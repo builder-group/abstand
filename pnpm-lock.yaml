@@ -106,64 +106,6 @@ importers:
         specifier: ^4.2.3
         version: 4.2.3
 
-  apps/desktop-tauri:
-    dependencies:
-      '@tanstack/react-router':
-        specifier: ^1.168.23
-        version: 1.168.23(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
-      '@tanstack/react-router-devtools':
-        specifier: ^1.166.13
-        version: 1.166.13(@tanstack/react-router@1.168.23(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(@tanstack/router-core@1.168.15)(csstype@3.2.3)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
-      '@tauri-apps/api':
-        specifier: ^2.10.1
-        version: 2.10.1
-      '@tauri-apps/plugin-opener':
-        specifier: ^2.5.3
-        version: 2.5.3
-      '@tauri-apps/plugin-os':
-        specifier: ^2.3.2
-        version: 2.3.2
-      clsx:
-        specifier: ^2.1.1
-        version: 2.1.1
-      react:
-        specifier: ^19.2.5
-        version: 19.2.5
-      react-dom:
-        specifier: ^19.2.5
-        version: 19.2.5(react@19.2.5)
-      tailwind-merge:
-        specifier: ^3.5.0
-        version: 3.5.0
-    devDependencies:
-      '@blgc/config':
-        specifier: ^0.0.41
-        version: 0.0.41(@types/node@25.6.0)(eslint@9.39.4(jiti@2.6.1))(postcss@8.5.10)(prettier@3.8.3)(turbo@2.9.6)(typescript@6.0.3)(vite@8.0.9(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.6.1)(tsx@4.21.0))
-      '@tailwindcss/vite':
-        specifier: ^4.2.2
-        version: 4.2.3(vite@8.0.9(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.6.1)(tsx@4.21.0))
-      '@tanstack/router-plugin':
-        specifier: ^1.167.22
-        version: 1.167.22(@tanstack/react-router@1.168.23(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(vite@8.0.9(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.6.1)(tsx@4.21.0))
-      '@tauri-apps/cli':
-        specifier: ^2.10.1
-        version: 2.10.1
-      '@types/node':
-        specifier: ^25.6.0
-        version: 25.6.0
-      '@types/react':
-        specifier: ^19.2.14
-        version: 19.2.14
-      '@types/react-dom':
-        specifier: ^19.2.3
-        version: 19.2.3(@types/react@19.2.14)
-      '@vitejs/plugin-react':
-        specifier: ^6.0.1
-        version: 6.0.1(vite@8.0.9(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.6.1)(tsx@4.21.0))
-      tailwindcss:
-        specifier: ^4.2.2
-        version: 4.2.3
-
 packages:
 
   '@babel/code-frame@7.29.0':

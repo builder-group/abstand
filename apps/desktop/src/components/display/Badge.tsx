@@ -1,8 +1,8 @@
-import { cn } from '@/lib';
 import { mergeProps } from '@base-ui/react/merge-props';
 import { useRender } from '@base-ui/react/use-render';
 import { cva, type VariantProps } from 'class-variance-authority';
 import React from 'react';
+import { cn } from '@/lib';
 
 export const Badge: React.FC<TBadgeProps> = (props) => {
 	const { className, variant = 'default', render, ...rest } = props;
@@ -35,6 +35,5 @@ const badgeVariants = cva(
 		}
 	}
 );
-
 
 type TBadgeProps = useRender.ComponentProps<'span'> & VariantProps<typeof badgeVariants>;

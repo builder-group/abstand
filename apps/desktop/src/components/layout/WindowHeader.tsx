@@ -1,8 +1,8 @@
-import { useAppInfo, usePlatform } from '@/hooks';
-import { cn } from '@/lib';
 import { mergeProps } from '@base-ui/react/merge-props';
 import { useRender } from '@base-ui/react/use-render';
 import React from 'react';
+import { useAppInfo, usePlatform } from '@/hooks';
+import { cn } from '@/lib';
 import { Badge, CircleQuestionMarkIcon } from '../display';
 import { Button } from '../input';
 

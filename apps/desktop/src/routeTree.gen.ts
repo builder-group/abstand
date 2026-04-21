@@ -9,65 +9,69 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WindowMainSidebarRouteRouteImport } from './routes/window.main._sidebar/route'
 import { Route as WindowMainSplashIndexRouteImport } from './routes/window.main.splash/index'
-import { Route as WindowMainHomeIndexRouteImport } from './routes/window.main.home/index'
-import { Route as WindowMainAboutIndexRouteImport } from './routes/window.main.about/index'
+import { Route as WindowMainSidebarHomeIndexRouteImport } from './routes/window.main._sidebar.home/index'
 
+const WindowMainSidebarRouteRoute = WindowMainSidebarRouteRouteImport.update({
+  id: '/window/main/_sidebar',
+  path: '/window/main',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WindowMainSplashIndexRoute = WindowMainSplashIndexRouteImport.update({
   id: '/window/main/splash/',
   path: '/window/main/splash/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const WindowMainHomeIndexRoute = WindowMainHomeIndexRouteImport.update({
-  id: '/window/main/home/',
-  path: '/window/main/home/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const WindowMainAboutIndexRoute = WindowMainAboutIndexRouteImport.update({
-  id: '/window/main/about/',
-  path: '/window/main/about/',
-  getParentRoute: () => rootRouteImport,
-} as any)
+const WindowMainSidebarHomeIndexRoute =
+  WindowMainSidebarHomeIndexRouteImport.update({
+    id: '/home/',
+    path: '/home/',
+    getParentRoute: () => WindowMainSidebarRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
-  '/window/main/about/': typeof WindowMainAboutIndexRoute
-  '/window/main/home/': typeof WindowMainHomeIndexRoute
+  '/window/main': typeof WindowMainSidebarRouteRouteWithChildren
   '/window/main/splash/': typeof WindowMainSplashIndexRoute
+  '/window/main/home/': typeof WindowMainSidebarHomeIndexRoute
 }
 export interface FileRoutesByTo {
-  '/window/main/about': typeof WindowMainAboutIndexRoute
-  '/window/main/home': typeof WindowMainHomeIndexRoute
+  '/window/main': typeof WindowMainSidebarRouteRouteWithChildren
   '/window/main/splash': typeof WindowMainSplashIndexRoute
+  '/window/main/home': typeof WindowMainSidebarHomeIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/window/main/about/': typeof WindowMainAboutIndexRoute
-  '/window/main/home/': typeof WindowMainHomeIndexRoute
+  '/window/main/_sidebar': typeof WindowMainSidebarRouteRouteWithChildren
   '/window/main/splash/': typeof WindowMainSplashIndexRoute
+  '/window/main/_sidebar/home/': typeof WindowMainSidebarHomeIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/window/main/about/'
-    | '/window/main/home/'
-    | '/window/main/splash/'
+  fullPaths: '/window/main' | '/window/main/splash/' | '/window/main/home/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/window/main/about' | '/window/main/home' | '/window/main/splash'
+  to: '/window/main' | '/window/main/splash' | '/window/main/home'
   id:
     | '__root__'
-    | '/window/main/about/'
-    | '/window/main/home/'
+    | '/window/main/_sidebar'
     | '/window/main/splash/'
+    | '/window/main/_sidebar/home/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  WindowMainAboutIndexRoute: typeof WindowMainAboutIndexRoute
-  WindowMainHomeIndexRoute: typeof WindowMainHomeIndexRoute
+  WindowMainSidebarRouteRoute: typeof WindowMainSidebarRouteRouteWithChildren
   WindowMainSplashIndexRoute: typeof WindowMainSplashIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/window/main/_sidebar': {
+      id: '/window/main/_sidebar'
+      path: '/window/main'
+      fullPath: '/window/main'
+      preLoaderRoute: typeof WindowMainSidebarRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/window/main/splash/': {
       id: '/window/main/splash/'
       path: '/window/main/splash'
@@ -75,26 +79,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WindowMainSplashIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/window/main/home/': {
-      id: '/window/main/home/'
-      path: '/window/main/home'
+    '/window/main/_sidebar/home/': {
+      id: '/window/main/_sidebar/home/'
+      path: '/home'
       fullPath: '/window/main/home/'
-      preLoaderRoute: typeof WindowMainHomeIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/window/main/about/': {
-      id: '/window/main/about/'
-      path: '/window/main/about'
-      fullPath: '/window/main/about/'
-      preLoaderRoute: typeof WindowMainAboutIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof WindowMainSidebarHomeIndexRouteImport
+      parentRoute: typeof WindowMainSidebarRouteRoute
     }
   }
 }
 
+interface WindowMainSidebarRouteRouteChildren {
+  WindowMainSidebarHomeIndexRoute: typeof WindowMainSidebarHomeIndexRoute
+}
+
+const WindowMainSidebarRouteRouteChildren: WindowMainSidebarRouteRouteChildren =
+  {
+    WindowMainSidebarHomeIndexRoute: WindowMainSidebarHomeIndexRoute,
+  }
+
+const WindowMainSidebarRouteRouteWithChildren =
+  WindowMainSidebarRouteRoute._addFileChildren(
+    WindowMainSidebarRouteRouteChildren,
+  )
+
 const rootRouteChildren: RootRouteChildren = {
-  WindowMainAboutIndexRoute: WindowMainAboutIndexRoute,
-  WindowMainHomeIndexRoute: WindowMainHomeIndexRoute,
+  WindowMainSidebarRouteRoute: WindowMainSidebarRouteRouteWithChildren,
   WindowMainSplashIndexRoute: WindowMainSplashIndexRoute,
 }
 export const routeTree = rootRouteImport

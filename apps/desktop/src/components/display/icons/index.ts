@@ -2,5 +2,11 @@
 export * from './LogoIcon';
 
 // Third Party Icons
-export { CircleQuestionMarkIcon } from 'lucide-react';
-
+export {
+	ArrowLeftIcon,
+	CircleQuestionMarkIcon,
+	PanelLeftCloseIcon,
+	PanelLeftOpenIcon,
+	PlusIcon,
+	SettingsIcon
+} from 'lucide-react';

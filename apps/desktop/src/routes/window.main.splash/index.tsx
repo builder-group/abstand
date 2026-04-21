@@ -1,6 +1,6 @@
-import { LogoIcon, WindowHeader } from '@/components';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import React from 'react';
+import { LogoIcon, WindowHeader } from '@/components';
 
 export const Route = createFileRoute('/window/main/splash/')({
 	component: RouteComponent

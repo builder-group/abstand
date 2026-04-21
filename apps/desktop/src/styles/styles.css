@@ -8,18 +8,14 @@
 /* MARK: - Theme */
 
 @theme {
-	--color-base-0: #ffffff; 
-	--color-base-50: var(
-		--color-apple-gray-6
-	); 
+	--color-base-0: #ffffff;
+	--color-base-50: var(--color-apple-gray-6);
 	--color-base-100: var(--color-apple-gray-5);
 	--color-base-200: var(--color-apple-gray-4);
 	--color-base-300: var(--color-apple-gray-3);
 	--color-base-400: var(--color-apple-gray-2);
 	--color-base-500: var(--color-apple-gray);
-	--color-base-600: var(
-		--color-apple-gray-dark-2
-	);
+	--color-base-600: var(--color-apple-gray-dark-2);
 	--color-base-700: var(--color-apple-gray-dark-3);
 	--color-base-800: var(--color-apple-gray-dark-4);
 	--color-base-900: var(--color-apple-gray-dark-5);

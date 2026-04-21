@@ -1,7 +1,7 @@
-import { cn } from '@/lib';
 import { Button as ButtonPrimitive } from '@base-ui/react/button';
 import { cva, type VariantProps } from 'class-variance-authority';
 import React from 'react';
+import { cn } from '@/lib';
 
 export const Button: React.FC<TButtonProps> = (props) => {
 	const { className, variant = 'default', size = 'default', ...rest } = props;
