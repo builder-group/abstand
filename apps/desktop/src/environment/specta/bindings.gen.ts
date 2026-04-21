@@ -13,12 +13,36 @@ async greetFromRust(name: string) : Promise<GreetingDto> {
 },
 async greetFromSwift(name: string) : Promise<GreetingDto> {
     return await TAURI_INVOKE("greet_from_swift", { name });
+},
+async getSettings() : Promise<AppSettings> {
+    return await TAURI_INVOKE("get_settings");
+},
+async setSettings(settings: AppSettings) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("set_settings", { settings }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async resetSettings() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("reset_settings") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
 /** user-defined events **/
 
 
+export const events = __makeEvents__<{
+appSettingsChangedEvent: AppSettingsChangedEvent
+}>({
+appSettingsChangedEvent: "app-settings-changed-event"
+})
 
 /** user-defined constants **/
 
@@ -28,9 +52,14 @@ async greetFromSwift(name: string) : Promise<GreetingDto> {
 
 export type AppDistribution = "appStore" | "direct"
 export type AppInfoDto = { version: string; stage: Stage; distribution: AppDistribution }
+export type AppSettings = { version: SettingsVersion; appearance: AppearanceSettings }
+export type AppSettingsChangedEvent = AppSettings
+export type AppearanceSettings = { theme: Theme }
 export type GreetingDto = { message: string; source: GreetingSource }
 export type GreetingSource = "rust" | "swift"
+export type SettingsVersion = "0.0.1"
 export type Stage = "dev" | "prod"
+export type Theme = "light" | "dark" | "auto"
 
 /** tauri-specta globals **/
 
