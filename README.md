@@ -72,6 +72,4 @@ You set up **Intentions**: configured commitments that define what gets blocked,
 
 Abstand is source-available under the **Elastic License 2.0 (ELv2)**.
 
-You can read the code, learn from it, and modify it for internal use. Redistribution (free or paid) is not permitted without a separate license.
-
 See [LICENSE](./LICENSE) for the full license text, or read the official overview at [elastic.co/licensing/elastic-license](https://www.elastic.co/licensing/elastic-license).

@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router';
 import React from 'react';
 import { Kbd } from '@/components';
 import { cn } from '@/lib';
+import { FileRouteTypes } from '@/routeTree.gen';
 
 export const SidebarItem: React.FC<TSidebarItemProps> = (props) => {
 	const { icon, label, shortcut, to, exact = false, className } = props;
@@ -37,7 +38,7 @@ interface TSidebarItemProps {
 	icon: React.ReactNode;
 	label: string;
 	shortcut?: string;
-	to?: string;
+	to?: FileRouteTypes['to'];
 	exact?: boolean;
 	className?: string;
 }

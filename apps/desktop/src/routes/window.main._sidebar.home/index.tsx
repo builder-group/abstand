@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { ContentPage } from '@/components';
 
 export const Route = createFileRoute('/window/main/_sidebar/home/')({
 	component: RouteComponent
@@ -6,10 +7,9 @@ export const Route = createFileRoute('/window/main/_sidebar/home/')({
 
 function RouteComponent() {
 	return (
-		<div className="flex h-full items-center justify-center px-6 py-6">
-			<h1 className="text-base-950 text-5xl leading-none font-bold tracking-tight sm:text-6xl">
-				Hello Home
-			</h1>
-		</div>
+		<ContentPage title="Home" backLabel="Back" backTo="/window/main/home">
+			<div className="text-base-950">Hello Home</div>
+			<div className="h-500 w-full bg-red-200" />
+		</ContentPage>
 	);
 }

@@ -16,7 +16,7 @@ function LayoutComponent() {
 			<WindowHeader
 				floating
 				compact={!sidebarOpen}
-				childrenStart={
+				leading={
 					<Tooltip content="Toggle sidebar" shortcut="⌘B" side="bottom">
 						<Toggle
 							aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
@@ -47,14 +47,14 @@ function LayoutComponent() {
 				</nav>
 
 				{/* Content */}
-				<main
+				<div
 					className={cn(
-						'border-base-100 bg-base-0 flex flex-1 flex-col overflow-y-auto transition-[border-radius] duration-200 ease-in-out',
+						'border-base-100 bg-base-0 flex flex-1 overflow-hidden transition-[border-radius] duration-200 ease-in-out',
 						sidebarOpen ? 'rounded-l-xl border-l' : 'rounded-none border-l-0'
 					)}
 				>
 					<Outlet />
-				</main>
+				</div>
 			</div>
 		</>
 	);

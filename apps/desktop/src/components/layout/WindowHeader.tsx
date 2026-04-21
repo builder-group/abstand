@@ -7,7 +7,7 @@ import { Badge, CircleQuestionMarkIcon } from '../display';
 import { Button } from '../input';
 
 export const WindowHeader: React.FC<TWindowHeaderProps> = (props) => {
-	const { title, floating = true, compact = false, childrenStart, childrenEnd, className } = props;
+	const { title, floating = true, compact = false, leading, trailing, className } = props;
 	const appInfo = useAppInfo();
 
 	const showDevBadge = !appInfo.isPending && appInfo.stage === 'dev';
@@ -23,7 +23,7 @@ export const WindowHeader: React.FC<TWindowHeaderProps> = (props) => {
 			className={cn('flex px-4', floating && 'absolute inset-x-0 top-0 z-10', className)}
 		>
 			<WindowControlsInset />
-			{childrenStart}
+			{leading}
 			{(title != null || showDevBadge || showBetaBadge) && !compact && (
 				<div className="ml-2 flex min-w-0 items-center gap-2">
 					{title != null && (
@@ -42,7 +42,7 @@ export const WindowHeader: React.FC<TWindowHeaderProps> = (props) => {
 				</div>
 			)}
 			<div data-tauri-drag-region className="h-full flex-1" />
-			{childrenEnd}
+			{trailing}
 			<Button aria-label="Help" variant="ghost" size="icon-sm" className="ml-2">
 				<CircleQuestionMarkIcon />
 			</Button>
@@ -54,8 +54,8 @@ interface TWindowHeaderProps {
 	title?: string;
 	floating?: boolean;
 	compact?: boolean;
-	childrenStart?: React.ReactNode;
-	childrenEnd?: React.ReactNode;
+	leading?: React.ReactNode;
+	trailing?: React.ReactNode;
 	className?: string;
 }
 
@@ -86,3 +86,32 @@ export const WindowControlsInset: React.FC = () => {
 		/>
 	);
 };
+
+/**
+ * Page-owned sticky header helper with separate foreground and background layers.
+ * Use this for sub-page header UI that should layer beneath the shell-owned WindowHeader.
+ */
+export const StickyPageHeaderLayers: React.FC<TStickyPageHeaderLayersProps> = (props) => {
+	const {
+		foreground,
+		background = <WindowHeaderRow />,
+		foregroundClassName,
+		backgroundClassName
+	} = props;
+
+	return (
+		<>
+			<div className="pointer-events-none sticky top-0 z-10 h-0">
+				<WindowHeaderRow className={foregroundClassName}>{foreground}</WindowHeaderRow>
+			</div>
+			<div className={cn('sticky top-0 z-5', backgroundClassName)}>{background}</div>
+		</>
+	);
+};
+
+interface TStickyPageHeaderLayersProps {
+	foreground?: React.ReactNode;
+	background?: React.ReactNode;
+	foregroundClassName?: string;
+	backgroundClassName?: string;
+}

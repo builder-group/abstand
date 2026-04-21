@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WindowMainSidebarRouteRouteImport } from './routes/window.main._sidebar/route'
 import { Route as WindowMainSplashIndexRouteImport } from './routes/window.main.splash/index'
+import { Route as WindowMainSidebarSettingsIndexRouteImport } from './routes/window.main._sidebar.settings/index'
 import { Route as WindowMainSidebarHomeIndexRouteImport } from './routes/window.main._sidebar.home/index'
 
 const WindowMainSidebarRouteRoute = WindowMainSidebarRouteRouteImport.update({
@@ -23,6 +24,12 @@ const WindowMainSplashIndexRoute = WindowMainSplashIndexRouteImport.update({
   path: '/window/main/splash/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WindowMainSidebarSettingsIndexRoute =
+  WindowMainSidebarSettingsIndexRouteImport.update({
+    id: '/settings/',
+    path: '/settings/',
+    getParentRoute: () => WindowMainSidebarRouteRoute,
+  } as any)
 const WindowMainSidebarHomeIndexRoute =
   WindowMainSidebarHomeIndexRouteImport.update({
     id: '/home/',
@@ -34,28 +41,40 @@ export interface FileRoutesByFullPath {
   '/window/main': typeof WindowMainSidebarRouteRouteWithChildren
   '/window/main/splash/': typeof WindowMainSplashIndexRoute
   '/window/main/home/': typeof WindowMainSidebarHomeIndexRoute
+  '/window/main/settings/': typeof WindowMainSidebarSettingsIndexRoute
 }
 export interface FileRoutesByTo {
   '/window/main': typeof WindowMainSidebarRouteRouteWithChildren
   '/window/main/splash': typeof WindowMainSplashIndexRoute
   '/window/main/home': typeof WindowMainSidebarHomeIndexRoute
+  '/window/main/settings': typeof WindowMainSidebarSettingsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/window/main/_sidebar': typeof WindowMainSidebarRouteRouteWithChildren
   '/window/main/splash/': typeof WindowMainSplashIndexRoute
   '/window/main/_sidebar/home/': typeof WindowMainSidebarHomeIndexRoute
+  '/window/main/_sidebar/settings/': typeof WindowMainSidebarSettingsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/window/main' | '/window/main/splash/' | '/window/main/home/'
+  fullPaths:
+    | '/window/main'
+    | '/window/main/splash/'
+    | '/window/main/home/'
+    | '/window/main/settings/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/window/main' | '/window/main/splash' | '/window/main/home'
+  to:
+    | '/window/main'
+    | '/window/main/splash'
+    | '/window/main/home'
+    | '/window/main/settings'
   id:
     | '__root__'
     | '/window/main/_sidebar'
     | '/window/main/splash/'
     | '/window/main/_sidebar/home/'
+    | '/window/main/_sidebar/settings/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -79,6 +98,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WindowMainSplashIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/window/main/_sidebar/settings/': {
+      id: '/window/main/_sidebar/settings/'
+      path: '/settings'
+      fullPath: '/window/main/settings/'
+      preLoaderRoute: typeof WindowMainSidebarSettingsIndexRouteImport
+      parentRoute: typeof WindowMainSidebarRouteRoute
+    }
     '/window/main/_sidebar/home/': {
       id: '/window/main/_sidebar/home/'
       path: '/home'
@@ -91,11 +117,13 @@ declare module '@tanstack/react-router' {
 
 interface WindowMainSidebarRouteRouteChildren {
   WindowMainSidebarHomeIndexRoute: typeof WindowMainSidebarHomeIndexRoute
+  WindowMainSidebarSettingsIndexRoute: typeof WindowMainSidebarSettingsIndexRoute
 }
 
 const WindowMainSidebarRouteRouteChildren: WindowMainSidebarRouteRouteChildren =
   {
     WindowMainSidebarHomeIndexRoute: WindowMainSidebarHomeIndexRoute,
+    WindowMainSidebarSettingsIndexRoute: WindowMainSidebarSettingsIndexRoute,
   }
 
 const WindowMainSidebarRouteRouteWithChildren =
