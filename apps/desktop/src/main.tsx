@@ -2,7 +2,7 @@ import { RouterProvider } from '@tanstack/react-router';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { router } from './router';
-import './styles.css';
+import './styles/styles.css';
 
 // Expose router for Tauri navigation.
 // When Tauri needs to navigate an existing window, it calls:
