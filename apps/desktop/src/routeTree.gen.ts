@@ -13,6 +13,8 @@ import { Route as WindowMainSidebarRouteRouteImport } from './routes/window.main
 import { Route as WindowMainSplashIndexRouteImport } from './routes/window.main.splash/index'
 import { Route as WindowMainSidebarSettingsIndexRouteImport } from './routes/window.main._sidebar.settings/index'
 import { Route as WindowMainSidebarHomeIndexRouteImport } from './routes/window.main._sidebar.home/index'
+import { Route as WindowMainSidebarSettingsGeneralIndexRouteImport } from './routes/window.main._sidebar.settings.general/index'
+import { Route as WindowMainSidebarIntentionsNewIndexRouteImport } from './routes/window.main._sidebar.intentions.new/index'
 
 const WindowMainSidebarRouteRoute = WindowMainSidebarRouteRouteImport.update({
   id: '/window/main/_sidebar',
@@ -36,18 +38,34 @@ const WindowMainSidebarHomeIndexRoute =
     path: '/home/',
     getParentRoute: () => WindowMainSidebarRouteRoute,
   } as any)
+const WindowMainSidebarSettingsGeneralIndexRoute =
+  WindowMainSidebarSettingsGeneralIndexRouteImport.update({
+    id: '/settings/general/',
+    path: '/settings/general/',
+    getParentRoute: () => WindowMainSidebarRouteRoute,
+  } as any)
+const WindowMainSidebarIntentionsNewIndexRoute =
+  WindowMainSidebarIntentionsNewIndexRouteImport.update({
+    id: '/intentions/new/',
+    path: '/intentions/new/',
+    getParentRoute: () => WindowMainSidebarRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/window/main': typeof WindowMainSidebarRouteRouteWithChildren
   '/window/main/splash/': typeof WindowMainSplashIndexRoute
   '/window/main/home/': typeof WindowMainSidebarHomeIndexRoute
   '/window/main/settings/': typeof WindowMainSidebarSettingsIndexRoute
+  '/window/main/intentions/new/': typeof WindowMainSidebarIntentionsNewIndexRoute
+  '/window/main/settings/general/': typeof WindowMainSidebarSettingsGeneralIndexRoute
 }
 export interface FileRoutesByTo {
   '/window/main': typeof WindowMainSidebarRouteRouteWithChildren
   '/window/main/splash': typeof WindowMainSplashIndexRoute
   '/window/main/home': typeof WindowMainSidebarHomeIndexRoute
   '/window/main/settings': typeof WindowMainSidebarSettingsIndexRoute
+  '/window/main/intentions/new': typeof WindowMainSidebarIntentionsNewIndexRoute
+  '/window/main/settings/general': typeof WindowMainSidebarSettingsGeneralIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -55,6 +73,8 @@ export interface FileRoutesById {
   '/window/main/splash/': typeof WindowMainSplashIndexRoute
   '/window/main/_sidebar/home/': typeof WindowMainSidebarHomeIndexRoute
   '/window/main/_sidebar/settings/': typeof WindowMainSidebarSettingsIndexRoute
+  '/window/main/_sidebar/intentions/new/': typeof WindowMainSidebarIntentionsNewIndexRoute
+  '/window/main/_sidebar/settings/general/': typeof WindowMainSidebarSettingsGeneralIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -63,18 +83,24 @@ export interface FileRouteTypes {
     | '/window/main/splash/'
     | '/window/main/home/'
     | '/window/main/settings/'
+    | '/window/main/intentions/new/'
+    | '/window/main/settings/general/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/window/main'
     | '/window/main/splash'
     | '/window/main/home'
     | '/window/main/settings'
+    | '/window/main/intentions/new'
+    | '/window/main/settings/general'
   id:
     | '__root__'
     | '/window/main/_sidebar'
     | '/window/main/splash/'
     | '/window/main/_sidebar/home/'
     | '/window/main/_sidebar/settings/'
+    | '/window/main/_sidebar/intentions/new/'
+    | '/window/main/_sidebar/settings/general/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -112,18 +138,38 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WindowMainSidebarHomeIndexRouteImport
       parentRoute: typeof WindowMainSidebarRouteRoute
     }
+    '/window/main/_sidebar/settings/general/': {
+      id: '/window/main/_sidebar/settings/general/'
+      path: '/settings/general'
+      fullPath: '/window/main/settings/general/'
+      preLoaderRoute: typeof WindowMainSidebarSettingsGeneralIndexRouteImport
+      parentRoute: typeof WindowMainSidebarRouteRoute
+    }
+    '/window/main/_sidebar/intentions/new/': {
+      id: '/window/main/_sidebar/intentions/new/'
+      path: '/intentions/new'
+      fullPath: '/window/main/intentions/new/'
+      preLoaderRoute: typeof WindowMainSidebarIntentionsNewIndexRouteImport
+      parentRoute: typeof WindowMainSidebarRouteRoute
+    }
   }
 }
 
 interface WindowMainSidebarRouteRouteChildren {
   WindowMainSidebarHomeIndexRoute: typeof WindowMainSidebarHomeIndexRoute
   WindowMainSidebarSettingsIndexRoute: typeof WindowMainSidebarSettingsIndexRoute
+  WindowMainSidebarIntentionsNewIndexRoute: typeof WindowMainSidebarIntentionsNewIndexRoute
+  WindowMainSidebarSettingsGeneralIndexRoute: typeof WindowMainSidebarSettingsGeneralIndexRoute
 }
 
 const WindowMainSidebarRouteRouteChildren: WindowMainSidebarRouteRouteChildren =
   {
     WindowMainSidebarHomeIndexRoute: WindowMainSidebarHomeIndexRoute,
     WindowMainSidebarSettingsIndexRoute: WindowMainSidebarSettingsIndexRoute,
+    WindowMainSidebarIntentionsNewIndexRoute:
+      WindowMainSidebarIntentionsNewIndexRoute,
+    WindowMainSidebarSettingsGeneralIndexRoute:
+      WindowMainSidebarSettingsGeneralIndexRoute,
   }
 
 const WindowMainSidebarRouteRouteWithChildren =

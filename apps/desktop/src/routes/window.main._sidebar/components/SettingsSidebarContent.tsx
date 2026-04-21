@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeftIcon, WindowHeaderRow } from '@/components';
+import { ArrowLeftIcon, IconBubble, SettingsIcon, WindowHeaderRow } from '@/components';
 import { cn } from '@/lib';
 import { SidebarItem } from './SidebarItem';
 
@@ -19,8 +19,18 @@ export const SettingsSidebarContent: React.FC<TSettingsSidebarContentProps> = (p
 				/>
 			</div>
 
-			{/* TODO */}
-			<div className="flex-1" />
+			{/* Settings nav */}
+			<div className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-2 py-2">
+				<SidebarItem
+					icon={
+						<IconBubble variant="neutral" size="xs">
+							<SettingsIcon />
+						</IconBubble>
+					}
+					label="General"
+					to="/window/main/settings/general"
+				/>
+			</div>
 		</div>
 	);
 };
