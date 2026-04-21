@@ -5,12 +5,12 @@ import { cn } from '@/lib';
 import { FileRouteTypes } from '@/routeTree.gen';
 
 export const SidebarItem: React.FC<TSidebarItemProps> = (props) => {
-	const { icon, label, shortcut, to, exact = false, className } = props;
+	const { icon, label, shortcut, className, ...itemProps } = props;
 
 	const cls = cn(
 		'flex w-full items-center gap-2 rounded-lg px-2 py-1 text-left',
 		'text-base-600 text-[13px] transition-colors',
-		'border border-transparent hover:bg-base-100/80 focus-ring',
+		'border border-transparent hover:bg-base-100/80 focus-ring disabled:pointer-events-none disabled:opacity-50',
 		'data-[status=active]:bg-base-200/80 data-[status=active]:text-base-950',
 		className
 	);
@@ -18,12 +18,14 @@ export const SidebarItem: React.FC<TSidebarItemProps> = (props) => {
 	const content = (
 		<>
 			{icon}
-			<span className="flex-1">{label}</span>
+			<span className="min-w-0 flex-1 truncate">{label}</span>
 			{shortcut != null && <Kbd variant="ghost">{shortcut}</Kbd>}
 		</>
 	);
 
-	if (to != null) {
+	if (itemProps.to != null) {
+		const { to, exact = false } = itemProps;
+
 		return (
 			<Link to={to} activeOptions={{ exact }} className={cls}>
 				{content}
@@ -31,14 +33,31 @@ export const SidebarItem: React.FC<TSidebarItemProps> = (props) => {
 		);
 	}
 
-	return <button className={cls}>{content}</button>;
+	const { type = 'button', ...buttonProps } = itemProps;
+
+	return (
+		<button type={type} className={cls} {...buttonProps}>
+			{content}
+		</button>
+	);
 };
 
-interface TSidebarItemProps {
+type TSidebarItemProps = TSidebarItemLinkProps | TSidebarItemButtonProps;
+
+interface TSidebarItemLinkProps extends TSidebarItemBaseProps {
+	to: FileRouteTypes['to'];
+	exact?: boolean;
+}
+
+type TSidebarItemButtonProps = TSidebarItemBaseProps &
+	Omit<React.ComponentPropsWithoutRef<'button'>, 'children' | 'className'> & {
+		to?: undefined;
+		exact?: never;
+	};
+
+interface TSidebarItemBaseProps {
 	icon: React.ReactNode;
 	label: string;
 	shortcut?: string;
-	to?: FileRouteTypes['to'];
-	exact?: boolean;
 	className?: string;
 }
