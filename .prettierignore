@@ -1,0 +1,24 @@
+# Dependencies
+**/node_modules/
+
+# Tooling
+**/.turbo/
+
+# Test artifacts
+**/coverage/
+
+# Build outputs
+**/.build/
+**/.output/
+**/build/
+**/dist/
+**/out/
+**/target/
+
+# Generated source
+**/*.gen.ts
+**/gen/
+
+# Local files
+.todo
+.DS_Store

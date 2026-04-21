@@ -1,0 +1,10 @@
+[workspace]
+resolver = "2"
+members = ["apps/*/src-tauri"]
+exclude = []
+
+[workspace.package]
+authors = ["@bennobuilder"]
+license = "ELv2"
+edition = "2021"
+repository = "https://github.com/builder-group/abstand"

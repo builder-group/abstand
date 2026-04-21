@@ -1,0 +1,31 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# Dependencies
+**/node_modules/
+
+# Environment
+.env
+.env.local
+*.env.local
+.env.*.local
+
+# Tooling
+**/.turbo/
+
+# Test artifacts
+**/coverage/
+
+# Build outputs
+**/.build/
+**/.output/
+**/build/
+**/dist/
+**/out/
+**/target/
+
+# Local files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.todo
+.DS_Store

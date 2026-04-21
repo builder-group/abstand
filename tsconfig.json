@@ -1,0 +1,3 @@
+{
+	"extends": "@blgc/config/typescript/base"
+}
