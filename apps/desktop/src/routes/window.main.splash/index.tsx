@@ -1,6 +1,6 @@
+import { LogoIcon, WindowHeader } from '@/components';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import React from 'react';
-import { WindowHeader } from '@/components';
 
 export const Route = createFileRoute('/window/main/splash/')({
 	component: RouteComponent
@@ -26,7 +26,7 @@ function RouteComponent() {
 	return (
 		<main className="relative flex h-screen items-center justify-center">
 			<WindowHeader floating />
-			<img alt="Tauri" className="h-20 w-20" height="80" src="/tauri.svg" width="80" />
+			<LogoIcon className="text-base-950 size-20" />
 		</main>
 	);
 }
