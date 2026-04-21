@@ -29,6 +29,7 @@
 		"update:latest": "pnpm update --latest"
 	},
 	"dependencies": {
+		"@base-ui/react": "^1.4.1",
 		"@tanstack/react-router": "^1.168.23",
 		"@tanstack/react-router-devtools": "^1.166.13",
 		"@tauri-apps/api": "^2.10.1",
@@ -41,13 +42,13 @@
 	},
 	"devDependencies": {
 		"@blgc/config": "^0.0.41",
-		"@tailwindcss/vite": "^4.2.2",
+		"@tailwindcss/vite": "^4.2.3",
 		"@tanstack/router-plugin": "^1.167.22",
 		"@tauri-apps/cli": "^2.10.1",
 		"@types/node": "^25.6.0",
 		"@types/react": "^19.2.14",
 		"@types/react-dom": "^19.2.3",
 		"@vitejs/plugin-react": "^6.0.1",
-		"tailwindcss": "^4.2.2"
+		"tailwindcss": "^4.2.3"
 	}
 }
