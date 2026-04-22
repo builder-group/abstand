@@ -25,7 +25,7 @@ async setSettings(settings: AppSettings) : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
-async resetSettings() : Promise<Result<null, string>> {
+async resetSettings() : Promise<Result<AppSettings, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("reset_settings") };
 } catch (e) {

@@ -37,10 +37,13 @@
 		"@tauri-apps/plugin-os": "^2.3.2",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
+		"feature-react": "^0.0.68",
+		"feature-state": "^0.0.66",
 		"lucide-react": "^1.8.0",
 		"react": "^19.2.5",
 		"react-dom": "^19.2.5",
-		"tailwind-merge": "^3.5.0"
+		"tailwind-merge": "^3.5.0",
+		"tuple-result": "^0.0.12"
 	},
 	"devDependencies": {
 		"@blgc/config": "^0.0.41",

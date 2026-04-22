@@ -26,10 +26,13 @@ pub fn set_settings(
 
 #[tauri::command]
 #[specta::specta]
-pub fn reset_settings(app: AppHandle, state: State<'_, AppSettingsState>) -> Result<(), String> {
+pub fn reset_settings(
+    app: AppHandle,
+    state: State<'_, AppSettingsState>,
+) -> Result<AppSettings, String> {
     let settings = AppSettings::default();
     persistence::save_settings(&app, &settings)?;
     *state.lock().unwrap() = settings.clone();
-    let _ = AppSettingsChangedEvent(settings).emit(&app);
-    return Ok(());
+    let _ = AppSettingsChangedEvent(settings.clone()).emit(&app);
+    return Ok(settings);
 }
