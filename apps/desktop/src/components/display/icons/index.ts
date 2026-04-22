@@ -5,8 +5,11 @@ export * from './LogoIcon';
 export {
 	ArrowLeftIcon,
 	CircleQuestionMarkIcon,
+	MonitorIcon,
+	MoonIcon,
 	PanelLeftCloseIcon,
 	PanelLeftOpenIcon,
 	PlusIcon,
-	SettingsIcon
+	SettingsIcon,
+	SunIcon
 } from 'lucide-react';

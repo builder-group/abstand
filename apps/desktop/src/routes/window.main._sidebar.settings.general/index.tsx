@@ -1,22 +1,61 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { SettingsIcon, SettingsPage } from '@/components';
+import { useCompute } from 'feature-react/state';
+import React from 'react';
+import {
+	MonitorIcon,
+	MoonIcon,
+	SegmentedControl,
+	SegmentedControlItem,
+	SettingsIcon,
+	SettingsPage,
+	SunIcon
+} from '@/components';
+import type { specta } from '@/environment';
+import { SettingsGroup, SettingsRow, useSettingsCx } from '@/modules/settings';
 
 export const Route = createFileRoute('/window/main/_sidebar/settings/general/')({
 	component: RouteComponent
 });
 
 function RouteComponent() {
+	const settingsCx = useSettingsCx();
+	const theme = useCompute(settingsCx.$appSettings, ({ value }) => value.appearance.theme);
+
+	// MARK: - Actions
+
+	const handleThemeChange = React.useCallback(
+		async (themeValue: string) => {
+			await settingsCx.update({
+				appearance: { theme: themeValue as specta.Theme }
+			});
+		},
+		[settingsCx]
+	);
+
+	// MARK: - UI
+
 	return (
 		<SettingsPage
 			title="General"
 			subtitle="App-wide preferences."
 			icon={<SettingsIcon />}
 			iconVariant="neutral"
-			backLabel="Back"
-			backTo="/window/main/home"
 		>
-			<div className="text-base-950">Hello General Settings</div>
-			<div className="h-500 w-full bg-red-200" />
+			<SettingsGroup title="Appearance">
+				<SettingsRow label="Theme" description="Choose how Abstand should appear across the app.">
+					<SegmentedControl value={theme} onValueChange={handleThemeChange}>
+						<SegmentedControlItem value="auto" aria-label="Auto theme" title="Auto theme">
+							<MonitorIcon />
+						</SegmentedControlItem>
+						<SegmentedControlItem value="light" aria-label="Light theme" title="Light theme">
+							<SunIcon />
+						</SegmentedControlItem>
+						<SegmentedControlItem value="dark" aria-label="Dark theme" title="Dark theme">
+							<MoonIcon />
+						</SegmentedControlItem>
+					</SegmentedControl>
+				</SettingsRow>
+			</SettingsGroup>
 		</SettingsPage>
 	);
 }

@@ -25,7 +25,7 @@ export const SettingsPage: React.FC<TSettingsPageProps> = (props) => {
 			backLabel={backLabel}
 			header={
 				header ?? (
-					<div className="bg-base-50/50 mb-6 flex items-start gap-3 rounded-xl px-4 py-4">
+					<div className="bg-base-50/70 mb-6 flex items-start gap-3 rounded-xl px-4 py-4">
 						{icon != null && (
 							<IconBubble variant={iconVariant} size="default" className="shrink-0">
 								{icon}
