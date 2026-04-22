@@ -3,8 +3,9 @@ use sqlx::{sqlite::SqlitePool, Pool, Sqlite};
 use std::ops::Deref;
 use tauri::{App, Manager};
 
-pub fn setup(app: &App) {
-    app.manage(DatabaseState::init(app));
+pub fn setup(app: &App) -> Result<(), Box<dyn std::error::Error>> {
+    app.manage(DatabaseState::init(app)?);
+    return Ok(());
 }
 
 pub struct Database {
@@ -32,10 +33,9 @@ impl Database {
 pub struct DatabaseState(Database);
 
 impl DatabaseState {
-    pub fn init(app: &App) -> Self {
-        let database = tauri::async_runtime::block_on(Database::new(app))
-            .expect("Failed to initialize database");
-        return Self(database);
+    pub fn init(app: &App) -> Result<Self, Box<dyn std::error::Error>> {
+        let database = tauri::async_runtime::block_on(Database::new(app))?;
+        return Ok(Self(database));
     }
 }
 

@@ -39,7 +39,7 @@ pub fn run() {
             specta_builder.mount_events(app);
 
             // Setup environment
-            db::setup(app);
+            db::setup(app)?;
 
             // Setup modules
             settings::setup(app);
