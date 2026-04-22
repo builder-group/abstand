@@ -12,11 +12,7 @@ export const SettingsSidebarContent: React.FC<TSettingsSidebarContentProps> = (p
 
 			{/* Top actions */}
 			<div className="border-base-100/80 flex flex-col gap-0.5 border-b px-2 py-2">
-				<SidebarItem
-					icon={<ArrowLeftIcon className="text-base-500 size-4 shrink-0" />}
-					label="Back to app"
-					to="/window/main/home"
-				/>
+				<SidebarItem icon={<ArrowLeftIcon />} label="Back to app" to="/window/main/home" />
 			</div>
 
 			{/* Settings nav */}

@@ -1,8 +1,9 @@
 @import 'tailwindcss';
 @import './apple.css';
 
-* {
-	box-sizing: border-box;
+/* Desktop app convention: use arrow cursor for all clickable elements */
+a {
+	cursor: default;
 }
 
 /* MARK: - Theme */

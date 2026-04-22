@@ -12,11 +12,7 @@ export const MainSidebarContent: React.FC<TMainSidebarContentProps> = (props) =>
 
 			{/* Top actions */}
 			<div className="border-base-100/80 flex flex-col gap-0.5 border-b px-2 py-2">
-				<SidebarItem
-					icon={<PlusIcon className="text-base-500 size-4 shrink-0" />}
-					label="New Intention"
-					to="/window/main/intentions/new"
-				/>
+				<SidebarItem icon={<PlusIcon />} label="New Intention" to="/window/main/intentions/new" />
 			</div>
 
 			{/* TODO */}
@@ -24,11 +20,7 @@ export const MainSidebarContent: React.FC<TMainSidebarContentProps> = (props) =>
 
 			{/* Footer */}
 			<div className="border-base-100/80 flex flex-col gap-0.5 border-t px-2 py-2">
-				<SidebarItem
-					icon={<SettingsIcon className="text-base-500 size-4 shrink-0" />}
-					label="Settings"
-					to="/window/main/settings"
-				/>
+				<SidebarItem icon={<SettingsIcon />} label="Settings" to="/window/main/settings" />
 			</div>
 		</div>
 	);

@@ -10,7 +10,7 @@ export const SidebarItem: React.FC<TSidebarItemProps> = (props) => {
 	const cls = cn(
 		'flex w-full items-center gap-2 rounded-lg px-2 py-1 text-left',
 		'text-base-600 text-[13px] transition-colors',
-		'border border-transparent hover:bg-base-100/80 focus-ring disabled:pointer-events-none disabled:opacity-50',
+		"border border-transparent hover:bg-base-100 hover:text-base-950 focus-ring disabled:pointer-events-none disabled:opacity-50 select-none [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0",
 		'data-[status=active]:bg-base-200/80 data-[status=active]:text-base-950',
 		className
 	);
