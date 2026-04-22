@@ -35,7 +35,7 @@ function LayoutComponent() {
 					</Tooltip>
 				}
 			/>
-			<div className="bg-base-50/80 flex h-screen overflow-hidden">
+			<div className="bg-base-50/90 flex h-screen overflow-hidden">
 				{/* Sidebar */}
 				<nav
 					className={cn(
