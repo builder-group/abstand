@@ -2,7 +2,7 @@ mod commands;
 pub mod window;
 
 use crate::environment::db;
-use crate::modules::{greet, settings};
+use crate::modules::settings;
 use specta_typescript::Typescript;
 use tauri_specta::{collect_commands, collect_events, Builder as SpectaBuilder};
 
@@ -11,9 +11,6 @@ pub fn run() {
         .commands(collect_commands![
             // App commands
             commands::get_app_info,
-            // Greet commands
-            greet::commands::greet_from_rust,
-            greet::commands::greet_from_swift,
             // Settings commands
             settings::commands::get_settings,
             settings::commands::set_settings,

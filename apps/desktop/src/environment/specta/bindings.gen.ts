@@ -8,12 +8,6 @@ export const commands = {
 async getAppInfo() : Promise<AppInfoDto> {
     return await TAURI_INVOKE("get_app_info");
 },
-async greetFromRust(name: string) : Promise<GreetingDto> {
-    return await TAURI_INVOKE("greet_from_rust", { name });
-},
-async greetFromSwift(name: string) : Promise<GreetingDto> {
-    return await TAURI_INVOKE("greet_from_swift", { name });
-},
 async getSettings() : Promise<AppSettings> {
     return await TAURI_INVOKE("get_settings");
 },
@@ -55,8 +49,6 @@ export type AppInfoDto = { version: string; stage: Stage; distribution: AppDistr
 export type AppSettings = { version: SettingsVersion; appearance: AppearanceSettings }
 export type AppSettingsChangedEvent = AppSettings
 export type AppearanceSettings = { theme: Theme }
-export type GreetingDto = { message: string; source: GreetingSource }
-export type GreetingSource = "rust" | "swift"
 export type SettingsVersion = "0.0.1"
 export type Stage = "dev" | "prod"
 export type Theme = "light" | "dark" | "auto"
