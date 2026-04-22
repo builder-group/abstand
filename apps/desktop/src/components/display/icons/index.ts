@@ -10,6 +10,7 @@ export {
 	PanelLeftCloseIcon,
 	PanelLeftOpenIcon,
 	PlusIcon,
+	SearchIcon,
 	SettingsIcon,
 	SunIcon
 } from 'lucide-react';

@@ -16,13 +16,13 @@ export const Toggle: React.FC<TToggleProps> = (props) => {
 };
 
 const toggleVariants = cva(
-	'inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg border border-transparent font-medium whitespace-nowrap transition select-none hover:bg-base-100 focus-ring active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 aria-pressed:bg-base-100 [&_svg]:pointer-events-none [&_svg]:shrink-0',
+	'inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg border border-transparent font-medium whitespace-nowrap transition select-none hover:bg-base-950/6 focus-ring active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 aria-pressed:bg-base-950/10 [&_svg]:pointer-events-none [&_svg]:shrink-0',
 	{
 		variants: {
 			variant: {
 				default: 'bg-transparent text-base-500 hover:text-base-950 aria-pressed:text-base-950',
 				// The icon communicates state; appearance stays the same whether pressed or not
-				icon: 'bg-transparent text-base-500 hover:text-base-950 aria-pressed:bg-transparent aria-pressed:text-base-500 hover:aria-pressed:bg-base-100 hover:aria-pressed:text-base-950',
+				icon: 'bg-transparent text-base-500 hover:text-base-950 aria-pressed:bg-transparent aria-pressed:text-base-500 hover:aria-pressed:bg-base-950/6 hover:aria-pressed:text-base-950',
 				outline:
 					'border border-base-200 bg-transparent text-base-500 hover:text-base-950 aria-pressed:text-base-950'
 			},

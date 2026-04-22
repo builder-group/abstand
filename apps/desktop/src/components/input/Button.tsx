@@ -29,9 +29,9 @@ const buttonVariants = cva(
 				destructive:
 					'bg-error/10 text-error hover:bg-error/18 focus-visible:border-error/40 focus-visible:ring-error/20',
 				ghost:
-					'text-base-600 hover:bg-base-100 hover:text-base-950 aria-expanded:bg-base-100 aria-expanded:text-base-950',
+					'text-base-600 hover:bg-base-950/6 hover:text-base-950 aria-expanded:bg-base-950/6 aria-expanded:text-base-950',
 				outline:
-					'border-base-200 bg-transparent text-base-600 hover:bg-base-100 hover:text-base-950 aria-expanded:bg-base-100 aria-expanded:text-base-950',
+					'border-base-200 bg-transparent text-base-600 hover:bg-base-950/6 hover:text-base-950 aria-expanded:bg-base-950/6 aria-expanded:text-base-950',
 				link: 'text-primary underline-offset-4 hover:underline'
 			},
 			size: {

@@ -5,13 +5,13 @@ import { cn } from '@/lib';
 import { FileRouteTypes } from '@/routeTree.gen';
 
 export const SidebarItem: React.FC<TSidebarItemProps> = (props) => {
-	const { icon, label, shortcut, className, ...itemProps } = props;
+	const { icon, label, shortcut, isAction, className, ...itemProps } = props;
 
 	const cls = cn(
 		'flex w-full items-center gap-2 rounded-lg px-2 py-1 text-left',
 		'text-base-600 text-[13px] transition-colors',
-		"border border-transparent hover:bg-base-100 hover:text-base-950 focus-ring disabled:pointer-events-none disabled:opacity-50 select-none [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0",
-		'data-[status=active]:bg-base-200/80 data-[status=active]:text-base-950',
+		"border border-transparent hover:bg-base-950/6 hover:text-base-950 focus-ring disabled:pointer-events-none disabled:opacity-50 select-none [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0",
+		!isAction && 'data-[status=active]:bg-base-950/10 data-[status=active]:text-base-950',
 		className
 	);
 
@@ -59,5 +59,6 @@ interface TSidebarItemBaseProps {
 	icon: React.ReactNode;
 	label: string;
 	shortcut?: string;
+	isAction?: boolean;
 	className?: string;
 }

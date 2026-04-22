@@ -11,8 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WindowMainSidebarRouteRouteImport } from './routes/window.main._sidebar/route'
 import { Route as WindowMainSplashIndexRouteImport } from './routes/window.main.splash/index'
+import { Route as WindowMainSidebarTodayIndexRouteImport } from './routes/window.main._sidebar.today/index'
 import { Route as WindowMainSidebarSettingsIndexRouteImport } from './routes/window.main._sidebar.settings/index'
-import { Route as WindowMainSidebarHomeIndexRouteImport } from './routes/window.main._sidebar.home/index'
 import { Route as WindowMainSidebarSettingsGeneralIndexRouteImport } from './routes/window.main._sidebar.settings.general/index'
 import { Route as WindowMainSidebarIntentionsNewIndexRouteImport } from './routes/window.main._sidebar.intentions.new/index'
 
@@ -26,16 +26,16 @@ const WindowMainSplashIndexRoute = WindowMainSplashIndexRouteImport.update({
   path: '/window/main/splash/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WindowMainSidebarTodayIndexRoute =
+  WindowMainSidebarTodayIndexRouteImport.update({
+    id: '/today/',
+    path: '/today/',
+    getParentRoute: () => WindowMainSidebarRouteRoute,
+  } as any)
 const WindowMainSidebarSettingsIndexRoute =
   WindowMainSidebarSettingsIndexRouteImport.update({
     id: '/settings/',
     path: '/settings/',
-    getParentRoute: () => WindowMainSidebarRouteRoute,
-  } as any)
-const WindowMainSidebarHomeIndexRoute =
-  WindowMainSidebarHomeIndexRouteImport.update({
-    id: '/home/',
-    path: '/home/',
     getParentRoute: () => WindowMainSidebarRouteRoute,
   } as any)
 const WindowMainSidebarSettingsGeneralIndexRoute =
@@ -54,16 +54,16 @@ const WindowMainSidebarIntentionsNewIndexRoute =
 export interface FileRoutesByFullPath {
   '/window/main': typeof WindowMainSidebarRouteRouteWithChildren
   '/window/main/splash/': typeof WindowMainSplashIndexRoute
-  '/window/main/home/': typeof WindowMainSidebarHomeIndexRoute
   '/window/main/settings/': typeof WindowMainSidebarSettingsIndexRoute
+  '/window/main/today/': typeof WindowMainSidebarTodayIndexRoute
   '/window/main/intentions/new/': typeof WindowMainSidebarIntentionsNewIndexRoute
   '/window/main/settings/general/': typeof WindowMainSidebarSettingsGeneralIndexRoute
 }
 export interface FileRoutesByTo {
   '/window/main': typeof WindowMainSidebarRouteRouteWithChildren
   '/window/main/splash': typeof WindowMainSplashIndexRoute
-  '/window/main/home': typeof WindowMainSidebarHomeIndexRoute
   '/window/main/settings': typeof WindowMainSidebarSettingsIndexRoute
+  '/window/main/today': typeof WindowMainSidebarTodayIndexRoute
   '/window/main/intentions/new': typeof WindowMainSidebarIntentionsNewIndexRoute
   '/window/main/settings/general': typeof WindowMainSidebarSettingsGeneralIndexRoute
 }
@@ -71,8 +71,8 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/window/main/_sidebar': typeof WindowMainSidebarRouteRouteWithChildren
   '/window/main/splash/': typeof WindowMainSplashIndexRoute
-  '/window/main/_sidebar/home/': typeof WindowMainSidebarHomeIndexRoute
   '/window/main/_sidebar/settings/': typeof WindowMainSidebarSettingsIndexRoute
+  '/window/main/_sidebar/today/': typeof WindowMainSidebarTodayIndexRoute
   '/window/main/_sidebar/intentions/new/': typeof WindowMainSidebarIntentionsNewIndexRoute
   '/window/main/_sidebar/settings/general/': typeof WindowMainSidebarSettingsGeneralIndexRoute
 }
@@ -81,24 +81,24 @@ export interface FileRouteTypes {
   fullPaths:
     | '/window/main'
     | '/window/main/splash/'
-    | '/window/main/home/'
     | '/window/main/settings/'
+    | '/window/main/today/'
     | '/window/main/intentions/new/'
     | '/window/main/settings/general/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/window/main'
     | '/window/main/splash'
-    | '/window/main/home'
     | '/window/main/settings'
+    | '/window/main/today'
     | '/window/main/intentions/new'
     | '/window/main/settings/general'
   id:
     | '__root__'
     | '/window/main/_sidebar'
     | '/window/main/splash/'
-    | '/window/main/_sidebar/home/'
     | '/window/main/_sidebar/settings/'
+    | '/window/main/_sidebar/today/'
     | '/window/main/_sidebar/intentions/new/'
     | '/window/main/_sidebar/settings/general/'
   fileRoutesById: FileRoutesById
@@ -124,18 +124,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WindowMainSplashIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/window/main/_sidebar/today/': {
+      id: '/window/main/_sidebar/today/'
+      path: '/today'
+      fullPath: '/window/main/today/'
+      preLoaderRoute: typeof WindowMainSidebarTodayIndexRouteImport
+      parentRoute: typeof WindowMainSidebarRouteRoute
+    }
     '/window/main/_sidebar/settings/': {
       id: '/window/main/_sidebar/settings/'
       path: '/settings'
       fullPath: '/window/main/settings/'
       preLoaderRoute: typeof WindowMainSidebarSettingsIndexRouteImport
-      parentRoute: typeof WindowMainSidebarRouteRoute
-    }
-    '/window/main/_sidebar/home/': {
-      id: '/window/main/_sidebar/home/'
-      path: '/home'
-      fullPath: '/window/main/home/'
-      preLoaderRoute: typeof WindowMainSidebarHomeIndexRouteImport
       parentRoute: typeof WindowMainSidebarRouteRoute
     }
     '/window/main/_sidebar/settings/general/': {
@@ -156,16 +156,16 @@ declare module '@tanstack/react-router' {
 }
 
 interface WindowMainSidebarRouteRouteChildren {
-  WindowMainSidebarHomeIndexRoute: typeof WindowMainSidebarHomeIndexRoute
   WindowMainSidebarSettingsIndexRoute: typeof WindowMainSidebarSettingsIndexRoute
+  WindowMainSidebarTodayIndexRoute: typeof WindowMainSidebarTodayIndexRoute
   WindowMainSidebarIntentionsNewIndexRoute: typeof WindowMainSidebarIntentionsNewIndexRoute
   WindowMainSidebarSettingsGeneralIndexRoute: typeof WindowMainSidebarSettingsGeneralIndexRoute
 }
 
 const WindowMainSidebarRouteRouteChildren: WindowMainSidebarRouteRouteChildren =
   {
-    WindowMainSidebarHomeIndexRoute: WindowMainSidebarHomeIndexRoute,
     WindowMainSidebarSettingsIndexRoute: WindowMainSidebarSettingsIndexRoute,
+    WindowMainSidebarTodayIndexRoute: WindowMainSidebarTodayIndexRoute,
     WindowMainSidebarIntentionsNewIndexRoute:
       WindowMainSidebarIntentionsNewIndexRoute,
     WindowMainSidebarSettingsGeneralIndexRoute:

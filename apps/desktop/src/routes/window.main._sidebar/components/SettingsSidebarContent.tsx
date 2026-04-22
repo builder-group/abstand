@@ -10,9 +10,14 @@ export const SettingsSidebarContent: React.FC<TSettingsSidebarContentProps> = (p
 		<div className={cn('flex h-full flex-col', className)}>
 			<WindowHeaderRow />
 
-			{/* Top actions */}
+			{/* Top nav */}
 			<div className="border-base-100/80 flex flex-col gap-0.5 border-b px-2 py-2">
-				<SidebarItem icon={<ArrowLeftIcon />} label="Back to app" to="/window/main/home" />
+				<SidebarItem
+					icon={<ArrowLeftIcon />}
+					label="Back to app"
+					to="/window/main/today"
+					isAction
+				/>
 			</div>
 
 			{/* Settings nav */}

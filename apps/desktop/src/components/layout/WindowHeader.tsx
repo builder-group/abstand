@@ -1,5 +1,6 @@
 import { mergeProps } from '@base-ui/react/merge-props';
 import { useRender } from '@base-ui/react/use-render';
+import { useLocation } from '@tanstack/react-router';
 import React from 'react';
 import { useAppInfo, usePlatform } from '@/hooks';
 import { cn } from '@/lib';
@@ -9,6 +10,7 @@ import { Button } from '../input';
 export const WindowHeader: React.FC<TWindowHeaderProps> = (props) => {
 	const { title, floating = true, compact = false, leading, trailing, className } = props;
 	const appInfo = useAppInfo();
+	const { pathname } = useLocation();
 
 	const showDevBadge = !appInfo.isPending && appInfo.stage === 'dev';
 	const showBetaBadge =
@@ -43,7 +45,15 @@ export const WindowHeader: React.FC<TWindowHeaderProps> = (props) => {
 			)}
 			<div data-tauri-drag-region className="h-full flex-1" />
 			{trailing}
-			<Button aria-label="Help" variant="ghost" size="icon-sm" className="ml-2">
+			<Button
+				aria-label="Help"
+				variant="ghost"
+				size="icon-sm"
+				className="ml-2"
+				onClick={() => {
+					console.log('[Help] current path:', pathname);
+				}}
+			>
 				<CircleQuestionMarkIcon />
 			</Button>
 		</WindowHeaderRow>

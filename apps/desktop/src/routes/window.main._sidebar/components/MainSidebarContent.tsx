@@ -1,5 +1,5 @@
 import React from 'react';
-import { PlusIcon, SettingsIcon, WindowHeaderRow } from '@/components';
+import { PlusIcon, SearchIcon, SettingsIcon, SunIcon, WindowHeaderRow } from '@/components';
 import { cn } from '@/lib';
 import { SidebarItem } from './SidebarItem';
 
@@ -10,9 +10,16 @@ export const MainSidebarContent: React.FC<TMainSidebarContentProps> = (props) =>
 		<div className={cn('flex h-full flex-col', className)}>
 			<WindowHeaderRow />
 
-			{/* Top actions */}
+			{/* Top nav */}
 			<div className="border-base-100/80 flex flex-col gap-0.5 border-b px-2 py-2">
-				<SidebarItem icon={<PlusIcon />} label="New Intention" to="/window/main/intentions/new" />
+				<SidebarItem icon={<SunIcon />} label="Today" to="/window/main/today" exact />
+				<SidebarItem
+					icon={<PlusIcon />}
+					label="New Intention"
+					to="/window/main/intentions/new"
+					isAction
+				/>
+				<SidebarItem icon={<SearchIcon />} label="Search" shortcut="⌘K" isAction />
 			</div>
 
 			{/* TODO */}

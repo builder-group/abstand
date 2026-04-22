@@ -13,7 +13,7 @@ function RouteComponent() {
 
 	React.useEffect(() => {
 		const splashTimer = setTimeout(() => {
-			void navigate({ to: '/window/main/home' });
+			void navigate({ to: '/window/main/today' });
 		}, 1000);
 
 		return () => {
