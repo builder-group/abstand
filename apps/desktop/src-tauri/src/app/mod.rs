@@ -1,6 +1,7 @@
 mod commands;
 pub mod window;
 
+use crate::environment::db;
 use crate::modules::{greet, settings};
 use specta_typescript::Typescript;
 use tauri_specta::{collect_commands, collect_events, Builder as SpectaBuilder};
@@ -39,6 +40,9 @@ pub fn run() {
         .setup(move |app| {
             // https://docs.rs/tauri-specta/2.0.0-rc.21/tauri_specta/index.html
             specta_builder.mount_events(app);
+
+            // Setup environment
+            db::setup(app);
 
             // Setup modules
             settings::setup(app);
