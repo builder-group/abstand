@@ -20,8 +20,7 @@
   <br />
   <br />
   <a href="#introduction"><strong>Introduction</strong></a> ·
-  <a href="#core-concepts"><strong>Core Concepts</strong></a> ·
-  <a href="#current-focus"><strong>Current Focus</strong></a> ·
+  <a href="#how-it-works"><strong>How it works</strong></a> ·
   <a href="#tech-stack"><strong>Tech Stack</strong></a> ·
   <a href="#license"><strong>License</strong></a>
 </p>
@@ -39,32 +38,22 @@
 
 ## Introduction
 
-Modern life is full of checking instead of doing. A quick look at a message, tab, or app can break your flow and scatter your energy.
+Your attention is like a river. Concentrated, it moves with power. Branched across tabs, apps, and notifications, it spreads thin. You feel busy. Nothing moves.
 
-**Abstand** is a macOS app for creating intentional distance from digital distractions. You define the boundaries in advance, and the app holds them when it matters.
+**Abstand** is a macOS app that builds the banks. You define your boundaries in advance, when you are clear-headed. The app holds them when it matters, so you do not have to make the hard decision again in the moment of temptation.
 
-The goal is simple: keep your attention together long enough to do meaningful work. Instead of asking you to keep making the hard decision in the moment, Abstand lets you make it once ahead of time and then enforces that choice across apps, URLs, and sessions.
+The word is German for distance. That is exactly what it creates.
 
-## Core Concepts
+## How it works
 
-- **Intentions** are configured commitments that define what gets blocked, when it starts, and when it ends.
-- An **Abstand** is the active moment of intentional distance after an Intention fires.
-- **Block** is the core MVP behavior. It sets hard limits on specific apps and URLs, or the entire computer, for a set window of time.
-- During an active Abstand, the app can visualize session state live and show where attention tried to branch away.
+**Intentions** are configured commitments. You set when they start, when they end, and how they enforce your focus. When an Intention fires, you take an **Abstand**: the active experience of intentional distance.
 
-## Current Focus
+Two behaviors are available:
 
-The current MVP centers on the core blocking mechanic and the surrounding session experience:
+- **Block** builds a hard wall. Configured apps and websites are inaccessible for the full duration. For a complete lockdown, the entire computer can be blocked behind a full-screen overlay.
+- **Pulse** creates a rhythm of breaks. A full-screen overlay fires at regular intervals, pulling your attention away from the screen before resuming.
 
-- Block Intentions with time-based or manual start and end conditions
-- Profiles for organizing Intentions
-- Live river visualization during an active Abstand
-- Session logging to support future Flow Map features
-- A menu bar icon with live Abstand state
-
-Features like **Pulse**, post-session **Flow Maps**, and reward artifacts are part of the broader product vision, but they come after the core mechanic is validated.
-
-Want the fuller product vision, terminology, MVP scope, and future direction? Read the [project spec](./docs/project-spec.md).
+Intentions are organized into **Profiles** in the sidebar, so you can build out your full day: a hard block overnight, selective blocking during morning focus hours, pulse breaks during the workday.
 
 ## Tech Stack
 

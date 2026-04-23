@@ -1,6 +1,6 @@
 # Project Spec
 
-Abstand is a macOS app for creating intentional distance from digital distractions. You define the boundaries in advance, and the app holds them when it matters. Those boundaries are configured as Intentions: rules for when to block apps, URLs, or the entire computer. When an Intention fires, you take an Abstand: the active moment of stepping back.
+Abstand is a macOS app for creating intentional distance from digital distractions. You define the boundaries in advance, and the app holds them when it matters.
 
 ## The problem
 
@@ -12,59 +12,55 @@ Abstand is built around one idea: attention flows better when it has boundaries,
 
 The difference from a timer is that you are not measuring discipline after the fact. You are setting a structure in advance that holds without requiring a decision at the moment of temptation.
 
+## Core concepts
+
+The concepts are the foundation of every decision in this project. When something is unclear, go back to the concepts.
+
+- **The River:** your attention is a river. Fixed energy. Concentrated it travels far. Branched it spreads thin. Abstand builds the banks. See `docs/concepts/river.md`.
+- **Abstand:** the active experience of intentional distance. What you live through when an Intention fires. See `docs/concepts/abstand.md`.
+- **Intention:** the configured commitment. When it starts, when it ends, which behavior enforces it. The planning layer that makes Abstands happen automatically. See `docs/concepts/intention.md`.
+- **Block:** a behavior that builds a hard wall for the full duration. Apps and websites inaccessible until the end condition is met. See `docs/concepts/behavior-block.md`.
+- **Pulse:** a behavior that creates a rhythm of forced breaks. Full-screen overlay at each interval, with a one-minute warning before each break. See `docs/concepts/behavior-pulse.md`.
+
 ## Interface
 
-The app is currently centered on a sidebar for navigation, a detail panel for configuration and visualization, and a menu bar icon for tracking live session state.
+The app is centered on a sidebar for navigation, a detail panel for configuration, and a menu bar icon for tracking live session state.
 
-Intentions are grouped by profile. Selecting one opens the detail panel, which shows configuration when idle and the live river visualization when an Abstand is active. The menu bar shows the current Abstand state and elapsed time.
-
-The exact layout can evolve, but the core product shape is stable: configure boundaries, see live session state, and keep the active session close at hand.
-
-## The session experience
-
-When an Intention fires and an Abstand begins, the detail panel shows a live river visualization. The line flows as time passes. If a blocked app or URL is attempted, the line branches, marking the moment attention tried to escape.
-
-Block Intentions show a full-screen immersive overlay when the entire computer is locked. When specific apps or URLs are blocked rather than everything, the block is applied at the app level without a full-screen takeover.
-
-In a future release, Pulse Intentions can fire an immersive full-screen overlay at each interval. The overlay holds for the configured duration and can be skipped or snoozed depending on the enforcement level.
-
-Ending an Abstand early is called Portage. It stops the session without framing it as a failure.
-
-Post-session Flow Map generation and artifact rewards are planned for a future release.
+Intentions are grouped by profile. Selecting one opens the detail panel, which shows configuration when idle and live state when an Abstand is active. The menu bar shows the current Abstand state and elapsed time.
 
 ## Product language
 
 ### Core terms
 
-| Term              | Meaning                                           |
-| ----------------- | ------------------------------------------------- |
-| Intention         | A configured commitment that triggers an Abstand  |
-| Taking an Abstand | The active moment of intentional distance         |
-| Branching         | A blocked app or URL being attempted              |
-| Portage           | Ending an Abstand early                           |
-| Flow Map          | The generated river visualization after a session |
+| Term      | Meaning                                                          |
+| --------- | ---------------------------------------------------------------- |
+| Intention | A configured commitment that triggers an Abstand                 |
+| Abstand   | The active experience of intentional distance                    |
+| Block     | A behavior that builds a hard wall for the duration              |
+| Pulse     | A behavior that enforces breaks at regular intervals             |
+| Portage   | Ending an Abstand early, treated as a valid decision not failure |
+| Profile   | An organizational grouping of Intentions in the sidebar          |
 
-### Working or future-facing language
+### Future-facing language
 
-- The Flow: the active Abstand ("Current Flow: 42m")
-- The Banks: the blocked apps and URLs
-- The Sea: successful completion of an Abstand
-- Artifact: the reward object earned at session end
+- Flow Map: a visual record of an Abstand session, built from activity data
+- Artifact: a reward object earned at session end
+- Branching: when attention tries to escape to a blocked app or website
+
+## What is in scope now
+
+- Block Intention: app and website blocking with time-based and manual start and end conditions
+- Pulse Intention: rhythm of forced breaks over a longer window, with enforcement levels
+- Profiles: organizational grouping of Intentions in the sidebar
+- Menu bar icon with live Abstand state
+
+## What comes later
+
+- Session recording: activity data collected during an Abstand to support the Flow Map
+- Flow Map: a visual record generated after a session, built from activity events
+- Artifact rewards: earned at session end
+- Live river visualization: a line that flows during an Abstand and branches when a blocked app or website is attempted
 
 ## Pricing direction
 
-The current direction is a one-time purchase rather than a subscription. The buyer would own that version forever and get one year of updates.
-
-## What is in MVP
-
-- Block Intention: app and URL blocking with time-based and manual start and end conditions
-- Profiles: organizational grouping of Intentions in the sidebar
-- Live river visualization: a line that flows during an Abstand and branches when a blocked app or URL is attempted
-- Session logging: activity data collected from day one to support the future Flow Map
-- Menu bar icon with live Abstand state
-
-## What is not in MVP
-
-- Pulse Intention ships after MVP. The core mechanic needs to be right before adding interval-based breaks.
-- Flow Map and artifact rewards come after the core is validated. The live river in MVP is direct feedback only.
-- Flow, a progressive Pomodoro timer, requires a different execution model. It is scoped to a future release.
+One-time purchase. The buyer owns that version forever and gets one year of updates.
