@@ -1,11 +1,20 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { SettingsPage, WrenchIcon } from '@/components';
+import React from 'react';
+import { ChevronRightIcon, FolderOpenIcon, SettingsPage, WrenchIcon } from '@/components';
+import { specta } from '@/environment';
+import { SettingsGroup, SettingsRow } from '@/modules/settings';
 
 export const Route = createFileRoute('/window/main/_sidebar/settings/developer/')({
 	component: RouteComponent
 });
 
 function RouteComponent() {
+	const handleOpenDataDirectory = React.useCallback(async () => {
+		await specta.commands.openDataDirectory();
+	}, []);
+
+	// MARK: - UI
+
 	return (
 		<SettingsPage
 			title="Developer"
@@ -13,7 +22,16 @@ function RouteComponent() {
 			icon={<WrenchIcon />}
 			iconVariant="warning"
 		>
-			<p>Hello developer settings</p>
+			<SettingsGroup title="App">
+				<SettingsRow
+					label="Data Directory"
+					description="Open app data folder in Finder."
+					render={<button onClick={handleOpenDataDirectory} />}
+				>
+					<FolderOpenIcon size={16} className="text-base-400" />
+					<ChevronRightIcon size={14} className="text-base-400" />
+				</SettingsRow>
+			</SettingsGroup>
 		</SettingsPage>
 	);
 }

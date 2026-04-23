@@ -4,7 +4,9 @@ export * from './LogoIcon';
 // Third Party Icons
 export {
 	ArrowLeftIcon,
+	ChevronRightIcon,
 	CircleQuestionMarkIcon,
+	FolderOpenIcon,
 	MonitorIcon,
 	MoonIcon,
 	PanelLeftCloseIcon,

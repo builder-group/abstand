@@ -10,6 +10,7 @@ pub fn run() {
         .commands(collect_commands![
             // App commands
             commands::get_app_info,
+            commands::open_data_directory,
             // Settings commands
             settings::commands::get_settings,
             settings::commands::set_settings,
