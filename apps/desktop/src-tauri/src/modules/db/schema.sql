@@ -1,0 +1,3 @@
+-- Source of truth for the Abstand database schema.
+-- Edit this file to change the schema, then run `pnpm db:migrate <name>` to generate a migration.
+-- Migrations are applied automatically on app startup via sqlx.
