@@ -51,9 +51,9 @@ The word is German for distance. That is exactly what it creates.
 Two behaviors are available:
 
 - **Block** builds a hard wall. Configured apps and websites are inaccessible for the full duration. For a complete lockdown, the entire computer can be blocked behind a full-screen overlay.
-- **Pulse** creates a rhythm of breaks. A full-screen overlay fires at regular intervals, pulling your attention away from the screen before resuming.
+- **Break** creates a rhythm of breaks. A full-screen overlay fires at regular intervals, pulling your attention away from the screen before resuming.
 
-Intentions are organized into **Profiles** in the sidebar, so you can build out your full day: a hard block overnight, selective blocking during morning focus hours, pulse breaks during the workday.
+Intentions are organized into **Profiles** in the sidebar, so you can build out your full day: a hard block overnight, selective blocking during morning focus hours, breaks during the workday.
 
 ## Tech Stack
 

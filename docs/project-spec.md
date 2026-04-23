@@ -20,7 +20,7 @@ The concepts are the foundation of every decision in this project. When somethin
 - **Abstand:** the active experience of intentional distance. What you live through when an Intention fires. See `docs/concepts/abstand.md`.
 - **Intention:** the configured commitment. When it starts, when it ends, which behavior enforces it. The planning layer that makes Abstands happen automatically. See `docs/concepts/intention.md`.
 - **Block:** a behavior that builds a hard wall for the full duration. Apps and websites inaccessible until the end condition is met. See `docs/concepts/behavior-block.md`.
-- **Pulse:** a behavior that creates a rhythm of forced breaks. Full-screen overlay at each interval, with a one-minute warning before each break. See `docs/concepts/behavior-pulse.md`.
+- **Break:** a behavior that creates a rhythm of forced breaks. Full-screen overlay at each interval, with a one-minute warning before each break. See `docs/concepts/behavior-break.md`.
 
 ## Interface
 
@@ -37,7 +37,7 @@ Intentions are grouped by profile. Selecting one opens the detail panel, which s
 | Intention | A configured commitment that triggers an Abstand                 |
 | Abstand   | The active experience of intentional distance                    |
 | Block     | A behavior that builds a hard wall for the duration              |
-| Pulse     | A behavior that enforces breaks at regular intervals             |
+| Break     | A behavior that enforces breaks at regular intervals             |
 | Portage   | Ending an Abstand early, treated as a valid decision not failure |
 | Profile   | An organizational grouping of Intentions in the sidebar          |
 
@@ -50,7 +50,7 @@ Intentions are grouped by profile. Selecting one opens the detail panel, which s
 ## What is in scope now
 
 - Block Intention: app and website blocking with time-based and manual start and end conditions
-- Pulse Intention: rhythm of forced breaks over a longer window, with enforcement levels
+- Break Intention: rhythm of forced breaks over a longer window, with enforcement levels
 - Profiles: organizational grouping of Intentions in the sidebar
 - Menu bar icon with live Abstand state
 

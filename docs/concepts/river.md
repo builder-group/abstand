@@ -10,6 +10,6 @@ This is why blocking works better than willpower. Willpower tries to hold the wa
 
 **Block** builds hard banks: walls that keep the river in its channel for the full duration.
 
-**Pulse** creates rhythm: regular moments where the river pauses and recharges before continuing.
+**Break** creates rhythm: regular moments where the river pauses and recharges before continuing.
 
 When attention tries to escape to a blocked app or website, it branches. The branch goes nowhere. The main channel keeps flowing.

@@ -14,11 +14,11 @@ Each Intention has start and end conditions. Conditions can be time-based (fires
 
 ## What it does
 
-The behavior on an Intention determines what kind of Abstand is enforced when it fires. Available behaviors are **Block** and **Pulse**. Each has its own configuration and creates a different kind of distance.
+The behavior on an Intention determines what kind of Abstand is enforced when it fires. Available behaviors are **Block** and **Break**. Each has its own configuration and creates a different kind of distance.
 
 ## Overlapping Intentions
 
-When two Intentions are active simultaneously both run independently. A Block and a Pulse active at the same time both enforce: the block stays in effect, the pulse fires its breaks on top.
+When two Intentions are active simultaneously both run independently. A Block and a Break active at the same time both enforce: the block stays in effect, the break fires on top.
 
 ## Profiles
 

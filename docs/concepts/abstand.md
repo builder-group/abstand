@@ -11,7 +11,7 @@ An Abstand is the active experience of stepping back on purpose. It begins when 
 An Abstand is always created by an Intention. The Intention defines when it fires and which behavior enforces the distance:
 
 - **Block**: a hard wall. The river has banks. Distractions are inaccessible.
-- **Pulse**: a rhythm of breaks. The river pauses and recharges at intervals.
+- **Break**: a rhythm of breaks. The river pauses and recharges at intervals.
 
 The Abstand is the same in both cases: intentional distance. The behavior is the mechanism that creates it.
 

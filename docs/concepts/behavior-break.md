@@ -1,6 +1,6 @@
-# Pulse
+# Break
 
-Pulse is a behavior that creates a rhythm of forced breaks over a longer window. The computer is interrupted at regular intervals and a full-screen overlay appears, pulling attention away from the screen for a short duration before resuming.
+Break is a behavior that creates a rhythm of forced breaks over a longer window. The computer is interrupted at regular intervals and a full-screen overlay appears, pulling attention away from the screen for a short duration before resuming.
 
 ## How a break works
 
@@ -16,4 +16,4 @@ Pulse is a behavior that creates a rhythm of forced breaks over a longer window.
 
 ## With Block
 
-If a Pulse Intention and a Block Intention are active at the same time both run independently. The block stays in effect during breaks. The Pulse overlay appears on top.
+If a Break Intention and a Block Intention are active at the same time both run independently. The block stays in effect during breaks. The Break overlay appears on top.
