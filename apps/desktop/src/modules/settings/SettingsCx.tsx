@@ -9,6 +9,9 @@ export class SettingsCx {
 		version: '0.0.1',
 		appearance: {
 			theme: 'auto'
+		},
+		developer: {
+			enabled: false
 		}
 	} satisfies specta.AppSettings);
 
@@ -38,6 +41,10 @@ export class SettingsCx {
 			appearance: {
 				...currentSettings.appearance,
 				...updates.appearance
+			},
+			developer: {
+				...currentSettings.developer,
+				...updates.developer
 			}
 		};
 		// Note: Successful writes sync back through appSettingsChangedEvent
