@@ -51,7 +51,7 @@ impl Scheduler {
         return self
             .insert_job(
                 label.into(),
-                Self::unix_timestamp_ms_now() + delay.as_millis() as i64,
+                Self::unix_ms_now() + delay.as_millis() as i64,
                 Box::new(action),
             )
             .id;
@@ -101,7 +101,7 @@ impl Scheduler {
         scheduled_for_unix_ms: i64,
         action: ScheduledJobAction,
     ) -> ScheduledJobDto {
-        let job_id = self.next_job_id();
+        let job_id = self.next_job_id.fetch_add(1, Ordering::Relaxed);
         let job = ScheduledJob {
             id: job_id,
             label,
@@ -117,10 +117,10 @@ impl Scheduler {
     }
 
     async fn run(self: Arc<Self>, app: AppHandle) {
-        let mut wake_rx = self.subscribe();
+        let mut wake_rx = self.wake_tx.subscribe();
 
         loop {
-            let now = Self::capture_now();
+            let now = Self::now();
             let due_jobs = self.pop_due_jobs(&now);
             if !due_jobs.is_empty() {
                 self.fire_jobs(&app, due_jobs);
@@ -180,30 +180,22 @@ impl Scheduler {
             .lock()
             .unwrap()
             .values()
-            .map(|job| job.next_deadline(now, Duration::from_millis(Self::RECONCILE_INTERVAL_MS)))
+            .map(|job| job.next_deadline(now, Self::MAX_SLEEP))
             .min();
-    }
-
-    fn next_job_id(&self) -> ScheduledJobId {
-        return self.next_job_id.fetch_add(1, Ordering::Relaxed);
     }
 
     fn notify_runner(&self) {
         let _ = self.wake_tx.send(());
     }
 
-    fn subscribe(&self) -> watch::Receiver<()> {
-        return self.wake_tx.subscribe();
-    }
-
-    fn capture_now() -> SchedulerNow {
+    fn now() -> SchedulerNow {
         return SchedulerNow {
             instant: Instant::now(),
-            unix_ms: Self::unix_timestamp_ms_now(),
+            unix_ms: Self::unix_ms_now(),
         };
     }
 
-    fn unix_timestamp_ms_now() -> i64 {
+    fn unix_ms_now() -> i64 {
         let duration = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap_or(Duration::ZERO);
@@ -213,7 +205,7 @@ impl Scheduler {
 
     // Tokio's monotonic clock pauses during system sleep, so without periodic wall-clock re-checks
     // a job could fire late after wake. 5 s is imperceptible for Intention scheduling.
-    const RECONCILE_INTERVAL_MS: u64 = 5_000;
+    const MAX_SLEEP: Duration = Duration::from_millis(5_000);
 }
 
 struct ScheduledJob {
@@ -236,7 +228,7 @@ impl ScheduledJob {
         return self.scheduled_for_unix_ms <= now.unix_ms;
     }
 
-    fn next_deadline(&self, now: &SchedulerNow, reconcile_interval: Duration) -> Instant {
+    fn next_deadline(&self, now: &SchedulerNow, max_sleep: Duration) -> Instant {
         let remaining_ms = if self.scheduled_for_unix_ms <= now.unix_ms {
             0
         } else {
@@ -248,7 +240,7 @@ impl ScheduledJob {
         }
 
         // Without the cap, a job with hours remaining would sleep through system sleep/wake and fire late
-        let sleep_ms = remaining_ms.min(reconcile_interval.as_millis() as u64);
+        let sleep_ms = remaining_ms.min(max_sleep.as_millis() as u64);
         return now.instant + Duration::from_millis(sleep_ms);
     }
 }
@@ -277,7 +269,7 @@ mod tests {
     #[test]
     fn schedule_after_targets_wall_clock_time() {
         let scheduler = Scheduler::new();
-        let before = Scheduler::unix_timestamp_ms_now();
+        let before = Scheduler::unix_ms_now();
 
         scheduler.schedule_after("wall-clock", Duration::from_secs(5), |_app| {});
         let jobs = scheduler.list_jobs();
@@ -289,7 +281,7 @@ mod tests {
     #[test]
     fn schedule_at_unix_ms_adds_absolute_job_to_public_list() {
         let scheduler = Scheduler::new();
-        let unix_ms = Scheduler::unix_timestamp_ms_now() + 10_000;
+        let unix_ms = Scheduler::unix_ms_now() + 10_000;
 
         let job_id = scheduler.schedule_at_unix_ms("absolute", unix_ms, |_app| {});
         let jobs = scheduler.list_jobs();
@@ -312,7 +304,7 @@ mod tests {
     #[test]
     fn list_jobs_returns_jobs_ordered_by_scheduled_time() {
         let scheduler = Scheduler::new();
-        let now_unix_ms = Scheduler::unix_timestamp_ms_now();
+        let now_unix_ms = Scheduler::unix_ms_now();
 
         scheduler.schedule_at_unix_ms("later", now_unix_ms + 20_000, |_app| {});
         scheduler.schedule_after("earlier", Duration::from_secs(1), |_app| {});
