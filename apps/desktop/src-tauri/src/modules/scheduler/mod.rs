@@ -15,7 +15,7 @@ pub fn setup(app: &App) {
     app.manage(SchedulerState(scheduler));
 }
 
-/// Schedules a one-shot callback to run after the provided delay.
+/// Schedules a one-shot callback to run after the provided delay in wall-clock time.
 #[allow(dead_code)]
 pub fn schedule_after<F>(
     app: &AppHandle,
@@ -43,30 +43,6 @@ where
 {
     let state = app.state::<SchedulerState>();
     return state.0.schedule_at_unix_ms(label, unix_ms, action);
-}
-
-/// Schedules a one-shot event job to run after the provided delay.
-#[allow(dead_code)]
-pub fn schedule_event_after(
-    app: &AppHandle,
-    label: impl Into<String>,
-    delay: Duration,
-    payload: Option<String>,
-) -> ScheduledJobDto {
-    let state = app.state::<SchedulerState>();
-    return state.0.schedule_event_after(label, delay, payload);
-}
-
-/// Schedules a one-shot event job to run at the provided Unix timestamp in milliseconds.
-#[allow(dead_code)]
-pub fn schedule_event_at_unix_ms(
-    app: &AppHandle,
-    label: impl Into<String>,
-    unix_ms: i64,
-    payload: Option<String>,
-) -> ScheduledJobDto {
-    let state = app.state::<SchedulerState>();
-    return state.0.schedule_event_at_unix_ms(label, unix_ms, payload);
 }
 
 /// Cancels a scheduled job by id if it has not fired yet.

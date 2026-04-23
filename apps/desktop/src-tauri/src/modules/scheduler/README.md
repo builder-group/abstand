@@ -1,18 +1,26 @@
 # Scheduler
 
-Shared in-process scheduler for the desktop app.
+In-process one-shot scheduler for the desktop app.
 
-It lets modules schedule work:
+This module lets Rust code schedule work:
 
-- after a delay
-- at a specific Unix timestamp
-- as a Rust callback or an emitted scheduler event
+- after a wall-clock delay
+- at a specific Unix timestamp in milliseconds
 
-The scheduler only runs while the app process is alive. It is not persistent across restarts.
+The scheduler runs only while the app process is alive. It does not persist jobs across restarts.
 
-## Usage
+## API
 
-From Rust:
+The app owns one shared `Scheduler` instance in `SchedulerState`.
+
+Callers use the module helpers in `mod.rs`:
+
+- `schedule_after`
+- `schedule_at_unix_ms`
+- `cancel_job`
+- `list_jobs`
+
+Example:
 
 ```rust
 use crate::modules::scheduler;
@@ -30,71 +38,75 @@ scheduler::schedule_at_unix_ms(&app, "example", unix_ms, move |app| {
 });
 ```
 
-For event-only jobs:
+Recurring schedules are managed by the caller by computing and scheduling the next one-shot job:
 
 ```rust
-scheduler::schedule_event_after(&app, "example", Duration::from_secs(30), None);
+fn schedule_next_run(app: &tauri::AppHandle, next_unix_ms: i64) {
+    scheduler::schedule_at_unix_ms(app, "daily sync", next_unix_ms, move |app| {
+        // do work
+
+        let following_unix_ms = next_unix_ms + 24 * 60 * 60 * 1_000;
+        schedule_next_run(&app, following_unix_ms);
+    });
+}
 ```
 
-## API Shape
+## Contract
 
-The app owns one `Scheduler` instance and exposes it through `SchedulerState` in Tauri managed state.
+Each job is stored as a concrete `scheduled_for_unix_ms`.
 
-Public timing primitives:
+`schedule_after` is only a convenience wrapper. It resolves the delay to a Unix timestamp when the
+job is inserted.
 
-- `ScheduledJobTiming::After { delay_ms }`
-- `ScheduledJobTiming::AtUnixMs { unix_ms }`
-
-Useful entry points:
-
-- `schedule_after`
-- `schedule_at_unix_ms`
-- `schedule_event_after`
-- `schedule_event_at_unix_ms`
-- `cancel_job`
-- `list_jobs`
+This means the scheduler is built for wall-clock scheduling, not stopwatch-style elapsed runtime
+timers.
 
 ## How It Works
 
-Internally the scheduler keeps an in-memory map of scheduled jobs.
+The scheduler keeps an in-memory map of jobs and runs one background loop.
 
-Each job is resolved to:
+On each cycle it:
 
-- a scheduled wall-clock instant for inspection and events
-- a Tokio wait strategy for sleeping until it should be checked again
+1. captures the current wall-clock time and Tokio `Instant`
+2. removes all jobs that are due
+3. dispatches those callbacks
+4. computes the earliest next deadline
+5. sleeps until that deadline or until the schedule changes
 
-The runtime uses one background loop:
+The loop uses Tokio's monotonic clock for sleeping, but due checks use wall-clock Unix time. While
+waiting, it wakes periodically instead of sleeping all the way to a far-future timestamp.
 
-1. collect jobs that are already due
-2. fire them immediately
-3. find the earliest remaining deadline
-4. sleep until that deadline or until the schedule changes
+That periodic reconciliation matters because Tokio's monotonic clock pauses during system sleep. If
+the machine sleeps through a scheduled time, the job will not fire while sleeping, but it will
+become due and run shortly after wake on the next reconciliation cycle.
 
-Absolute Unix-timestamp jobs are checked against wall-clock time and periodically re-evaluated while waiting so clock changes do not leave them pinned to one old monotonic deadline.
+## Ordering
 
-When a job fires:
+The scheduler guarantees timing, not sequencing.
 
-- it is removed from the in-memory store
-- `ScheduledJobFiredEvent` is emitted
-- its Rust callback is dispatched without blocking the scheduler loop
+If multiple jobs become due in the same cycle, they are collected together and dispatched
+independently. Callers should not rely on a deterministic execution order between same-cycle jobs.
 
-## Module Boundary
+If a workflow needs strict ordering, model it as one scheduled callback that performs the steps in
+the required order instead of multiple separate jobs with the same target time.
 
-The scheduler is generic infrastructure. It should not read another module's domain data directly.
+## Boundary
 
-The intended flow is:
+The scheduler owns timing and dispatch only.
 
-```txt
-domain module decides what should happen and when
--> domain module schedules work with scheduler
--> scheduler wakes up and runs it
--> domain module handles the effect
-```
+Domain modules own:
+
+- what should happen
+- when it should happen
+- how recurring schedules are computed
+- what domain effects happen when a scheduled callback runs
+
+The scheduler should not read another module's domain state directly.
 
 ## Current Limits
 
 - in-memory only
 - one-shot jobs only
-- no recurrence yet
 - no persistence across app restarts
-- no OS-level sleep/wake or time-zone hooks yet
+- no OS-specific sleep/wake hooks
+- no local-time recurrence or time-zone rules

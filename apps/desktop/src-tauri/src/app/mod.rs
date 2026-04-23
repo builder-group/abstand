@@ -18,9 +18,7 @@ pub fn run() {
         ])
         .events(collect_events![
             // Settings events
-            settings::types::AppSettingsChangedEvent,
-            // Scheduler events
-            scheduler::types::ScheduledJobFiredEvent
+            settings::types::AppSettingsChangedEvent
         ]);
 
     // Generate Typescript bindings
