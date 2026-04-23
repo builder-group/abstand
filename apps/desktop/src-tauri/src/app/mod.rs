@@ -1,8 +1,7 @@
 mod commands;
 pub mod window;
 
-use crate::environment::db;
-use crate::modules::{scheduler, settings};
+use crate::modules::{db, scheduler, settings};
 use specta_typescript::{BigIntExportBehavior, Typescript};
 use tauri_specta::{collect_commands, collect_events, Builder as SpectaBuilder};
 
@@ -38,10 +37,8 @@ pub fn run() {
             // https://docs.rs/tauri-specta/2.0.0-rc.21/tauri_specta/index.html
             specta_builder.mount_events(app);
 
-            // Setup environment
-            db::setup(app)?;
-
             // Setup modules
+            db::setup(app)?;
             settings::setup(app);
             scheduler::setup(app);
 

@@ -1,12 +1,6 @@
 use crate::environment::{configs::db::DbConfig, path::get_app_data_dir};
 use sqlx::{sqlite::SqlitePool, Pool, Sqlite};
-use std::ops::Deref;
-use tauri::{App, Manager};
-
-pub fn setup(app: &App) -> Result<(), Box<dyn std::error::Error>> {
-    app.manage(DatabaseState::init(app)?);
-    return Ok(());
-}
+use tauri::App;
 
 pub struct Database {
     pub pool: Pool<Sqlite>,
@@ -27,22 +21,5 @@ impl Database {
         sqlx::migrate!("./migrations").run(&pool).await?;
 
         return Ok(Self { pool });
-    }
-}
-
-pub struct DatabaseState(Database);
-
-impl DatabaseState {
-    pub fn init(app: &App) -> Result<Self, Box<dyn std::error::Error>> {
-        let database = tauri::async_runtime::block_on(Database::new(app))?;
-        return Ok(Self(database));
-    }
-}
-
-impl Deref for DatabaseState {
-    type Target = Database;
-
-    fn deref(&self) -> &Self::Target {
-        return &self.0;
     }
 }
