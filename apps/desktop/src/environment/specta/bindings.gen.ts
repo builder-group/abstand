@@ -33,9 +33,11 @@ async resetSettings() : Promise<Result<AppSettings, string>> {
 
 
 export const events = __makeEvents__<{
-appSettingsChangedEvent: AppSettingsChangedEvent
+appSettingsChangedEvent: AppSettingsChangedEvent,
+scheduledJobFiredEvent: ScheduledJobFiredEvent
 }>({
-appSettingsChangedEvent: "app-settings-changed-event"
+appSettingsChangedEvent: "app-settings-changed-event",
+scheduledJobFiredEvent: "scheduled-job-fired-event"
 })
 
 /** user-defined constants **/
@@ -49,6 +51,10 @@ export type AppInfoDto = { version: string; stage: Stage; distribution: AppDistr
 export type AppSettings = { version: SettingsVersion; appearance: AppearanceSettings }
 export type AppSettingsChangedEvent = AppSettings
 export type AppearanceSettings = { theme: Theme }
+export type ScheduledJobDto = { id: number; label: string; timing: ScheduledJobTiming; scheduledForUnixMs: number }
+export type ScheduledJobFiredEvent = ScheduledJobFiredPayload
+export type ScheduledJobFiredPayload = { job: ScheduledJobDto; firedAtUnixMs: number; payload: string | null }
+export type ScheduledJobTiming = { kind: "after"; delay_ms: number } | { kind: "atUnixMs"; unix_ms: number }
 export type SettingsVersion = "0.0.1"
 export type Stage = "dev" | "prod"
 export type Theme = "light" | "dark" | "auto"

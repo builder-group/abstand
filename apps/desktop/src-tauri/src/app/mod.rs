@@ -2,8 +2,8 @@ mod commands;
 pub mod window;
 
 use crate::environment::db;
-use crate::modules::settings;
-use specta_typescript::Typescript;
+use crate::modules::{scheduler, settings};
+use specta_typescript::{BigIntExportBehavior, Typescript};
 use tauri_specta::{collect_commands, collect_events, Builder as SpectaBuilder};
 
 pub fn run() {
@@ -18,13 +18,15 @@ pub fn run() {
         ])
         .events(collect_events![
             // Settings events
-            settings::types::AppSettingsChangedEvent
+            settings::types::AppSettingsChangedEvent,
+            // Scheduler events
+            scheduler::types::ScheduledJobFiredEvent
         ]);
 
     // Generate Typescript bindings
     #[cfg(debug_assertions)]
     if let Err(error) = specta_builder.export(
-        Typescript::default(),
+        Typescript::default().bigint(BigIntExportBehavior::Number),
         "../src/environment/specta/bindings.gen.ts",
     ) {
         eprintln!("Skipping TypeScript bindings export: {}", error);
@@ -43,6 +45,7 @@ pub fn run() {
 
             // Setup modules
             settings::setup(app);
+            scheduler::setup(app);
 
             // Show main window on startup
             let _ = window::AppWindow::Main.show(app.handle());
