@@ -1,10 +1,17 @@
+import { useCompute } from 'feature-react/state';
 import React from 'react';
-import { ArrowLeftIcon, IconBubble, SettingsIcon, WindowHeaderRow } from '@/components';
+import { ArrowLeftIcon, IconBubble, SettingsIcon, WindowHeaderRow, WrenchIcon } from '@/components';
 import { cn } from '@/lib';
+import { useSettingsCx } from '@/modules/settings';
 import { SidebarItem } from './SidebarItem';
 
 export const SettingsSidebarContent: React.FC<TSettingsSidebarContentProps> = (props) => {
 	const { className } = props;
+	const settingsCx = useSettingsCx();
+	const developerEnabled = useCompute(
+		settingsCx.$appSettings,
+		({ value }) => value.developer.enabled
+	);
 
 	return (
 		<div className={cn('flex h-full flex-col', className)}>
@@ -31,6 +38,17 @@ export const SettingsSidebarContent: React.FC<TSettingsSidebarContentProps> = (p
 					label="General"
 					to="/window/main/settings/general"
 				/>
+				{developerEnabled && (
+					<SidebarItem
+						icon={
+							<IconBubble variant="warning" size="xs">
+								<WrenchIcon />
+							</IconBubble>
+						}
+						label="Developer"
+						to="/window/main/settings/developer"
+					/>
+				)}
 			</div>
 		</div>
 	);

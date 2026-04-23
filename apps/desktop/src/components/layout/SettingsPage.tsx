@@ -1,4 +1,5 @@
 import React from 'react';
+import { cn } from '@/lib';
 import type { FileRouteTypes } from '@/routeTree.gen';
 import { IconBubble, type TIconBubbleProps } from '../display';
 import { ContentPage } from './ContentPage';
@@ -40,7 +41,7 @@ export const SettingsPage: React.FC<TSettingsPageProps> = (props) => {
 			}
 			collapseAt={collapseAt}
 			className={className}
-			contentClassName={contentClassName}
+			contentClassName={cn('space-y-4 pt-4', contentClassName)}
 		>
 			{children}
 		</ContentPage>

@@ -8,7 +8,8 @@ import {
 	SegmentedControlItem,
 	SettingsIcon,
 	SettingsPage,
-	SunIcon
+	SunIcon,
+	Switch
 } from '@/components';
 import type { specta } from '@/environment';
 import { SettingsGroup, SettingsRow, useSettingsCx } from '@/modules/settings';
@@ -20,6 +21,10 @@ export const Route = createFileRoute('/window/main/_sidebar/settings/general/')(
 function RouteComponent() {
 	const settingsCx = useSettingsCx();
 	const theme = useCompute(settingsCx.$appSettings, ({ value }) => value.appearance.theme);
+	const developerEnabled = useCompute(
+		settingsCx.$appSettings,
+		({ value }) => value.developer.enabled
+	);
 
 	// MARK: - Actions
 
@@ -28,6 +33,13 @@ function RouteComponent() {
 			await settingsCx.update({
 				appearance: { theme: themeValue as specta.Theme }
 			});
+		},
+		[settingsCx]
+	);
+
+	const handleDeveloperToggle = React.useCallback(
+		async (pressed: boolean) => {
+			await settingsCx.update({ developer: { enabled: pressed } });
 		},
 		[settingsCx]
 	);
@@ -54,6 +66,11 @@ function RouteComponent() {
 							<MoonIcon />
 						</SegmentedControlItem>
 					</SegmentedControl>
+				</SettingsRow>
+			</SettingsGroup>
+			<SettingsGroup title="Features">
+				<SettingsRow label="Developer" description="Enable developer tools and settings.">
+					<Switch checked={developerEnabled} onCheckedChange={handleDeveloperToggle} />
 				</SettingsRow>
 			</SettingsGroup>
 		</SettingsPage>

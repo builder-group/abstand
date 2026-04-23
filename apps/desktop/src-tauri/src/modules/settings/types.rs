@@ -8,6 +8,7 @@ use tauri::App;
 pub struct AppSettings {
     pub version: SettingsVersion,
     pub appearance: AppearanceSettings,
+    pub developer: DeveloperSettings,
 }
 
 impl Default for AppSettings {
@@ -15,6 +16,7 @@ impl Default for AppSettings {
         return Self {
             version: SettingsVersion::current(),
             appearance: AppearanceSettings::default(),
+            developer: DeveloperSettings::default(),
         };
     }
 }
@@ -50,6 +52,12 @@ pub enum Theme {
     Dark,
     #[default]
     Auto,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type, Default)]
+#[serde(rename_all = "camelCase", default)]
+pub struct DeveloperSettings {
+    pub enabled: bool,
 }
 
 // MARK: - State

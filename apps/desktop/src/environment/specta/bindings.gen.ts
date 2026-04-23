@@ -46,9 +46,10 @@ appSettingsChangedEvent: "app-settings-changed-event"
 
 export type AppDistribution = "appStore" | "direct"
 export type AppInfoDto = { version: string; stage: Stage; distribution: AppDistribution }
-export type AppSettings = { version: SettingsVersion; appearance: AppearanceSettings }
+export type AppSettings = { version: SettingsVersion; appearance: AppearanceSettings; developer: DeveloperSettings }
 export type AppSettingsChangedEvent = AppSettings
 export type AppearanceSettings = { theme: Theme }
+export type DeveloperSettings = { enabled: boolean }
 export type SettingsVersion = "0.0.1"
 export type Stage = "dev" | "prod"
 export type Theme = "light" | "dark" | "auto"

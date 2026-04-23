@@ -12,5 +12,6 @@ export {
 	PlusIcon,
 	SearchIcon,
 	SettingsIcon,
-	SunIcon
+	SunIcon,
+	WrenchIcon
 } from 'lucide-react';
