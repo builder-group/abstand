@@ -2,6 +2,7 @@ import { createFileRoute, Outlet } from '@tanstack/react-router';
 import React from 'react';
 import { PanelLeftCloseIcon, PanelLeftOpenIcon, Toggle, Tooltip, WindowHeader } from '@/components';
 import { cn } from '@/lib';
+import { useOnShortcut } from '@/modules/shortcuts';
 import { SidebarContent } from './components';
 
 export const Route = createFileRoute('/window/main/_sidebar')({
@@ -10,6 +11,10 @@ export const Route = createFileRoute('/window/main/_sidebar')({
 
 function LayoutComponent() {
 	const [sidebarOpen, setSidebarOpen] = React.useState(true);
+
+	useOnShortcut('toggleSidebar', () => {
+		setSidebarOpen((v) => !v);
+	});
 
 	return (
 		<>

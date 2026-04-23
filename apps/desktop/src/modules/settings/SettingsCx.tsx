@@ -12,6 +12,10 @@ export class SettingsCx {
 		},
 		developer: {
 			enabled: false
+		},
+		shortcuts: {
+			search: { modifiers: ['meta'], code: 'KeyK', global: false },
+			toggleSidebar: { modifiers: ['meta'], code: 'KeyB', global: false }
 		}
 	} satisfies specta.AppSettings);
 
@@ -45,6 +49,10 @@ export class SettingsCx {
 			developer: {
 				...currentSettings.developer,
 				...updates.developer
+			},
+			shortcuts: {
+				...currentSettings.shortcuts,
+				...updates.shortcuts
 			}
 		};
 		// Note: Successful writes sync back through appSettingsChangedEvent

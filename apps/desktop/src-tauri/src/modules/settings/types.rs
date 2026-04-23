@@ -9,6 +9,7 @@ pub struct AppSettings {
     pub version: SettingsVersion,
     pub appearance: AppearanceSettings,
     pub developer: DeveloperSettings,
+    pub shortcuts: ShortcutsSettings,
 }
 
 impl Default for AppSettings {
@@ -17,6 +18,7 @@ impl Default for AppSettings {
             version: SettingsVersion::current(),
             appearance: AppearanceSettings::default(),
             developer: DeveloperSettings::default(),
+            shortcuts: ShortcutsSettings::default(),
         };
     }
 }
@@ -58,6 +60,51 @@ pub enum Theme {
 #[serde(rename_all = "camelCase", default)]
 pub struct DeveloperSettings {
     pub enabled: bool,
+}
+
+// Note: Each field name must have a matching variant in `shortcuts::types::ShortcutAction`
+// with the same camelCase name, otherwise the shortcut will have no effect.
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase", default)]
+pub struct ShortcutsSettings {
+    pub search: KeyboardShortcut,
+    pub toggle_sidebar: KeyboardShortcut,
+}
+
+impl Default for ShortcutsSettings {
+    fn default() -> Self {
+        return Self {
+            search: KeyboardShortcut {
+                modifiers: vec![ShortcutModifier::Meta],
+                code: "KeyK".to_string(),
+                global: false,
+            },
+            toggle_sidebar: KeyboardShortcut {
+                modifiers: vec![ShortcutModifier::Meta],
+                code: "KeyB".to_string(),
+                global: false,
+            },
+        };
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct KeyboardShortcut {
+    pub modifiers: Vec<ShortcutModifier>,
+    /// A browser KeyboardEvent.code value, e.g. "KeyK", "KeyB".
+    pub code: String,
+    /// Whether the shortcut is registered globally with the OS (true) or only active when the app is focused (false).
+    pub global: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub enum ShortcutModifier {
+    Meta,
+    Ctrl,
+    Alt,
+    Shift,
 }
 
 // MARK: - State

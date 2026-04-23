@@ -41,9 +41,11 @@ async resetSettings() : Promise<Result<AppSettings, string>> {
 
 
 export const events = __makeEvents__<{
-appSettingsChangedEvent: AppSettingsChangedEvent
+appSettingsChangedEvent: AppSettingsChangedEvent,
+shortcutTriggeredEvent: ShortcutTriggeredEvent
 }>({
-appSettingsChangedEvent: "app-settings-changed-event"
+appSettingsChangedEvent: "app-settings-changed-event",
+shortcutTriggeredEvent: "shortcut-triggered-event"
 })
 
 /** user-defined constants **/
@@ -54,11 +56,24 @@ appSettingsChangedEvent: "app-settings-changed-event"
 
 export type AppDistribution = "appStore" | "direct"
 export type AppInfoDto = { version: string; stage: Stage; distribution: AppDistribution }
-export type AppSettings = { version: SettingsVersion; appearance: AppearanceSettings; developer: DeveloperSettings }
+export type AppSettings = { version: SettingsVersion; appearance: AppearanceSettings; developer: DeveloperSettings; shortcuts: ShortcutsSettings }
 export type AppSettingsChangedEvent = AppSettings
 export type AppearanceSettings = { theme: Theme }
 export type DeveloperSettings = { enabled: boolean }
+export type KeyboardShortcut = { modifiers: ShortcutModifier[]; 
+/**
+ * A browser KeyboardEvent.code value, e.g. "KeyK", "KeyB".
+ */
+code: string; 
+/**
+ * Whether the shortcut is registered globally with the OS (true) or only active when the app is focused (false).
+ */
+global: boolean }
 export type SettingsVersion = "0.0.1"
+export type ShortcutAction = "search" | "toggleSidebar"
+export type ShortcutModifier = "meta" | "ctrl" | "alt" | "shift"
+export type ShortcutTriggeredEvent = ShortcutAction
+export type ShortcutsSettings = { search: KeyboardShortcut; toggleSidebar: KeyboardShortcut }
 export type Stage = "dev" | "prod"
 export type Theme = "light" | "dark" | "auto"
 

@@ -1,7 +1,7 @@
 mod commands;
 pub mod window;
 
-use crate::modules::{db, scheduler, settings};
+use crate::modules::{db, scheduler, settings, shortcuts};
 use specta_typescript::{BigIntExportBehavior, Typescript};
 use tauri_specta::{collect_commands, collect_events, Builder as SpectaBuilder};
 
@@ -18,7 +18,9 @@ pub fn run() {
         ])
         .events(collect_events![
             // Settings events
-            settings::types::AppSettingsChangedEvent
+            settings::types::AppSettingsChangedEvent,
+            // Shortcuts events
+            shortcuts::types::ShortcutTriggeredEvent,
         ]);
 
     // Generate Typescript bindings

@@ -1,13 +1,16 @@
 import React from 'react';
 import { ThemeProvider } from '@/components';
 import { SettingsCxProvider } from '@/modules/settings';
+import { ShortcutProvider } from '@/modules/shortcuts';
 
 export const AppProvider: React.FC<TAppProviderProps> = (props) => {
 	const { children } = props;
 
 	return (
 		<SettingsCxProvider>
-			<ThemeProvider>{children}</ThemeProvider>
+			<ShortcutProvider>
+				<ThemeProvider>{children}</ThemeProvider>
+			</ShortcutProvider>
 		</SettingsCxProvider>
 	);
 };
