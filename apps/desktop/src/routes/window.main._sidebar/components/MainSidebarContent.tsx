@@ -1,11 +1,13 @@
 import React from 'react';
 import { PlusIcon, SearchIcon, SettingsIcon, SunIcon, WindowHeaderRow } from '@/components';
 import { cn } from '@/lib';
+import { useCommandPaletteCx } from '@/modules/command-palette';
 import { useShortcutHint } from '@/modules/shortcuts';
 import { SidebarItem } from './SidebarItem';
 
 export const MainSidebarContent: React.FC<TMainSidebarContentProps> = (props) => {
 	const { className } = props;
+	const commandPaletteCx = useCommandPaletteCx();
 	const searchHint = useShortcutHint('search');
 
 	return (
@@ -21,7 +23,13 @@ export const MainSidebarContent: React.FC<TMainSidebarContentProps> = (props) =>
 					to="/window/main/intentions/new"
 					isAction
 				/>
-				<SidebarItem icon={<SearchIcon />} label="Search" shortcut={searchHint} isAction />
+				<SidebarItem
+					icon={<SearchIcon />}
+					label="Search"
+					shortcut={searchHint}
+					isAction
+					onClick={() => commandPaletteCx.open()}
+				/>
 			</div>
 
 			{/* TODO */}
