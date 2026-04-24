@@ -13,10 +13,7 @@ export class SettingsCx {
 		developer: {
 			enabled: false
 		},
-		shortcuts: {
-			search: { modifiers: ['meta'], code: 'KeyK', global: false },
-			toggleSidebar: { modifiers: ['meta'], code: 'KeyB', global: false }
-		}
+		shortcuts: {}
 	} satisfies specta.AppSettings);
 
 	public mount(): () => void {
@@ -38,7 +35,7 @@ export class SettingsCx {
 	}
 
 	public async update(updates: Partial<specta.AppSettings>): Promise<TResult<null, string>> {
-		const currentSettings = this.$appSettings.get();
+		const currentSettings = this.$appSettings._v;
 		const nextSettings: specta.AppSettings = {
 			...currentSettings,
 			...updates,

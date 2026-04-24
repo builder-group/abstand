@@ -1,10 +1,12 @@
 import React from 'react';
 import { PlusIcon, SearchIcon, SettingsIcon, SunIcon, WindowHeaderRow } from '@/components';
 import { cn } from '@/lib';
+import { useShortcutHint } from '@/modules/shortcuts';
 import { SidebarItem } from './SidebarItem';
 
 export const MainSidebarContent: React.FC<TMainSidebarContentProps> = (props) => {
 	const { className } = props;
+	const searchHint = useShortcutHint('search');
 
 	return (
 		<div className={cn('flex h-full flex-col', className)}>
@@ -19,7 +21,7 @@ export const MainSidebarContent: React.FC<TMainSidebarContentProps> = (props) =>
 					to="/window/main/intentions/new"
 					isAction
 				/>
-				<SidebarItem icon={<SearchIcon />} label="Search" shortcut="⌘K" isAction />
+				<SidebarItem icon={<SearchIcon />} label="Search" shortcut={searchHint} isAction />
 			</div>
 
 			{/* TODO */}

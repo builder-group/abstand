@@ -1,26 +1,24 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useCompute } from 'feature-react/state';
+import { useFeatureState } from 'feature-react/state';
 import React from 'react';
 import { CommandIcon, SettingsPage } from '@/components';
 import { specta } from '@/environment';
-import { SettingsGroup, SettingsRow, useSettingsCx } from '@/modules/settings';
-import { ShortcutRecorder, shortcutsConfig } from '@/modules/shortcuts';
+import { SettingsGroup, SettingsRow } from '@/modules/settings';
+import { ShortcutRecorder, shortcutsConfig, useShortcutsCx } from '@/modules/shortcuts';
 
 export const Route = createFileRoute('/window/main/_sidebar/settings/shortcuts/')({
 	component: RouteComponent
 });
 
 function RouteComponent() {
-	const settingsCx = useSettingsCx();
-	const shortcuts = useCompute(settingsCx.$appSettings, ({ value }) => value.shortcuts);
+	const shortcutsCx = useShortcutsCx();
+	const configs = useFeatureState(shortcutsCx.$configs);
 
 	const handleChange = React.useCallback(
-		async (action: specta.ShortcutAction, shortcut: specta.KeyboardShortcut) => {
-			await settingsCx.update({
-				shortcuts: { ...settingsCx.$appSettings.get().shortcuts, [action]: shortcut }
-			});
+		async (action: specta.ShortcutAction, shortcut: specta.KeyboardShortcut | null) => {
+			await shortcutsCx.updateShortcut(action, shortcut);
 		},
-		[settingsCx]
+		[shortcutsCx]
 	);
 
 	// MARK: - UI
@@ -33,11 +31,11 @@ function RouteComponent() {
 			iconVariant="warning"
 		>
 			<SettingsGroup title="App">
-				{(Object.keys(shortcuts) as specta.ShortcutAction[]).map((action) => (
-					<SettingsRow key={action} label={shortcutsConfig.actionLabels[action]}>
+				{configs.map((config) => (
+					<SettingsRow key={config.action} label={shortcutsConfig.actions[config.action].label}>
 						<ShortcutRecorder
-							value={shortcuts[action]}
-							onChange={(shortcut) => void handleChange(action, shortcut)}
+							value={config.shortcut}
+							onChange={(shortcut) => void handleChange(config.action, shortcut)}
 						/>
 					</SettingsRow>
 				))}

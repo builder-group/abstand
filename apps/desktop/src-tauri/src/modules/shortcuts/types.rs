@@ -1,12 +1,52 @@
 use serde::{Deserialize, Serialize};
 
-// Note: Each variant must have a matching field in `settings::types::ShortcutsSettings`
-// with the same camelCase name, otherwise the action will never fire.
-#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub enum ShortcutAction {
     Search,
     ToggleSidebar,
+}
+
+impl ShortcutAction {
+    pub fn all() -> &'static [Self] {
+        return &[Self::Search, Self::ToggleSidebar];
+    }
+
+    pub fn is_global(&self) -> bool {
+        return match self {
+            Self::Search | Self::ToggleSidebar => false,
+        };
+    }
+
+    pub fn default_shortcut(&self) -> KeyboardShortcut {
+        return match self {
+            Self::Search => KeyboardShortcut {
+                modifiers: vec![ShortcutModifier::Meta],
+                code: "KeyK".to_string(),
+            },
+            Self::ToggleSidebar => KeyboardShortcut {
+                modifiers: vec![ShortcutModifier::Meta],
+                code: "KeyB".to_string(),
+            },
+        };
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct KeyboardShortcut {
+    pub modifiers: Vec<ShortcutModifier>,
+    /// A browser KeyboardEvent.code value, e.g. "KeyK", "KeyB".
+    pub code: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub enum ShortcutModifier {
+    Meta,
+    Ctrl,
+    Alt,
+    Shift,
 }
 
 // MARK: - Events

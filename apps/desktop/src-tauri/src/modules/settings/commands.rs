@@ -16,8 +16,16 @@ pub fn get_settings(state: State<'_, AppSettingsState>) -> AppSettings {
 pub fn set_settings(
     app: AppHandle,
     state: State<'_, AppSettingsState>,
-    settings: AppSettings,
+    mut settings: AppSettings,
 ) -> Result<(), String> {
+    // Normalize: remove overrides that match the action's default (absent key = use default)
+    settings
+        .shortcuts
+        .retain(|action, shortcut| match shortcut {
+            None => true,
+            Some(s) => s != &action.default_shortcut(),
+        });
+
     persistence::save_settings(&app, &settings)?;
     *state.lock().unwrap() = settings.clone();
     let _ = AppSettingsChangedEvent(settings).emit(&app);

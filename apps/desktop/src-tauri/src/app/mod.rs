@@ -15,6 +15,8 @@ pub fn run() {
             settings::commands::get_settings,
             settings::commands::set_settings,
             settings::commands::reset_settings,
+            // Shortcuts commands
+            shortcuts::commands::get_shortcut_configs,
         ])
         .events(collect_events![
             // Settings events

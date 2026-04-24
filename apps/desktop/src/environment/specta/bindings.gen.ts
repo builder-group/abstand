@@ -34,6 +34,9 @@ async resetSettings() : Promise<Result<AppSettings, string>> {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async getShortcutConfigs() : Promise<ShortcutActionConfigDto[]> {
+    return await TAURI_INVOKE("get_shortcut_configs");
 }
 }
 
@@ -56,7 +59,11 @@ shortcutTriggeredEvent: "shortcut-triggered-event"
 
 export type AppDistribution = "appStore" | "direct"
 export type AppInfoDto = { version: string; stage: Stage; distribution: AppDistribution }
-export type AppSettings = { version: SettingsVersion; appearance: AppearanceSettings; developer: DeveloperSettings; shortcuts: ShortcutsSettings }
+export type AppSettings = { version: SettingsVersion; appearance: AppearanceSettings; developer: DeveloperSettings; 
+/**
+ * User overrides per action. Absent key = use default. None value = shortcut cleared.
+ */
+shortcuts: Partial<{ [key in ShortcutAction]: KeyboardShortcut | null }> }
 export type AppSettingsChangedEvent = AppSettings
 export type AppearanceSettings = { theme: Theme }
 export type DeveloperSettings = { enabled: boolean }
@@ -64,16 +71,12 @@ export type KeyboardShortcut = { modifiers: ShortcutModifier[];
 /**
  * A browser KeyboardEvent.code value, e.g. "KeyK", "KeyB".
  */
-code: string; 
-/**
- * Whether the shortcut is registered globally with the OS (true) or only active when the app is focused (false).
- */
-global: boolean }
+code: string }
 export type SettingsVersion = "0.0.1"
 export type ShortcutAction = "search" | "toggleSidebar"
+export type ShortcutActionConfigDto = { action: ShortcutAction; isGlobal: boolean; shortcut: KeyboardShortcut | null }
 export type ShortcutModifier = "meta" | "ctrl" | "alt" | "shift"
 export type ShortcutTriggeredEvent = ShortcutAction
-export type ShortcutsSettings = { search: KeyboardShortcut; toggleSidebar: KeyboardShortcut }
 export type Stage = "dev" | "prod"
 export type Theme = "light" | "dark" | "auto"
 

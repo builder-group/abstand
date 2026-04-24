@@ -45,7 +45,7 @@ export const ThemeProvider: React.FC<TThemeProviderProps> = (props) => {
 	// Listen for system theme changes (only matters if set to 'auto')
 	React.useEffect(() => {
 		const unlistenPromise = getCurrentWindow().onThemeChanged(({ payload }) => {
-			const currentTheme = settingsCx.$appSettings.get().appearance.theme;
+			const currentTheme = settingsCx.$appSettings._v.appearance.theme;
 			if (currentTheme === 'auto') {
 				applyThemeClass(payload);
 			}
