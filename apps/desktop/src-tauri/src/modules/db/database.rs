@@ -13,7 +13,8 @@ impl Database {
         let connection_options = sqlx::sqlite::SqliteConnectOptions::new()
             .filename(&db_path)
             .create_if_missing(true)
-            .journal_mode(sqlx::sqlite::SqliteJournalMode::Wal);
+            .journal_mode(sqlx::sqlite::SqliteJournalMode::Wal)
+            .foreign_keys(true);
 
         let pool = SqlitePool::connect_with(connection_options).await?;
 
