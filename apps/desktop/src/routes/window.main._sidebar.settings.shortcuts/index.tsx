@@ -4,7 +4,7 @@ import React from 'react';
 import { CommandIcon, SettingsPage } from '@/components';
 import { specta } from '@/environment';
 import { SettingsGroup, SettingsRow } from '@/modules/settings';
-import { ShortcutRecorder, shortcutsConfig, useShortcutsCx } from '@/modules/shortcuts';
+import { ShortcutRecorder, useShortcutsCx } from '@/modules/shortcuts';
 
 export const Route = createFileRoute('/window/main/_sidebar/settings/shortcuts/')({
 	component: RouteComponent
@@ -31,15 +31,38 @@ function RouteComponent() {
 			iconVariant="warning"
 		>
 			<SettingsGroup title="App">
-				{configs.map((config) => (
-					<SettingsRow key={config.action} label={shortcutsConfig.actions[config.action].label}>
-						<ShortcutRecorder
-							value={config.shortcut}
-							onChange={(shortcut) => void handleChange(config.action, shortcut)}
-						/>
-					</SettingsRow>
-				))}
+				<ShortcutSettingsRow label="Search" config={configs.search} onChange={handleChange} />
+				<ShortcutSettingsRow
+					label="Toggle Sidebar"
+					config={configs.toggleSidebar}
+					onChange={handleChange}
+				/>
 			</SettingsGroup>
 		</SettingsPage>
 	);
+}
+
+const ShortcutSettingsRow: React.FC<TShortcutSettingsRowProps> = (props) => {
+	const { label, config, onChange } = props;
+	if (config == null) {
+		return null;
+	}
+
+	return (
+		<SettingsRow label={label}>
+			<ShortcutRecorder
+				value={config.shortcut}
+				onChange={(shortcut) => void onChange(config.action, shortcut)}
+			/>
+		</SettingsRow>
+	);
+};
+
+interface TShortcutSettingsRowProps {
+	label: string;
+	config?: specta.ShortcutActionConfigDto;
+	onChange: (
+		action: specta.ShortcutAction,
+		shortcut: specta.KeyboardShortcut | null
+	) => Promise<void>;
 }

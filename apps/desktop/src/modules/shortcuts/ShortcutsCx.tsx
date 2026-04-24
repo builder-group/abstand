@@ -6,7 +6,7 @@ import { createMountLifecycle } from '@/lib';
 import { useSettingsCx, type SettingsCx } from '@/modules/settings';
 
 export class ShortcutsCx {
-	public readonly $configs = createState<specta.ShortcutActionConfigDto[]>([]);
+	public readonly $configs = createState<TShortcutConfigs>({});
 
 	private readonly settingsCx: SettingsCx;
 
@@ -18,7 +18,7 @@ export class ShortcutsCx {
 		const lifecycle = createMountLifecycle();
 
 		const onKeyDown = (e: KeyboardEvent) => {
-			for (const config of this.$configs._v) {
+			for (const config of Object.values(this.$configs._v)) {
 				if (config.isGlobal) continue;
 				if (config.shortcut == null) continue;
 				if (!this.matchesShortcut(e, config.shortcut)) continue;
@@ -33,13 +33,13 @@ export class ShortcutsCx {
 		void (async () => {
 			const configs = await specta.commands.getShortcutConfigs();
 			if (lifecycle.isUnmounted()) return;
-			this.$configs.set(configs);
+			this.$configs.set(this.createShortcutConfigs(configs));
 
 			lifecycle.addCleanup(
 				await specta.events.appSettingsChangedEvent.listen(async () => {
 					const configs = await specta.commands.getShortcutConfigs();
 					if (lifecycle.isUnmounted()) return;
-					this.$configs.set(configs);
+					this.$configs.set(this.createShortcutConfigs(configs));
 				})
 			);
 		})();
@@ -69,7 +69,17 @@ export class ShortcutsCx {
 		if (e.shiftKey !== shortcut.modifiers.includes('shift')) return false;
 		return true;
 	}
+
+	private createShortcutConfigs(configs: specta.ShortcutActionConfigDto[]): TShortcutConfigs {
+		const result: TShortcutConfigs = {};
+		for (const config of configs) {
+			result[config.action] = config;
+		}
+		return result;
+	}
 }
+
+type TShortcutConfigs = Partial<Record<specta.ShortcutAction, specta.ShortcutActionConfigDto>>;
 
 const ReactShortcutsCx = React.createContext<ShortcutsCx | null>(null);
 
