@@ -13,6 +13,7 @@ import { Route as WindowMainSidebarRouteRouteImport } from './routes/window.main
 import { Route as WindowMainSplashIndexRouteImport } from './routes/window.main.splash/index'
 import { Route as WindowMainSidebarTodayIndexRouteImport } from './routes/window.main._sidebar.today/index'
 import { Route as WindowMainSidebarSettingsIndexRouteImport } from './routes/window.main._sidebar.settings/index'
+import { Route as WindowMainSidebarSettingsShortcutsIndexRouteImport } from './routes/window.main._sidebar.settings.shortcuts/index'
 import { Route as WindowMainSidebarSettingsGeneralIndexRouteImport } from './routes/window.main._sidebar.settings.general/index'
 import { Route as WindowMainSidebarSettingsDeveloperIndexRouteImport } from './routes/window.main._sidebar.settings.developer/index'
 import { Route as WindowMainSidebarIntentionsNewIndexRouteImport } from './routes/window.main._sidebar.intentions.new/index'
@@ -37,6 +38,12 @@ const WindowMainSidebarSettingsIndexRoute =
   WindowMainSidebarSettingsIndexRouteImport.update({
     id: '/settings/',
     path: '/settings/',
+    getParentRoute: () => WindowMainSidebarRouteRoute,
+  } as any)
+const WindowMainSidebarSettingsShortcutsIndexRoute =
+  WindowMainSidebarSettingsShortcutsIndexRouteImport.update({
+    id: '/settings/shortcuts/',
+    path: '/settings/shortcuts/',
     getParentRoute: () => WindowMainSidebarRouteRoute,
   } as any)
 const WindowMainSidebarSettingsGeneralIndexRoute =
@@ -66,6 +73,7 @@ export interface FileRoutesByFullPath {
   '/window/main/intentions/new/': typeof WindowMainSidebarIntentionsNewIndexRoute
   '/window/main/settings/developer/': typeof WindowMainSidebarSettingsDeveloperIndexRoute
   '/window/main/settings/general/': typeof WindowMainSidebarSettingsGeneralIndexRoute
+  '/window/main/settings/shortcuts/': typeof WindowMainSidebarSettingsShortcutsIndexRoute
 }
 export interface FileRoutesByTo {
   '/window/main': typeof WindowMainSidebarRouteRouteWithChildren
@@ -75,6 +83,7 @@ export interface FileRoutesByTo {
   '/window/main/intentions/new': typeof WindowMainSidebarIntentionsNewIndexRoute
   '/window/main/settings/developer': typeof WindowMainSidebarSettingsDeveloperIndexRoute
   '/window/main/settings/general': typeof WindowMainSidebarSettingsGeneralIndexRoute
+  '/window/main/settings/shortcuts': typeof WindowMainSidebarSettingsShortcutsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -85,6 +94,7 @@ export interface FileRoutesById {
   '/window/main/_sidebar/intentions/new/': typeof WindowMainSidebarIntentionsNewIndexRoute
   '/window/main/_sidebar/settings/developer/': typeof WindowMainSidebarSettingsDeveloperIndexRoute
   '/window/main/_sidebar/settings/general/': typeof WindowMainSidebarSettingsGeneralIndexRoute
+  '/window/main/_sidebar/settings/shortcuts/': typeof WindowMainSidebarSettingsShortcutsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -96,6 +106,7 @@ export interface FileRouteTypes {
     | '/window/main/intentions/new/'
     | '/window/main/settings/developer/'
     | '/window/main/settings/general/'
+    | '/window/main/settings/shortcuts/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/window/main'
@@ -105,6 +116,7 @@ export interface FileRouteTypes {
     | '/window/main/intentions/new'
     | '/window/main/settings/developer'
     | '/window/main/settings/general'
+    | '/window/main/settings/shortcuts'
   id:
     | '__root__'
     | '/window/main/_sidebar'
@@ -114,6 +126,7 @@ export interface FileRouteTypes {
     | '/window/main/_sidebar/intentions/new/'
     | '/window/main/_sidebar/settings/developer/'
     | '/window/main/_sidebar/settings/general/'
+    | '/window/main/_sidebar/settings/shortcuts/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -151,6 +164,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WindowMainSidebarSettingsIndexRouteImport
       parentRoute: typeof WindowMainSidebarRouteRoute
     }
+    '/window/main/_sidebar/settings/shortcuts/': {
+      id: '/window/main/_sidebar/settings/shortcuts/'
+      path: '/settings/shortcuts'
+      fullPath: '/window/main/settings/shortcuts/'
+      preLoaderRoute: typeof WindowMainSidebarSettingsShortcutsIndexRouteImport
+      parentRoute: typeof WindowMainSidebarRouteRoute
+    }
     '/window/main/_sidebar/settings/general/': {
       id: '/window/main/_sidebar/settings/general/'
       path: '/settings/general'
@@ -181,6 +201,7 @@ interface WindowMainSidebarRouteRouteChildren {
   WindowMainSidebarIntentionsNewIndexRoute: typeof WindowMainSidebarIntentionsNewIndexRoute
   WindowMainSidebarSettingsDeveloperIndexRoute: typeof WindowMainSidebarSettingsDeveloperIndexRoute
   WindowMainSidebarSettingsGeneralIndexRoute: typeof WindowMainSidebarSettingsGeneralIndexRoute
+  WindowMainSidebarSettingsShortcutsIndexRoute: typeof WindowMainSidebarSettingsShortcutsIndexRoute
 }
 
 const WindowMainSidebarRouteRouteChildren: WindowMainSidebarRouteRouteChildren =
@@ -193,6 +214,8 @@ const WindowMainSidebarRouteRouteChildren: WindowMainSidebarRouteRouteChildren =
       WindowMainSidebarSettingsDeveloperIndexRoute,
     WindowMainSidebarSettingsGeneralIndexRoute:
       WindowMainSidebarSettingsGeneralIndexRoute,
+    WindowMainSidebarSettingsShortcutsIndexRoute:
+      WindowMainSidebarSettingsShortcutsIndexRoute,
   }
 
 const WindowMainSidebarRouteRouteWithChildren =

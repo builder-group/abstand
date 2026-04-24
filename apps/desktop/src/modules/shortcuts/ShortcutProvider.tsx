@@ -1,4 +1,3 @@
-import { useSubscriber } from 'feature-react/state';
 import React from 'react';
 import { specta } from '@/environment';
 import { useSettingsCx } from '@/modules/settings';
@@ -6,19 +5,10 @@ import { useSettingsCx } from '@/modules/settings';
 export const ShortcutProvider: React.FC<{ children: React.ReactNode }> = (props) => {
 	const { children } = props;
 	const settingsCx = useSettingsCx();
-	const shortcutsRef = React.useRef(settingsCx.$appSettings.get().shortcuts);
-
-	useSubscriber(
-		settingsCx.$appSettings,
-		({ value }) => {
-			shortcutsRef.current = value.shortcuts;
-		},
-		[]
-	);
 
 	React.useEffect(() => {
 		const onKeyDown = (e: KeyboardEvent) => {
-			for (const [action, shortcut] of Object.entries(shortcutsRef.current) as [
+			for (const [action, shortcut] of Object.entries(settingsCx.$appSettings._v.shortcuts) as [
 				specta.ShortcutAction,
 				specta.KeyboardShortcut
 			][]) {
@@ -32,7 +22,7 @@ export const ShortcutProvider: React.FC<{ children: React.ReactNode }> = (props)
 
 		window.addEventListener('keydown', onKeyDown);
 		return () => window.removeEventListener('keydown', onKeyDown);
-	}, []);
+	}, [settingsCx]);
 
 	return <>{children}</>;
 };

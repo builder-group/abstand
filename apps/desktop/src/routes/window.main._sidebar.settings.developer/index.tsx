@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import React from 'react';
-import { ChevronRightIcon, FolderOpenIcon, SettingsPage, WrenchIcon } from '@/components';
+import { ChevronRightIcon, CodeXmlIcon, FolderOpenIcon, SettingsPage } from '@/components';
 import { specta } from '@/environment';
 import { SettingsGroup, SettingsRow } from '@/modules/settings';
 
@@ -19,8 +19,8 @@ function RouteComponent() {
 		<SettingsPage
 			title="Developer"
 			subtitle="Tools and settings for development."
-			icon={<WrenchIcon />}
-			iconVariant="warning"
+			icon={<CodeXmlIcon />}
+			iconVariant="secondary"
 		>
 			<SettingsGroup title="App">
 				<SettingsRow

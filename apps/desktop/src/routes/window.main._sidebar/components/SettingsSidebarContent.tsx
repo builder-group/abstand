@@ -1,6 +1,13 @@
 import { useCompute } from 'feature-react/state';
 import React from 'react';
-import { ArrowLeftIcon, IconBubble, SettingsIcon, WindowHeaderRow, WrenchIcon } from '@/components';
+import {
+	ArrowLeftIcon,
+	CodeXmlIcon,
+	CommandIcon,
+	IconBubble,
+	SettingsIcon,
+	WindowHeaderRow
+} from '@/components';
 import { cn } from '@/lib';
 import { useSettingsCx } from '@/modules/settings';
 import { SidebarItem } from './SidebarItem';
@@ -38,11 +45,20 @@ export const SettingsSidebarContent: React.FC<TSettingsSidebarContentProps> = (p
 					label="General"
 					to="/window/main/settings/general"
 				/>
+				<SidebarItem
+					icon={
+						<IconBubble variant="warning" size="xs">
+							<CommandIcon />
+						</IconBubble>
+					}
+					label="Shortcuts"
+					to="/window/main/settings/shortcuts"
+				/>
 				{developerEnabled && (
 					<SidebarItem
 						icon={
-							<IconBubble variant="warning" size="xs">
-								<WrenchIcon />
+							<IconBubble variant="secondary" size="xs">
+								<CodeXmlIcon />
 							</IconBubble>
 						}
 						label="Developer"

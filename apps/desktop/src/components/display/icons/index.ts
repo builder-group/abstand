@@ -6,6 +6,8 @@ export {
 	ArrowLeftIcon,
 	ChevronRightIcon,
 	CircleQuestionMarkIcon,
+	CodeXmlIcon,
+	CommandIcon,
 	FolderOpenIcon,
 	MonitorIcon,
 	MoonIcon,
@@ -15,5 +17,5 @@ export {
 	SearchIcon,
 	SettingsIcon,
 	SunIcon,
-	WrenchIcon
+	XCircleIcon
 } from 'lucide-react';
