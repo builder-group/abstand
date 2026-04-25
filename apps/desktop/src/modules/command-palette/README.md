@@ -4,10 +4,10 @@ Opens via Cmd+K or the sidebar search button. Items are computed from settings s
 
 ## Keyboard navigation
 
-Two navigation modes coexist intentionally.
+The search input keeps focus while arrow keys move a virtual selection through the result list. Enter confirms the highlighted item. Escape closes the palette.
 
-**Arrow keys** navigate `activeIndex` without leaving the input. Focus stays in the search field so the user can keep typing at any point. Enter confirms the highlighted item.
+The active result is exposed to assistive technology without moving browser focus into the list. List items stay out of the Tab order, and Tab cycles only through controls in the modal, such as the search input, close action, or future controls like filters.
 
-**Tab** moves browser focus through every interactive element in the palette: the input, the items, and any future controls like filters. Arrow keys only navigate the item list, so they cannot substitute for Tab. Keyboard-only users and screen readers depend on Tab to reach all focusable elements in a modal.
+## Alternatives considered
 
-Both modes feed the same `activeIndex` state, so Enter always confirms whichever item is highlighted regardless of how it was reached.
+**Tab through list items.** ChatGPT does this. It was implemented and tested but removed because it added some complexity and breaks the cleaner separation between modal controls and virtual result navigation.
