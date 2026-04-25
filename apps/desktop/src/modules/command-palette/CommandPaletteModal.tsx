@@ -129,23 +129,19 @@ export const CommandPaletteModal: React.FC = () => {
 				</div>
 
 				{/* Results */}
-				<div
-					ref={resultsRef}
-					id={filteredItems.length > 0 ? 'command-palette-results' : undefined}
-					role={filteredItems.length > 0 ? 'listbox' : undefined}
-					aria-label={filteredItems.length > 0 ? 'Command results' : undefined}
-					className="max-h-72 overflow-y-auto px-1 py-1"
-				>
+				<div ref={resultsRef} className="max-h-72 overflow-y-auto px-1 py-1">
 					{filteredItems.length > 0 ? (
-						filteredItems.map((item, index) => (
-							<CommandPaletteItem
-								key={item.id}
-								item={item}
-								isActive={index === activeIndex}
-								onSelect={handleSelect}
-								onPointerMove={() => setActiveIndex(index)}
-							/>
-						))
+						<div id="command-palette-results" role="listbox" aria-label="Command results">
+							{filteredItems.map((item, index) => (
+								<CommandPaletteItem
+									key={item.id}
+									item={item}
+									isActive={index === activeIndex}
+									onSelect={handleSelect}
+									onPointerMove={() => setActiveIndex(index)}
+								/>
+							))}
+						</div>
 					) : (
 						<p className="text-base-400 px-3 py-8 text-center text-sm">No results</p>
 					)}
