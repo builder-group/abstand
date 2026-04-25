@@ -109,8 +109,10 @@ export const CommandPaletteModal: React.FC = () => {
 						role="combobox"
 						aria-label="Search commands"
 						aria-autocomplete="list"
-						aria-haspopup="listbox"
 						aria-controls={filteredItems.length > 0 ? 'command-palette-results' : undefined}
+						autoComplete="off"
+						autoCorrect="off"
+						spellCheck={false}
 						aria-expanded={true}
 						aria-activedescendant={
 							activeItem != null ? `command-palette-option-${activeItem.id}` : undefined
@@ -172,8 +174,8 @@ const CommandPaletteItem: React.FC<TCommandPaletteItemProps> = (props) => {
 			role="option"
 			aria-selected={isActive}
 			className={cn(
-				'flex w-full cursor-default items-center gap-3 rounded-lg px-2 py-2 text-left',
-				'text-base-600 text-sm transition-colors outline-none',
+				'flex w-full cursor-default items-center gap-3 rounded-lg px-2 py-2',
+				'text-base-600 text-sm transition-colors',
 				'select-none [&_svg]:pointer-events-none [&_svg]:shrink-0',
 				isActive && 'bg-base-950/6 text-base-950'
 			)}
