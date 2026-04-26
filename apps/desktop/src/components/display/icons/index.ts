@@ -16,6 +16,8 @@ export {
 	PlusIcon,
 	SearchIcon,
 	SettingsIcon,
+	ShieldIcon,
 	SunIcon,
+	TimerIcon,
 	XCircleIcon
 } from 'lucide-react';

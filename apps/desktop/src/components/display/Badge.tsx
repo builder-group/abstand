@@ -5,18 +5,18 @@ import React from 'react';
 import { cn } from '@/lib';
 
 export const Badge: React.FC<TBadgeProps> = (props) => {
-	const { className, variant = 'default', render, ...rest } = props;
+	const { className, variant = 'default', size = 'default', render, ...rest } = props;
 
 	return useRender({
 		defaultTagName: 'span',
-		props: mergeProps<'span'>({ className: cn(badgeVariants({ variant }), className) }, rest),
+		props: mergeProps<'span'>({ className: cn(badgeVariants({ variant, size }), className) }, rest),
 		render,
-		state: { slot: 'badge', variant }
+		state: { slot: 'badge', variant, size }
 	});
 };
 
 const badgeVariants = cva(
-	"inline-flex h-5 shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap select-none transition-[color,box-shadow] focus-ring [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3",
+	'inline-flex shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border border-transparent font-medium whitespace-nowrap select-none transition-[color,box-shadow] focus-ring [&_svg]:pointer-events-none [&_svg]:shrink-0',
 	{
 		variants: {
 			variant: {
@@ -28,10 +28,15 @@ const badgeVariants = cva(
 				outline: 'border-base-200 text-base-600 [a&]:hover:bg-base-100 [a&]:hover:text-base-950',
 				ghost: 'text-base-600 [a&]:hover:bg-base-100 [a&]:hover:text-base-950',
 				link: 'text-primary underline-offset-4 [a&]:hover:underline'
+			},
+			size: {
+				default: "h-5 px-2 py-0.5 text-xs [&_svg:not([class*='size-'])]:size-3",
+				sm: "h-4 px-1.5 text-[10px] [&_svg:not([class*='size-'])]:size-2.5"
 			}
 		},
 		defaultVariants: {
-			variant: 'default'
+			variant: 'default',
+			size: 'default'
 		}
 	}
 );
