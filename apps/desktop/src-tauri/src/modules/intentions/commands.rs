@@ -10,14 +10,10 @@ use tauri_specta::Event;
 
 #[tauri::command]
 #[specta::specta]
-pub async fn get_intentions(
-    state: State<'_, DatabaseState>,
-) -> Result<Vec<Intention>, String> {
-    let row_sets = IntentionRepository::get_all(&state.pool)
+pub async fn get_intentions(state: State<'_, DatabaseState>) -> Result<Vec<Intention>, String> {
+    return IntentionRepository::get_all(&state.pool)
         .await
-        .map_err(|error| error.to_string())?;
-
-    return row_sets.into_iter().map(Intention::try_from).collect();
+        .map_err(|error| error.to_string());
 }
 
 #[tauri::command]
@@ -26,11 +22,9 @@ pub async fn get_intention(
     state: State<'_, DatabaseState>,
     intention_id: i64,
 ) -> Result<Option<Intention>, String> {
-    let row_set = IntentionRepository::get_by_id(&state.pool, intention_id)
+    return IntentionRepository::get_by_id(&state.pool, intention_id)
         .await
         .map_err(|error| error.to_string());
-
-    return row_set?.map(Intention::try_from).transpose();
 }
 
 #[tauri::command]
@@ -54,11 +48,10 @@ pub async fn create_intention(
         return Err("Please enter a name".to_string());
     }
 
-    let row_set = IntentionRepository::create(&state.pool, input)
+    let intention = IntentionRepository::create(&state.pool, input)
         .await
         .map_err(|error| error.to_string())?;
 
-    let intention = Intention::try_from(row_set)?;
     let _ = IntentionCreatedEvent {
         intention_id: intention.id,
     }

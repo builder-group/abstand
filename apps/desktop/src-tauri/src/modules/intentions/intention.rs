@@ -1,7 +1,5 @@
-use super::{
-    repository::{IntentionConditionRow, IntentionRowSet},
-    types::IntentionBehaviorType,
-};
+use super::types::IntentionBehaviorType;
+use crate::modules::catalog::types::{App, Website};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
@@ -12,46 +10,6 @@ pub struct Intention {
     pub behavior: IntentionBehavior,
     pub conditions: Vec<IntentionCondition>,
     pub created_at: i64,
-}
-
-impl TryFrom<IntentionRowSet> for Intention {
-    type Error = String;
-
-    fn try_from(rows: IntentionRowSet) -> Result<Self, Self::Error> {
-        let behavior_type = IntentionBehaviorType::from_str(&rows.base.behavior_type)?;
-        let behavior = match behavior_type {
-            IntentionBehaviorType::Block => {
-                let Some(block) = rows.block else {
-                    return Err(format!("Missing block rows for intention {}", rows.base.id));
-                };
-
-                IntentionBehavior::Block(IntentionBlock {
-                    enforcement_mode: IntentionEnforcementMode::from_str(
-                        &block.config.enforcement_mode,
-                    )?,
-                    target_scope: IntentionBlockTargetScope::from_str(&block.config.target_scope)?,
-                    app_ids: block.app_ids,
-                    website_ids: block.website_ids,
-                    created_at: block.config.created_at,
-                })
-            }
-            IntentionBehaviorType::Break => IntentionBehavior::Break,
-        };
-
-        let conditions = rows
-            .conditions
-            .into_iter()
-            .map(IntentionCondition::try_from)
-            .collect::<Result<Vec<_>, _>>()?;
-
-        return Ok(Self {
-            id: rows.base.id,
-            name: rows.base.name,
-            behavior,
-            conditions,
-            created_at: rows.base.created_at,
-        });
-    }
 }
 
 // MARK: - Intention Behavior
@@ -85,9 +43,9 @@ impl From<IntentionBehavior> for IntentionBehaviorType {
 #[serde(rename_all = "camelCase")]
 pub struct IntentionBlock {
     pub enforcement_mode: IntentionEnforcementMode,
-    pub target_scope: IntentionBlockTargetScope,
-    pub app_ids: Vec<i64>,
-    pub website_ids: Vec<i64>,
+    pub block_mode: IntentionBlockMode,
+    pub apps: Vec<App>,
+    pub websites: Vec<Website>,
     pub created_at: i64,
 }
 
@@ -112,17 +70,19 @@ impl IntentionEnforcementMode {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
-pub enum IntentionBlockTargetScope {
-    SelectedTargets,
-    WholeDevice,
+pub enum IntentionBlockMode {
+    BlockList,
+    AllowList,
+    BlockAll,
 }
 
-impl IntentionBlockTargetScope {
+impl IntentionBlockMode {
     pub fn from_str(value: &str) -> Result<Self, String> {
         return match value {
-            "selected_targets" => Ok(Self::SelectedTargets),
-            "whole_device" => Ok(Self::WholeDevice),
-            _ => Err(format!("Unknown intention block target scope: {}", value)),
+            "block_list" => Ok(Self::BlockList),
+            "allow_list" => Ok(Self::AllowList),
+            "block_all" => Ok(Self::BlockAll),
+            _ => Err(format!("Unknown intention block mode: {}", value)),
         };
     }
 }
@@ -164,40 +124,4 @@ pub enum IntentionConditionRule {
         weekdays: Option<Vec<u8>>,
     },
     Manual,
-}
-
-impl TryFrom<IntentionConditionRow> for IntentionCondition {
-    type Error = String;
-
-    fn try_from(row: IntentionConditionRow) -> Result<Self, Self::Error> {
-        let phase = IntentionConditionPhase::from_str(&row.condition_phase)?;
-        let rule = match row.condition_type.as_str() {
-            "time" => IntentionConditionRule::Time {
-                time_of_day: row
-                    .time_of_day
-                    .ok_or("Missing time_of_day for time condition".to_string())?,
-                weekdays: match row.weekdays {
-                    Some(weekdays) => Some(
-                        serde_json::from_str::<Vec<u8>>(&weekdays)
-                            .map_err(|error| error.to_string())?,
-                    ),
-                    None => None,
-                },
-            },
-            "manual" => IntentionConditionRule::Manual,
-            _ => {
-                return Err(format!(
-                    "Unknown intention condition type: {}",
-                    row.condition_type
-                ));
-            }
-        };
-
-        return Ok(Self {
-            id: row.id,
-            phase,
-            rule,
-            created_at: row.created_at,
-        });
-    }
 }

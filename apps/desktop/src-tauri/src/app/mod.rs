@@ -1,7 +1,7 @@
 mod commands;
 pub mod window;
 
-use crate::modules::{db, intentions, scheduler, settings, shortcuts};
+use crate::modules::{catalog, db, intentions, scheduler, settings, shortcuts};
 use specta_typescript::{BigIntExportBehavior, Typescript};
 use tauri_specta::{collect_commands, collect_events, Builder as SpectaBuilder};
 
@@ -21,6 +21,8 @@ pub fn run() {
             intentions::commands::create_intention,
             // Shortcuts commands
             shortcuts::commands::get_shortcut_configs,
+            // Catalog commands
+            catalog::commands::search_catalog,
         ])
         .events(collect_events![
             // Settings events

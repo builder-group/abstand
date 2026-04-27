@@ -61,6 +61,14 @@ async createIntention(params: CreateIntentionParams) : Promise<Result<Intention,
 },
 async getShortcutConfigs() : Promise<ShortcutActionConfigDto[]> {
     return await TAURI_INVOKE("get_shortcut_configs");
+},
+async searchCatalog(params: SearchCatalogParams) : Promise<Result<CatalogSearchResult[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("search_catalog", { params }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -85,6 +93,7 @@ shortcutTriggeredEvent: "shortcut-triggered-event"
 
 /** user-defined types **/
 
+export type App = { id: number; bundleId: string; name: string; icon: string | null; color: string | null }
 export type AppDistribution = "appStore" | "direct"
 export type AppInfoDto = { version: string; stage: Stage; distribution: AppDistribution }
 export type AppSettings = { version: SettingsVersion; appearance: AppearanceSettings; developer: DeveloperSettings; 
@@ -94,13 +103,16 @@ export type AppSettings = { version: SettingsVersion; appearance: AppearanceSett
 shortcuts: Partial<{ [key in ShortcutAction]: KeyboardShortcut | null }> }
 export type AppSettingsChangedEvent = AppSettings
 export type AppearanceSettings = { theme: Theme }
+export type CatalogAppSearchResult = { bundleId: string; name: string | null; icon: string | null; color: string | null }
+export type CatalogSearchResult = { type: "app"; app: CatalogAppSearchResult; score: number } | { type: "website"; website: CatalogWebsiteSearchResult; score: number }
+export type CatalogWebsiteSearchResult = { domain: string; name: string | null; icon: string | null; color: string | null }
 export type CreateIntentionBehaviorParams = { type: "block" } | { type: "break" }
 export type CreateIntentionParams = { name: string; behavior: CreateIntentionBehaviorParams }
 export type DeveloperSettings = { enabled: boolean }
 export type Intention = { id: number; name: string; behavior: IntentionBehavior; conditions: IntentionCondition[]; createdAt: number }
 export type IntentionBehavior = ({ type: "block" } & IntentionBlock) | { type: "break" }
-export type IntentionBlock = { enforcementMode: IntentionEnforcementMode; targetScope: IntentionBlockTargetScope; appIds: number[]; websiteIds: number[]; createdAt: number }
-export type IntentionBlockTargetScope = "selectedTargets" | "wholeDevice"
+export type IntentionBlock = { enforcementMode: IntentionEnforcementMode; blockMode: IntentionBlockMode; apps: App[]; websites: Website[]; createdAt: number }
+export type IntentionBlockMode = "blockList" | "allowList" | "blockAll"
 export type IntentionCondition = { id: number; phase: IntentionConditionPhase; rule: IntentionConditionRule; createdAt: number }
 export type IntentionConditionPhase = "start" | "end"
 export type IntentionConditionRule = { type: "time"; timeOfDay: string; weekdays: number[] | null } | { type: "manual" }
@@ -112,6 +124,7 @@ export type KeyboardShortcut = { modifiers: ShortcutModifier[];
  * A browser KeyboardEvent.code value, e.g. "KeyK", "KeyB".
  */
 code: string }
+export type SearchCatalogParams = { query: string }
 export type SettingsVersion = "0.0.1"
 export type ShortcutAction = "search" | "toggleSidebar"
 export type ShortcutActionConfigDto = { action: ShortcutAction; isGlobal: boolean; shortcut: KeyboardShortcut | null }
@@ -119,6 +132,7 @@ export type ShortcutModifier = "meta" | "ctrl" | "alt" | "shift"
 export type ShortcutTriggeredEvent = ShortcutAction
 export type Stage = "dev" | "prod"
 export type Theme = "light" | "dark" | "auto"
+export type Website = { id: number; domain: string; name: string; icon: string | null; color: string | null }
 
 /** tauri-specta globals **/
 

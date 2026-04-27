@@ -1,3 +1,4 @@
+pub mod catalog;
 pub mod db;
 pub mod intentions;
 pub mod scheduler;

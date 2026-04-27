@@ -67,7 +67,7 @@ CREATE INDEX idx_intention_condition_intention_id ON intention_condition (intent
 CREATE TABLE intention_block (
     intention_id INTEGER PRIMARY KEY REFERENCES intention (id) ON DELETE CASCADE,
     enforcement_mode TEXT NOT NULL DEFAULT 'balanced' CHECK (enforcement_mode IN ('casual', 'balanced', 'hardcore')),
-    target_scope TEXT NOT NULL DEFAULT 'selected_targets' CHECK (target_scope IN ('selected_targets', 'whole_device')),
+    block_mode TEXT NOT NULL DEFAULT 'block_list' CHECK (block_mode IN ('block_list', 'allow_list', 'block_all')),
     created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)
 );
 
