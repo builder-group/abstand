@@ -46,7 +46,9 @@
 		"react": "^19.2.5",
 		"react-dom": "^19.2.5",
 		"tailwind-merge": "^3.5.0",
-		"tuple-result": "^0.0.12"
+		"tuple-result": "^0.0.12",
+		"validation-adapters": "^0.0.38",
+		"zod": "^4.3.6"
 	},
 	"devDependencies": {
 		"@blgc/config": "^0.0.41",

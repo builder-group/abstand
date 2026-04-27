@@ -14,7 +14,7 @@ SQLite database module. `schema.sql` is the source of truth. Edit it, then run `
 SELECT i.*, ib.*
 FROM intention AS i
 JOIN intention_block AS ib ON ib.intention_id = i.id
-WHERE i.behavior_type = 'BLOCK';
+WHERE i.behavior_type = 'block';
 ```
 
 Identity belongs to the intention, not the behavior. When `Break` is added it follows the same shape: a new `intention_break` table with `intention_id` as its key. The parent table stays stable.

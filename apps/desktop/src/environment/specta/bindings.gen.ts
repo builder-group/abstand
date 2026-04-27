@@ -35,6 +35,22 @@ async resetSettings() : Promise<Result<AppSettings, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+async getIntention(intentionId: number) : Promise<Result<Intention | null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_intention", { intentionId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async createIntention(params: CreateIntentionParams) : Promise<Result<Intention, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("create_intention", { params }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getShortcutConfigs() : Promise<ShortcutActionConfigDto[]> {
     return await TAURI_INVOKE("get_shortcut_configs");
 }
@@ -45,9 +61,13 @@ async getShortcutConfigs() : Promise<ShortcutActionConfigDto[]> {
 
 export const events = __makeEvents__<{
 appSettingsChangedEvent: AppSettingsChangedEvent,
+intentionCreatedEvent: IntentionCreatedEvent,
+intentionUpdatedEvent: IntentionUpdatedEvent,
 shortcutTriggeredEvent: ShortcutTriggeredEvent
 }>({
 appSettingsChangedEvent: "app-settings-changed-event",
+intentionCreatedEvent: "intention-created-event",
+intentionUpdatedEvent: "intention-updated-event",
 shortcutTriggeredEvent: "shortcut-triggered-event"
 })
 
@@ -66,7 +86,19 @@ export type AppSettings = { version: SettingsVersion; appearance: AppearanceSett
 shortcuts: Partial<{ [key in ShortcutAction]: KeyboardShortcut | null }> }
 export type AppSettingsChangedEvent = AppSettings
 export type AppearanceSettings = { theme: Theme }
+export type CreateIntentionBehaviorParams = { type: "block" } | { type: "break" }
+export type CreateIntentionParams = { name: string; behavior: CreateIntentionBehaviorParams }
 export type DeveloperSettings = { enabled: boolean }
+export type Intention = { id: number; name: string; behavior: IntentionBehavior; conditions: IntentionCondition[]; createdAt: number }
+export type IntentionBehavior = ({ type: "block" } & IntentionBlock) | { type: "break" }
+export type IntentionBlock = { enforcementMode: IntentionEnforcementMode; targetScope: IntentionBlockTargetScope; appIds: number[]; websiteIds: number[]; createdAt: number }
+export type IntentionBlockTargetScope = "selectedTargets" | "wholeDevice"
+export type IntentionCondition = { id: number; phase: IntentionConditionPhase; rule: IntentionConditionRule; createdAt: number }
+export type IntentionConditionPhase = "start" | "end"
+export type IntentionConditionRule = { type: "time"; timeOfDay: string; weekdays: number[] | null } | { type: "manual" }
+export type IntentionCreatedEvent = { intentionId: number }
+export type IntentionEnforcementMode = "casual" | "balanced" | "hardcore"
+export type IntentionUpdatedEvent = { intentionId: number }
 export type KeyboardShortcut = { modifiers: ShortcutModifier[]; 
 /**
  * A browser KeyboardEvent.code value, e.g. "KeyK", "KeyB".

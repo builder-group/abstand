@@ -1,16 +1,69 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { ContentPage } from '@/components';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { useForm } from 'feature-react/form';
+import { useFeatureState } from 'feature-react/state';
+import React from 'react';
+import { Button, ContentPage, Input } from '@/components';
+import { useNewIntentionCx } from '@/modules/intentions';
+import { SettingsGroup, SettingsRow } from '@/modules/settings';
 
 export const Route = createFileRoute('/window/main/_sidebar/intentions/new/block/')({
 	component: RouteComponent
 });
 
 function RouteComponent() {
+	const navigate = useNavigate();
+	const intentionCx = useNewIntentionCx();
+
+	const { handleSubmit, register, status } = useForm(intentionCx.$baseForm);
+	const isSubmitting = useFeatureState(intentionCx.$baseForm.isSubmitting);
+	const nameStatus = useFeatureState(status('name'));
+
+	// MARK: - Actions
+
+	const handleValidSubmit = React.useCallback(async () => {
+		const [isIntentionOk, , intention] = await intentionCx.submitBehavior('block');
+		if (isIntentionOk) {
+			void navigate({
+				to: '/window/main/intentions/$intentionId',
+				params: { intentionId: `${intention.id}` }
+			});
+		}
+	}, [intentionCx, navigate]);
+
+	// MARK: - UI
+
 	return (
 		<ContentPage
 			title="Block Intention"
 			subtitle="Configure your Block."
 			backTo="/window/main/intentions/new"
-		></ContentPage>
+		>
+			<form onSubmit={handleSubmit({ onValidSubmit: handleValidSubmit })} className="space-y-4">
+				<SettingsGroup title="Details">
+					<SettingsRow
+						label="Name"
+						description="Give this intention a short name you will recognize later."
+					>
+						<div className="flex w-72 flex-col items-end gap-1">
+							<Input
+								{...register('name')}
+								autoFocus
+								placeholder="Deep work"
+								aria-invalid={nameStatus.type === 'INVALID'}
+							/>
+							{nameStatus.type === 'INVALID' && (
+								<p className="text-error text-xs">{nameStatus.errors[0]?.message}</p>
+							)}
+						</div>
+					</SettingsRow>
+				</SettingsGroup>
+
+				<div className="flex justify-end">
+					<Button type="submit" variant="primary" disabled={isSubmitting}>
+						Create Intention
+					</Button>
+				</div>
+			</form>
+		</ContentPage>
 	);
 }

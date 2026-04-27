@@ -89,6 +89,12 @@ importers:
       tuple-result:
         specifier: ^0.0.12
         version: 0.0.12
+      validation-adapters:
+        specifier: ^0.0.38
+        version: 0.0.38
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
     devDependencies:
       '@blgc/config':
         specifier: ^0.0.41
@@ -2481,6 +2487,9 @@ packages:
 
   validation-adapter@0.0.28:
     resolution: {integrity: sha512-DV4fuJoTqTm8g13Zi8n8uFcTC0TbKuIjxCsvo0bmYzEynB0xzF+RlXXcQVgzZ3p/yZboLCt040Slnhq10rsVvg==}
+
+  validation-adapters@0.0.38:
+    resolution: {integrity: sha512-wrbT5sYVxv4e7ejhOlG+OxFlnhnAn2sbsnkAHjZu6iGwv+0gOTmkzkNb9+moOIWWQkfDarWD1sHqDwOEUgPiFg==}
 
   vite@8.0.9:
     resolution: {integrity: sha512-t7g7GVRpMXjNpa67HaVWI/8BWtdVIQPCL2WoozXXA7LBGEFK4AkkKkHx2hAQf5x1GZSlcmEDPkVLSGahxnEEZw==}
@@ -5079,6 +5088,10 @@ snapshots:
   validation-adapter@0.0.28:
     dependencies:
       '@blgc/utils': 0.0.62
+
+  validation-adapters@0.0.38:
+    dependencies:
+      validation-adapter: 0.0.28
 
   vite@8.0.9(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.6.1)(tsx@4.21.0):
     dependencies:

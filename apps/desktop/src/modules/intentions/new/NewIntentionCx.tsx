@@ -1,8 +1,60 @@
+import { createForm } from 'feature-form';
 import React from 'react';
+import { Err, type TResult } from 'tuple-result';
+import { zValidator } from 'validation-adapters/zod';
+import * as z from 'zod';
+import { specta } from '@/environment';
+import { toTuple } from '@/lib';
 
 export class NewIntentionCx {
+	public readonly $baseForm = createForm<TNewIntentionBaseFormData>({
+		fields: {
+			name: {
+				defaultValue: '',
+				validator: zValidator(
+					z
+						.string()
+						.trim()
+						.min(1, 'Please enter a name')
+						.max(80, 'Name must be 80 characters or less')
+				)
+			}
+		}
+	});
+
 	public mount(): () => void {
 		return () => {};
+	}
+
+	public async submitBehavior(
+		behaviorType: TIntentionBehaviorType
+	): Promise<TResult<specta.Intention, string>> {
+		const baseFormData = this.$baseForm.getValidData();
+		if (baseFormData == null) {
+			return Err('Form is invalid');
+		}
+
+		let input: specta.CreateIntentionParams;
+		switch (behaviorType) {
+			case 'block':
+				input = {
+					name: baseFormData.name.trim(),
+					behavior: {
+						type: 'block'
+					}
+				};
+				break;
+			case 'break':
+				input = {
+					name: baseFormData.name.trim(),
+					behavior: {
+						type: 'break'
+					}
+				};
+				break;
+		}
+
+		return toTuple(await specta.commands.createIntention(input));
 	}
 }
 
@@ -25,3 +77,9 @@ export function useNewIntentionCx(): NewIntentionCx {
 	}
 	return cx;
 }
+
+interface TNewIntentionBaseFormData {
+	name: string;
+}
+
+type TIntentionBehaviorType = 'block' | 'break';

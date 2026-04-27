@@ -26,7 +26,7 @@ CREATE TABLE `intention` (
   `name` text NOT NULL,
   `behavior_type` text NOT NULL,
   `created_at` integer NOT NULL DEFAULT (strftime('%s', 'now') * 1000),
-  CHECK (behavior_type IN ('BLOCK'))
+  CHECK (behavior_type IN ('block'))
 );
 -- Create "intention_condition" table
 CREATE TABLE `intention_condition` (
@@ -38,11 +38,11 @@ CREATE TABLE `intention_condition` (
   `weekdays` text NULL,
   `created_at` integer NOT NULL DEFAULT (strftime('%s', 'now') * 1000),
   CONSTRAINT `0` FOREIGN KEY (`intention_id`) REFERENCES `intention` (`id`) ON UPDATE NO ACTION ON DELETE CASCADE,
-  CHECK (condition_phase IN ('START', 'END')),
-  CHECK (condition_type IN ('TIME', 'MANUAL')),
+  CHECK (condition_phase IN ('start', 'end')),
+  CHECK (condition_type IN ('time', 'manual')),
   CHECK (
         (
-            condition_type = 'TIME'
+            condition_type = 'time'
             AND time_of_day IS NOT NULL
             AND length(time_of_day) = 5
             AND time_of_day GLOB '[0-2][0-9]:[0-5][0-9]'
@@ -53,7 +53,7 @@ CREATE TABLE `intention_condition` (
             )
         )
         OR (
-            condition_type = 'MANUAL'
+            condition_type = 'manual'
             AND time_of_day IS NULL
             AND weekdays IS NULL
         )
@@ -64,13 +64,13 @@ CREATE INDEX `idx_intention_condition_intention_id` ON `intention_condition` (`i
 -- Create "intention_block" table
 CREATE TABLE `intention_block` (
   `intention_id` integer NULL,
-  `enforcement_mode` text NOT NULL DEFAULT 'BALANCED',
-  `blocks_entire_computer` integer NOT NULL DEFAULT 0,
+  `enforcement_mode` text NOT NULL DEFAULT 'balanced',
+  `target_scope` text NOT NULL DEFAULT 'selected_targets',
   `created_at` integer NOT NULL DEFAULT (strftime('%s', 'now') * 1000),
   PRIMARY KEY (`intention_id`),
   CONSTRAINT `0` FOREIGN KEY (`intention_id`) REFERENCES `intention` (`id`) ON UPDATE NO ACTION ON DELETE CASCADE,
-  CHECK (enforcement_mode IN ('CASUAL', 'BALANCED', 'HARDCORE')),
-  CHECK (blocks_entire_computer IN (0, 1))
+  CHECK (enforcement_mode IN ('casual', 'balanced', 'hardcore')),
+  CHECK (target_scope IN ('selected_targets', 'whole_device'))
 );
 -- Create "intention_block_app" table
 CREATE TABLE `intention_block_app` (
