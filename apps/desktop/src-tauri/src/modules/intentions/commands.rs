@@ -10,6 +10,18 @@ use tauri_specta::Event;
 
 #[tauri::command]
 #[specta::specta]
+pub async fn get_intentions(
+    state: State<'_, DatabaseState>,
+) -> Result<Vec<Intention>, String> {
+    let row_sets = IntentionRepository::get_all(&state.pool)
+        .await
+        .map_err(|error| error.to_string())?;
+
+    return row_sets.into_iter().map(Intention::try_from).collect();
+}
+
+#[tauri::command]
+#[specta::specta]
 pub async fn get_intention(
     state: State<'_, DatabaseState>,
     intention_id: i64,

@@ -16,6 +16,7 @@ pub fn run() {
             settings::commands::set_settings,
             settings::commands::reset_settings,
             // Intention commands
+            intentions::commands::get_intentions,
             intentions::commands::get_intention,
             intentions::commands::create_intention,
             // Shortcuts commands

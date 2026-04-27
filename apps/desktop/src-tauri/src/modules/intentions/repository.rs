@@ -5,6 +5,27 @@ use std::fmt;
 pub struct IntentionRepository;
 
 impl IntentionRepository {
+    pub async fn get_all(
+        pool: &Pool<Sqlite>,
+    ) -> Result<Vec<IntentionRowSet>, IntentionRepositoryError> {
+        let bases = sqlx::query_as::<_, IntentionRow>(
+            "SELECT id, name, behavior_type, created_at FROM intention ORDER BY created_at ASC, id ASC",
+        )
+        .fetch_all(pool)
+        .await?;
+
+        let mut row_sets = Vec::with_capacity(bases.len());
+        for base in bases {
+            let id = base.id;
+            let row_set = Self::get_by_id(pool, id).await?;
+            if let Some(row_set) = row_set {
+                row_sets.push(row_set);
+            }
+        }
+
+        return Ok(row_sets);
+    }
+
     pub async fn get_by_id(
         pool: &Pool<Sqlite>,
         intention_id: i64,

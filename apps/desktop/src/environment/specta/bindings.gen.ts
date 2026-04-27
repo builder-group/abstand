@@ -35,6 +35,14 @@ async resetSettings() : Promise<Result<AppSettings, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+async getIntentions() : Promise<Result<Intention[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_intentions") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getIntention(intentionId: number) : Promise<Result<Intention | null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_intention", { intentionId }) };

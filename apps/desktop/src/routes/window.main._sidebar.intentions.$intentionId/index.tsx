@@ -1,25 +1,16 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { unwrapOrNull } from 'tuple-result';
+import { useFeatureState } from 'feature-react/state';
 import { ContentPage } from '@/components';
-import { specta } from '@/environment';
-import { toTuple } from '@/lib';
+import { useIntentionsCx } from '@/modules/intentions';
 
 export const Route = createFileRoute('/window/main/_sidebar/intentions/$intentionId/')({
-	loader: async ({ params }) => {
-		const intentionId = Number(params.intentionId);
-		if (!Number.isFinite(intentionId)) {
-			return null;
-		}
-
-		const intentionResult = toTuple(await specta.commands.getIntention(intentionId));
-		return unwrapOrNull(intentionResult);
-	},
 	component: RouteComponent
 });
 
 function RouteComponent() {
 	const { intentionId } = Route.useParams();
-	const intention = Route.useLoaderData();
+	const intentionsCx = useIntentionsCx();
+	const intention = useFeatureState(intentionsCx.intentions[Number(intentionId)]);
 
 	// MARK: - UI
 

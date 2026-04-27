@@ -4,7 +4,7 @@ import { Err, type TResult } from 'tuple-result';
 import { zValidator } from 'validation-adapters/zod';
 import * as z from 'zod';
 import { specta } from '@/environment';
-import { toTuple } from '@/lib';
+import { IntentionsCx, useIntentionsCx } from '../IntentionsCx';
 
 export class NewIntentionCx {
 	public readonly $baseForm = createForm<TNewIntentionBaseFormData>({
@@ -22,6 +22,12 @@ export class NewIntentionCx {
 		}
 	});
 
+	private readonly intentionsCx: IntentionsCx;
+
+	public constructor(intentionsCx: IntentionsCx) {
+		this.intentionsCx = intentionsCx;
+	}
+
 	public mount(): () => void {
 		return () => {};
 	}
@@ -37,31 +43,22 @@ export class NewIntentionCx {
 		let input: specta.CreateIntentionParams;
 		switch (behaviorType) {
 			case 'block':
-				input = {
-					name: baseFormData.name.trim(),
-					behavior: {
-						type: 'block'
-					}
-				};
+				input = { name: baseFormData.name.trim(), behavior: { type: 'block' } };
 				break;
 			case 'break':
-				input = {
-					name: baseFormData.name.trim(),
-					behavior: {
-						type: 'break'
-					}
-				};
+				input = { name: baseFormData.name.trim(), behavior: { type: 'break' } };
 				break;
 		}
 
-		return toTuple(await specta.commands.createIntention(input));
+		return this.intentionsCx.create(input);
 	}
 }
 
 const ReactNewIntentionCx = React.createContext<NewIntentionCx | null>(null);
 
 export const NewIntentionCxProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-	const cx = React.useMemo(() => new NewIntentionCx(), []);
+	const intentionsCx = useIntentionsCx();
+	const cx = React.useMemo(() => new NewIntentionCx(intentionsCx), [intentionsCx]);
 
 	React.useEffect(() => {
 		return cx.mount();

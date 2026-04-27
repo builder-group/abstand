@@ -2,6 +2,7 @@ import { createFileRoute, Outlet } from '@tanstack/react-router';
 import React from 'react';
 import { PanelLeftCloseIcon, PanelLeftOpenIcon, Toggle, Tooltip, WindowHeader } from '@/components';
 import { cn } from '@/lib';
+import { IntentionsCxProvider } from '@/modules/intentions';
 import { useOnShortcut, useShortcutHint } from '@/modules/shortcuts';
 import { SidebarContent } from './components';
 
@@ -22,7 +23,7 @@ function LayoutComponent() {
 	// MARK: - UI
 
 	return (
-		<>
+		<IntentionsCxProvider>
 			<WindowHeader
 				floating
 				compact={!sidebarOpen}
@@ -66,6 +67,6 @@ function LayoutComponent() {
 					<Outlet />
 				</div>
 			</div>
-		</>
+		</IntentionsCxProvider>
 	);
 }
