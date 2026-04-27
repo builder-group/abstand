@@ -1,43 +1,47 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router';
-import React from 'react';
+import { useFeatureState } from 'feature-react/state';
 import { PanelLeftCloseIcon, PanelLeftOpenIcon, Toggle, Tooltip, WindowHeader } from '@/components';
 import { cn } from '@/lib';
 import { IntentionsCxProvider } from '@/modules/intentions';
-import { useOnShortcut, useShortcutHint } from '@/modules/shortcuts';
+import { useShortcutHint } from '@/modules/shortcuts';
 import { SidebarContent } from './components';
+import { SidebarCxProvider, useSidebarCx } from './SidebarCx';
 
 export const Route = createFileRoute('/window/main/_sidebar')({
 	component: LayoutComponent
 });
 
 function LayoutComponent() {
-	const [sidebarOpen, setSidebarOpen] = React.useState(true);
+	return (
+		<SidebarCxProvider>
+			<IntentionsCxProvider>
+				<SidebarLayout />
+			</IntentionsCxProvider>
+		</SidebarCxProvider>
+	);
+}
+
+function SidebarLayout() {
+	const sidebarCx = useSidebarCx();
+	const isOpen = useFeatureState(sidebarCx.$isOpen);
 	const toggleSidebarHint = useShortcutHint('toggleSidebar');
 
-	// MARK: - Effects
-
-	useOnShortcut('toggleSidebar', () => {
-		setSidebarOpen((v) => !v);
-	});
-
-	// MARK: - UI
-
 	return (
-		<IntentionsCxProvider>
+		<>
 			<WindowHeader
 				floating
-				compact={!sidebarOpen}
+				compact={!isOpen}
 				leading={
 					<Tooltip content="Toggle sidebar" shortcut={toggleSidebarHint} side="bottom">
 						<Toggle
-							aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
+							aria-label={isOpen ? 'Close sidebar' : 'Open sidebar'}
 							variant="icon"
 							size="icon-sm"
-							pressed={sidebarOpen}
-							onPressedChange={setSidebarOpen}
+							pressed={isOpen}
+							onPressedChange={(pressed) => (pressed ? sidebarCx.open() : sidebarCx.close())}
 							className="ml-2"
 						>
-							{sidebarOpen ? (
+							{isOpen ? (
 								<PanelLeftCloseIcon className="size-3.5" />
 							) : (
 								<PanelLeftOpenIcon className="size-3.5" />
@@ -51,7 +55,7 @@ function LayoutComponent() {
 				<nav
 					className={cn(
 						'shrink-0 overflow-hidden transition-[width] duration-200 ease-in-out select-none',
-						sidebarOpen ? 'w-56' : 'w-0'
+						isOpen ? 'w-56' : 'w-0'
 					)}
 				>
 					<SidebarContent />
@@ -61,12 +65,12 @@ function LayoutComponent() {
 				<div
 					className={cn(
 						'border-base-100 bg-base-0 flex flex-1 overflow-hidden transition-[border-radius] duration-200 ease-in-out',
-						sidebarOpen ? 'rounded-l-xl border-l' : 'rounded-none border-l-0'
+						isOpen ? 'rounded-l-xl border-l' : 'rounded-none border-l-0'
 					)}
 				>
 					<Outlet />
 				</div>
 			</div>
-		</IntentionsCxProvider>
+		</>
 	);
 }
