@@ -68,6 +68,13 @@ export class CommandPaletteCx {
 				to: '/window/main/today'
 			},
 			{
+				id: 'new-intention',
+				label: 'New Intention',
+				group: 'Navigation',
+				keywords: ['new', 'intention', 'create', 'plan'],
+				to: '/window/main/intentions/new'
+			},
+			{
 				id: 'settings-general',
 				label: 'General',
 				group: 'Settings',
