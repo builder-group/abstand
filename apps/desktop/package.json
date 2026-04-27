@@ -32,16 +32,17 @@
 	},
 	"dependencies": {
 		"@base-ui/react": "^1.4.1",
-		"@tanstack/react-router": "^1.168.23",
+		"@tanstack/react-router": "^1.168.24",
 		"@tanstack/react-router-devtools": "^1.166.13",
 		"@tauri-apps/api": "^2.10.1",
 		"@tauri-apps/plugin-opener": "^2.5.3",
 		"@tauri-apps/plugin-os": "^2.3.2",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
+		"feature-form": "^0.0.59",
 		"feature-react": "^0.0.68",
 		"feature-state": "^0.0.66",
-		"lucide-react": "^1.8.0",
+		"lucide-react": "^1.11.0",
 		"react": "^19.2.5",
 		"react-dom": "^19.2.5",
 		"tailwind-merge": "^3.5.0",
@@ -49,13 +50,13 @@
 	},
 	"devDependencies": {
 		"@blgc/config": "^0.0.41",
-		"@tailwindcss/vite": "^4.2.3",
-		"@tanstack/router-plugin": "^1.167.22",
+		"@tailwindcss/vite": "^4.2.4",
+		"@tanstack/router-plugin": "^1.167.27",
 		"@tauri-apps/cli": "^2.10.1",
 		"@types/node": "^25.6.0",
 		"@types/react": "^19.2.14",
 		"@types/react-dom": "^19.2.3",
 		"@vitejs/plugin-react": "^6.0.1",
-		"tailwindcss": "^4.2.3"
+		"tailwindcss": "^4.2.4"
 	}
 }
