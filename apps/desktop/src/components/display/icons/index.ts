@@ -4,6 +4,8 @@ export * from './LogoIcon';
 // Third Party Icons
 export {
 	ArrowLeftIcon,
+	CheckIcon,
+	ChevronDownIcon,
 	ChevronRightIcon,
 	CircleQuestionMarkIcon,
 	CodeXmlIcon,
@@ -16,6 +18,7 @@ export {
 	PlusIcon,
 	SearchIcon,
 	SettingsIcon,
+	ShieldCheckIcon,
 	ShieldIcon,
 	SunIcon,
 	TimerIcon,

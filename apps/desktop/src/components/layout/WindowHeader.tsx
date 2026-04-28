@@ -86,6 +86,7 @@ export const WindowHeaderRow: React.FC<TWindowHeaderRowProps> = (props) => {
 
 type TWindowHeaderRowProps = useRender.ComponentProps<'div'>;
 
+/** Spacer for the macOS traffic light buttons. Zero-width on other platforms. */
 export const WindowControlsInset: React.FC = () => {
 	const platform = usePlatform();
 
@@ -98,10 +99,12 @@ export const WindowControlsInset: React.FC = () => {
 };
 
 /**
- * Page-owned sticky header helper with separate foreground and background layers.
- * Use this for sub-page header UI that should layer beneath the shell-owned WindowHeader.
+ * Renders a sticky page header with separate foreground and background slots.
+ *
+ * Keep interactive controls in `foreground` so they stay clickable above the shell header chrome and drag regions.
+ * Use `background` for the pinned header surface so blur, border, or fill treatment can sit underneath shell-owned controls.
  */
-export const StickyPageHeaderLayers: React.FC<TStickyPageHeaderLayersProps> = (props) => {
+export const StickyPageHeader: React.FC<TStickyPageHeaderProps> = (props) => {
 	const {
 		foreground,
 		background = <WindowHeaderRow />,
@@ -119,7 +122,7 @@ export const StickyPageHeaderLayers: React.FC<TStickyPageHeaderLayersProps> = (p
 	);
 };
 
-interface TStickyPageHeaderLayersProps {
+interface TStickyPageHeaderProps {
 	foreground?: React.ReactNode;
 	background?: React.ReactNode;
 	foregroundClassName?: string;

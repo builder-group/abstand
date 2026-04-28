@@ -32,7 +32,7 @@ export const SettingsRow: React.FC<TSettingsRowProps> = (props) => {
 };
 
 const settingsRowVariants = cva(
-	'flex items-center justify-between [button]:w-full [button]:cursor-default [button]:text-left [button]:hover:bg-base-100 [button]:active:bg-base-200',
+	'flex items-center justify-between [button]:w-full [button]:cursor-default [button]:text-left [button]:hover:bg-base-950/6 [button]:active:bg-base-950/10',
 	{
 		variants: {
 			size: {

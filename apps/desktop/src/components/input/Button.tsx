@@ -28,6 +28,7 @@ const buttonVariants = cva(
 					'bg-secondary/15 text-secondary hover:bg-secondary/22 aria-expanded:bg-secondary/22',
 				destructive:
 					'bg-error/10 text-error hover:bg-error/18 focus-visible:border-error/40 focus-visible:ring-error/20',
+				soft: 'bg-base-950/6 text-base-600 hover:bg-base-950/10 hover:text-base-950 aria-expanded:bg-base-950/10 aria-expanded:text-base-950',
 				ghost:
 					'text-base-600 hover:bg-base-950/6 hover:text-base-950 aria-expanded:bg-base-950/6 aria-expanded:text-base-950',
 				outline:

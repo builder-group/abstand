@@ -25,8 +25,8 @@ const badgeVariants = cva(
 				success: 'bg-success/10 text-success',
 				warning: 'bg-warning/10 text-warning',
 				destructive: 'bg-error/10 text-error',
-				outline: 'border-base-200 text-base-600 [a&]:hover:bg-base-100 [a&]:hover:text-base-950',
-				ghost: 'text-base-600 [a&]:hover:bg-base-100 [a&]:hover:text-base-950',
+				outline: 'border-base-200 text-base-600 [a&]:hover:bg-base-950/6 [a&]:hover:text-base-950',
+				ghost: 'text-base-600 [a&]:hover:bg-base-950/6 [a&]:hover:text-base-950',
 				link: 'text-primary underline-offset-4 [a&]:hover:underline'
 			},
 			size: {

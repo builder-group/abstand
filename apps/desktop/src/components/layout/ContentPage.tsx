@@ -4,7 +4,7 @@ import { cn } from '@/lib';
 import type { FileRouteTypes } from '@/routeTree.gen';
 import { ArrowLeftIcon } from '../display';
 import { Button } from '../input';
-import { StickyPageHeaderLayers } from './WindowHeader';
+import { StickyPageHeader } from './WindowHeader';
 
 export const ContentPage: React.FC<TContentPageProps> = (props) => {
 	const {
@@ -13,15 +13,25 @@ export const ContentPage: React.FC<TContentPageProps> = (props) => {
 		backTo,
 		backLabel = 'Back',
 		header,
+		trailing,
+		footer,
 		collapsedHeader,
 		children,
 		collapseAt = 48,
 		className,
 		headerClassName,
-		contentClassName
+		contentClassName,
+		footerClassName
 	} = props;
+	const mainRef = React.useRef<HTMLElement | null>(null);
+	const contentRef = React.useRef<HTMLDivElement | null>(null);
+
 	const [isCollapsed, setIsCollapsed] = React.useState(false);
+	const [hasOverflowingContent, setHasOverflowingContent] = React.useState(false);
+
 	const hasBackButton = backTo != null;
+	const hasTrailing = trailing != null;
+	const hasFooter = footer != null;
 
 	// MARK: - Actions
 
@@ -32,20 +42,53 @@ export const ContentPage: React.FC<TContentPageProps> = (props) => {
 		[collapseAt]
 	);
 
+	const updateOverflowingContent = React.useCallback(() => {
+		const main = mainRef.current;
+		if (main == null) {
+			return;
+		}
+
+		setHasOverflowingContent(main.scrollHeight > main.clientHeight + 1);
+	}, []);
+
+	// MARK: - Effects
+
+	React.useLayoutEffect(() => {
+		updateOverflowingContent();
+
+		const main = mainRef.current;
+		const content = contentRef.current;
+		if (main == null || content == null) {
+			return;
+		}
+
+		const resizeObserver = new ResizeObserver(() => {
+			updateOverflowingContent();
+		});
+
+		resizeObserver.observe(main);
+		resizeObserver.observe(content);
+
+		return () => {
+			resizeObserver.disconnect();
+		};
+	}, [updateOverflowingContent]);
+
 	// MARK: - UI
 
 	return (
 		<main
-			className={cn('flex min-h-0 flex-1 flex-col overflow-y-auto', className)}
+			ref={mainRef}
+			className={cn('@container flex min-h-0 flex-1 flex-col overflow-y-auto', className)}
 			onScroll={handleScroll}
 		>
-			<StickyPageHeaderLayers
+			<StickyPageHeader
 				foreground={
 					<>
 						{hasBackButton && (
 							<Button
 								render={<Link to={backTo} />}
-								variant="outline"
+								variant="soft"
 								size={isCollapsed ? 'icon-sm' : 'sm'}
 								className="pointer-events-auto rounded-full"
 							>
@@ -66,22 +109,40 @@ export const ContentPage: React.FC<TContentPageProps> = (props) => {
 								<span className="text-base-950 block truncate text-sm font-semibold">{title}</span>
 							)}
 						</div>
+						{hasTrailing && (
+							<>
+								<div className="flex-1" />
+								<div className="pointer-events-auto flex items-center gap-2">{trailing}</div>
+								{/* Reserve space for shell-owned help chrome so page trailing actions never sit underneath it */}
+								<div
+									className="shrink-0"
+									style={{
+										// 42rem is the row max width from max-w-2xl.
+										// 1.75rem is the shell help gutter (px-4 + ml-2 + size-7 = 3.25rem) minus this row's own px-6 right padding (1.5rem).
+										// As the centered row loses natural right margin, the spacer grows to make up only that lost clearance.
+										width: 'clamp(0rem, calc(1.75rem - ((100cqw - 42rem) / 2)), 1.75rem)'
+									}}
+								/>
+							</>
+						)}
 					</>
 				}
 				foregroundClassName={cn(
-					isCollapsed || hasBackButton ? 'mx-auto w-full max-w-2xl px-6' : 'max-w-0 opacity-0',
+					isCollapsed || hasBackButton || hasTrailing
+						? 'mx-auto w-full max-w-2xl px-6'
+						: 'max-w-0 opacity-0',
 					headerClassName
 				)}
 				backgroundClassName={cn(
 					isCollapsed &&
 						'border-base-100 bg-base-0/90 border-b supports-backdrop-filter:bg-base-0/80 supports-backdrop-filter:backdrop-blur-xl',
 					!isCollapsed &&
-						hasBackButton &&
+						(hasBackButton || hasTrailing) &&
 						"before:from-base-0 before:pointer-events-none before:absolute before:h-16 before:w-full before:bg-linear-to-b before:from-55% before:to-transparent before:content-['']"
 				)}
 			/>
 
-			<div className={cn('mx-auto w-full max-w-2xl px-6 pt-4 pb-10', contentClassName)}>
+			<div ref={contentRef} className={cn('mx-auto w-full max-w-2xl px-6 pt-4', contentClassName)}>
 				{header ?? (
 					<div className="mb-5">
 						<h1 className="text-base-950 text-xl font-semibold">{title}</h1>
@@ -90,6 +151,25 @@ export const ContentPage: React.FC<TContentPageProps> = (props) => {
 				)}
 				{children}
 			</div>
+			{hasFooter && (
+				<div
+					className={cn(
+						'pointer-events-none sticky inset-x-0 bottom-0 z-10 mt-auto',
+						hasOverflowingContent
+							? 'border-base-100 bg-base-0/90 supports-backdrop-filter:bg-base-0/80 border-t supports-backdrop-filter:backdrop-blur-xl'
+							: 'bg-base-0'
+					)}
+				>
+					<div
+						className={cn(
+							'pointer-events-auto mx-auto flex w-full max-w-2xl items-center justify-between gap-3 px-6 py-3',
+							footerClassName
+						)}
+					>
+						{footer}
+					</div>
+				</div>
+			)}
 		</main>
 	);
 };
@@ -100,10 +180,13 @@ interface TContentPageProps {
 	backTo?: FileRouteTypes['to'];
 	backLabel?: string;
 	header?: React.ReactNode;
+	trailing?: React.ReactNode;
+	footer?: React.ReactNode;
 	collapsedHeader?: React.ReactNode;
 	children?: React.ReactNode;
 	collapseAt?: number;
 	className?: string;
 	headerClassName?: string;
 	contentClassName?: string;
+	footerClassName?: string;
 }
