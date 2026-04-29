@@ -4,8 +4,9 @@ pub mod database;
 pub mod types;
 
 use tauri::{App, Manager};
+use types::DatabaseState;
 
 pub fn setup(app: &App) -> Result<(), Box<dyn std::error::Error>> {
-    app.manage(types::DatabaseState::init(app)?);
+    app.manage(DatabaseState::init(app)?);
     return Ok(());
 }

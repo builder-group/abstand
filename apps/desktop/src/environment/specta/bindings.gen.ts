@@ -62,7 +62,10 @@ async createIntention(params: CreateIntentionParams) : Promise<Result<Intention,
 async getShortcutConfigs() : Promise<ShortcutActionConfigDto[]> {
     return await TAURI_INVOKE("get_shortcut_configs");
 },
-async searchCatalog(params: SearchCatalogParams) : Promise<Result<CatalogSearchResult[], string>> {
+/**
+ * Searches cached catalog items by query.
+ */
+async searchCatalog(params: SearchCatalogParams) : Promise<Result<CatalogSearchResultDto[], string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("search_catalog", { params }) };
 } catch (e) {
@@ -93,7 +96,23 @@ shortcutTriggeredEvent: "shortcut-triggered-event"
 
 /** user-defined types **/
 
-export type App = { id: number; bundleId: string; name: string; icon: string | null; color: string | null }
+export type App = { 
+/**
+ * Database row identifier for persisted app records.
+ */
+id: number; 
+/**
+ * Stable app identifier used as the canonical app key across platforms.
+ */
+appId: string; 
+/**
+ * macOS bundle identifier when the app provides one.
+ */
+bundleId: string | null; name: string; 
+/**
+ * Executable or bundle path used to derive stable IDs for unbundled apps.
+ */
+processPath: string | null; icon: string | null; color: string | null }
 export type AppDistribution = "appStore" | "direct"
 export type AppInfoDto = { version: string; stage: Stage; distribution: AppDistribution }
 export type AppSettings = { version: SettingsVersion; appearance: AppearanceSettings; developer: DeveloperSettings; 
@@ -103,9 +122,21 @@ export type AppSettings = { version: SettingsVersion; appearance: AppearanceSett
 shortcuts: Partial<{ [key in ShortcutAction]: KeyboardShortcut | null }> }
 export type AppSettingsChangedEvent = AppSettings
 export type AppearanceSettings = { theme: Theme }
-export type CatalogAppSearchResult = { bundleId: string; name: string | null; icon: string | null; color: string | null }
-export type CatalogSearchResult = { type: "app"; app: CatalogAppSearchResult; score: number } | { type: "website"; website: CatalogWebsiteSearchResult; score: number }
-export type CatalogWebsiteSearchResult = { domain: string; name: string | null; icon: string | null; color: string | null }
+export type CatalogAppSearchResultDto = { 
+/**
+ * Stable app identifier used as the canonical app key across platforms.
+ */
+appId: string; 
+/**
+ * macOS bundle identifier when the app provides one.
+ */
+bundleId: string | null; name: string | null; icon: string | null; color: string | null }
+export type CatalogSearchResultDto = { type: "app"; app: CatalogAppSearchResultDto; score: number } | { type: "website"; website: CatalogWebsiteSearchResultDto; score: number }
+export type CatalogWebsiteSearchResultDto = { 
+/**
+ * Canonical website domain used as the stable website key.
+ */
+domain: string; name: string | null; icon: string | null; color: string | null }
 export type CreateIntentionBehaviorParams = { type: "block" } | { type: "break" }
 export type CreateIntentionParams = { name: string; behavior: CreateIntentionBehaviorParams }
 export type DeveloperSettings = { enabled: boolean }
@@ -124,7 +155,7 @@ export type KeyboardShortcut = { modifiers: ShortcutModifier[];
  * A browser KeyboardEvent.code value, e.g. "KeyK", "KeyB".
  */
 code: string }
-export type SearchCatalogParams = { query: string }
+export type SearchCatalogParams = { query: string; limit: number | null }
 export type SettingsVersion = "0.0.1"
 export type ShortcutAction = "search" | "toggleSidebar"
 export type ShortcutActionConfigDto = { action: ShortcutAction; isGlobal: boolean; shortcut: KeyboardShortcut | null }
@@ -132,7 +163,15 @@ export type ShortcutModifier = "meta" | "ctrl" | "alt" | "shift"
 export type ShortcutTriggeredEvent = ShortcutAction
 export type Stage = "dev" | "prod"
 export type Theme = "light" | "dark" | "auto"
-export type Website = { id: number; domain: string; name: string; icon: string | null; color: string | null }
+export type Website = { 
+/**
+ * Database row identifier for persisted website records.
+ */
+id: number; 
+/**
+ * Canonical website domain used as the stable website key.
+ */
+domain: string; name: string; icon: string | null; color: string | null }
 
 /** tauri-specta globals **/
 

@@ -1,12 +1,16 @@
 -- Create "app" table
 CREATE TABLE `app` (
   `id` integer NULL PRIMARY KEY AUTOINCREMENT,
-  `bundle_id` text NOT NULL,
+  `app_id` text NOT NULL,
+  `bundle_id` text NULL,
   `name` text NOT NULL,
+  `process_path` text NULL,
   `icon` text NULL,
   `color` text NULL,
   `created_at` integer NOT NULL DEFAULT (strftime('%s', 'now') * 1000)
 );
+-- Create index "app_app_id" to table: "app"
+CREATE UNIQUE INDEX `app_app_id` ON `app` (`app_id`);
 -- Create index "app_bundle_id" to table: "app"
 CREATE UNIQUE INDEX `app_bundle_id` ON `app` (`bundle_id`);
 -- Create "website" table

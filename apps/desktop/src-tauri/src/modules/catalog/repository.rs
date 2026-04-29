@@ -14,7 +14,7 @@ impl CatalogRepository {
         }
 
         let mut query_builder = QueryBuilder::<Sqlite>::new(
-            "SELECT id, bundle_id, name, icon, color FROM app WHERE id IN (",
+            "SELECT id, app_id, bundle_id, name, process_path, icon, color FROM app WHERE id IN (",
         );
         let mut separated = query_builder.separated(", ");
         for app_id in app_ids {
@@ -28,15 +28,17 @@ impl CatalogRepository {
             .await?;
 
         let positions = Self::positions_by_id(app_ids);
-
+        // Restore the caller's requested order after the SQL IN query
         rows.sort_by_key(|row| positions.get(&row.id).copied().unwrap_or(usize::MAX));
 
         return Ok(rows
             .into_iter()
             .map(|row| App {
                 id: row.id,
+                app_id: row.app_id,
                 bundle_id: row.bundle_id,
                 name: row.name,
+                process_path: row.process_path,
                 icon: row.icon,
                 color: row.color,
             })
@@ -66,7 +68,7 @@ impl CatalogRepository {
             .await?;
 
         let positions = Self::positions_by_id(website_ids);
-
+        // Restore the caller's requested order after the SQL IN query
         rows.sort_by_key(|row| positions.get(&row.id).copied().unwrap_or(usize::MAX));
 
         return Ok(rows
@@ -124,8 +126,10 @@ impl From<sqlx::Error> for CatalogRepositoryError {
 #[derive(Debug, Clone, FromRow)]
 struct AppRow {
     id: i64,
-    bundle_id: String,
+    app_id: String,
+    bundle_id: Option<String>,
     name: String,
+    process_path: Option<String>,
     icon: Option<String>,
     color: Option<String>,
 }

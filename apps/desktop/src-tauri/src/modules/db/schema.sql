@@ -5,8 +5,10 @@
 -- Apps: global registry of known apps
 CREATE TABLE app (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    bundle_id TEXT UNIQUE NOT NULL,
+    app_id TEXT UNIQUE NOT NULL,
+    bundle_id TEXT UNIQUE,
     name TEXT NOT NULL,
+    process_path TEXT, -- executable or bundle path
     icon TEXT, -- base64 PNG
     color TEXT, -- hex color
     created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)

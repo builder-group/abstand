@@ -53,6 +53,7 @@ pub fn run() {
 
             // Setup modules
             db::setup(app)?;
+            catalog::setup(app);
             settings::setup(app);
             scheduler::setup(app);
 
