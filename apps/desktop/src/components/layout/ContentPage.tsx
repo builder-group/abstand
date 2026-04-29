@@ -163,7 +163,7 @@ export const ContentPage: React.FC<TContentPageProps> = (props) => {
 				>
 					<div
 						className={cn(
-							'pointer-events-auto mx-auto flex w-full max-w-2xl items-center justify-between gap-3 px-6 py-3',
+							'pointer-events-auto mx-auto flex w-full max-w-2xl items-center justify-between gap-3 px-6 pt-3 pb-5',
 							footerClassName
 						)}
 					>

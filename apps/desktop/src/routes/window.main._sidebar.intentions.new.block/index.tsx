@@ -3,7 +3,7 @@ import { useForm } from 'feature-react/form';
 import { useFeatureState } from 'feature-react/state';
 import React from 'react';
 import { Button, ContentPage, Input } from '@/components';
-import { useNewIntentionCx } from '@/modules/intentions';
+import { BlockModeCard, useNewIntentionCx } from '@/modules/intentions';
 import { SettingsGroup, SettingsRow } from '@/modules/settings';
 
 export const Route = createFileRoute('/window/main/_sidebar/intentions/new/block/')({
@@ -39,10 +39,11 @@ function RouteComponent() {
 			backTo="/window/main/intentions/new"
 		>
 			<form onSubmit={handleSubmit({ onValidSubmit: handleValidSubmit })} className="space-y-4">
-				<SettingsGroup title="Details">
+				<SettingsGroup>
 					<SettingsRow
 						label="Name"
 						description="Give this intention a short name you will recognize later."
+						className="items-start"
 					>
 						<div className="flex w-72 flex-col items-end gap-1">
 							<Input
@@ -57,6 +58,8 @@ function RouteComponent() {
 						</div>
 					</SettingsRow>
 				</SettingsGroup>
+
+				<BlockModeCard />
 
 				<div className="flex justify-end">
 					<Button type="submit" variant="primary" disabled={isSubmitting}>

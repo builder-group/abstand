@@ -1,0 +1,143 @@
+import React from 'react';
+import {
+	Badge,
+	CheckIcon,
+	Combobox,
+	ComboboxContent,
+	ComboboxEmpty,
+	ComboboxInput,
+	ComboboxItem,
+	ComboboxList,
+	ComboboxStatus,
+	SearchIcon,
+	useComboboxAnchor
+} from '@/components';
+import { specta } from '@/environment';
+import { toTuple } from '@/lib';
+import {
+	BlockTargetIcon,
+	BlockTargetTypeBadge,
+	getBlockTargetKey,
+	getBlockTargetLabel,
+	getBlockTargetSublabel,
+	toBlockTarget,
+	type TBlockTarget
+} from '@/modules/intentions';
+
+export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
+	const { selectedKeys, onToggle } = props;
+	const anchorRef = useComboboxAnchor();
+
+	const [query, setQuery] = React.useState('');
+	const trimmedQuery = React.useMemo(() => query.trim(), [query]);
+
+	const [searchResults, setSearchResults] = React.useState<specta.CatalogSearchResultDto[]>([]);
+	const [isLoading, setIsLoading] = React.useState(false);
+	const resultTargets = React.useMemo(() => searchResults.map(toBlockTarget), [searchResults]);
+
+	// MARK: - Actions
+
+	const handleInputChange = React.useCallback((value: string) => {
+		setQuery(value);
+	}, []);
+
+	// MARK: - Effects
+
+	// Debounce search and cancel stale requests on each query change
+	React.useEffect(() => {
+		if (trimmedQuery.length === 0) {
+			setSearchResults([]);
+			setIsLoading(false);
+			return;
+		}
+
+		let isActive = true;
+
+		const timer = setTimeout(async () => {
+			setIsLoading(true);
+			try {
+				const [isSearchOk, , searchData] = toTuple(
+					await specta.commands.searchCatalog({ query: trimmedQuery, limit: 20 })
+				);
+				if (!isActive) return;
+				if (isSearchOk) {
+					setSearchResults(searchData);
+				}
+			} finally {
+				if (isActive) {
+					setIsLoading(false);
+				}
+			}
+		}, 150);
+
+		return () => {
+			isActive = false;
+			clearTimeout(timer);
+		};
+	}, [trimmedQuery]);
+
+	// MARK: - UI
+
+	return (
+		<Combobox
+			multiple
+			filter={null}
+			items={resultTargets}
+			// Note: returning '' clears the input display after an item is pressed
+			itemToStringValue={() => ''}
+			onInputValueChange={handleInputChange}
+		>
+			<ComboboxInput
+				ref={anchorRef}
+				autoFocus
+				showTrigger={false}
+				leading={<SearchIcon className="text-base-400 size-4" />}
+				placeholder="Search apps and websites…"
+			/>
+
+			{trimmedQuery.length > 0 && (
+				<ComboboxContent
+					anchor={anchorRef}
+					className="w-(--anchor-width) max-w-(--anchor-width) min-w-0"
+				>
+					<ComboboxStatus>{isLoading ? 'Searching…' : 'Select apps & websites'}</ComboboxStatus>
+
+					<ComboboxList>
+						{resultTargets.map((target) => {
+							const isSelected = selectedKeys.has(getBlockTargetKey(target));
+							return (
+								<ComboboxItem
+									key={getBlockTargetKey(target)}
+									value={target}
+									onClick={() => onToggle(target)}
+								>
+									<BlockTargetIcon target={target} />
+									<div className="flex min-w-0 flex-1 flex-col gap-0.5">
+										<span className="truncate text-sm">{getBlockTargetLabel(target)}</span>
+										<span className="text-base-400 truncate text-xs">
+											{getBlockTargetSublabel(target)}
+										</span>
+									</div>
+									{isSelected && (
+										<Badge size="sm" className="bg-green-500/10 text-green-600">
+											<CheckIcon className="size-3" />
+											added
+										</Badge>
+									)}
+									<BlockTargetTypeBadge target={target} />
+								</ComboboxItem>
+							);
+						})}
+
+						<ComboboxEmpty>No results</ComboboxEmpty>
+					</ComboboxList>
+				</ComboboxContent>
+			)}
+		</Combobox>
+	);
+};
+
+export interface TCatalogSearchProps {
+	selectedKeys: Set<string>;
+	onToggle: (target: TBlockTarget) => void;
+}

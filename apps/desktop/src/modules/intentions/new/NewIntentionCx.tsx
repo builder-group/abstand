@@ -4,9 +4,12 @@ import { Err, type TResult } from 'tuple-result';
 import { zValidator } from 'validation-adapters/zod';
 import * as z from 'zod';
 import { specta } from '@/environment';
+import { type TBlockTarget } from '../block';
 import { IntentionsCx, useIntentionsCx } from '../IntentionsCx';
 
 export class NewIntentionCx {
+	private readonly intentionsCx: IntentionsCx;
+
 	public readonly $baseForm = createForm<TNewIntentionBaseFormData>({
 		fields: {
 			name: {
@@ -21,8 +24,16 @@ export class NewIntentionCx {
 			}
 		}
 	});
-
-	private readonly intentionsCx: IntentionsCx;
+	public readonly $blockForm = createForm<TNewIntentionBlockFormData>({
+		fields: {
+			blockMode: {
+				defaultValue: 'blockList'
+			},
+			selectedTargets: {
+				defaultValue: []
+			}
+		}
+	});
 
 	public constructor(intentionsCx: IntentionsCx) {
 		this.intentionsCx = intentionsCx;
@@ -77,6 +88,11 @@ export function useNewIntentionCx(): NewIntentionCx {
 
 interface TNewIntentionBaseFormData {
 	name: string;
+}
+
+interface TNewIntentionBlockFormData {
+	blockMode: specta.IntentionBlockMode;
+	selectedTargets: TBlockTarget[];
 }
 
 type TIntentionBehaviorType = 'block' | 'break';
