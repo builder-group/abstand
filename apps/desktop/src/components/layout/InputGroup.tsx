@@ -107,21 +107,36 @@ export const InputGroupText: React.FC<TInputGroupTextProps> = (props) => {
 export type TInputGroupTextProps = React.ComponentProps<'span'>;
 
 export const InputGroupInput: React.FC<TInputGroupInputProps> = (props) => {
-	const { className, ...rest } = props;
+	const { className, size = 'default', ...rest } = props;
 
 	return (
 		<Input
+			size={size}
 			data-slot="input-group-control"
-			className={cn(
-				'min-w-0 flex-1 rounded-none border-0 bg-transparent shadow-none focus-visible:ring-0 disabled:bg-transparent aria-invalid:ring-0',
-				className
-			)}
+			className={cn(inputGroupInputVariants({ size }), className)}
 			{...rest}
 		/>
 	);
 };
 
 export type TInputGroupInputProps = React.ComponentProps<typeof Input>;
+
+const inputGroupInputVariants = cva(
+	'min-w-0 flex-1 rounded-none border-0 bg-transparent shadow-none focus-visible:ring-0 disabled:bg-transparent aria-invalid:ring-0',
+	{
+		variants: {
+			// Note: Standalone Input sizes include its own border. Inside InputGroup the wrapper owns the border,
+			// so the inner control is 2px shorter to keep the overall rendered height aligned.
+			size: {
+				default: 'h-[calc(--spacing(8)-2px)]',
+				sm: 'h-[calc(--spacing(7)-2px)]'
+			}
+		},
+		defaultVariants: {
+			size: 'default'
+		}
+	}
+);
 
 export const InputGroupTextarea: React.FC<TInputGroupTextareaProps> = (props) => {
 	const { className, ...rest } = props;
