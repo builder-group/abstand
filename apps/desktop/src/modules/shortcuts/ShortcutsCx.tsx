@@ -30,16 +30,18 @@ export class ShortcutsCx {
 		window.addEventListener('keydown', onKeyDown);
 		lifecycle.addCleanup(() => window.removeEventListener('keydown', onKeyDown));
 
-		void (async () => {
+		const refreshConfigs = async () => {
 			const configs = await specta.commands.getShortcutConfigs();
 			if (lifecycle.isUnmounted()) return;
 			this.$configs.set(this.createShortcutConfigs(configs));
+		};
+
+		void (async () => {
+			await refreshConfigs();
 
 			lifecycle.addCleanup(
 				await specta.events.appSettingsChangedEvent.listen(async () => {
-					const configs = await specta.commands.getShortcutConfigs();
-					if (lifecycle.isUnmounted()) return;
-					this.$configs.set(this.createShortcutConfigs(configs));
+					await refreshConfigs();
 				})
 			);
 		})();
