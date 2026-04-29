@@ -17,7 +17,7 @@ export const ContentPage: React.FC<TContentPageProps> = (props) => {
 		footer,
 		collapsedHeader,
 		children,
-		collapseAt = 48,
+		collapseAt = 52,
 		className,
 		headerClassName,
 		contentClassName,
@@ -109,7 +109,7 @@ export const ContentPage: React.FC<TContentPageProps> = (props) => {
 								<span className="text-base-950 block truncate text-sm font-semibold">{title}</span>
 							)}
 						</div>
-						{hasTrailing && (
+						{hasTrailing && isCollapsed && (
 							<>
 								<div className="flex-1" />
 								<div className="pointer-events-auto flex items-center gap-2">{trailing}</div>
@@ -128,25 +128,26 @@ export const ContentPage: React.FC<TContentPageProps> = (props) => {
 					</>
 				}
 				foregroundClassName={cn(
-					isCollapsed || hasBackButton || hasTrailing
-						? 'mx-auto w-full max-w-2xl px-6'
-						: 'max-w-0 opacity-0',
+					isCollapsed || hasBackButton ? 'mx-auto w-full max-w-2xl px-6' : 'max-w-0 opacity-0',
 					headerClassName
 				)}
 				backgroundClassName={cn(
 					isCollapsed &&
 						'border-base-100 bg-base-0/90 border-b supports-backdrop-filter:bg-base-0/80 supports-backdrop-filter:backdrop-blur-xl',
 					!isCollapsed &&
-						(hasBackButton || hasTrailing) &&
+						hasBackButton &&
 						"before:from-base-0 before:pointer-events-none before:absolute before:h-16 before:w-full before:bg-linear-to-b before:from-55% before:to-transparent before:content-['']"
 				)}
 			/>
 
 			<div ref={contentRef} className={cn('mx-auto w-full max-w-2xl px-6 pt-4', contentClassName)}>
 				{header ?? (
-					<div className="mb-5">
-						<h1 className="text-base-950 text-xl font-semibold">{title}</h1>
-						{subtitle != null && <p className="text-base-500 mt-1 text-sm">{subtitle}</p>}
+					<div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+						<div className="min-w-0 flex-1">
+							<h1 className="text-base-950 text-xl font-semibold">{title}</h1>
+							{subtitle != null && <p className="text-base-500 mt-1 text-sm">{subtitle}</p>}
+						</div>
+						{hasTrailing && <div className="flex shrink-0 items-center gap-2">{trailing}</div>}
 					</div>
 				)}
 				{children}
