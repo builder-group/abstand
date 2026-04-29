@@ -174,7 +174,7 @@ export const ContentPage: React.FC<TContentPageProps> = (props) => {
 	);
 };
 
-interface TContentPageProps {
+export interface TContentPageProps {
 	title: React.ReactNode;
 	subtitle?: React.ReactNode;
 	backTo?: FileRouteTypes['to'];

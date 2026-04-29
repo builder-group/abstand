@@ -42,4 +42,4 @@ const toggleVariants = cva(
 	}
 );
 
-type TToggleProps = TogglePrimitive.Props & VariantProps<typeof toggleVariants>;
+export type TToggleProps = TogglePrimitive.Props & VariantProps<typeof toggleVariants>;

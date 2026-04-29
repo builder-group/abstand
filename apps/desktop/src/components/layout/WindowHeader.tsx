@@ -60,7 +60,7 @@ export const WindowHeader: React.FC<TWindowHeaderProps> = (props) => {
 	);
 };
 
-interface TWindowHeaderProps {
+export interface TWindowHeaderProps {
 	title?: string;
 	floating?: boolean;
 	compact?: boolean;
@@ -84,7 +84,7 @@ export const WindowHeaderRow: React.FC<TWindowHeaderRowProps> = (props) => {
 	});
 };
 
-type TWindowHeaderRowProps = useRender.ComponentProps<'div'>;
+export type TWindowHeaderRowProps = useRender.ComponentProps<'div'>;
 
 /** Spacer for the macOS traffic light buttons. Zero-width on other platforms. */
 export const WindowControlsInset: React.FC = () => {
@@ -122,7 +122,7 @@ export const StickyPageHeader: React.FC<TStickyPageHeaderProps> = (props) => {
 	);
 };
 
-interface TStickyPageHeaderProps {
+export interface TStickyPageHeaderProps {
 	foreground?: React.ReactNode;
 	background?: React.ReactNode;
 	foregroundClassName?: string;

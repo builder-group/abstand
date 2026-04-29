@@ -19,6 +19,6 @@ export const AppProvider: React.FC<TAppProviderProps> = (props) => {
 	);
 };
 
-interface TAppProviderProps {
+export interface TAppProviderProps {
 	children: React.ReactNode;
 }

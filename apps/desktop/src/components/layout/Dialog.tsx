@@ -2,21 +2,29 @@ import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';
 import React from 'react';
 import { cn } from '@/lib';
 
-export const Dialog: React.FC<DialogPrimitive.Root.Props> = (props) => {
+export const Dialog: React.FC<TDialogProps> = (props) => {
 	return <DialogPrimitive.Root data-slot="dialog" {...props} />;
 };
 
-export const DialogTrigger: React.FC<DialogPrimitive.Trigger.Props> = (props) => {
+export type TDialogProps = DialogPrimitive.Root.Props;
+
+export const DialogTrigger: React.FC<TDialogTriggerProps> = (props) => {
 	return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />;
 };
 
-export const DialogPortal: React.FC<DialogPrimitive.Portal.Props> = (props) => {
+export type TDialogTriggerProps = DialogPrimitive.Trigger.Props;
+
+export const DialogPortal: React.FC<TDialogPortalProps> = (props) => {
 	return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />;
 };
 
-export const DialogClose: React.FC<DialogPrimitive.Close.Props> = (props) => {
+export type TDialogPortalProps = DialogPrimitive.Portal.Props;
+
+export const DialogClose: React.FC<TDialogCloseProps> = (props) => {
 	return <DialogPrimitive.Close data-slot="dialog-close" {...props} />;
 };
+
+export type TDialogCloseProps = DialogPrimitive.Close.Props;
 
 export const DialogBackdrop: React.FC<TDialogBackdropProps> = (props) => {
 	const { className, ...rest } = props;
@@ -37,7 +45,7 @@ export const DialogBackdrop: React.FC<TDialogBackdropProps> = (props) => {
 	);
 };
 
-interface TDialogBackdropProps extends DialogPrimitive.Backdrop.Props {}
+export type TDialogBackdropProps = DialogPrimitive.Backdrop.Props;
 
 export const DialogContent: React.FC<TDialogContentProps> = (props) => {
 	const { className, children, ...rest } = props;
@@ -64,9 +72,9 @@ export const DialogContent: React.FC<TDialogContentProps> = (props) => {
 	);
 };
 
-interface TDialogContentProps extends DialogPrimitive.Popup.Props {}
+export type TDialogContentProps = DialogPrimitive.Popup.Props;
 
-export const DialogHeader: React.FC<React.ComponentProps<'div'>> = (props) => {
+export const DialogHeader: React.FC<TDialogHeaderProps> = (props) => {
 	const { className, ...rest } = props;
 
 	return (
@@ -77,6 +85,8 @@ export const DialogHeader: React.FC<React.ComponentProps<'div'>> = (props) => {
 		/>
 	);
 };
+
+export type TDialogHeaderProps = React.ComponentProps<'div'>;
 
 export const DialogTitle: React.FC<TDialogTitleProps> = (props) => {
 	const { className, ...rest } = props;
@@ -90,7 +100,7 @@ export const DialogTitle: React.FC<TDialogTitleProps> = (props) => {
 	);
 };
 
-interface TDialogTitleProps extends DialogPrimitive.Title.Props {}
+export type TDialogTitleProps = DialogPrimitive.Title.Props;
 
 export const DialogDescription: React.FC<TDialogDescriptionProps> = (props) => {
 	const { className, ...rest } = props;
@@ -104,15 +114,17 @@ export const DialogDescription: React.FC<TDialogDescriptionProps> = (props) => {
 	);
 };
 
-interface TDialogDescriptionProps extends DialogPrimitive.Description.Props {}
+export type TDialogDescriptionProps = DialogPrimitive.Description.Props;
 
-export const DialogBody: React.FC<React.ComponentProps<'div'>> = (props) => {
+export const DialogBody: React.FC<TDialogBodyProps> = (props) => {
 	const { className, ...rest } = props;
 
 	return <div data-slot="dialog-body" className={cn('px-4 py-3', className)} {...rest} />;
 };
 
-export const DialogFooter: React.FC<React.ComponentProps<'div'>> = (props) => {
+export type TDialogBodyProps = React.ComponentProps<'div'>;
+
+export const DialogFooter: React.FC<TDialogFooterProps> = (props) => {
 	const { className, ...rest } = props;
 
 	return (
@@ -127,3 +139,5 @@ export const DialogFooter: React.FC<React.ComponentProps<'div'>> = (props) => {
 		/>
 	);
 };
+
+export type TDialogFooterProps = React.ComponentProps<'div'>;

@@ -39,7 +39,7 @@ export const Tooltip: React.FC<TTooltipProps> = (props) => {
 	);
 };
 
-interface TTooltipProps extends TooltipPrimitive.Root.Props {
+export interface TTooltipProps extends TooltipPrimitive.Root.Props {
 	children: React.ReactElement;
 	content: React.ReactNode;
 	shortcut?: string;

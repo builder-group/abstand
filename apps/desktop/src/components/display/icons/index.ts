@@ -1,3 +1,5 @@
+export * from './types';
+
 // Custom Icons
 export * from './LogoIcon';
 

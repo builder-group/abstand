@@ -53,4 +53,4 @@ const buttonVariants = cva(
 	}
 );
 
-type TButtonProps = ButtonPrimitive.Props & VariantProps<typeof buttonVariants>;
+export type TButtonProps = ButtonPrimitive.Props & VariantProps<typeof buttonVariants>;

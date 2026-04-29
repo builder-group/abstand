@@ -19,8 +19,7 @@ export const InputGroup: React.FC<TInputGroupProps> = (props) => {
 const inputGroupVariants = cva(
 	'group/input-group border-base-200 bg-base-0 text-base-950 relative flex min-h-8 w-full min-w-0 items-center rounded-lg border bg-clip-padding transition has-[[data-slot=input-group-control]:focus-visible]:border-primary has-[[data-slot=input-group-control]:focus-visible]:ring-2 has-[[data-slot=input-group-control]:focus-visible]:ring-primary/30 has-[[data-slot=input-group-control][aria-invalid=true]]:border-error has-[[data-slot=input-group-control][aria-invalid=true]]:ring-2 has-[[data-slot=input-group-control][aria-invalid=true]]:ring-error/20 has-[>[data-align=block-end]]:items-stretch has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-start]]:items-stretch has-[>[data-align=block-start]]:flex-col has-[textarea]:items-stretch has-disabled:opacity-50'
 );
-
-type TInputGroupProps = React.ComponentProps<'div'>;
+export type TInputGroupProps = React.ComponentProps<'div'>;
 
 export const InputGroupAddon: React.FC<TInputGroupAddonProps> = (props) => {
 	const { className, align = 'inline-start', onClick, ...rest } = props;
@@ -68,7 +67,7 @@ const inputGroupAddonVariants = cva(
 	}
 );
 
-type TInputGroupAddonProps = React.ComponentProps<'div'> &
+export type TInputGroupAddonProps = React.ComponentProps<'div'> &
 	VariantProps<typeof inputGroupAddonVariants>;
 
 export const InputGroupButton: React.FC<TInputGroupButtonProps> = (props) => {
@@ -86,7 +85,7 @@ export const InputGroupButton: React.FC<TInputGroupButtonProps> = (props) => {
 	);
 };
 
-type TInputGroupButtonProps = Omit<React.ComponentProps<typeof Button>, 'type'> & {
+export type TInputGroupButtonProps = Omit<React.ComponentProps<typeof Button>, 'type'> & {
 	type?: 'button' | 'submit' | 'reset';
 };
 
@@ -105,7 +104,7 @@ export const InputGroupText: React.FC<TInputGroupTextProps> = (props) => {
 	);
 };
 
-type TInputGroupTextProps = React.ComponentProps<'span'>;
+export type TInputGroupTextProps = React.ComponentProps<'span'>;
 
 export const InputGroupInput: React.FC<TInputGroupInputProps> = (props) => {
 	const { className, ...rest } = props;
@@ -122,7 +121,7 @@ export const InputGroupInput: React.FC<TInputGroupInputProps> = (props) => {
 	);
 };
 
-type TInputGroupInputProps = React.ComponentProps<typeof Input>;
+export type TInputGroupInputProps = React.ComponentProps<typeof Input>;
 
 export const InputGroupTextarea: React.FC<TInputGroupTextareaProps> = (props) => {
 	const { className, ...rest } = props;
@@ -139,4 +138,4 @@ export const InputGroupTextarea: React.FC<TInputGroupTextareaProps> = (props) =>
 	);
 };
 
-type TInputGroupTextareaProps = React.ComponentProps<typeof Textarea>;
+export type TInputGroupTextareaProps = React.ComponentProps<typeof Textarea>;

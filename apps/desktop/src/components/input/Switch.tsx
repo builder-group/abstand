@@ -46,4 +46,4 @@ const thumbVariants = cva(
 	}
 );
 
-type TSwitchProps = SwitchPrimitive.Root.Props & VariantProps<typeof switchVariants>;
+export type TSwitchProps = SwitchPrimitive.Root.Props & VariantProps<typeof switchVariants>;

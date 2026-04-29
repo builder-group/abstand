@@ -5,7 +5,9 @@ import { cn } from '@/lib';
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '../layout';
 import { Button } from './Button';
 
-export const Combobox: React.FC<TComboboxProps> = (props) => {
+export const Combobox = <GValue, GMultiple extends boolean | undefined = false>(
+	props: TComboboxProps<GValue, GMultiple>
+) => {
 	const { children, ...rest } = props;
 
 	return (
@@ -15,13 +17,16 @@ export const Combobox: React.FC<TComboboxProps> = (props) => {
 	);
 };
 
-type TComboboxProps = React.ComponentProps<typeof ComboboxPrimitive.Root>;
+export type TComboboxProps<
+	GValue,
+	GMultiple extends boolean | undefined = false
+> = ComboboxPrimitive.Root.Props<GValue, GMultiple>;
 
 export const ComboboxValue: React.FC<TComboboxValueProps> = (props) => {
 	return <ComboboxPrimitive.Value data-slot="combobox-value" {...props} />;
 };
 
-type TComboboxValueProps = ComboboxPrimitive.Value.Props;
+export type TComboboxValueProps = ComboboxPrimitive.Value.Props;
 
 export const ComboboxTrigger: React.FC<TComboboxTriggerProps> = (props) => {
 	const { className, children, ...rest } = props;
@@ -41,7 +46,7 @@ export const ComboboxTrigger: React.FC<TComboboxTriggerProps> = (props) => {
 	);
 };
 
-type TComboboxTriggerProps = ComboboxPrimitive.Trigger.Props;
+export type TComboboxTriggerProps = ComboboxPrimitive.Trigger.Props;
 
 export const ComboboxClear: React.FC<TComboboxClearProps> = (props) => {
 	const { className, ...rest } = props;
@@ -60,20 +65,23 @@ export const ComboboxClear: React.FC<TComboboxClearProps> = (props) => {
 	);
 };
 
-type TComboboxClearProps = ComboboxPrimitive.Clear.Props;
+export type TComboboxClearProps = ComboboxPrimitive.Clear.Props;
 
 export const ComboboxInput: React.FC<TComboboxInputProps> = (props) => {
 	const {
 		className,
 		children,
 		disabled = false,
+		leading,
 		showTrigger = true,
 		showClear = false,
+		ref,
 		...rest
 	} = props;
 
 	return (
-		<InputGroup className={className}>
+		<InputGroup ref={ref} className={className}>
+			{leading != null && <InputGroupAddon align="inline-start">{leading}</InputGroupAddon>}
 			<ComboboxPrimitive.Input render={<InputGroupInput disabled={disabled} />} {...rest} />
 			<InputGroupAddon align="inline-end">
 				{showTrigger && (
@@ -92,8 +100,10 @@ export const ComboboxInput: React.FC<TComboboxInputProps> = (props) => {
 	);
 };
 
-type TComboboxInputProps = Omit<ComboboxPrimitive.Input.Props, 'className'> & {
+export type TComboboxInputProps = Omit<ComboboxPrimitive.Input.Props, 'className' | 'ref'> & {
 	className?: string;
+	ref?: React.Ref<HTMLDivElement>;
+	leading?: React.ReactNode;
 	showTrigger?: boolean;
 	showClear?: boolean;
 };
@@ -132,7 +142,7 @@ export const ComboboxContent: React.FC<TComboboxContentProps> = (props) => {
 	);
 };
 
-type TComboboxContentProps = ComboboxPrimitive.Popup.Props &
+export type TComboboxContentProps = ComboboxPrimitive.Popup.Props &
 	Pick<
 		ComboboxPrimitive.Positioner.Props,
 		'side' | 'align' | 'sideOffset' | 'alignOffset' | 'anchor'
@@ -153,7 +163,7 @@ export const ComboboxList: React.FC<TComboboxListProps> = (props) => {
 	);
 };
 
-type TComboboxListProps = ComboboxPrimitive.List.Props;
+export type TComboboxListProps = ComboboxPrimitive.List.Props;
 
 export const ComboboxItem: React.FC<TComboboxItemProps> = (props) => {
 	const { className, children, ...rest } = props;
@@ -179,7 +189,7 @@ export const ComboboxItem: React.FC<TComboboxItemProps> = (props) => {
 	);
 };
 
-type TComboboxItemProps = ComboboxPrimitive.Item.Props;
+export type TComboboxItemProps = ComboboxPrimitive.Item.Props;
 
 export const ComboboxGroup: React.FC<TComboboxGroupProps> = (props) => {
 	const { className, ...rest } = props;
@@ -187,7 +197,7 @@ export const ComboboxGroup: React.FC<TComboboxGroupProps> = (props) => {
 	return <ComboboxPrimitive.Group data-slot="combobox-group" className={className} {...rest} />;
 };
 
-type TComboboxGroupProps = ComboboxPrimitive.Group.Props;
+export type TComboboxGroupProps = ComboboxPrimitive.Group.Props;
 
 export const ComboboxLabel: React.FC<TComboboxLabelProps> = (props) => {
 	const { className, ...rest } = props;
@@ -201,13 +211,30 @@ export const ComboboxLabel: React.FC<TComboboxLabelProps> = (props) => {
 	);
 };
 
-type TComboboxLabelProps = ComboboxPrimitive.GroupLabel.Props;
+export type TComboboxLabelProps = ComboboxPrimitive.GroupLabel.Props;
 
 export const ComboboxCollection: React.FC<TComboboxCollectionProps> = (props) => {
 	return <ComboboxPrimitive.Collection data-slot="combobox-collection" {...props} />;
 };
 
-type TComboboxCollectionProps = ComboboxPrimitive.Collection.Props;
+export type TComboboxCollectionProps = ComboboxPrimitive.Collection.Props;
+
+export const ComboboxStatus: React.FC<TComboboxStatusProps> = (props) => {
+	const { className, ...rest } = props;
+
+	return (
+		<ComboboxPrimitive.Status
+			data-slot="combobox-status"
+			className={cn(
+				'text-base-500 border-base-100 border-b px-3 py-2 text-xs font-medium',
+				className
+			)}
+			{...rest}
+		/>
+	);
+};
+
+export type TComboboxStatusProps = ComboboxPrimitive.Status.Props;
 
 export const ComboboxEmpty: React.FC<TComboboxEmptyProps> = (props) => {
 	const { className, ...rest } = props;
@@ -224,7 +251,7 @@ export const ComboboxEmpty: React.FC<TComboboxEmptyProps> = (props) => {
 	);
 };
 
-type TComboboxEmptyProps = ComboboxPrimitive.Empty.Props;
+export type TComboboxEmptyProps = ComboboxPrimitive.Empty.Props;
 
 export const ComboboxSeparator: React.FC<TComboboxSeparatorProps> = (props) => {
 	const { className, ...rest } = props;
@@ -238,7 +265,7 @@ export const ComboboxSeparator: React.FC<TComboboxSeparatorProps> = (props) => {
 	);
 };
 
-type TComboboxSeparatorProps = ComboboxPrimitive.Separator.Props;
+export type TComboboxSeparatorProps = ComboboxPrimitive.Separator.Props;
 
 export const ComboboxChips: React.FC<TComboboxChipsProps> = (props) => {
 	const { className, ...rest } = props;
@@ -255,7 +282,7 @@ export const ComboboxChips: React.FC<TComboboxChipsProps> = (props) => {
 	);
 };
 
-type TComboboxChipsProps = ComboboxPrimitive.Chips.Props;
+export type TComboboxChipsProps = ComboboxPrimitive.Chips.Props;
 
 export const ComboboxChip: React.FC<TComboboxChipProps> = (props) => {
 	const { className, children, showRemove = true, ...rest } = props;
@@ -288,7 +315,7 @@ export const ComboboxChip: React.FC<TComboboxChipProps> = (props) => {
 	);
 };
 
-type TComboboxChipProps = ComboboxPrimitive.Chip.Props & {
+export type TComboboxChipProps = ComboboxPrimitive.Chip.Props & {
 	showRemove?: boolean;
 };
 
@@ -307,8 +334,8 @@ export const ComboboxChipsInput: React.FC<TComboboxChipsInputProps> = (props) =>
 	);
 };
 
-type TComboboxChipsInputProps = ComboboxPrimitive.Input.Props;
+export type TComboboxChipsInputProps = ComboboxPrimitive.Input.Props;
 
-export const useComboboxAnchor = () => {
+export function useComboboxAnchor() {
 	return React.useRef<HTMLDivElement | null>(null);
-};
+}

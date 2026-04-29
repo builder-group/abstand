@@ -61,6 +61,6 @@ export const ThemeProvider: React.FC<TThemeProviderProps> = (props) => {
 	return <>{children}</>;
 };
 
-interface TThemeProviderProps {
+export interface TThemeProviderProps {
 	children: React.ReactNode;
 }

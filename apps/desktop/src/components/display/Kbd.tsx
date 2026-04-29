@@ -35,4 +35,4 @@ const kbdVariants = cva(
 	}
 );
 
-type TKbdProps = React.ComponentPropsWithoutRef<'kbd'> & VariantProps<typeof kbdVariants>;
+export type TKbdProps = React.ComponentPropsWithoutRef<'kbd'> & VariantProps<typeof kbdVariants>;

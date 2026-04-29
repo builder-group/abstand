@@ -48,7 +48,7 @@ export const SettingsPage: React.FC<TSettingsPageProps> = (props) => {
 	);
 };
 
-interface TSettingsPageProps {
+export interface TSettingsPageProps {
 	title: React.ReactNode;
 	subtitle?: React.ReactNode;
 	icon?: React.ReactNode;

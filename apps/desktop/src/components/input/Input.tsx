@@ -31,4 +31,4 @@ const inputVariants = cva(
 	}
 );
 
-type TInputProps = Omit<InputPrimitive.Props, 'size'> & VariantProps<typeof inputVariants>;
+export type TInputProps = Omit<InputPrimitive.Props, 'size'> & VariantProps<typeof inputVariants>;

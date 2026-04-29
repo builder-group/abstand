@@ -14,7 +14,7 @@ interface TSegmentedControlContext {
 	size: TSegmentedControlSize;
 }
 
-type TSegmentedControlSize = 'default' | 'sm';
+export type TSegmentedControlSize = 'default' | 'sm';
 
 export const SegmentedControl: React.FC<TSegmentedControlProps> = (props) => {
 	const { value, onValueChange, className, size = 'default', children } = props;
@@ -128,7 +128,7 @@ const segmentedControlVariants = cva(
 	}
 );
 
-interface TSegmentedControlProps extends VariantProps<typeof segmentedControlVariants> {
+export interface TSegmentedControlProps extends VariantProps<typeof segmentedControlVariants> {
 	value: string | undefined;
 	onValueChange: (value: string) => void;
 	className?: string;
@@ -180,7 +180,10 @@ const segmentedControlItemVariants = cva(
 	}
 );
 
-type TSegmentedControlItemProps = Omit<React.ComponentProps<typeof Toggle>, 'className' | 'value'> &
+export type TSegmentedControlItemProps = Omit<
+	React.ComponentProps<typeof Toggle>,
+	'className' | 'value'
+> &
 	VariantProps<typeof segmentedControlItemVariants> & {
 		className?: string;
 		value: string;

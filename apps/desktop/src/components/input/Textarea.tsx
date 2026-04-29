@@ -30,4 +30,5 @@ const textareaVariants = cva(
 	}
 );
 
-type TTextareaProps = React.ComponentProps<'textarea'> & VariantProps<typeof textareaVariants>;
+export type TTextareaProps = React.ComponentProps<'textarea'> &
+	VariantProps<typeof textareaVariants>;
