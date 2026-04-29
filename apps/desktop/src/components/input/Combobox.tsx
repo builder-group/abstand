@@ -226,7 +226,7 @@ export const ComboboxStatus: React.FC<TComboboxStatusProps> = (props) => {
 		<ComboboxPrimitive.Status
 			data-slot="combobox-status"
 			className={cn(
-				'text-base-500 border-base-100 border-b px-3 py-2 text-xs font-medium',
+				'text-base-500 border-base-100 bg-base-50/60 border-b px-3 py-2 text-xs font-medium',
 				className
 			)}
 			{...rest}
