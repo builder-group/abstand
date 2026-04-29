@@ -10,15 +10,15 @@ export const InputGroup: React.FC<TInputGroupProps> = (props) => {
 		<div
 			data-slot="input-group"
 			role="group"
-			className={cn(inputGroupVariants(), className)}
+			className={cn(
+				'group/input-group border-base-200 bg-base-0 text-base-950 has-[[data-slot=input-group-control]:focus-visible]:border-primary has-[[data-slot=input-group-control]:focus-visible]:ring-primary/30 has-[[data-slot=input-group-control][aria-invalid=true]]:border-error has-[[data-slot=input-group-control][aria-invalid=true]]:ring-error/20 relative flex h-8 w-full min-w-0 items-center rounded-lg border bg-clip-padding transition has-disabled:opacity-50 has-[[data-slot=input-group-control]:focus-visible]:ring-2 has-[[data-slot=input-group-control][aria-invalid=true]]:ring-2 has-[textarea]:items-stretch has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-end]]:items-stretch has-[>[data-align=block-start]]:h-auto has-[>[data-align=block-start]]:flex-col has-[>[data-align=block-start]]:items-stretch has-[>textarea]:h-auto',
+				className
+			)}
 			{...rest}
 		/>
 	);
 };
 
-const inputGroupVariants = cva(
-	'group/input-group border-base-200 bg-base-0 text-base-950 relative flex min-h-8 w-full min-w-0 items-center rounded-lg border bg-clip-padding transition has-[[data-slot=input-group-control]:focus-visible]:border-primary has-[[data-slot=input-group-control]:focus-visible]:ring-2 has-[[data-slot=input-group-control]:focus-visible]:ring-primary/30 has-[[data-slot=input-group-control][aria-invalid=true]]:border-error has-[[data-slot=input-group-control][aria-invalid=true]]:ring-2 has-[[data-slot=input-group-control][aria-invalid=true]]:ring-error/20 has-[>[data-align=block-end]]:items-stretch has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-start]]:items-stretch has-[>[data-align=block-start]]:flex-col has-[textarea]:items-stretch has-disabled:opacity-50'
-);
 export type TInputGroupProps = React.ComponentProps<'div'>;
 
 export const InputGroupAddon: React.FC<TInputGroupAddonProps> = (props) => {
@@ -107,36 +107,21 @@ export const InputGroupText: React.FC<TInputGroupTextProps> = (props) => {
 export type TInputGroupTextProps = React.ComponentProps<'span'>;
 
 export const InputGroupInput: React.FC<TInputGroupInputProps> = (props) => {
-	const { className, size = 'default', ...rest } = props;
+	const { className, ...rest } = props;
 
 	return (
 		<Input
-			size={size}
 			data-slot="input-group-control"
-			className={cn(inputGroupInputVariants({ size }), className)}
+			className={cn(
+				'h-full min-w-0 flex-1 rounded-none border-0 bg-transparent shadow-none focus-visible:ring-0 disabled:bg-transparent aria-invalid:ring-0',
+				className
+			)}
 			{...rest}
 		/>
 	);
 };
 
-export type TInputGroupInputProps = React.ComponentProps<typeof Input>;
-
-const inputGroupInputVariants = cva(
-	'min-w-0 flex-1 rounded-none border-0 bg-transparent shadow-none focus-visible:ring-0 disabled:bg-transparent aria-invalid:ring-0',
-	{
-		variants: {
-			// Note: Standalone Input sizes include its own border. Inside InputGroup the wrapper owns the border,
-			// so the inner control is 2px shorter to keep the overall rendered height aligned.
-			size: {
-				default: 'h-[calc(--spacing(8)-2px)]',
-				sm: 'h-[calc(--spacing(7)-2px)]'
-			}
-		},
-		defaultVariants: {
-			size: 'default'
-		}
-	}
-);
+export type TInputGroupInputProps = Omit<React.ComponentProps<typeof Input>, 'size'>;
 
 export const InputGroupTextarea: React.FC<TInputGroupTextareaProps> = (props) => {
 	const { className, ...rest } = props;
