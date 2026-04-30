@@ -1,6 +1,9 @@
 use super::search::CatalogSearch;
 use serde::{Deserialize, Serialize};
-use std::{ops::Deref, sync::Mutex};
+use std::{
+    ops::Deref,
+    sync::{Arc, Mutex},
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
@@ -71,11 +74,15 @@ pub struct CatalogWebsiteSearchResultDto {
 
 // MARK: - State
 
-pub struct CatalogSearchState(Mutex<CatalogSearch>);
+pub struct CatalogSearchState(Arc<Mutex<CatalogSearch>>);
 
 impl CatalogSearchState {
     pub fn init() -> Self {
-        return Self(Mutex::new(CatalogSearch::new()));
+        return Self(Arc::new(Mutex::new(CatalogSearch::new())));
+    }
+
+    pub fn arc(&self) -> Arc<Mutex<CatalogSearch>> {
+        return Arc::clone(&self.0);
     }
 }
 
