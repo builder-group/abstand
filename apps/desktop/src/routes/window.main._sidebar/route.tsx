@@ -53,6 +53,8 @@ function SidebarLayout() {
 			<div className="bg-base-50/90 flex h-screen overflow-hidden">
 				{/* Sidebar */}
 				<nav
+					aria-hidden={!isOpen}
+					inert={!isOpen}
 					className={cn(
 						'shrink-0 overflow-hidden transition-[width] duration-200 ease-in-out select-none',
 						isOpen ? 'w-56' : 'w-0'
