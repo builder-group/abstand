@@ -103,7 +103,7 @@ export const CommandPaletteModal: React.FC = () => {
 
 	return (
 		<Dialog open={isOpen} onOpenChange={handleOpenChange}>
-			<DialogContent className="max-w-lg overflow-hidden p-0">
+			<DialogContent className="top-[20vh] max-w-lg translate-y-0 overflow-hidden p-0">
 				<DialogTitle className="sr-only">Command Palette</DialogTitle>
 
 				{/* Search */}
