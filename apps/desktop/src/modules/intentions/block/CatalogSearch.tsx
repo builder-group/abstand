@@ -15,14 +15,14 @@ import {
 import { specta } from '@/environment';
 import { toTuple } from '@/lib';
 import {
-	BlockTargetIcon,
-	BlockTargetTypeBadge,
 	getBlockTargetKey,
 	getBlockTargetLabel,
 	getBlockTargetSublabel,
 	toBlockTarget,
 	type TBlockTarget
-} from '@/modules/intentions';
+} from './block-target';
+import { BlockTargetIcon } from './BlockTargetIcon';
+import { BlockTargetTypeBadge } from './BlockTargetTypeBadge';
 
 export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
 	const { selectedKeys, onToggle } = props;

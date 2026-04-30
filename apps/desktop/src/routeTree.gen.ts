@@ -20,7 +20,6 @@ import { Route as WindowMainSidebarSettingsDeveloperIndexRouteImport } from './r
 import { Route as WindowMainSidebarIntentionsNewIndexRouteImport } from './routes/window.main._sidebar.intentions.new/index'
 import { Route as WindowMainSidebarIntentionsIntentionIdIndexRouteImport } from './routes/window.main._sidebar.intentions.$intentionId/index'
 import { Route as WindowMainSidebarIntentionsNewBlockIndexRouteImport } from './routes/window.main._sidebar.intentions.new.block/index'
-import { Route as WindowMainSidebarIntentionsNewBlockTargetsIndexRouteImport } from './routes/window.main._sidebar.intentions.new.block.targets/index'
 
 const WindowMainSidebarRouteRoute = WindowMainSidebarRouteRouteImport.update({
   id: '/window/main/_sidebar',
@@ -86,12 +85,6 @@ const WindowMainSidebarIntentionsNewBlockIndexRoute =
     path: '/block/',
     getParentRoute: () => WindowMainSidebarIntentionsNewRouteRoute,
   } as any)
-const WindowMainSidebarIntentionsNewBlockTargetsIndexRoute =
-  WindowMainSidebarIntentionsNewBlockTargetsIndexRouteImport.update({
-    id: '/block/targets/',
-    path: '/block/targets/',
-    getParentRoute: () => WindowMainSidebarIntentionsNewRouteRoute,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/window/main': typeof WindowMainSidebarRouteRouteWithChildren
@@ -105,7 +98,6 @@ export interface FileRoutesByFullPath {
   '/window/main/settings/general/': typeof WindowMainSidebarSettingsGeneralIndexRoute
   '/window/main/settings/shortcuts/': typeof WindowMainSidebarSettingsShortcutsIndexRoute
   '/window/main/intentions/new/block/': typeof WindowMainSidebarIntentionsNewBlockIndexRoute
-  '/window/main/intentions/new/block/targets/': typeof WindowMainSidebarIntentionsNewBlockTargetsIndexRoute
 }
 export interface FileRoutesByTo {
   '/window/main': typeof WindowMainSidebarRouteRouteWithChildren
@@ -118,7 +110,6 @@ export interface FileRoutesByTo {
   '/window/main/settings/general': typeof WindowMainSidebarSettingsGeneralIndexRoute
   '/window/main/settings/shortcuts': typeof WindowMainSidebarSettingsShortcutsIndexRoute
   '/window/main/intentions/new/block': typeof WindowMainSidebarIntentionsNewBlockIndexRoute
-  '/window/main/intentions/new/block/targets': typeof WindowMainSidebarIntentionsNewBlockTargetsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -133,7 +124,6 @@ export interface FileRoutesById {
   '/window/main/_sidebar/settings/general/': typeof WindowMainSidebarSettingsGeneralIndexRoute
   '/window/main/_sidebar/settings/shortcuts/': typeof WindowMainSidebarSettingsShortcutsIndexRoute
   '/window/main/_sidebar/intentions/new/block/': typeof WindowMainSidebarIntentionsNewBlockIndexRoute
-  '/window/main/_sidebar/intentions/new/block/targets/': typeof WindowMainSidebarIntentionsNewBlockTargetsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -149,7 +139,6 @@ export interface FileRouteTypes {
     | '/window/main/settings/general/'
     | '/window/main/settings/shortcuts/'
     | '/window/main/intentions/new/block/'
-    | '/window/main/intentions/new/block/targets/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/window/main'
@@ -162,7 +151,6 @@ export interface FileRouteTypes {
     | '/window/main/settings/general'
     | '/window/main/settings/shortcuts'
     | '/window/main/intentions/new/block'
-    | '/window/main/intentions/new/block/targets'
   id:
     | '__root__'
     | '/window/main/_sidebar'
@@ -176,7 +164,6 @@ export interface FileRouteTypes {
     | '/window/main/_sidebar/settings/general/'
     | '/window/main/_sidebar/settings/shortcuts/'
     | '/window/main/_sidebar/intentions/new/block/'
-    | '/window/main/_sidebar/intentions/new/block/targets/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -263,20 +250,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WindowMainSidebarIntentionsNewBlockIndexRouteImport
       parentRoute: typeof WindowMainSidebarIntentionsNewRouteRoute
     }
-    '/window/main/_sidebar/intentions/new/block/targets/': {
-      id: '/window/main/_sidebar/intentions/new/block/targets/'
-      path: '/block/targets'
-      fullPath: '/window/main/intentions/new/block/targets/'
-      preLoaderRoute: typeof WindowMainSidebarIntentionsNewBlockTargetsIndexRouteImport
-      parentRoute: typeof WindowMainSidebarIntentionsNewRouteRoute
-    }
   }
 }
 
 interface WindowMainSidebarIntentionsNewRouteRouteChildren {
   WindowMainSidebarIntentionsNewIndexRoute: typeof WindowMainSidebarIntentionsNewIndexRoute
   WindowMainSidebarIntentionsNewBlockIndexRoute: typeof WindowMainSidebarIntentionsNewBlockIndexRoute
-  WindowMainSidebarIntentionsNewBlockTargetsIndexRoute: typeof WindowMainSidebarIntentionsNewBlockTargetsIndexRoute
 }
 
 const WindowMainSidebarIntentionsNewRouteRouteChildren: WindowMainSidebarIntentionsNewRouteRouteChildren =
@@ -285,8 +264,6 @@ const WindowMainSidebarIntentionsNewRouteRouteChildren: WindowMainSidebarIntenti
       WindowMainSidebarIntentionsNewIndexRoute,
     WindowMainSidebarIntentionsNewBlockIndexRoute:
       WindowMainSidebarIntentionsNewBlockIndexRoute,
-    WindowMainSidebarIntentionsNewBlockTargetsIndexRoute:
-      WindowMainSidebarIntentionsNewBlockTargetsIndexRoute,
   }
 
 const WindowMainSidebarIntentionsNewRouteRouteWithChildren =

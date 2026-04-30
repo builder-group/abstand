@@ -19,7 +19,7 @@ function RouteComponent() {
 							<ShieldIcon className="size-7 text-white/50" />
 						</div>
 						<div>
-							<p className="text-base-950 text-[13px] font-semibold">Block</p>
+							<p className="text-base-950 text-[13px]">Block</p>
 							<p className="text-base-500 mt-0.5 text-xs">
 								Builds a hard wall for the duration. Apps and websites stay inaccessible until the
 								end.
@@ -33,7 +33,7 @@ function RouteComponent() {
 						</div>
 						<div>
 							<div className="flex items-center gap-1.5">
-								<p className="text-base-950 text-[13px] font-semibold">Break</p>
+								<p className="text-base-950 text-[13px]">Break</p>
 								<Badge variant="outline" size="sm">
 									Coming soon
 								</Badge>

@@ -36,7 +36,7 @@ const settingsRowVariants = cva(
 	{
 		variants: {
 			size: {
-				default: 'min-h-10 gap-6 px-4 py-2.5',
+				default: 'min-h-10 gap-6 px-3.5 py-2.5',
 				sm: 'min-h-8 gap-4 px-3 py-2'
 			}
 		},
@@ -49,8 +49,8 @@ const settingsRowVariants = cva(
 const labelVariants = cva('text-base-950', {
 	variants: {
 		size: {
-			default: 'text-sm',
-			sm: 'text-[13px]'
+			default: 'text-[13px]',
+			sm: 'text-xs'
 		}
 	},
 	defaultVariants: {

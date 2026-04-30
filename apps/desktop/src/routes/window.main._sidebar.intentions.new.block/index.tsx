@@ -42,10 +42,9 @@ function RouteComponent() {
 				<SettingsGroup>
 					<SettingsRow
 						label="Name"
-						description="Give this intention a short name you will recognize later."
-						className="items-start"
+						description="Give this intention a name you will recognize later."
 					>
-						<div className="flex w-72 flex-col items-end gap-1">
+						<div className="flex flex-col items-end gap-1">
 							<Input
 								{...register('name')}
 								autoFocus
