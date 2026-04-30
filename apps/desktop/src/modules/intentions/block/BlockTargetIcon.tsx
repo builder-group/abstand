@@ -3,8 +3,8 @@ import { CodeXmlIcon, MonitorIcon } from '@/components';
 import type { TBlockTarget } from './block-target';
 
 export const BlockTargetIcon: React.FC<TBlockTargetIconProps> = (props) => {
-	const { target } = props;
-	const icon = target.type === 'app' ? target.app.icon : target.website.icon;
+	const { target, icon: iconOverride } = props;
+	const icon = iconOverride ?? (target.type === 'app' ? target.app.icon : target.website.icon);
 
 	if (icon != null) {
 		return (
@@ -32,4 +32,5 @@ export const BlockTargetIcon: React.FC<TBlockTargetIconProps> = (props) => {
 
 interface TBlockTargetIconProps {
 	target: TBlockTarget;
+	icon?: string | null;
 }

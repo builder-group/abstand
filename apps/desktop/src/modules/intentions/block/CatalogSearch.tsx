@@ -25,7 +25,7 @@ import { BlockTargetIcon } from './BlockTargetIcon';
 import { BlockTargetTypeBadge } from './BlockTargetTypeBadge';
 
 export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
-	const { selectedKeys, onToggle } = props;
+	const { iconAssets, selectedKeys, onToggle } = props;
 	const anchorRef = useComboboxAnchor();
 
 	const [query, setQuery] = React.useState('');
@@ -43,11 +43,16 @@ export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
 
 	// MARK: - Effects
 
-	// Debounce search and cancel stale requests on each query change
+	// Debounce catalog searches slightly so fast typing does not thrash the backend
 	React.useEffect(() => {
 		if (trimmedQuery.length === 0) {
 			setSearchResults([]);
 			setIsLoading(false);
+			void specta.commands.searchCatalog({
+				query: '',
+				limit: 20,
+				iconMode: 'none'
+			});
 			return;
 		}
 
@@ -56,19 +61,23 @@ export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
 		const timer = setTimeout(async () => {
 			setIsLoading(true);
 			try {
-				const [isSearchOk, , searchData] = toTuple(
-					await specta.commands.searchCatalog({ query: trimmedQuery, limit: 20 })
+				const [isSearchOk, , searchResults] = toTuple(
+					await specta.commands.searchCatalog({
+						query: trimmedQuery,
+						limit: 20,
+						iconMode: 'lazy'
+					})
 				);
 				if (!isActive) return;
 				if (isSearchOk) {
-					setSearchResults(searchData);
+					setSearchResults(searchResults);
 				}
 			} finally {
 				if (isActive) {
 					setIsLoading(false);
 				}
 			}
-		}, 150);
+		}, 100);
 
 		return () => {
 			isActive = false;
@@ -104,14 +113,12 @@ export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
 
 					<ComboboxList>
 						{resultTargets.map((target) => {
-							const isSelected = selectedKeys.has(getBlockTargetKey(target));
+							const targetKey = getBlockTargetKey(target);
+							const isSelected = selectedKeys.has(targetKey);
+
 							return (
-								<ComboboxItem
-									key={getBlockTargetKey(target)}
-									value={target}
-									onClick={() => onToggle(target)}
-								>
-									<BlockTargetIcon target={target} />
+								<ComboboxItem key={targetKey} value={target} onClick={() => onToggle(target)}>
+									<BlockTargetIcon target={target} icon={iconAssets[targetKey]?.icon} />
 									<div className="flex min-w-0 flex-1 flex-col gap-0.5">
 										<span className="truncate text-sm">{getBlockTargetLabel(target)}</span>
 										<span className="text-base-400 truncate text-xs">
@@ -138,6 +145,7 @@ export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
 };
 
 export interface TCatalogSearchProps {
+	iconAssets: Record<string, specta.CatalogIconDto>;
 	selectedKeys: Set<string>;
 	onToggle: (target: TBlockTarget) => void;
 }

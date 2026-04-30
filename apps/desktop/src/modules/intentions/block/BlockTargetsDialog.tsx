@@ -11,7 +11,8 @@ import {
 	DialogTitle,
 	XCircleIcon
 } from '@/components';
-import { cn, createComputedState } from '@/lib';
+import { specta } from '@/environment';
+import { cn, createComputedState, createMountLifecycle } from '@/lib';
 import {
 	addBlockTarget,
 	getBlockTargetKey,
@@ -28,6 +29,7 @@ import { CatalogSearch } from './CatalogSearch';
 const BlockTargetsDialog: React.FC<TBlockTargetsDialogProps> = ({ cx }) => {
 	const isOpen = useFeatureState(cx.$isOpen);
 	const selectedTargets = useFeatureState(cx.$selectedTargets);
+	const iconAssets = useFeatureState(cx.$iconAssets);
 	const selectedKeys = React.useMemo(
 		() => new Set(selectedTargets.map(getBlockTargetKey)),
 		[selectedTargets]
@@ -49,7 +51,11 @@ const BlockTargetsDialog: React.FC<TBlockTargetsDialogProps> = ({ cx }) => {
 				</DialogHeader>
 
 				<DialogBody className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
-					<CatalogSearch selectedKeys={selectedKeys} onToggle={(t) => cx.toggle(t)} />
+					<CatalogSearch
+						iconAssets={iconAssets}
+						selectedKeys={selectedKeys}
+						onToggle={(t) => cx.toggle(t)}
+					/>
 
 					<div className="flex min-h-0 flex-1 flex-col gap-2">
 						<p className="text-base-600 ml-1 shrink-0 px-1 text-[13px] font-semibold">Selected</p>
@@ -62,6 +68,7 @@ const BlockTargetsDialog: React.FC<TBlockTargetsDialogProps> = ({ cx }) => {
 								selectedTargets.map((target, i) => (
 									<SelectedTargetRow
 										key={getBlockTargetKey(target)}
+										iconAssets={iconAssets}
 										target={target}
 										isFirst={i === 0}
 										onRemove={() => cx.remove(target)}
@@ -88,7 +95,7 @@ interface TBlockTargetsDialogProps {
 }
 
 const SelectedTargetRow: React.FC<TSelectedTargetRowProps> = (props) => {
-	const { target, isFirst, onRemove } = props;
+	const { iconAssets, target, isFirst, onRemove } = props;
 
 	return (
 		<div
@@ -98,7 +105,7 @@ const SelectedTargetRow: React.FC<TSelectedTargetRowProps> = (props) => {
 					"before:bg-base-100 before:absolute before:inset-x-4 before:top-0 before:h-px before:content-['']"
 			)}
 		>
-			<BlockTargetIcon target={target} />
+			<BlockTargetIcon target={target} icon={iconAssets[getBlockTargetKey(target)]?.icon} />
 			<div className="flex min-w-0 flex-1 flex-col gap-0.5">
 				<span className="text-base-950 truncate text-sm">{getBlockTargetLabel(target)}</span>
 				<span className="text-base-400 truncate text-xs">{getBlockTargetSublabel(target)}</span>
@@ -120,6 +127,7 @@ const SelectedTargetRow: React.FC<TSelectedTargetRowProps> = (props) => {
 };
 
 interface TSelectedTargetRowProps {
+	iconAssets: Record<string, specta.CatalogIconDto>;
 	target: TBlockTarget;
 	isFirst: boolean;
 	onRemove: () => void;
@@ -129,6 +137,7 @@ interface TSelectedTargetRowProps {
 
 class BlockTargetsDialogCx {
 	public readonly $isOpen = createState(false);
+	public readonly $iconAssets = createState<Record<string, specta.CatalogIconDto>>({});
 	public readonly $selectedTargets = createState<TBlockTarget[]>([]);
 	private readonly $committedTargets = createState<TBlockTarget[]>([]);
 
@@ -138,6 +147,20 @@ class BlockTargetsDialogCx {
 
 	constructor(onConfirm: (targets: TBlockTarget[]) => void) {
 		this._hooks.onConfirm = onConfirm;
+	}
+
+	public mount(): () => void {
+		const lifecycle = createMountLifecycle();
+
+		void (async () => {
+			lifecycle.addCleanup(
+				await specta.events.catalogIconLoadedEvent.listen(({ payload }) => {
+					this.cacheIcon(payload.targetKey, payload.asset);
+				})
+			);
+		})();
+
+		return lifecycle.unmount;
 	}
 
 	public readonly $isDirty = createComputedState(
@@ -181,6 +204,18 @@ class BlockTargetsDialogCx {
 		this.$selectedTargets.set([...this.$committedTargets._v]);
 		this.$isOpen.set(false);
 	}
+
+	private cacheIcon(targetKey: string, asset: specta.CatalogIconDto): void {
+		const currentAsset = this.$iconAssets._v[targetKey];
+		if (currentAsset?.icon === asset.icon && currentAsset?.color === asset.color) {
+			return;
+		}
+
+		this.$iconAssets.set({
+			...this.$iconAssets._v,
+			[targetKey]: asset
+		});
+	}
 }
 
 // MARK: - Hook
@@ -191,6 +226,10 @@ export function useBlockTargetsDialog(
 	const { onConfirm } = options;
 
 	const cx = React.useMemo(() => new BlockTargetsDialogCx(onConfirm), [onConfirm]);
+
+	React.useEffect(() => {
+		return cx.mount();
+	}, [cx]);
 
 	const Modal = React.useCallback(() => <BlockTargetsDialog cx={cx} />, [cx]);
 

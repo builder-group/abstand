@@ -1,6 +1,7 @@
 //! Manages catalog lookup and search.
 
 mod app_id;
+mod assets;
 pub mod commands;
 mod matcher;
 mod predefined;
@@ -9,8 +10,9 @@ mod search;
 pub mod types;
 
 use tauri::{App, Manager};
-use types::CatalogSearchState;
+use types::{CatalogAssetsState, CatalogSearchState};
 
 pub fn setup(app: &App) {
+    app.manage(CatalogAssetsState::init());
     app.manage(CatalogSearchState::init());
 }

@@ -80,11 +80,13 @@ async searchCatalog(params: SearchCatalogParams) : Promise<Result<CatalogSearchR
 
 export const events = __makeEvents__<{
 appSettingsChangedEvent: AppSettingsChangedEvent,
+catalogIconLoadedEvent: CatalogIconLoadedEvent,
 intentionCreatedEvent: IntentionCreatedEvent,
 intentionUpdatedEvent: IntentionUpdatedEvent,
 shortcutTriggeredEvent: ShortcutTriggeredEvent
 }>({
 appSettingsChangedEvent: "app-settings-changed-event",
+catalogIconLoadedEvent: "catalog-icon-loaded-event",
 intentionCreatedEvent: "intention-created-event",
 intentionUpdatedEvent: "intention-updated-event",
 shortcutTriggeredEvent: "shortcut-triggered-event"
@@ -131,6 +133,9 @@ appId: string;
  * macOS bundle identifier when the app provides one.
  */
 bundleId: string | null; name: string | null; icon: string | null; color: string | null }
+export type CatalogIconDto = { icon: string | null; color: string | null }
+export type CatalogIconLoadedEvent = { targetKey: string; asset: CatalogIconDto }
+export type CatalogIconMode = "none" | "await" | "lazy"
 export type CatalogSearchResultDto = { type: "app"; app: CatalogAppSearchResultDto; score: number } | { type: "website"; website: CatalogWebsiteSearchResultDto; score: number }
 export type CatalogWebsiteSearchResultDto = { 
 /**
@@ -155,7 +160,7 @@ export type KeyboardShortcut = { modifiers: ShortcutModifier[];
  * A browser KeyboardEvent.code value, e.g. "KeyK", "KeyB".
  */
 code: string }
-export type SearchCatalogParams = { query: string; limit: number | null }
+export type SearchCatalogParams = { query: string; limit: number | null; iconMode: CatalogIconMode | null }
 export type SettingsVersion = "0.0.1"
 export type ShortcutAction = "search" | "toggleSidebar"
 export type ShortcutActionConfigDto = { action: ShortcutAction; isGlobal: boolean; shortcut: KeyboardShortcut | null }

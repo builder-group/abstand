@@ -32,6 +32,8 @@ pub fn run() {
             intentions::types::IntentionUpdatedEvent,
             // Shortcuts events
             shortcuts::types::ShortcutTriggeredEvent,
+            // Catalog events
+            catalog::types::CatalogIconLoadedEvent,
         ]);
 
     // Generate Typescript bindings
