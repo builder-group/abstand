@@ -14,7 +14,12 @@ A plain synchronous Tauri command runs on the main thread. While it executes, th
 
 The JavaScript `await invoke(...)` does not prevent this. It only makes the JavaScript side non-blocking. The Rust main thread is still blocked for the entire duration of the command.
 
-`async fn` moves the command off the main thread onto Tauri's async runtime (Tokio). Tokio runs two separate thread pools: a small async pool (roughly one thread per CPU core) for work that yields frequently, like network or async I/O, and a larger blocking pool for work that never yields. If blocking work runs on the async pool it occupies a thread without releasing it, which can stall other commands sharing that thread. `spawn_blocking` routes that work to the blocking pool instead, keeping the async pool free.
+`async fn` moves the command off the main thread onto Tauri's async runtime (Tokio). Tokio has two thread pools:
+
+- Async pool: a small fixed number of threads (roughly one per CPU core). Designed for work that spends most of its time waiting, like network or async I/O. While one task waits, another runs on the same thread.
+- Blocking pool: a larger pool for work that never waits. Tokio spins up threads here as needed.
+
+A command that acquires a lock or calls a synchronous API runs until done without ever yielding. On the async pool that holds the thread for the full duration, which can stall other commands. `spawn_blocking` moves it to the blocking pool where that behavior is expected.
 
 ## What Counts As Blocking Work
 
