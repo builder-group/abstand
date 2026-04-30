@@ -1,3 +1,4 @@
+import { useCompute } from 'feature-react/state';
 import React from 'react';
 import {
 	Badge,
@@ -22,10 +23,11 @@ import {
 	type TBlockTarget
 } from './block-target';
 import { BlockTargetIcon } from './BlockTargetIcon';
+import type { BlockTargetsDialogCx } from './BlockTargetsDialog';
 import { BlockTargetTypeBadge } from './BlockTargetTypeBadge';
 
 export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
-	const { iconAssets, selectedKeys, onToggle } = props;
+	const { cx } = props;
 	const anchorRef = useComboboxAnchor();
 
 	const [query, setQuery] = React.useState('');
@@ -34,6 +36,9 @@ export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
 	const [searchResults, setSearchResults] = React.useState<specta.CatalogSearchResultDto[]>([]);
 	const [isLoading, setIsLoading] = React.useState(false);
 	const resultTargets = React.useMemo(() => searchResults.map(toBlockTarget), [searchResults]);
+	const selectedKeys = useCompute(cx.$selectedTargets, ({ value }) => {
+		return new Set(value.map(getBlockTargetKey));
+	});
 
 	// MARK: - Actions
 
@@ -48,11 +53,7 @@ export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
 		if (trimmedQuery.length === 0) {
 			setSearchResults([]);
 			setIsLoading(false);
-			void specta.commands.searchCatalog({
-				query: '',
-				limit: 20,
-				iconMode: 'none'
-			});
+			void cx.cancelActiveCatalogSearchSession();
 			return;
 		}
 
@@ -61,17 +62,29 @@ export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
 		const timer = setTimeout(async () => {
 			setIsLoading(true);
 			try {
-				const [isSearchOk, , searchResults] = toTuple(
+				await cx.cancelActiveCatalogSearchSession();
+
+				const [isSearchOk, , searchResponse] = toTuple(
 					await specta.commands.searchCatalog({
 						query: trimmedQuery,
 						limit: 20,
 						iconMode: 'lazy'
 					})
 				);
-				if (!isActive) return;
-				if (isSearchOk) {
-					setSearchResults(searchResults);
+				if (!isSearchOk) {
+					return;
 				}
+
+				const { lazySessionId, results } = searchResponse;
+				if (!isActive) {
+					if (lazySessionId != null) {
+						await specta.commands.cancelCatalogSearchSession({ sessionId: lazySessionId });
+					}
+					return;
+				}
+
+				cx.setActiveCatalogSearchSessionId(lazySessionId);
+				setSearchResults(results);
 			} finally {
 				if (isActive) {
 					setIsLoading(false);
@@ -83,7 +96,7 @@ export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
 			isActive = false;
 			clearTimeout(timer);
 		};
-	}, [trimmedQuery]);
+	}, [cx, trimmedQuery]);
 
 	// MARK: - UI
 
@@ -117,22 +130,13 @@ export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
 							const isSelected = selectedKeys.has(targetKey);
 
 							return (
-								<ComboboxItem key={targetKey} value={target} onClick={() => onToggle(target)}>
-									<BlockTargetIcon target={target} icon={iconAssets[targetKey]?.icon} />
-									<div className="flex min-w-0 flex-1 flex-col gap-0.5">
-										<span className="truncate text-sm">{getBlockTargetLabel(target)}</span>
-										<span className="text-base-400 truncate text-xs">
-											{getBlockTargetSublabel(target)}
-										</span>
-									</div>
-									{isSelected && (
-										<Badge size="sm" className="bg-green-500/10 text-green-600">
-											<CheckIcon className="size-3" />
-											added
-										</Badge>
-									)}
-									<BlockTargetTypeBadge target={target} />
-								</ComboboxItem>
+								<CatalogSearchResultRow
+									key={targetKey}
+									cx={cx}
+									target={target}
+									isSelected={isSelected}
+									onToggle={() => cx.toggle(target)}
+								/>
 							);
 						})}
 
@@ -145,7 +149,34 @@ export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
 };
 
 export interface TCatalogSearchProps {
-	iconAssets: Record<string, specta.CatalogIconDto>;
-	selectedKeys: Set<string>;
-	onToggle: (target: TBlockTarget) => void;
+	cx: BlockTargetsDialogCx;
+}
+
+const CatalogSearchResultRow: React.FC<TCatalogSearchResultRowProps> = (props) => {
+	const { cx, target, isSelected, onToggle } = props;
+	const icon = useCompute(cx.$iconAssets, ({ value }) => value[getBlockTargetKey(target)]?.icon);
+
+	return (
+		<ComboboxItem value={target} onClick={onToggle}>
+			<BlockTargetIcon target={target} icon={icon} />
+			<div className="flex min-w-0 flex-1 flex-col gap-0.5">
+				<span className="truncate text-sm">{getBlockTargetLabel(target)}</span>
+				<span className="text-base-400 truncate text-xs">{getBlockTargetSublabel(target)}</span>
+			</div>
+			{isSelected && (
+				<Badge size="sm" className="bg-green-500/10 text-green-600">
+					<CheckIcon className="size-3" />
+					added
+				</Badge>
+			)}
+			<BlockTargetTypeBadge target={target} />
+		</ComboboxItem>
+	);
+};
+
+interface TCatalogSearchResultRowProps {
+	cx: BlockTargetsDialogCx;
+	target: TBlockTarget;
+	isSelected: boolean;
+	onToggle: () => void;
 }

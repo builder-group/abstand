@@ -1,9 +1,7 @@
-use super::search::CatalogSearch;
+use super::{assets::CatalogAssets, search::CatalogSearch};
 use serde::{Deserialize, Serialize};
 use std::{
-    collections::HashMap,
     ops::Deref,
-    sync::atomic::{AtomicU64, Ordering},
     sync::{Arc, Mutex},
 };
 
@@ -50,6 +48,13 @@ pub enum CatalogSearchResultDto {
         website: CatalogWebsiteSearchResultDto,
         score: u32,
     },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct CatalogSearchResponseDto {
+    pub results: Vec<CatalogSearchResultDto>,
+    pub lazy_session_id: Option<u64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
@@ -124,50 +129,28 @@ impl Deref for CatalogSearchState {
     }
 }
 
-/// Stores shared catalog icon assets and the latest lazy search session.
-///
-/// Lazy icon resolution currently assumes one active catalog search flow per app process.
-#[derive(Clone)]
-pub struct CatalogAssetsState {
-    cache: Arc<Mutex<HashMap<String, CatalogIconDto>>>,
-    current_session_id: Arc<AtomicU64>,
-}
+pub struct CatalogAssetsState(Arc<Mutex<CatalogAssets>>);
 
 impl CatalogAssetsState {
     pub fn init() -> Self {
-        return Self {
-            cache: Arc::new(Mutex::new(HashMap::new())),
-            current_session_id: Arc::new(AtomicU64::new(0)),
-        };
+        return Self(Arc::new(Mutex::new(CatalogAssets::new())));
     }
 
-    /// Advances the active catalog asset session and returns its identifier.
-    pub fn advance_session(&self) -> u64 {
-        return self.current_session_id.fetch_add(1, Ordering::SeqCst) + 1;
+    pub fn arc(&self) -> Arc<Mutex<CatalogAssets>> {
+        return Arc::clone(&self.0);
     }
+}
 
-    /// Returns whether the session is still the latest lazy catalog search.
-    pub fn is_session_current(&self, session_id: u64) -> bool {
-        return self.current_session_id.load(Ordering::SeqCst) == session_id;
+impl Clone for CatalogAssetsState {
+    fn clone(&self) -> Self {
+        return Self(self.arc());
     }
+}
 
-    /// Returns a cached icon asset for a stable catalog target key.
-    pub fn cached_icon(&self, target_key: &str) -> Result<Option<CatalogIconDto>, String> {
-        return self
-            .cache
-            .lock()
-            .map_err(|_| "Catalog asset cache is unavailable".to_string())
-            .map(|cache| cache.get(target_key).cloned());
-    }
+impl Deref for CatalogAssetsState {
+    type Target = Mutex<CatalogAssets>;
 
-    /// Stores an icon asset for a stable catalog target key.
-    pub fn cache_icon(&self, target_key: String, icon: CatalogIconDto) -> Result<(), String> {
-        return self
-            .cache
-            .lock()
-            .map_err(|_| "Catalog asset cache is unavailable".to_string())
-            .map(|mut cache| {
-                cache.insert(target_key, icon);
-            });
+    fn deref(&self) -> &Self::Target {
+        return &self.0;
     }
 }

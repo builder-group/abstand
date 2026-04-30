@@ -63,9 +63,15 @@ async getShortcutConfigs() : Promise<ShortcutActionConfigDto[]> {
     return await TAURI_INVOKE("get_shortcut_configs");
 },
 /**
+ * Cancels an active lazy catalog asset session.
+ */
+async cancelCatalogSearchSession(params: CancelCatalogSearchSessionParams) : Promise<void> {
+    await TAURI_INVOKE("cancel_catalog_search_session", { params });
+},
+/**
  * Searches cached catalog items by query.
  */
-async searchCatalog(params: SearchCatalogParams) : Promise<Result<CatalogSearchResultDto[], string>> {
+async searchCatalog(params: SearchCatalogParams) : Promise<Result<CatalogSearchResponseDto, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("search_catalog", { params }) };
 } catch (e) {
@@ -124,6 +130,7 @@ export type AppSettings = { version: SettingsVersion; appearance: AppearanceSett
 shortcuts: Partial<{ [key in ShortcutAction]: KeyboardShortcut | null }> }
 export type AppSettingsChangedEvent = AppSettings
 export type AppearanceSettings = { theme: Theme }
+export type CancelCatalogSearchSessionParams = { sessionId: number }
 export type CatalogAppSearchResultDto = { 
 /**
  * Stable app identifier used as the canonical app key across platforms.
@@ -136,6 +143,7 @@ bundleId: string | null; name: string | null; icon: string | null; color: string
 export type CatalogIconDto = { icon: string | null; color: string | null }
 export type CatalogIconLoadedEvent = { targetKey: string; asset: CatalogIconDto }
 export type CatalogIconMode = "none" | "await" | "lazy"
+export type CatalogSearchResponseDto = { results: CatalogSearchResultDto[]; lazySessionId: number | null }
 export type CatalogSearchResultDto = { type: "app"; app: CatalogAppSearchResultDto; score: number } | { type: "website"; website: CatalogWebsiteSearchResultDto; score: number }
 export type CatalogWebsiteSearchResultDto = { 
 /**

@@ -22,6 +22,7 @@ pub fn run() {
             // Shortcuts commands
             shortcuts::commands::get_shortcut_configs,
             // Catalog commands
+            catalog::commands::cancel_catalog_search_session,
             catalog::commands::search_catalog,
         ])
         .events(collect_events![

@@ -1,4 +1,4 @@
-import { useFeatureState } from 'feature-react/state';
+import { useCompute, useFeatureState } from 'feature-react/state';
 import { createState } from 'feature-state';
 import React from 'react';
 import {
@@ -29,11 +29,6 @@ import { CatalogSearch } from './CatalogSearch';
 const BlockTargetsDialog: React.FC<TBlockTargetsDialogProps> = ({ cx }) => {
 	const isOpen = useFeatureState(cx.$isOpen);
 	const selectedTargets = useFeatureState(cx.$selectedTargets);
-	const iconAssets = useFeatureState(cx.$iconAssets);
-	const selectedKeys = React.useMemo(
-		() => new Set(selectedTargets.map(getBlockTargetKey)),
-		[selectedTargets]
-	);
 	const isDirty = useFeatureState(cx.$isDirty);
 
 	// MARK: - UI
@@ -51,11 +46,7 @@ const BlockTargetsDialog: React.FC<TBlockTargetsDialogProps> = ({ cx }) => {
 				</DialogHeader>
 
 				<DialogBody className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
-					<CatalogSearch
-						iconAssets={iconAssets}
-						selectedKeys={selectedKeys}
-						onToggle={(t) => cx.toggle(t)}
-					/>
+					<CatalogSearch cx={cx} />
 
 					<div className="flex min-h-0 flex-1 flex-col gap-2">
 						<p className="text-base-600 ml-1 shrink-0 px-1 text-[13px] font-semibold">Selected</p>
@@ -68,7 +59,7 @@ const BlockTargetsDialog: React.FC<TBlockTargetsDialogProps> = ({ cx }) => {
 								selectedTargets.map((target, i) => (
 									<SelectedTargetRow
 										key={getBlockTargetKey(target)}
-										iconAssets={iconAssets}
+										cx={cx}
 										target={target}
 										isFirst={i === 0}
 										onRemove={() => cx.remove(target)}
@@ -95,7 +86,8 @@ interface TBlockTargetsDialogProps {
 }
 
 const SelectedTargetRow: React.FC<TSelectedTargetRowProps> = (props) => {
-	const { iconAssets, target, isFirst, onRemove } = props;
+	const { cx, target, isFirst, onRemove } = props;
+	const icon = useCompute(cx.$iconAssets, ({ value }) => value[getBlockTargetKey(target)]?.icon);
 
 	return (
 		<div
@@ -105,7 +97,7 @@ const SelectedTargetRow: React.FC<TSelectedTargetRowProps> = (props) => {
 					"before:bg-base-100 before:absolute before:inset-x-4 before:top-0 before:h-px before:content-['']"
 			)}
 		>
-			<BlockTargetIcon target={target} icon={iconAssets[getBlockTargetKey(target)]?.icon} />
+			<BlockTargetIcon target={target} icon={icon} />
 			<div className="flex min-w-0 flex-1 flex-col gap-0.5">
 				<span className="text-base-950 truncate text-sm">{getBlockTargetLabel(target)}</span>
 				<span className="text-base-400 truncate text-xs">{getBlockTargetSublabel(target)}</span>
@@ -127,7 +119,7 @@ const SelectedTargetRow: React.FC<TSelectedTargetRowProps> = (props) => {
 };
 
 interface TSelectedTargetRowProps {
-	iconAssets: Record<string, specta.CatalogIconDto>;
+	cx: BlockTargetsDialogCx;
 	target: TBlockTarget;
 	isFirst: boolean;
 	onRemove: () => void;
@@ -135,11 +127,12 @@ interface TSelectedTargetRowProps {
 
 // MARK: - Cx
 
-class BlockTargetsDialogCx {
+export class BlockTargetsDialogCx {
 	public readonly $isOpen = createState(false);
 	public readonly $iconAssets = createState<Record<string, specta.CatalogIconDto>>({});
 	public readonly $selectedTargets = createState<TBlockTarget[]>([]);
 	private readonly $committedTargets = createState<TBlockTarget[]>([]);
+	private _activeCatalogSearchSessionId: number | null = null;
 
 	private readonly _hooks: {
 		onConfirm: (targets: TBlockTarget[]) => void;
@@ -151,6 +144,9 @@ class BlockTargetsDialogCx {
 
 	public mount(): () => void {
 		const lifecycle = createMountLifecycle();
+		lifecycle.addCleanup(() => {
+			void this.cancelActiveCatalogSearchSession();
+		});
 
 		void (async () => {
 			lifecycle.addCleanup(
@@ -195,14 +191,30 @@ class BlockTargetsDialogCx {
 	}
 
 	public confirm(): void {
+		void this.cancelActiveCatalogSearchSession();
 		this.$committedTargets.set([...this.$selectedTargets._v]);
 		this._hooks.onConfirm(this.$selectedTargets._v);
 		this.$isOpen.set(false);
 	}
 
 	public cancel(): void {
+		void this.cancelActiveCatalogSearchSession();
 		this.$selectedTargets.set([...this.$committedTargets._v]);
 		this.$isOpen.set(false);
+	}
+
+	public setActiveCatalogSearchSessionId(sessionId: number | null): void {
+		this._activeCatalogSearchSessionId = sessionId;
+	}
+
+	public async cancelActiveCatalogSearchSession(): Promise<void> {
+		const sessionId = this._activeCatalogSearchSessionId;
+		this._activeCatalogSearchSessionId = null;
+		if (sessionId == null) {
+			return;
+		}
+
+		await specta.commands.cancelCatalogSearchSession({ sessionId });
 	}
 
 	private cacheIcon(targetKey: string, asset: specta.CatalogIconDto): void {
