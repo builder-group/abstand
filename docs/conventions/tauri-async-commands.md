@@ -6,46 +6,51 @@ How to write Tauri command handlers that do not block the UI.
 
 **`async fn` is the default for Tauri commands. Plain `fn` is only acceptable for commands that return immediately with no locks, no I/O, and no computation.**
 
-When the command does blocking or CPU-bound work inside, also wrap that work in `tauri::async_runtime::spawn_blocking`.
+If the command performs blocking or CPU-bound work, wrap that work in `tauri::async_runtime::spawn_blocking`.
 
 ## Why
 
-A plain synchronous Tauri command runs on the main thread. While it executes, the webview cannot repaint and React cannot update state. The UI freezes until it returns.
+A plain synchronous Tauri command runs on the thread responsible for handling commands (often the main/UI thread). While it executes, the webview cannot repaint and React cannot update state. The UI freezes until it returns.
 
-The JavaScript `await invoke(...)` does not prevent this. It only makes the JavaScript side non-blocking. The Rust main thread is still blocked for the entire duration of the command.
+The JavaScript `await invoke(...)` does not prevent this. It only makes the JavaScript side non-blocking. The Rust side can still block the UI thread for the entire duration of the command.
 
-`async fn` moves the command off the main thread onto Tauri's async runtime (Tokio). Tokio has two thread pools:
+`async fn` makes the command run on Tauri’s async runtime (usually Tokio).
 
-- Async pool: a small fixed number of threads (roughly one per CPU core). Designed for work that spends most of its time waiting, like network or async I/O. While one task waits, another runs on the same thread.
-- Blocking pool: a larger pool for work that never waits. Tokio spins up threads here as needed.
+Tokio commonly has two relevant kinds of threads:
 
-A command that acquires a lock or calls a synchronous API runs until done without ever yielding. On the async pool that holds the thread for the full duration, which can stall other commands. `spawn_blocking` moves it to the blocking pool where that behavior is expected.
+- **Runtime worker threads**: a small pool (often around one per CPU core). Designed for async work that frequently reaches `.await` (network, async I/O). While one task awaits, another can run on the same thread.
+- **Blocking threads**: a separate, larger pool for blocking or CPU-heavy work. Tokio creates these threads as needed, up to a limit.
+
+If a command performs long-running synchronous work (locks, CPU work, sync APIs) on a runtime worker thread, it occupies that thread and delays other async tasks.
+
+`spawn_blocking` moves that work to the blocking pool, where this behavior is expected.
 
 ## What Counts As Blocking Work
 
-If the command body does any of the following, it needs `spawn_blocking`:
+If the command does any of the following, it should use `spawn_blocking`:
 
-- acquires a `Mutex` or `RwLock`
+- acquires a `Mutex` or `RwLock` and performs non-trivial work while holding it
 - reads or writes files using synchronous `std::fs`
-- calls macOS or platform APIs that are not async (e.g. icon loading, app enumeration)
-- does heavy CPU computation (fuzzy matching over large data sets, image processing, etc.)
+- calls platform APIs that are not async (e.g. icon loading, app enumeration)
+- performs CPU-heavy work (fuzzy matching, large loops, image processing, JSON parsing, data transforms)
 
-If the command only does async I/O (network requests, `tokio::fs`, database queries over an async driver), plain `async fn` without `spawn_blocking` is sufficient.
+Short, uncontended locks for trivial reads are usually fine, but long-held or contended locks should go into `spawn_blocking`.
+
+If the command only performs async I/O (network requests, `tokio::fs`, async database drivers), plain `async fn` is sufficient.
 
 ## When To Use Each Form
 
-| Command form                        | Use when                                                            |
-| ----------------------------------- | ------------------------------------------------------------------- |
-| `fn foo()`                          | Returns immediately with no locks, no I/O, no computation           |
-| `async fn foo()`                    | Does genuinely async I/O (network, async file reads, async DB)      |
-| `async fn foo()` + `spawn_blocking` | Acquires locks, calls sync platform APIs, or does heavy computation |
+| Command form                        | Use when                                                      |
+| ----------------------------------- | ------------------------------------------------------------- |
+| `fn foo()`                          | Returns immediately (no locks, no I/O, no computation)        |
+| `async fn foo()`                    | Performs real async I/O (network, async file reads, async DB) |
+| `async fn foo()` + `spawn_blocking` | Uses locks, sync APIs, or CPU-heavy work                      |
 
 ## Examples
 
 ### Sync command: blocks the UI
 
 ```rust
-// Avoid: runs on the main thread, freezes the UI for the duration
 #[tauri::command]
 pub fn get_data(state: State<'_, Arc<Mutex<AppData>>>) -> Result<Vec<DataDto>, String> {
     let locked = state.lock().map_err(|_| "State unavailable".to_string())?;
@@ -53,10 +58,9 @@ pub fn get_data(state: State<'_, Arc<Mutex<AppData>>>) -> Result<Vec<DataDto>, S
 }
 ```
 
-### Async command with spawn_blocking: does not block
+### Async command with spawn_blocking: non-blocking
 
 ```rust
-// Preferred for commands that acquire locks or call sync APIs
 #[tauri::command]
 pub async fn get_data(state: State<'_, Arc<Mutex<AppData>>>) -> Result<Vec<DataDto>, String> {
     let state = Arc::clone(state.inner()); // or state.arc() if the state type exposes a helper
@@ -70,20 +74,15 @@ pub async fn get_data(state: State<'_, Arc<Mutex<AppData>>>) -> Result<Vec<DataD
 }
 ```
 
-### Async command without spawn_blocking: for genuinely async I/O
+### Async command without spawn_blocking: true async I/O
 
 ```rust
-// Fine when the work is already async end to end
 #[tauri::command]
 pub async fn fetch_remote_data(url: String) -> Result<String, String> {
     let response = reqwest::get(&url).await.map_err(|e| e.to_string())?;
-    return response.text().await.map_err(|e| e.to_string());
+    response.text().await.map_err(|e| e.to_string())
 }
 ```
-
-## What Not To Do
-
-Do not use `#[tauri::command(async)]` on a plain sync `fn` as a shortcut. It wraps the call in `spawn()` rather than `spawn_blocking()`. Blocking work inside `spawn()` ties up a slot in the async executor thread pool, which is designed for non-blocking tasks and can run out of capacity when blocked.
 
 ## Resources & References
 
