@@ -1,3 +1,4 @@
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { createState } from 'feature-state';
 import React from 'react';
 import { specta } from '@/environment';
@@ -61,6 +62,7 @@ export class CommandPaletteCx {
 		const { developer } = this.settingsCx.$appSettings._v;
 		const items: TCommandItem[] = [
 			{
+				type: 'navigation',
 				id: 'today',
 				label: 'Today',
 				group: 'Navigation',
@@ -68,6 +70,7 @@ export class CommandPaletteCx {
 				to: '/window/main/today'
 			},
 			{
+				type: 'navigation',
 				id: 'new-intention',
 				label: 'New Intention',
 				group: 'Navigation',
@@ -75,6 +78,15 @@ export class CommandPaletteCx {
 				to: '/window/main/intentions/new'
 			},
 			{
+				type: 'action',
+				id: 'toggle-theme',
+				label: 'Toggle Theme',
+				group: 'Appearance',
+				keywords: ['theme', 'appearance', 'light', 'dark', 'toggle'],
+				run: () => this.toggleTheme()
+			},
+			{
+				type: 'navigation',
 				id: 'settings-general',
 				label: 'General',
 				group: 'Settings',
@@ -82,6 +94,7 @@ export class CommandPaletteCx {
 				to: '/window/main/settings/general'
 			},
 			{
+				type: 'navigation',
 				id: 'settings-shortcuts',
 				label: 'Shortcuts',
 				group: 'Settings',
@@ -92,6 +105,7 @@ export class CommandPaletteCx {
 
 		if (developer.enabled) {
 			items.push({
+				type: 'navigation',
 				id: 'settings-developer',
 				label: 'Developer',
 				group: 'Settings',
@@ -101,6 +115,24 @@ export class CommandPaletteCx {
 		}
 
 		return items;
+	}
+
+	private async toggleTheme(): Promise<void> {
+		const currentTheme = this.settingsCx.$appSettings._v.appearance.theme;
+
+		if (currentTheme === 'light') {
+			await this.settingsCx.update({ appearance: { theme: 'dark' } });
+			return;
+		}
+
+		if (currentTheme === 'dark') {
+			await this.settingsCx.update({ appearance: { theme: 'light' } });
+			return;
+		}
+
+		const effectiveTheme = await getCurrentWindow().theme();
+		const nextTheme: specta.Theme = effectiveTheme === 'dark' ? 'light' : 'dark';
+		await this.settingsCx.update({ appearance: { theme: nextTheme } });
 	}
 }
 
@@ -125,10 +157,21 @@ export function useCommandPaletteCx(): CommandPaletteCx {
 	return cx;
 }
 
-export interface TCommandItem {
+export type TCommandItem = TNavigationCommandItem | TActionCommandItem;
+
+interface TNavigationCommandItem extends TBaseCommandItem {
+	type: 'navigation';
+	to: FileRouteTypes['to'];
+}
+
+interface TActionCommandItem extends TBaseCommandItem {
+	type: 'action';
+	run: () => Promise<void>;
+}
+
+interface TBaseCommandItem {
 	id: string;
 	label: string;
 	group: string;
 	keywords: string[];
-	to: FileRouteTypes['to'];
 }

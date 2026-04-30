@@ -38,8 +38,16 @@ export const CommandPaletteModal: React.FC = () => {
 	);
 
 	const handleSelect = React.useCallback(
-		(item: TCommandItem) => {
-			void navigate({ to: item.to });
+		async (item: TCommandItem) => {
+			switch (item.type) {
+				case 'navigation':
+					void navigate({ to: item.to });
+					break;
+				case 'action':
+					await item.run();
+					break;
+			}
+
 			cx.close();
 		},
 		[cx, navigate]
@@ -67,7 +75,7 @@ export const CommandPaletteModal: React.FC = () => {
 				handleNavigate('up');
 			} else if (e.key === 'Enter') {
 				e.preventDefault();
-				if (activeItem != null) handleSelect(activeItem);
+				if (activeItem != null) void handleSelect(activeItem);
 			}
 		},
 		[activeItem, handleSelect, handleNavigate]
@@ -179,7 +187,7 @@ const CommandPaletteItem: React.FC<TCommandPaletteItemProps> = (props) => {
 				'select-none [&_svg]:pointer-events-none [&_svg]:shrink-0',
 				isActive && 'bg-base-950/6 text-base-950'
 			)}
-			onClick={() => onSelect(item)}
+			onClick={() => void onSelect(item)}
 			onPointerMove={onPointerMove}
 		>
 			<span className="flex-1 truncate">{item.label}</span>
@@ -191,6 +199,6 @@ const CommandPaletteItem: React.FC<TCommandPaletteItemProps> = (props) => {
 interface TCommandPaletteItemProps {
 	item: TCommandItem;
 	isActive: boolean;
-	onSelect: (item: TCommandItem) => void;
+	onSelect: (item: TCommandItem) => Promise<void>;
 	onPointerMove: () => void;
 }
