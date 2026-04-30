@@ -5,7 +5,16 @@ import React from 'react';
 import { cn } from '@/lib';
 
 export const SettingsRow: React.FC<TSettingsRowProps> = (props) => {
-	const { label, description, size = 'default', className, render, children, ...rest } = props;
+	const {
+		label,
+		description,
+		size = 'default',
+		className,
+		contentClassName,
+		render,
+		children,
+		...rest
+	} = props;
 
 	return useRender({
 		defaultTagName: 'div',
@@ -20,7 +29,9 @@ export const SettingsRow: React.FC<TSettingsRowProps> = (props) => {
 								<span className={descriptionVariants({ size })}>{description}</span>
 							)}
 						</div>
-						{children != null && <div className={controlVariants({ size })}>{children}</div>}
+						{children != null && (
+							<div className={cn(controlVariants({ size }), contentClassName)}>{children}</div>
+						)}
 					</>
 				)
 			},
@@ -32,7 +43,7 @@ export const SettingsRow: React.FC<TSettingsRowProps> = (props) => {
 };
 
 const settingsRowVariants = cva(
-	'flex items-center justify-between [button]:w-full [button]:cursor-default [button]:text-left [button]:hover:bg-base-950/6 [button]:active:bg-base-950/10',
+	'flex items-center justify-between [button]:w-full [button]:cursor-default [button]:text-left [button]:hover:bg-base-950/6 [button]:active:bg-base-950/10 [a]:w-full [a]:cursor-default [a]:text-left [a]:hover:bg-base-950/6 [a]:active:bg-base-950/10',
 	{
 		variants: {
 			size: {
@@ -86,4 +97,5 @@ type TSettingsRowProps = useRender.ComponentProps<'div'> &
 	VariantProps<typeof settingsRowVariants> & {
 		label: string;
 		description?: string;
+		contentClassName?: string;
 	};

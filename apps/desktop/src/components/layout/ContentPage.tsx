@@ -140,7 +140,10 @@ export const ContentPage: React.FC<TContentPageProps> = (props) => {
 				)}
 			/>
 
-			<div ref={contentRef} className={cn('mx-auto w-full max-w-2xl px-6 pt-4', contentClassName)}>
+			<div
+				ref={contentRef}
+				className={cn('mx-auto w-full max-w-2xl px-6 pt-4 pb-3', contentClassName)}
+			>
 				{header ?? (
 					<div className="mb-5 flex flex-wrap items-start justify-between gap-3">
 						<div className="min-w-0 flex-1">

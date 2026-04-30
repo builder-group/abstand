@@ -13,6 +13,7 @@ export {
 	CodeXmlIcon,
 	CommandIcon,
 	FolderOpenIcon,
+	LibraryBigIcon,
 	MonitorIcon,
 	MoonIcon,
 	PanelLeftCloseIcon,

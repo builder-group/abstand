@@ -19,6 +19,7 @@ import { Route as WindowMainSidebarSettingsGeneralIndexRouteImport } from './rou
 import { Route as WindowMainSidebarSettingsDeveloperIndexRouteImport } from './routes/window.main._sidebar.settings.developer/index'
 import { Route as WindowMainSidebarIntentionsNewIndexRouteImport } from './routes/window.main._sidebar.intentions.new/index'
 import { Route as WindowMainSidebarIntentionsIntentionIdIndexRouteImport } from './routes/window.main._sidebar.intentions.$intentionId/index'
+import { Route as WindowMainSidebarSettingsDeveloperUiPlaygroundIndexRouteImport } from './routes/window.main._sidebar.settings.developer.ui-playground/index'
 import { Route as WindowMainSidebarIntentionsNewBlockIndexRouteImport } from './routes/window.main._sidebar.intentions.new.block/index'
 
 const WindowMainSidebarRouteRoute = WindowMainSidebarRouteRouteImport.update({
@@ -79,6 +80,12 @@ const WindowMainSidebarIntentionsIntentionIdIndexRoute =
     path: '/intentions/$intentionId/',
     getParentRoute: () => WindowMainSidebarRouteRoute,
   } as any)
+const WindowMainSidebarSettingsDeveloperUiPlaygroundIndexRoute =
+  WindowMainSidebarSettingsDeveloperUiPlaygroundIndexRouteImport.update({
+    id: '/settings/developer/ui-playground/',
+    path: '/settings/developer/ui-playground/',
+    getParentRoute: () => WindowMainSidebarRouteRoute,
+  } as any)
 const WindowMainSidebarIntentionsNewBlockIndexRoute =
   WindowMainSidebarIntentionsNewBlockIndexRouteImport.update({
     id: '/block/',
@@ -98,6 +105,7 @@ export interface FileRoutesByFullPath {
   '/window/main/settings/general/': typeof WindowMainSidebarSettingsGeneralIndexRoute
   '/window/main/settings/shortcuts/': typeof WindowMainSidebarSettingsShortcutsIndexRoute
   '/window/main/intentions/new/block/': typeof WindowMainSidebarIntentionsNewBlockIndexRoute
+  '/window/main/settings/developer/ui-playground/': typeof WindowMainSidebarSettingsDeveloperUiPlaygroundIndexRoute
 }
 export interface FileRoutesByTo {
   '/window/main': typeof WindowMainSidebarRouteRouteWithChildren
@@ -110,6 +118,7 @@ export interface FileRoutesByTo {
   '/window/main/settings/general': typeof WindowMainSidebarSettingsGeneralIndexRoute
   '/window/main/settings/shortcuts': typeof WindowMainSidebarSettingsShortcutsIndexRoute
   '/window/main/intentions/new/block': typeof WindowMainSidebarIntentionsNewBlockIndexRoute
+  '/window/main/settings/developer/ui-playground': typeof WindowMainSidebarSettingsDeveloperUiPlaygroundIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -124,6 +133,7 @@ export interface FileRoutesById {
   '/window/main/_sidebar/settings/general/': typeof WindowMainSidebarSettingsGeneralIndexRoute
   '/window/main/_sidebar/settings/shortcuts/': typeof WindowMainSidebarSettingsShortcutsIndexRoute
   '/window/main/_sidebar/intentions/new/block/': typeof WindowMainSidebarIntentionsNewBlockIndexRoute
+  '/window/main/_sidebar/settings/developer/ui-playground/': typeof WindowMainSidebarSettingsDeveloperUiPlaygroundIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -139,6 +149,7 @@ export interface FileRouteTypes {
     | '/window/main/settings/general/'
     | '/window/main/settings/shortcuts/'
     | '/window/main/intentions/new/block/'
+    | '/window/main/settings/developer/ui-playground/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/window/main'
@@ -151,6 +162,7 @@ export interface FileRouteTypes {
     | '/window/main/settings/general'
     | '/window/main/settings/shortcuts'
     | '/window/main/intentions/new/block'
+    | '/window/main/settings/developer/ui-playground'
   id:
     | '__root__'
     | '/window/main/_sidebar'
@@ -164,6 +176,7 @@ export interface FileRouteTypes {
     | '/window/main/_sidebar/settings/general/'
     | '/window/main/_sidebar/settings/shortcuts/'
     | '/window/main/_sidebar/intentions/new/block/'
+    | '/window/main/_sidebar/settings/developer/ui-playground/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -243,6 +256,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WindowMainSidebarIntentionsIntentionIdIndexRouteImport
       parentRoute: typeof WindowMainSidebarRouteRoute
     }
+    '/window/main/_sidebar/settings/developer/ui-playground/': {
+      id: '/window/main/_sidebar/settings/developer/ui-playground/'
+      path: '/settings/developer/ui-playground'
+      fullPath: '/window/main/settings/developer/ui-playground/'
+      preLoaderRoute: typeof WindowMainSidebarSettingsDeveloperUiPlaygroundIndexRouteImport
+      parentRoute: typeof WindowMainSidebarRouteRoute
+    }
     '/window/main/_sidebar/intentions/new/block/': {
       id: '/window/main/_sidebar/intentions/new/block/'
       path: '/block'
@@ -279,6 +299,7 @@ interface WindowMainSidebarRouteRouteChildren {
   WindowMainSidebarSettingsDeveloperIndexRoute: typeof WindowMainSidebarSettingsDeveloperIndexRoute
   WindowMainSidebarSettingsGeneralIndexRoute: typeof WindowMainSidebarSettingsGeneralIndexRoute
   WindowMainSidebarSettingsShortcutsIndexRoute: typeof WindowMainSidebarSettingsShortcutsIndexRoute
+  WindowMainSidebarSettingsDeveloperUiPlaygroundIndexRoute: typeof WindowMainSidebarSettingsDeveloperUiPlaygroundIndexRoute
 }
 
 const WindowMainSidebarRouteRouteChildren: WindowMainSidebarRouteRouteChildren =
@@ -295,6 +316,8 @@ const WindowMainSidebarRouteRouteChildren: WindowMainSidebarRouteRouteChildren =
       WindowMainSidebarSettingsGeneralIndexRoute,
     WindowMainSidebarSettingsShortcutsIndexRoute:
       WindowMainSidebarSettingsShortcutsIndexRoute,
+    WindowMainSidebarSettingsDeveloperUiPlaygroundIndexRoute:
+      WindowMainSidebarSettingsDeveloperUiPlaygroundIndexRoute,
   }
 
 const WindowMainSidebarRouteRouteWithChildren =

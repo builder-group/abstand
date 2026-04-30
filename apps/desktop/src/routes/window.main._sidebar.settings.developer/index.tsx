@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import React from 'react';
 import { ChevronRightIcon, CodeXmlIcon, FolderOpenIcon, SettingsPage } from '@/components';
 import { specta } from '@/environment';
@@ -29,6 +29,13 @@ function RouteComponent() {
 					render={<button onClick={handleOpenDataDirectory} />}
 				>
 					<FolderOpenIcon size={16} className="text-base-400" />
+					<ChevronRightIcon size={14} className="text-base-400" />
+				</SettingsRow>
+				<SettingsRow
+					label="UI Playground"
+					description="Preview shared desktop components and sizing."
+					render={<Link to="/window/main/settings/developer/ui-playground" />}
+				>
 					<ChevronRightIcon size={14} className="text-base-400" />
 				</SettingsRow>
 			</SettingsGroup>
