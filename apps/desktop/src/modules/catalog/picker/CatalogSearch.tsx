@@ -14,17 +14,18 @@ import {
 	useComboboxAnchor
 } from '@/components';
 import { specta } from '@/environment';
+import { useDelayedValue } from '@/hooks';
 import { toTuple } from '@/lib';
+import { CatalogItemIcon } from './CatalogItemIcon';
+import { CatalogItemTypeBadge } from './CatalogItemTypeBadge';
 import {
-	type CatalogPickerCx,
 	getCatalogItemKey,
 	getCatalogItemLabel,
 	getCatalogItemSublabel,
 	toCatalogItem,
+	type CatalogPickerCx,
 	type TCatalogItem
 } from './CatalogPickerCx';
-import { CatalogItemIcon } from './CatalogItemIcon';
-import { CatalogItemTypeBadge } from './CatalogItemTypeBadge';
 
 export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
 	const { selectedKeys, cx } = props;
@@ -34,8 +35,10 @@ export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
 	const trimmedQuery = React.useMemo(() => query.trim(), [query]);
 
 	const [searchResults, setSearchResults] = React.useState<specta.CatalogSearchResultDto[]>([]);
-	const [isLoading, setIsLoading] = React.useState(false);
 	const resultItems = React.useMemo(() => searchResults.map(toCatalogItem), [searchResults]);
+
+	const [isLoading, setIsLoading] = React.useState(false);
+	const isLoadingVisible = useDelayedValue(isLoading, (nextValue) => (nextValue ? 200 : 0));
 
 	// MARK: - Actions
 
@@ -87,6 +90,7 @@ export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
 	return (
 		<Combobox
 			multiple
+			autoHighlight="always"
 			filter={null}
 			items={resultItems}
 			// Note: returning '' clears the input display after an item is pressed
@@ -106,7 +110,9 @@ export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
 					anchor={anchorRef}
 					className="w-(--anchor-width) max-w-(--anchor-width) min-w-0"
 				>
-					<ComboboxStatus>{isLoading ? 'Searching…' : 'Select apps & websites'}</ComboboxStatus>
+					<ComboboxStatus>
+						{isLoadingVisible ? 'Searching…' : 'Select apps & websites'}
+					</ComboboxStatus>
 
 					<ComboboxList>
 						{resultItems.map((item) => {
