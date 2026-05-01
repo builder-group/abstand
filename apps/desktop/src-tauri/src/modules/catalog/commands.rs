@@ -17,7 +17,7 @@ pub async fn search_catalog(
     let search = state.arc();
 
     return tauri::async_runtime::spawn_blocking(move || {
-        let mut locked = search
+        let locked = search
             .lock()
             .map_err(|_| "Catalog search state is unavailable".to_string())?;
         Ok(locked.search(&query, limit))
