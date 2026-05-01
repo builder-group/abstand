@@ -1,4 +1,3 @@
-use super::types::{ScheduledJobDto, ScheduledJobId};
 use std::{
     collections::HashMap,
     sync::{
@@ -9,8 +8,6 @@ use std::{
 };
 use tauri::AppHandle;
 use tokio::{sync::watch, time::Instant};
-
-type ScheduledJobAction = Box<dyn FnOnce(AppHandle) + Send + 'static>;
 
 pub struct Scheduler {
     jobs: Mutex<HashMap<ScheduledJobId, ScheduledJob>>,
@@ -82,13 +79,13 @@ impl Scheduler {
     }
 
     /// Returns the currently scheduled in-memory jobs ordered by their scheduled time.
-    pub fn list_jobs(&self) -> Vec<ScheduledJobDto> {
+    pub fn list_jobs(&self) -> Vec<ScheduledJobSummary> {
         let mut jobs = self
             .jobs
             .lock()
             .unwrap()
             .values()
-            .map(ScheduledJob::to_dto)
+            .map(ScheduledJobSummary::from)
             .collect::<Vec<_>>();
 
         jobs.sort_by_key(|job| job.scheduled_for_unix_ms);
@@ -100,7 +97,7 @@ impl Scheduler {
         label: String,
         scheduled_for_unix_ms: i64,
         action: ScheduledJobAction,
-    ) -> ScheduledJobDto {
+    ) -> ScheduledJobSummary {
         let job_id = self.next_job_id.fetch_add(1, Ordering::Relaxed);
         let job = ScheduledJob {
             id: job_id,
@@ -108,12 +105,12 @@ impl Scheduler {
             scheduled_for_unix_ms,
             action,
         };
-        let job_dto = job.to_dto();
+        let job_summary = ScheduledJobSummary::from(&job);
 
         self.jobs.lock().unwrap().insert(job_id, job);
         self.notify_runner();
 
-        return job_dto;
+        return job_summary;
     }
 
     async fn run(self: Arc<Self>, app: AppHandle) {
@@ -216,14 +213,6 @@ struct ScheduledJob {
 }
 
 impl ScheduledJob {
-    fn to_dto(&self) -> ScheduledJobDto {
-        return ScheduledJobDto {
-            id: self.id,
-            label: self.label.clone(),
-            scheduled_for_unix_ms: self.scheduled_for_unix_ms,
-        };
-    }
-
     fn is_due(&self, now: &SchedulerNow) -> bool {
         return self.scheduled_for_unix_ms <= now.unix_ms;
     }
@@ -249,6 +238,27 @@ struct SchedulerNow {
     instant: Instant,
     unix_ms: i64,
 }
+
+#[derive(Debug, Clone)]
+#[allow(dead_code)]
+pub struct ScheduledJobSummary {
+    pub id: ScheduledJobId,
+    pub label: String,
+    pub scheduled_for_unix_ms: i64,
+}
+
+impl From<&ScheduledJob> for ScheduledJobSummary {
+    fn from(job: &ScheduledJob) -> Self {
+        return ScheduledJobSummary {
+            id: job.id,
+            label: job.label.clone(),
+            scheduled_for_unix_ms: job.scheduled_for_unix_ms,
+        };
+    }
+}
+
+type ScheduledJobAction = Box<dyn FnOnce(AppHandle) + Send + 'static>;
+pub type ScheduledJobId = u64;
 
 #[cfg(test)]
 mod tests {

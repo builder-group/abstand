@@ -1,10 +1,9 @@
 import React from 'react';
 import { CodeXmlIcon, MonitorIcon } from '@/components';
-import type { TBlockTarget } from './block-target';
+import type { TCatalogItem } from './CatalogPickerCx';
 
-export const BlockTargetIcon: React.FC<TBlockTargetIconProps> = (props) => {
-	const { target } = props;
-	const icon = target.type === 'app' ? target.app.icon : target.website.icon;
+export const CatalogItemIcon: React.FC<TCatalogItemIconProps> = (props) => {
+	const { item, icon = item.type === 'app' ? item.app.icon : item.website.icon } = props;
 
 	if (icon != null) {
 		return (
@@ -14,7 +13,7 @@ export const BlockTargetIcon: React.FC<TBlockTargetIconProps> = (props) => {
 		);
 	}
 
-	switch (target.type) {
+	switch (item.type) {
 		case 'app':
 			return (
 				<span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-blue-500">
@@ -30,6 +29,7 @@ export const BlockTargetIcon: React.FC<TBlockTargetIconProps> = (props) => {
 	}
 };
 
-interface TBlockTargetIconProps {
-	target: TBlockTarget;
+interface TCatalogItemIconProps {
+	item: TCatalogItem;
+	icon?: string | null;
 }

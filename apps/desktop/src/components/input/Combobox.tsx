@@ -11,16 +11,21 @@ export const Combobox = <GValue, GMultiple extends boolean | undefined = false>(
 	const { children, ...rest } = props;
 
 	return (
-		<ComboboxPrimitive.Root data-slot="combobox" {...rest}>
+		<ComboboxPrimitive.Root
+			data-slot="combobox"
+			{...(rest as ComboboxPrimitive.Root.Props<GValue, GMultiple>)}
+		>
 			{children}
 		</ComboboxPrimitive.Root>
 	);
 };
 
-export type TComboboxProps<
-	GValue,
-	GMultiple extends boolean | undefined = false
-> = ComboboxPrimitive.Root.Props<GValue, GMultiple>;
+export type TComboboxProps<GValue, GMultiple extends boolean | undefined = false> = Omit<
+	ComboboxPrimitive.Root.Props<GValue, GMultiple>,
+	'autoHighlight'
+> & {
+	autoHighlight?: boolean | 'always';
+};
 
 export const ComboboxValue: React.FC<TComboboxValueProps> = (props) => {
 	return <ComboboxPrimitive.Value data-slot="combobox-value" {...props} />;

@@ -13,8 +13,8 @@ Use it for product or system areas such as settings, sessions, notifications, up
 ```txt
 module/
 ├── mod.rs          # Module exports and setup/exit hooks
-├── commands.rs     # Tauri handlers and closely related command glue
-├── types.rs        # Shared types, DTOs, events, runtime state
+├── commands.rs     # Tauri handlers, command params, response types, and command-local glue
+├── types.rs        # Shared types, events, runtime state
 ├── repository.rs   # Database layer plus Row/Input types
 └── [domain].rs     # Complex business logic (optional)
 ```
@@ -25,13 +25,13 @@ Modules may add a clearly named extra file when they own a distinct concern that
 
 ## When To Create Each File
 
-| File            | Create when...                                                                        |
-| --------------- | ------------------------------------------------------------------------------------- |
-| `mod.rs`        | Always                                                                                |
-| `commands.rs`   | The module exposes Tauri commands                                                     |
-| `types.rs`      | The module has shared enums, DTOs, events, state, or types used by more than one file |
-| `repository.rs` | The module owns database operations                                                   |
-| `[domain].rs`   | The module has business logic beyond structural mapping                               |
+| File            | Create when...                                                                  |
+| --------------- | ------------------------------------------------------------------------------- |
+| `mod.rs`        | Always                                                                          |
+| `commands.rs`   | The module exposes Tauri commands                                               |
+| `types.rs`      | The module has shared enums, events, state, or types used by more than one file |
+| `repository.rs` | The module owns database operations                                             |
+| `[domain].rs`   | The module has business logic beyond structural mapping                         |
 
 ### When To Create A Domain File
 
@@ -83,12 +83,11 @@ Do not put large command logic or type definitions here.
 
 ### types.rs
 
-Keep `types.rs` for shared or external-facing types only.
+Keep `types.rs` for shared or cross-file types.
 
 Good fits:
 
 - shared enums
-- DTOs returned to the frontend
 - events emitted to the frontend
 - runtime state types
 - small self-contained impls on shared enums or value types
@@ -99,7 +98,6 @@ Use category markers in `types.rs` only for sections that are genuinely useful t
 
 Common markers:
 
-- `// MARK: - DTOs`
 - `// MARK: - State`
 - `// MARK: - Events`
 
@@ -126,13 +124,13 @@ pub struct ModuleUpdatedEvent(pub ModuleDto);
 
 ### commands.rs
 
-Use `commands.rs` primarily for Tauri command handlers.
+Use `commands.rs` primarily for Tauri command handlers and the transport types that are tied to those handlers.
 
 Good fits:
 
 - `#[tauri::command]` handlers
-- command-local params types when they are only used by commands in the same file
-- small structural conversions such as `impl From` when they are tightly tied to command flow
+- command-specific params types and response types (like DTOs)
+- structural conversions (to e.g. response types) such as `impl From`
 
 Do not treat `commands.rs` as a general-purpose misc file.
 
@@ -184,18 +182,16 @@ Avoid:
 - `types.rs` importing from `repository.rs`
 - `repository.rs` importing from `commands.rs`
 
-Keep `types.rs` as the stable center of the module.
-
 ## Type Naming
 
-| Type   | Suffix    | Location        | Purpose                   |
-| ------ | --------- | --------------- | ------------------------- |
-| DTO    | `*Dto`    | `types.rs`      | Returned to frontend      |
-| Event  | `*Event`  | `types.rs`      | Emitted to frontend       |
-| State  | `*State`  | `types.rs`      | Runtime state             |
-| Params | `*Params` | `commands.rs`   | Received from frontend    |
-| Row    | `*Row`    | `repository.rs` | Database row mapping      |
-| Input  | `*Input`  | `repository.rs` | Internal repository input |
+| Type   | Suffix    | Typical location | Purpose                          |
+| ------ | --------- | ---------------- | -------------------------------- |
+| DTO    | `*Dto`    | `commands.rs`    | Command-specific transport shape |
+| Event  | `*Event`  | `types.rs`       | Emitted to frontend              |
+| State  | `*State`  | `types.rs`       | Runtime state                    |
+| Params | `*Params` | `commands.rs`    | Received from frontend           |
+| Row    | `*Row`    | `repository.rs`  | Database row mapping             |
+| Input  | `*Input`  | `repository.rs`  | Internal repository input        |
 
 For a module root aggregate that crosses module boundaries, prefer an explicit name like `AppConfig` over a generic `Config`.
 

@@ -10,10 +10,9 @@ import {
 } from '@/components';
 import { type specta } from '@/environment';
 import { cn } from '@/lib';
+import { useCatalogPicker, type TCatalogItem } from '@/modules/catalog';
 import { SettingsGroup } from '@/modules/settings';
 import { useNewIntentionCx } from '../new';
-import { type TBlockTarget } from './block-target';
-import { useBlockTargetsDialog } from './BlockTargetsDialog';
 
 export const BlockModeCard: React.FC = () => {
 	const cx = useNewIntentionCx();
@@ -41,10 +40,10 @@ export const BlockModeCard: React.FC = () => {
 		return 'None';
 	}, [isTargetsSelectable, selectedTargets]);
 
-	const { open: openTargetsDialog, Modal: TargetsDialog } = useBlockTargetsDialog({
+	const { open: openPicker, Dialog: PickerDialog } = useCatalogPicker({
 		onConfirm: React.useCallback(
-			(targets: TBlockTarget[]) => {
-				cx.$blockForm.fields.selectedTargets.set(targets);
+			(items: TCatalogItem[]) => {
+				cx.$blockForm.fields.selectedTargets.set(items);
 			},
 			[cx]
 		)
@@ -61,8 +60,8 @@ export const BlockModeCard: React.FC = () => {
 	);
 
 	const handleOpenTargets = React.useCallback(() => {
-		openTargetsDialog(selectedTargets);
-	}, [openTargetsDialog, selectedTargets]);
+		openPicker(selectedTargets);
+	}, [openPicker, selectedTargets]);
 
 	// MARK: - UI
 
@@ -136,7 +135,7 @@ export const BlockModeCard: React.FC = () => {
 					</div>
 				)}
 			</SettingsGroup>
-			<TargetsDialog />
+			<PickerDialog />
 		</>
 	);
 };

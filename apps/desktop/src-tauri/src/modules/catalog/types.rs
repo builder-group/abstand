@@ -1,8 +1,14 @@
-use super::search::CatalogSearch;
+use super::{
+    assets::{CatalogAsset, CatalogAssets},
+    search::CatalogSearch,
+};
 use serde::{Deserialize, Serialize};
 use std::{
     ops::Deref,
-    sync::{Arc, Mutex},
+    sync::{
+        atomic::{AtomicU64, Ordering},
+        Arc, Mutex,
+    },
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
@@ -33,43 +39,19 @@ pub struct Website {
     pub color: Option<String>,
 }
 
-// MARK: - DTOs
-
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(tag = "type", rename_all = "camelCase")]
-pub enum CatalogSearchResultDto {
-    #[serde(rename = "app")]
+pub enum CatalogItemId {
     App {
-        app: CatalogAppSearchResultDto,
-        score: u32,
+        #[serde(rename = "appId")]
+        app_id: String,
+        // Required for icon resolution on macOS; not part of the cache key.
+        #[serde(rename = "bundleId")]
+        bundle_id: Option<String>,
     },
-    #[serde(rename = "website")]
     Website {
-        website: CatalogWebsiteSearchResultDto,
-        score: u32,
+        domain: String,
     },
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
-#[serde(rename_all = "camelCase")]
-pub struct CatalogAppSearchResultDto {
-    /// Stable app identifier used as the canonical app key across platforms.
-    pub app_id: String,
-    /// macOS bundle identifier when the app provides one.
-    pub bundle_id: Option<String>,
-    pub name: Option<String>,
-    pub icon: Option<String>,
-    pub color: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
-#[serde(rename_all = "camelCase")]
-pub struct CatalogWebsiteSearchResultDto {
-    /// Canonical website domain used as the stable website key.
-    pub domain: String,
-    pub name: Option<String>,
-    pub icon: Option<String>,
-    pub color: Option<String>,
 }
 
 // MARK: - State
@@ -91,5 +73,60 @@ impl Deref for CatalogSearchState {
 
     fn deref(&self) -> &Self::Target {
         return &self.0;
+    }
+}
+
+#[derive(Clone)]
+pub struct CatalogAssetsState {
+    assets: Arc<Mutex<CatalogAssets>>,
+    generation: Arc<AtomicU64>,
+}
+
+impl CatalogAssetsState {
+    pub fn init() -> Self {
+        return Self {
+            assets: Arc::new(Mutex::new(CatalogAssets::new())),
+            generation: Arc::new(AtomicU64::new(0)),
+        };
+    }
+
+    pub fn arc(&self) -> Arc<Mutex<CatalogAssets>> {
+        return Arc::clone(&self.assets);
+    }
+
+    pub fn generation_arc(&self) -> Arc<AtomicU64> {
+        return Arc::clone(&self.generation);
+    }
+
+    pub fn next_generation(&self) -> u64 {
+        return self.generation.fetch_add(1, Ordering::SeqCst) + 1;
+    }
+}
+
+impl Deref for CatalogAssetsState {
+    type Target = Mutex<CatalogAssets>;
+
+    fn deref(&self) -> &Self::Target {
+        return &self.assets;
+    }
+}
+
+// MARK: - Events
+
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type, tauri_specta::Event)]
+#[serde(rename_all = "camelCase")]
+pub struct CatalogAssetLoadedEvent {
+    pub item_id: CatalogItemId,
+    pub icon: Option<String>,
+    pub color: Option<String>,
+}
+
+impl CatalogAssetLoadedEvent {
+    pub fn from_asset(item_id: &CatalogItemId, asset: &CatalogAsset) -> Self {
+        return Self {
+            item_id: item_id.clone(),
+            icon: asset.icon.clone(),
+            color: asset.color.clone(),
+        };
     }
 }

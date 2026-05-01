@@ -1,3 +1,4 @@
+import { useCompute } from 'feature-react/state';
 import React from 'react';
 import {
 	Badge,
@@ -13,27 +14,31 @@ import {
 	useComboboxAnchor
 } from '@/components';
 import { specta } from '@/environment';
+import { useDelayedValue } from '@/hooks';
 import { toTuple } from '@/lib';
+import { CatalogItemIcon } from './CatalogItemIcon';
+import { CatalogItemTypeBadge } from './CatalogItemTypeBadge';
 import {
-	getBlockTargetKey,
-	getBlockTargetLabel,
-	getBlockTargetSublabel,
-	toBlockTarget,
-	type TBlockTarget
-} from './block-target';
-import { BlockTargetIcon } from './BlockTargetIcon';
-import { BlockTargetTypeBadge } from './BlockTargetTypeBadge';
+	getCatalogItemKey,
+	getCatalogItemLabel,
+	getCatalogItemSublabel,
+	toCatalogItem,
+	type CatalogPickerCx,
+	type TCatalogItem
+} from './CatalogPickerCx';
 
 export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
-	const { selectedKeys, onToggle } = props;
+	const { selectedKeys, cx } = props;
 	const anchorRef = useComboboxAnchor();
 
 	const [query, setQuery] = React.useState('');
 	const trimmedQuery = React.useMemo(() => query.trim(), [query]);
 
 	const [searchResults, setSearchResults] = React.useState<specta.CatalogSearchResultDto[]>([]);
+	const resultItems = React.useMemo(() => searchResults.map(toCatalogItem), [searchResults]);
+
 	const [isLoading, setIsLoading] = React.useState(false);
-	const resultTargets = React.useMemo(() => searchResults.map(toBlockTarget), [searchResults]);
+	const isLoadingVisible = useDelayedValue(isLoading, (nextValue) => (nextValue ? 200 : 0));
 
 	// MARK: - Actions
 
@@ -57,7 +62,11 @@ export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
 			setIsLoading(true);
 			try {
 				const [isSearchOk, , searchData] = toTuple(
-					await specta.commands.searchCatalog({ query: trimmedQuery, limit: 20 })
+					await specta.commands.searchCatalog({
+						query: trimmedQuery,
+						limit: 20,
+						includeIcon: { type: 'lazy', includeColor: false }
+					})
 				);
 				if (!isActive) return;
 				if (isSearchOk) {
@@ -81,8 +90,9 @@ export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
 	return (
 		<Combobox
 			multiple
+			autoHighlight="always"
 			filter={null}
-			items={resultTargets}
+			items={resultItems}
 			// Note: returning '' clears the input display after an item is pressed
 			itemToStringValue={() => ''}
 			onInputValueChange={handleInputChange}
@@ -100,32 +110,20 @@ export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
 					anchor={anchorRef}
 					className="w-(--anchor-width) max-w-(--anchor-width) min-w-0"
 				>
-					<ComboboxStatus>{isLoading ? 'Searching…' : 'Select apps & websites'}</ComboboxStatus>
+					<ComboboxStatus>
+						{isLoadingVisible ? 'Searching…' : 'Select apps & websites'}
+					</ComboboxStatus>
 
 					<ComboboxList>
-						{resultTargets.map((target) => {
-							const isSelected = selectedKeys.has(getBlockTargetKey(target));
+						{resultItems.map((item) => {
+							const key = getCatalogItemKey(item);
 							return (
-								<ComboboxItem
-									key={getBlockTargetKey(target)}
-									value={target}
-									onClick={() => onToggle(target)}
-								>
-									<BlockTargetIcon target={target} />
-									<div className="flex min-w-0 flex-1 flex-col gap-0.5">
-										<span className="truncate text-sm">{getBlockTargetLabel(target)}</span>
-										<span className="text-base-400 truncate text-xs">
-											{getBlockTargetSublabel(target)}
-										</span>
-									</div>
-									{isSelected && (
-										<Badge size="sm" className="bg-green-500/10 text-green-600">
-											<CheckIcon className="size-3" />
-											added
-										</Badge>
-									)}
-									<BlockTargetTypeBadge target={target} />
-								</ComboboxItem>
+								<CatalogSearchItem
+									key={key}
+									item={item}
+									cx={cx}
+									isSelected={selectedKeys.has(key)}
+								/>
 							);
 						})}
 
@@ -137,7 +135,36 @@ export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
 	);
 };
 
-export interface TCatalogSearchProps {
+interface TCatalogSearchProps {
 	selectedKeys: Set<string>;
-	onToggle: (target: TBlockTarget) => void;
+	cx: CatalogPickerCx;
+}
+
+const CatalogSearchItem: React.FC<TCatalogSearchItemProps> = (props) => {
+	const { item, cx, isSelected } = props;
+	const key = getCatalogItemKey(item);
+	const icon = useCompute(cx.$iconAssets, ({ value }) => value[key]);
+
+	return (
+		<ComboboxItem key={key} value={item} onClick={() => cx.toggle(item)}>
+			<CatalogItemIcon item={item} icon={icon} />
+			<div className="flex min-w-0 flex-1 flex-col gap-0.5">
+				<span className="truncate text-sm">{getCatalogItemLabel(item)}</span>
+				<span className="text-base-400 truncate text-xs">{getCatalogItemSublabel(item)}</span>
+			</div>
+			{isSelected && (
+				<Badge size="sm" className="bg-green-500/10 text-green-600">
+					<CheckIcon className="size-3" />
+					added
+				</Badge>
+			)}
+			<CatalogItemTypeBadge item={item} />
+		</ComboboxItem>
+	);
+};
+
+interface TCatalogSearchItemProps {
+	item: TCatalogItem;
+	cx: CatalogPickerCx;
+	isSelected: boolean;
 }
