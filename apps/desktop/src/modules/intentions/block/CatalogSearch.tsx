@@ -1,4 +1,3 @@
-import { useCompute } from 'feature-react/state';
 import React from 'react';
 import {
 	Badge,
@@ -23,11 +22,10 @@ import {
 	type TBlockTarget
 } from './block-target';
 import { BlockTargetIcon } from './BlockTargetIcon';
-import type { BlockTargetsDialogCx } from './BlockTargetsDialog';
 import { BlockTargetTypeBadge } from './BlockTargetTypeBadge';
 
 export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
-	const { cx } = props;
+	const { selectedKeys, onToggle } = props;
 	const anchorRef = useComboboxAnchor();
 
 	const [query, setQuery] = React.useState('');
@@ -36,9 +34,6 @@ export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
 	const [searchResults, setSearchResults] = React.useState<specta.CatalogSearchResultDto[]>([]);
 	const [isLoading, setIsLoading] = React.useState(false);
 	const resultTargets = React.useMemo(() => searchResults.map(toBlockTarget), [searchResults]);
-	const selectedKeys = useCompute(cx.$selectedTargets, ({ value }) => {
-		return new Set(value.map(getBlockTargetKey));
-	});
 
 	// MARK: - Actions
 
@@ -48,12 +43,11 @@ export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
 
 	// MARK: - Effects
 
-	// Debounce catalog searches slightly so fast typing does not thrash the backend
+	// Debounce search and cancel stale requests on each query change
 	React.useEffect(() => {
 		if (trimmedQuery.length === 0) {
 			setSearchResults([]);
 			setIsLoading(false);
-			void cx.cancelActiveCatalogSearchSession();
 			return;
 		}
 
@@ -69,32 +63,22 @@ export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
 						includeIcon: { type: 'eager', includeColor: false }
 					})
 				);
-				if (!isSearchOk) {
-					return;
+				if (!isActive) return;
+				if (isSearchOk) {
+					setSearchResults(searchData);
 				}
-
-				const { lazySessionId, results } = searchResponse;
-				if (!isActive) {
-					if (lazySessionId != null) {
-						await specta.commands.cancelCatalogSearchSession({ sessionId: lazySessionId });
-					}
-					return;
-				}
-
-				cx.setActiveCatalogSearchSessionId(lazySessionId);
-				setSearchResults(results);
 			} finally {
 				if (isActive) {
 					setIsLoading(false);
 				}
 			}
-		}, 100);
+		}, 150);
 
 		return () => {
 			isActive = false;
 			clearTimeout(timer);
 		};
-	}, [cx, trimmedQuery]);
+	}, [trimmedQuery]);
 
 	// MARK: - UI
 
@@ -124,17 +108,28 @@ export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
 
 					<ComboboxList>
 						{resultTargets.map((target) => {
-							const targetKey = getBlockTargetKey(target);
-							const isSelected = selectedKeys.has(targetKey);
-
+							const isSelected = selectedKeys.has(getBlockTargetKey(target));
 							return (
-								<CatalogSearchResultRow
-									key={targetKey}
-									cx={cx}
-									target={target}
-									isSelected={isSelected}
-									onToggle={() => cx.toggle(target)}
-								/>
+								<ComboboxItem
+									key={getBlockTargetKey(target)}
+									value={target}
+									onClick={() => onToggle(target)}
+								>
+									<BlockTargetIcon target={target} />
+									<div className="flex min-w-0 flex-1 flex-col gap-0.5">
+										<span className="truncate text-sm">{getBlockTargetLabel(target)}</span>
+										<span className="text-base-400 truncate text-xs">
+											{getBlockTargetSublabel(target)}
+										</span>
+									</div>
+									{isSelected && (
+										<Badge size="sm" className="bg-green-500/10 text-green-600">
+											<CheckIcon className="size-3" />
+											added
+										</Badge>
+									)}
+									<BlockTargetTypeBadge target={target} />
+								</ComboboxItem>
 							);
 						})}
 
@@ -147,34 +142,6 @@ export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
 };
 
 export interface TCatalogSearchProps {
-	cx: BlockTargetsDialogCx;
-}
-
-const CatalogSearchResultRow: React.FC<TCatalogSearchResultRowProps> = (props) => {
-	const { cx, target, isSelected, onToggle } = props;
-	const icon = useCompute(cx.$iconAssets, ({ value }) => value[getBlockTargetKey(target)]?.icon);
-
-	return (
-		<ComboboxItem value={target} onClick={onToggle}>
-			<BlockTargetIcon target={target} icon={icon} />
-			<div className="flex min-w-0 flex-1 flex-col gap-0.5">
-				<span className="truncate text-sm">{getBlockTargetLabel(target)}</span>
-				<span className="text-base-400 truncate text-xs">{getBlockTargetSublabel(target)}</span>
-			</div>
-			{isSelected && (
-				<Badge size="sm" className="bg-green-500/10 text-green-600">
-					<CheckIcon className="size-3" />
-					added
-				</Badge>
-			)}
-			<BlockTargetTypeBadge target={target} />
-		</ComboboxItem>
-	);
-};
-
-interface TCatalogSearchResultRowProps {
-	cx: BlockTargetsDialogCx;
-	target: TBlockTarget;
-	isSelected: boolean;
-	onToggle: () => void;
+	selectedKeys: Set<string>;
+	onToggle: (target: TBlockTarget) => void;
 }

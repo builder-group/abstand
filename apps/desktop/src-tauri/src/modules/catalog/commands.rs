@@ -14,8 +14,11 @@ pub async fn search_catalog(
     search_state: State<'_, CatalogSearchState>,
     assets_state: State<'_, CatalogAssetsState>,
     params: SearchCatalogParams,
-) -> Result<CatalogSearchResponseDto, String> {
+) -> Result<Vec<CatalogSearchResultDto>, String> {
     let query = params.query.trim().to_string();
+    if query.is_empty() {
+        return Ok(Vec::new());
+    }
     let limit = params.limit.unwrap_or(20) as usize;
     let icon_mode = params.include_icon.unwrap_or(CatalogIconMode::Lazy {
         include_color: false,

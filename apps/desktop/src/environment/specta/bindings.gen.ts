@@ -63,15 +63,9 @@ async getShortcutConfigs() : Promise<ShortcutActionConfigDto[]> {
     return await TAURI_INVOKE("get_shortcut_configs");
 },
 /**
- * Cancels an active lazy catalog asset session.
- */
-async cancelCatalogSearchSession(params: CancelCatalogSearchSessionParams) : Promise<void> {
-    await TAURI_INVOKE("cancel_catalog_search_session", { params });
-},
-/**
  * Searches cached catalog items by query.
  */
-async searchCatalog(params: SearchCatalogParams) : Promise<Result<CatalogSearchResponseDto, string>> {
+async searchCatalog(params: SearchCatalogParams) : Promise<Result<CatalogSearchResultDto[], string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("search_catalog", { params }) };
 } catch (e) {

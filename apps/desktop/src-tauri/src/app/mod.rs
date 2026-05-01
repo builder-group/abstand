@@ -22,7 +22,6 @@ pub fn run() {
             // Shortcuts commands
             shortcuts::commands::get_shortcut_configs,
             // Catalog commands
-            catalog::commands::cancel_catalog_search_session,
             catalog::commands::search_catalog,
         ])
         .events(collect_events![
@@ -35,8 +34,6 @@ pub fn run() {
             intentions::types::IntentionUpdatedEvent,
             // Shortcuts events
             shortcuts::types::ShortcutTriggeredEvent,
-            // Catalog events
-            catalog::types::CatalogIconLoadedEvent,
         ]);
 
     // Generate Typescript bindings
