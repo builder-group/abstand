@@ -1,5 +1,5 @@
 use super::{
-    assets::{load_assets, resolve_asset, CatalogAsset},
+    assets::{load_assets, resolve_asset_and_cache, CatalogAsset},
     search::CatalogSearchResult,
     types::{CatalogAssetsState, CatalogItemId, CatalogSearchState},
 };
@@ -52,7 +52,7 @@ pub async fn search_catalog(
                     .iter()
                     .map(|result| {
                         let item_id = CatalogItemId::from(result);
-                        let asset = resolve_asset(&item_id, include_color);
+                        let asset = resolve_asset_and_cache(&item_id, &assets, include_color);
                         CatalogSearchResultDto::from_search_result(result, asset.as_ref())
                     })
                     .collect(),

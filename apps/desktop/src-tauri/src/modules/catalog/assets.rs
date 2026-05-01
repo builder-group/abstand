@@ -1,8 +1,9 @@
 use crate::modules::catalog::types::{CatalogAssetLoadedEvent, CatalogAssetsState, CatalogItemId};
 #[cfg(target_os = "macos")]
 use mado::get_app_icon;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::sync::atomic::Ordering;
+use std::sync::{Arc, Mutex};
 use tauri::AppHandle;
 use tauri_specta::Event;
 
@@ -24,39 +25,16 @@ pub fn load_assets(
     let assets = assets_state.arc();
 
     tauri::async_runtime::spawn_blocking(move || {
-        let mut seen_keys = HashSet::<CatalogAssetKey>::new();
-
         for item_id in &item_ids {
             if generation_state.load(Ordering::SeqCst) != generation {
                 break;
             }
 
-            if !seen_keys.insert(CatalogAssetKey::from(item_id)) {
-                continue;
-            }
-
-            let is_cached = match assets.lock() {
-                Ok(locked) => locked.has(item_id),
-                Err(_) => break,
-            };
-            if is_cached {
-                continue;
-            }
-
-            let Some(asset) = resolve_asset(item_id, include_color) else {
+            let Some(asset) = resolve_asset_and_cache(item_id, &assets, include_color) else {
                 continue;
             };
 
-            match assets.lock() {
-                Ok(mut locked) => {
-                    // Check again because another thread may have inserted while resolve ran without the lock
-                    if !locked.has(item_id) {
-                        locked.set(item_id, asset.clone());
-                        let _ = CatalogAssetLoadedEvent::from_asset(item_id, &asset).emit(&app);
-                    }
-                }
-                Err(_) => break,
-            }
+            let _ = CatalogAssetLoadedEvent::from_asset(item_id, &asset).emit(&app);
         }
     });
 }
@@ -110,7 +88,30 @@ pub struct CatalogAsset {
 
 // MARK: - Resolvers
 
-pub(super) fn resolve_asset(item_id: &CatalogItemId, include_color: bool) -> Option<CatalogAsset> {
+pub(super) fn resolve_asset_and_cache(
+    item_id: &CatalogItemId,
+    assets: &Arc<Mutex<CatalogAssets>>,
+    include_color: bool,
+) -> Option<CatalogAsset> {
+    if let Ok(locked) = assets.lock() {
+        if let Some(cached) = locked.get(item_id) {
+            return Some(cached.clone());
+        }
+    }
+
+    let asset = resolve_asset(item_id, include_color)?;
+
+    // Note: Check cache again because another thread may have inserted while resolve ran without the lock
+    if let Ok(mut locked) = assets.lock() {
+        if !locked.has(item_id) {
+            locked.set(item_id, asset.clone());
+        }
+    }
+
+    return Some(asset);
+}
+
+fn resolve_asset(item_id: &CatalogItemId, include_color: bool) -> Option<CatalogAsset> {
     return match item_id {
         CatalogItemId::App { bundle_id, .. } => {
             let bundle_id = bundle_id.as_deref()?;
