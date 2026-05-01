@@ -86,13 +86,13 @@ async searchCatalog(params: SearchCatalogParams) : Promise<Result<CatalogSearchR
 
 export const events = __makeEvents__<{
 appSettingsChangedEvent: AppSettingsChangedEvent,
-catalogIconLoadedEvent: CatalogIconLoadedEvent,
+catalogAssetLoadedEvent: CatalogAssetLoadedEvent,
 intentionCreatedEvent: IntentionCreatedEvent,
 intentionUpdatedEvent: IntentionUpdatedEvent,
 shortcutTriggeredEvent: ShortcutTriggeredEvent
 }>({
 appSettingsChangedEvent: "app-settings-changed-event",
-catalogIconLoadedEvent: "catalog-icon-loaded-event",
+catalogAssetLoadedEvent: "catalog-asset-loaded-event",
 intentionCreatedEvent: "intention-created-event",
 intentionUpdatedEvent: "intention-updated-event",
 shortcutTriggeredEvent: "shortcut-triggered-event"
@@ -130,26 +130,12 @@ export type AppSettings = { version: SettingsVersion; appearance: AppearanceSett
 shortcuts: Partial<{ [key in ShortcutAction]: KeyboardShortcut | null }> }
 export type AppSettingsChangedEvent = AppSettings
 export type AppearanceSettings = { theme: Theme }
-export type CancelCatalogSearchSessionParams = { sessionId: number }
-export type CatalogAppSearchResultDto = { 
-/**
- * Stable app identifier used as the canonical app key across platforms.
- */
-appId: string; 
-/**
- * macOS bundle identifier when the app provides one.
- */
-bundleId: string | null; name: string | null; icon: string | null; color: string | null }
-export type CatalogIconDto = { icon: string | null; color: string | null }
-export type CatalogIconLoadedEvent = { targetKey: string; asset: CatalogIconDto }
-export type CatalogIconMode = "none" | "await" | "lazy"
-export type CatalogSearchResponseDto = { results: CatalogSearchResultDto[]; lazySessionId: number | null }
+export type CatalogAppSearchResultDto = { appId: string; bundleId: string | null; name: string | null; icon: string | null; color: string | null }
+export type CatalogAssetLoadedEvent = { itemId: CatalogItemId; icon: string | null; color: string | null }
+export type CatalogIconMode = { type: "skip" } | { type: "eager"; includeColor: boolean } | { type: "lazy"; includeColor: boolean }
+export type CatalogItemId = { type: "app"; appId: string; bundleId: string | null } | { type: "website"; domain: string }
 export type CatalogSearchResultDto = { type: "app"; app: CatalogAppSearchResultDto; score: number } | { type: "website"; website: CatalogWebsiteSearchResultDto; score: number }
-export type CatalogWebsiteSearchResultDto = { 
-/**
- * Canonical website domain used as the stable website key.
- */
-domain: string; name: string | null; icon: string | null; color: string | null }
+export type CatalogWebsiteSearchResultDto = { domain: string; name: string | null; icon: string | null; color: string | null }
 export type CreateIntentionBehaviorParams = { type: "block" } | { type: "break" }
 export type CreateIntentionParams = { name: string; behavior: CreateIntentionBehaviorParams }
 export type DeveloperSettings = { enabled: boolean }
@@ -168,7 +154,7 @@ export type KeyboardShortcut = { modifiers: ShortcutModifier[];
  * A browser KeyboardEvent.code value, e.g. "KeyK", "KeyB".
  */
 code: string }
-export type SearchCatalogParams = { query: string; limit: number | null; iconMode: CatalogIconMode | null }
+export type SearchCatalogParams = { query: string; limit: number | null; includeIcon: CatalogIconMode | null }
 export type SettingsVersion = "0.0.1"
 export type ShortcutAction = "search" | "toggleSidebar"
 export type ShortcutActionConfigDto = { action: ShortcutAction; isGlobal: boolean; shortcut: KeyboardShortcut | null }

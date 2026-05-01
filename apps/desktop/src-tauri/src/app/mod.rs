@@ -26,6 +26,8 @@ pub fn run() {
             catalog::commands::search_catalog,
         ])
         .events(collect_events![
+            // Catalog events
+            catalog::types::CatalogAssetLoadedEvent,
             // Settings events
             settings::types::AppSettingsChangedEvent,
             // Intentions events

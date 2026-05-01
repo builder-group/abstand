@@ -62,13 +62,11 @@ export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
 		const timer = setTimeout(async () => {
 			setIsLoading(true);
 			try {
-				await cx.cancelActiveCatalogSearchSession();
-
-				const [isSearchOk, , searchResponse] = toTuple(
+				const [isSearchOk, , searchData] = toTuple(
 					await specta.commands.searchCatalog({
 						query: trimmedQuery,
 						limit: 20,
-						iconMode: 'lazy'
+						includeIcon: { type: 'eager', includeColor: false }
 					})
 				);
 				if (!isSearchOk) {
