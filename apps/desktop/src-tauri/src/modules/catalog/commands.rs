@@ -1,4 +1,5 @@
 use super::{
+    assets::{CatalogAssetRequest, CatalogAssets},
     search::CatalogSearchResult,
     types::{CatalogAssetsState, CatalogSearchState},
 };
@@ -85,36 +86,30 @@ pub struct CatalogWebsiteSearchResultDto {
 }
 
 impl CatalogSearchResultDto {
-    fn from_search_result(
-        result: CatalogSearchResult,
-        assets: &super::assets::CatalogAssets,
-    ) -> Self {
+    fn from_search_result(result: CatalogSearchResult, assets: &CatalogAssets) -> Self {
+        let asset_request = CatalogAssetRequest::from(&result);
+        let asset = assets.get(&asset_request);
+
         return match result {
-            CatalogSearchResult::App { app, score } => {
-                let asset = assets.get_for_app(&app.app_id);
-                Self::App {
-                    app: CatalogAppSearchResultDto {
-                        app_id: app.app_id,
-                        bundle_id: app.bundle_id,
-                        name: app.name,
-                        icon: asset.and_then(|asset| asset.icon.clone()),
-                        color: asset.and_then(|asset| asset.color.clone()),
-                    },
-                    score,
-                }
-            }
-            CatalogSearchResult::Website { website, score } => {
-                let asset = assets.get_for_website(&website.domain);
-                Self::Website {
-                    website: CatalogWebsiteSearchResultDto {
-                        domain: website.domain,
-                        name: website.name,
-                        icon: asset.and_then(|asset| asset.icon.clone()),
-                        color: asset.and_then(|asset| asset.color.clone()),
-                    },
-                    score,
-                }
-            }
+            CatalogSearchResult::App { app, score } => Self::App {
+                app: CatalogAppSearchResultDto {
+                    app_id: app.app_id,
+                    bundle_id: app.bundle_id,
+                    name: app.name,
+                    icon: asset.and_then(|asset| asset.icon.clone()),
+                    color: asset.and_then(|asset| asset.color.clone()),
+                },
+                score,
+            },
+            CatalogSearchResult::Website { website, score } => Self::Website {
+                website: CatalogWebsiteSearchResultDto {
+                    domain: website.domain,
+                    name: website.name,
+                    icon: asset.and_then(|asset| asset.icon.clone()),
+                    color: asset.and_then(|asset| asset.color.clone()),
+                },
+                score,
+            },
         };
     }
 }
