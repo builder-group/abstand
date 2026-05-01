@@ -4,7 +4,7 @@ import { Err, type TResult } from 'tuple-result';
 import { zValidator } from 'validation-adapters/zod';
 import * as z from 'zod';
 import { specta } from '@/environment';
-import { type TBlockTarget } from '../block';
+import { type TCatalogItem } from '@/modules/catalog';
 import { IntentionsCx, useIntentionsCx } from '../IntentionsCx';
 
 export class NewIntentionCx {
@@ -92,7 +92,7 @@ interface TNewIntentionBaseFormData {
 
 interface TNewIntentionBlockFormData {
 	blockMode: specta.IntentionBlockMode;
-	selectedTargets: TBlockTarget[];
+	selectedTargets: TCatalogItem[];
 }
 
 type TIntentionBehaviorType = 'block' | 'break';
