@@ -43,8 +43,10 @@ pub struct Website {
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum CatalogItemId {
     App {
+        #[serde(rename = "appId")]
         app_id: String,
         // Required for icon resolution on macOS; not part of the cache key.
+        #[serde(rename = "bundleId")]
         bundle_id: Option<String>,
     },
     Website {

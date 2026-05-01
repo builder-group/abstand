@@ -101,8 +101,14 @@ pub struct SearchCatalogParams {
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum CatalogIconMode {
     Skip,
-    Eager { include_color: bool },
-    Lazy { include_color: bool },
+    Eager {
+        #[serde(rename = "includeColor")]
+        include_color: bool,
+    },
+    Lazy {
+        #[serde(rename = "includeColor")]
+        include_color: bool,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]

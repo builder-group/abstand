@@ -80,7 +80,7 @@ impl From<&CatalogItemId> for CatalogAssetKey {
     }
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct CatalogAsset {
     pub icon: Option<String>,
     pub color: Option<String>,
