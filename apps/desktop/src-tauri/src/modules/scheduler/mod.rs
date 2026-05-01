@@ -3,11 +3,11 @@
 pub mod scheduler;
 pub mod types;
 
-use scheduler::Scheduler;
+use scheduler::{ScheduledJobId, ScheduledJobSummary, Scheduler};
 use std::sync::Arc;
 use std::time::Duration;
 use tauri::{App, AppHandle, Manager};
-use types::{ScheduledJobDto, ScheduledJobId, SchedulerState};
+use types::SchedulerState;
 
 pub fn setup(app: &App) {
     let scheduler = Arc::new(Scheduler::new());
@@ -54,7 +54,7 @@ pub fn cancel_job(app: &AppHandle, job_id: ScheduledJobId) -> bool {
 
 /// Returns the currently scheduled in-memory jobs ordered by their scheduled time.
 #[allow(dead_code)]
-pub fn list_jobs(app: &AppHandle) -> Vec<ScheduledJobDto> {
+pub fn list_jobs(app: &AppHandle) -> Vec<ScheduledJobSummary> {
     let state = app.state::<SchedulerState>();
     return state.0.list_jobs();
 }

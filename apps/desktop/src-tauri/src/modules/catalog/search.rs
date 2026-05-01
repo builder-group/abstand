@@ -1,9 +1,4 @@
-use super::{
-    app_id::resolve_app_identity,
-    matcher::fuzzy_match,
-    predefined::PREDEFINED_SERVICES,
-    types::{CatalogAppSearchResultDto, CatalogSearchResultDto, CatalogWebsiteSearchResultDto},
-};
+use super::{app_id::resolve_app_identity, matcher::fuzzy_match, predefined::PREDEFINED_SERVICES};
 use crate::common::url::extract_domain;
 use mado::{get_installed_apps, InstalledAppsConfig};
 use std::collections::HashSet;
@@ -22,7 +17,7 @@ impl CatalogSearch {
     }
 
     /// Searches cached catalog items by query.
-    pub fn search(&self, query: &str, limit: usize) -> Vec<CatalogSearchResultDto> {
+    pub fn search(&self, query: &str, limit: usize) -> Vec<CatalogSearchResult> {
         let trimmed_query = query.trim();
         if trimmed_query.is_empty() {
             return Vec::new();
@@ -51,7 +46,7 @@ impl CatalogSearch {
             // Keep only the best result for each stable identifier
             .filter(|(item, _)| seen_ids.insert(item.id().to_string()))
             .take(limit)
-            .map(|(item, score)| CatalogSearchResultDto::from((item.clone(), score)))
+            .map(|(item, score)| CatalogSearchResult::from((item.clone(), score)))
             .collect();
     }
 
@@ -100,11 +95,6 @@ impl CatalogSearch {
     fn has_website_domain(&self, domain: &str) -> bool {
         return self.websites.iter().any(|item| item.id() == domain);
     }
-
-    #[cfg(test)]
-    fn from_items(apps: Vec<SearchableItem>, websites: Vec<SearchableItem>) -> Self {
-        return Self { apps, websites };
-    }
 }
 
 // MARK: - Searchable Item
@@ -112,11 +102,11 @@ impl CatalogSearch {
 #[derive(Debug, Clone)]
 pub enum SearchableItem {
     App {
-        app: CatalogAppSearchResultDto,
+        app: SearchableApp,
         keywords: Vec<String>,
     },
     Website {
-        website: CatalogWebsiteSearchResultDto,
+        website: SearchableWebsite,
         keywords: Vec<String>,
     },
 }
@@ -130,24 +120,17 @@ impl SearchableItem {
 
         return Self::App {
             keywords,
-            app: CatalogAppSearchResultDto {
+            app: SearchableApp {
                 app_id,
                 bundle_id,
                 name,
-                icon: None,
-                color: None,
             },
         };
     }
 
     pub fn website(domain: String, name: Option<String>, keywords: Vec<String>) -> Self {
         return Self::Website {
-            website: CatalogWebsiteSearchResultDto {
-                domain,
-                name,
-                icon: None,
-                color: None,
-            },
+            website: SearchableWebsite { domain, name },
             keywords,
         };
     }
@@ -182,11 +165,36 @@ impl SearchableItem {
     }
 }
 
-impl From<(SearchableItem, u32)> for CatalogSearchResultDto {
+#[derive(Debug, Clone)]
+pub enum CatalogSearchResult {
+    App {
+        app: SearchableApp,
+        score: u32,
+    },
+    Website {
+        website: SearchableWebsite,
+        score: u32,
+    },
+}
+
+impl From<(SearchableItem, u32)> for CatalogSearchResult {
     fn from((item, score): (SearchableItem, u32)) -> Self {
         return match item {
             SearchableItem::App { app, .. } => Self::App { app, score },
             SearchableItem::Website { website, .. } => Self::Website { website, score },
         };
     }
+}
+
+#[derive(Debug, Clone)]
+pub struct SearchableApp {
+    pub app_id: String,
+    pub bundle_id: Option<String>,
+    pub name: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct SearchableWebsite {
+    pub domain: String,
+    pub name: Option<String>,
 }

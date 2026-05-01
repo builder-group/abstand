@@ -63,6 +63,7 @@ impl AppWindow {
 
     /// Shows the window at `path`, building a new window there on first open
     /// and navigating existing windows client-side.
+    #[allow(dead_code)]
     pub fn show_as(&self, app: &AppHandle, path: &str) -> tauri::Result<WebviewWindow> {
         let window = if let Some(window) = self.get(app) {
             self.navigate_to_path(&window, path)?;

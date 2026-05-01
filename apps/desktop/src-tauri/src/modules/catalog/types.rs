@@ -1,4 +1,4 @@
-use super::search::CatalogSearch;
+use super::{assets::CatalogAssets, search::CatalogSearch};
 use serde::{Deserialize, Serialize};
 use std::{
     ops::Deref,
@@ -33,45 +33,6 @@ pub struct Website {
     pub color: Option<String>,
 }
 
-// MARK: - DTOs
-
-#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
-#[serde(tag = "type", rename_all = "camelCase")]
-pub enum CatalogSearchResultDto {
-    #[serde(rename = "app")]
-    App {
-        app: CatalogAppSearchResultDto,
-        score: u32,
-    },
-    #[serde(rename = "website")]
-    Website {
-        website: CatalogWebsiteSearchResultDto,
-        score: u32,
-    },
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
-#[serde(rename_all = "camelCase")]
-pub struct CatalogAppSearchResultDto {
-    /// Stable app identifier used as the canonical app key across platforms.
-    pub app_id: String,
-    /// macOS bundle identifier when the app provides one.
-    pub bundle_id: Option<String>,
-    pub name: Option<String>,
-    pub icon: Option<String>,
-    pub color: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
-#[serde(rename_all = "camelCase")]
-pub struct CatalogWebsiteSearchResultDto {
-    /// Canonical website domain used as the stable website key.
-    pub domain: String,
-    pub name: Option<String>,
-    pub icon: Option<String>,
-    pub color: Option<String>,
-}
-
 // MARK: - State
 
 pub struct CatalogSearchState(Arc<Mutex<CatalogSearch>>);
@@ -88,6 +49,26 @@ impl CatalogSearchState {
 
 impl Deref for CatalogSearchState {
     type Target = Mutex<CatalogSearch>;
+
+    fn deref(&self) -> &Self::Target {
+        return &self.0;
+    }
+}
+
+pub struct CatalogAssetsState(Arc<Mutex<CatalogAssets>>);
+
+impl CatalogAssetsState {
+    pub fn init() -> Self {
+        return Self(Arc::new(Mutex::new(CatalogAssets::new())));
+    }
+
+    pub fn arc(&self) -> Arc<Mutex<CatalogAssets>> {
+        return Arc::clone(&self.0);
+    }
+}
+
+impl Deref for CatalogAssetsState {
+    type Target = Mutex<CatalogAssets>;
 
     fn deref(&self) -> &Self::Target {
         return &self.0;
