@@ -41,7 +41,7 @@ const CatalogPickerDialog: React.FC<TCatalogPickerDialogProps> = (props) => {
 				if (!open) cx.cancel();
 			}}
 		>
-			<DialogContent className="flex h-120 max-w-xl flex-col">
+			<DialogContent className="flex h-122 max-w-xl flex-col">
 				<DialogHeader>
 					<DialogTitle>{title}</DialogTitle>
 				</DialogHeader>
