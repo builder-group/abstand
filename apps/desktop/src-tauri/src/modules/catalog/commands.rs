@@ -1,5 +1,5 @@
 use super::{
-    assets::{load_assets, CatalogAssets},
+    assets::{load_assets, resolve_asset, CatalogAsset},
     search::CatalogSearchResult,
     types::{CatalogAssetsState, CatalogItemId, CatalogSearchState},
 };
@@ -20,6 +20,17 @@ pub async fn search_catalog(
         return Ok(Vec::new());
     }
     let limit = params.limit.unwrap_or(20) as usize;
+    let icon_mode = params.include_icon.unwrap_or(CatalogIconMode::Lazy {
+        include_color: false,
+    });
+    let include_color = match &icon_mode {
+        CatalogIconMode::Eager { include_color } | CatalogIconMode::Lazy { include_color } => {
+            *include_color
+        }
+        CatalogIconMode::Skip => false,
+    };
+    let is_lazy = matches!(icon_mode, CatalogIconMode::Lazy { .. });
+
     let search = search_state.arc();
     let assets = assets_state.arc();
 
@@ -32,24 +43,48 @@ pub async fn search_catalog(
                 locked.search(&query, limit)
             };
 
-            let locked_assets = assets
-                .lock()
-                .map_err(|_| "Catalog assets state is unavailable".to_string())?;
+            let dtos = match icon_mode {
+                CatalogIconMode::Skip => results
+                    .iter()
+                    .map(|result| CatalogSearchResultDto::from_search_result(result, None))
+                    .collect(),
+                CatalogIconMode::Eager { .. } => results
+                    .iter()
+                    .map(|result| {
+                        let item_id = CatalogItemId::from(result);
+                        let asset = resolve_asset(&item_id, include_color);
+                        CatalogSearchResultDto::from_search_result(result, asset.as_ref())
+                    })
+                    .collect(),
+                CatalogIconMode::Lazy { .. } => {
+                    let locked_assets = assets
+                        .lock()
+                        .map_err(|_| "Catalog assets state is unavailable".to_string())?;
+                    results
+                        .iter()
+                        .map(|result| {
+                            let item_id = CatalogItemId::from(result);
+                            let asset = locked_assets.get(&item_id);
+                            CatalogSearchResultDto::from_search_result(result, asset)
+                        })
+                        .collect()
+                }
+            };
 
-            return Ok(results
-                .iter()
-                .map(|result| CatalogSearchResultDto::from_search_result(result, &locked_assets))
-                .collect());
+            return Ok(dtos);
         },
     )
     .await
     .map_err(|e| e.to_string())??;
 
-    load_assets(
-        app,
-        assets_state.inner().clone(),
-        dtos.iter().map(CatalogItemId::from).collect(),
-    );
+    if is_lazy {
+        load_assets(
+            app,
+            assets_state.inner().clone(),
+            dtos.iter().map(CatalogItemId::from).collect(),
+            include_color,
+        );
+    }
 
     return Ok(dtos);
 }
@@ -59,6 +94,15 @@ pub async fn search_catalog(
 pub struct SearchCatalogParams {
     pub query: String,
     pub limit: Option<u32>,
+    pub include_icon: Option<CatalogIconMode>,
+}
+
+#[derive(Debug, Clone, Deserialize, specta::Type)]
+#[serde(tag = "type", rename_all = "camelCase")]
+pub enum CatalogIconMode {
+    Skip,
+    Eager { include_color: bool },
+    Lazy { include_color: bool },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
@@ -96,9 +140,7 @@ pub struct CatalogWebsiteSearchResultDto {
 }
 
 impl CatalogSearchResultDto {
-    fn from_search_result(result: &CatalogSearchResult, assets: &CatalogAssets) -> Self {
-        let asset = assets.get(&CatalogItemId::from(result));
-
+    fn from_search_result(result: &CatalogSearchResult, asset: Option<&CatalogAsset>) -> Self {
         return match result {
             CatalogSearchResult::App { app, score } => Self::App {
                 app: CatalogAppSearchResultDto {

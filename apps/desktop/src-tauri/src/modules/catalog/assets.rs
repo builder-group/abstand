@@ -6,7 +6,12 @@ use std::sync::atomic::Ordering;
 use tauri::AppHandle;
 use tauri_specta::Event;
 
-pub fn load_assets(app: AppHandle, assets_state: CatalogAssetsState, item_ids: Vec<CatalogItemId>) {
+pub fn load_assets(
+    app: AppHandle,
+    assets_state: CatalogAssetsState,
+    item_ids: Vec<CatalogItemId>,
+    include_color: bool,
+) {
     if item_ids.is_empty() {
         return;
     }
@@ -15,6 +20,7 @@ pub fn load_assets(app: AppHandle, assets_state: CatalogAssetsState, item_ids: V
     // search has started and stop early. See: https://github.com/orgs/tauri-apps/discussions/5894
     let generation = assets_state.next_generation();
     let generation_state = assets_state.generation_arc();
+
     let assets = assets_state.arc();
 
     tauri::async_runtime::spawn_blocking(move || {
@@ -25,7 +31,7 @@ pub fn load_assets(app: AppHandle, assets_state: CatalogAssetsState, item_ids: V
                 break;
             }
 
-            if !seen_keys.insert(item_id.key()) {
+            if !seen_keys.insert(CatalogAssetKey::from(item_id)) {
                 continue;
             }
 
@@ -37,18 +43,13 @@ pub fn load_assets(app: AppHandle, assets_state: CatalogAssetsState, item_ids: V
                 continue;
             }
 
-            let Some(asset) = resolve_asset(item_id) else {
+            let Some(asset) = resolve_asset(item_id, include_color) else {
                 continue;
             };
 
-            // Check again after the blocking resolve; a newer search may have started.
-            if generation_state.load(Ordering::SeqCst) != generation {
-                break;
-            }
-
             match assets.lock() {
                 Ok(mut locked) => {
-                    // Another thread may have inserted while resolve ran without the lock.
+                    // Check again because another thread may have inserted while resolve ran without the lock
                     if !locked.has(item_id) {
                         locked.set(item_id, asset.clone());
                         let _ = CatalogAssetLoadedEvent::from_asset(item_id, &asset).emit(&app);
@@ -74,15 +75,15 @@ impl CatalogAssets {
     }
 
     pub fn get(&self, item_id: &CatalogItemId) -> Option<&CatalogAsset> {
-        return self.assets.get(&item_id.key());
+        return self.assets.get(&CatalogAssetKey::from(item_id));
     }
 
     pub fn has(&self, item_id: &CatalogItemId) -> bool {
-        return self.assets.contains_key(&item_id.key());
+        return self.assets.contains_key(&CatalogAssetKey::from(item_id));
     }
 
     pub fn set(&mut self, item_id: &CatalogItemId, asset: CatalogAsset) {
-        self.assets.insert(item_id.key(), asset);
+        self.assets.insert(CatalogAssetKey::from(item_id), asset);
     }
 }
 
@@ -92,11 +93,11 @@ enum CatalogAssetKey {
     Website(String),
 }
 
-impl CatalogItemId {
-    fn key(&self) -> CatalogAssetKey {
-        return match self {
-            Self::App { app_id, .. } => CatalogAssetKey::App(app_id.clone()),
-            Self::Website { domain } => CatalogAssetKey::Website(domain.clone()),
+impl From<&CatalogItemId> for CatalogAssetKey {
+    fn from(item_id: &CatalogItemId) -> Self {
+        return match item_id {
+            CatalogItemId::App { app_id, .. } => Self::App(app_id.clone()),
+            CatalogItemId::Website { domain } => Self::Website(domain.clone()),
         };
     }
 }
@@ -109,31 +110,31 @@ pub struct CatalogAsset {
 
 // MARK: - Resolvers
 
-fn resolve_asset(item_id: &CatalogItemId) -> Option<CatalogAsset> {
+pub(super) fn resolve_asset(item_id: &CatalogItemId, include_color: bool) -> Option<CatalogAsset> {
     return match item_id {
         CatalogItemId::App { bundle_id, .. } => {
             let bundle_id = bundle_id.as_deref()?;
-            resolve_app_asset(bundle_id)
+            resolve_app_asset(bundle_id, include_color)
         }
         CatalogItemId::Website { domain } => resolve_website_asset(domain),
     };
 }
 
 #[cfg(target_os = "macos")]
-fn resolve_app_asset(bundle_id: &str) -> Option<CatalogAsset> {
-    let icon_data = get_app_icon(bundle_id, 64, false);
+fn resolve_app_asset(bundle_id: &str, include_color: bool) -> Option<CatalogAsset> {
+    let icon_data = get_app_icon(bundle_id, 64, include_color);
     if icon_data.data_url.is_none() {
         return None;
     }
 
     return Some(CatalogAsset {
         icon: icon_data.data_url,
-        color: None,
+        color: icon_data.color,
     });
 }
 
 #[cfg(not(target_os = "macos"))]
-fn resolve_app_asset(_bundle_id: &str) -> Option<CatalogAsset> {
+fn resolve_app_asset(_bundle_id: &str, _include_color: bool) -> Option<CatalogAsset> {
     return None;
 }
 
