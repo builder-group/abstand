@@ -1,6 +1,7 @@
 import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';
 import React from 'react';
 import { cn } from '@/lib';
+import { WindowControlsInset, WindowHeaderRow } from './WindowHeader';
 
 export const Dialog: React.FC<TDialogProps> = (props) => {
 	return <DialogPrimitive.Root data-slot="dialog" {...props} />;
@@ -48,11 +49,21 @@ export const DialogBackdrop: React.FC<TDialogBackdropProps> = (props) => {
 export type TDialogBackdropProps = DialogPrimitive.Backdrop.Props;
 
 export const DialogContent: React.FC<TDialogContentProps> = (props) => {
-	const { className, children, ...rest } = props;
+	const { className, children, showWindowDragRegion = true, ...rest } = props;
 
 	return (
 		<DialogPortal>
 			<DialogBackdrop />
+			{showWindowDragRegion && (
+				// Note: Keep only the drag regions active so non-draggable top gutters still pass through to the backdrop
+				<WindowHeaderRow
+					aria-hidden="true"
+					className="pointer-events-none fixed inset-x-0 top-0 z-50 px-4"
+				>
+					<WindowControlsInset />
+					<div data-tauri-drag-region className="pointer-events-auto h-full flex-1" />
+				</WindowHeaderRow>
+			)}
 			<DialogPrimitive.Popup
 				data-slot="dialog-content"
 				className={cn(
@@ -72,7 +83,9 @@ export const DialogContent: React.FC<TDialogContentProps> = (props) => {
 	);
 };
 
-export type TDialogContentProps = DialogPrimitive.Popup.Props;
+export interface TDialogContentProps extends DialogPrimitive.Popup.Props {
+	showWindowDragRegion?: boolean;
+}
 
 export const DialogHeader: React.FC<TDialogHeaderProps> = (props) => {
 	const { className, ...rest } = props;

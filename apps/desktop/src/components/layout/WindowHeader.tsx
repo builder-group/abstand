@@ -93,7 +93,7 @@ export const WindowControlsInset: React.FC = () => {
 	return (
 		<div
 			data-tauri-drag-region
-			className={cn(platform === 'macos' ? 'h-full w-[60px] shrink-0' : 'h-full w-0')}
+			className={cn(platform === 'macos' ? 'h-full w-15 shrink-0' : 'h-full w-0')}
 		/>
 	);
 };
