@@ -171,7 +171,25 @@ export const ComboboxList: React.FC<TComboboxListProps> = (props) => {
 export type TComboboxListProps = ComboboxPrimitive.List.Props;
 
 export const ComboboxItem: React.FC<TComboboxItemProps> = (props) => {
-	const { className, children, ...rest } = props;
+	const { className, children, onMouseMoveCapture, ...rest } = props;
+
+	const handleMouseMoveCapture = React.useCallback(
+		(event: Parameters<NonNullable<TComboboxItemProps['onMouseMoveCapture']>>[0]) => {
+			onMouseMoveCapture?.(event);
+			if (event.isPropagationStopped()) {
+				return;
+			}
+
+			// WebKit emits zero-delta mousemove events while keyboard scrolling the list, see https://github.com/mui/base-ui/issues/4002
+			const nativeEvent = event.nativeEvent;
+			const isStationaryWebKitMouseMove =
+				'webkitForce' in nativeEvent && nativeEvent.movementX === 0 && nativeEvent.movementY === 0;
+			if (isStationaryWebKitMouseMove) {
+				event.stopPropagation();
+			}
+		},
+		[onMouseMoveCapture]
+	);
 
 	return (
 		<ComboboxPrimitive.Item
@@ -180,6 +198,7 @@ export const ComboboxItem: React.FC<TComboboxItemProps> = (props) => {
 				"text-base-700 data-highlighted:bg-base-950/6 data-highlighted:text-base-950 relative flex w-full cursor-default items-center gap-2 rounded-lg px-2 py-1.5 text-sm outline-none select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
 				className
 			)}
+			onMouseMoveCapture={handleMouseMoveCapture}
 			{...rest}
 		>
 			{children}
