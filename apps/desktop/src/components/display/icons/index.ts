@@ -5,6 +5,7 @@ export * from './LogoIcon';
 
 // Third Party Icons
 export {
+	AppWindowIcon,
 	ArrowLeftIcon,
 	CheckIcon,
 	ChevronDownIcon,
@@ -13,7 +14,9 @@ export {
 	CodeXmlIcon,
 	CommandIcon,
 	FolderOpenIcon,
+	GlobeIcon,
 	LibraryBigIcon,
+	MinusIcon,
 	MonitorIcon,
 	MoonIcon,
 	PanelLeftCloseIcon,
@@ -25,5 +28,6 @@ export {
 	ShieldIcon,
 	SunIcon,
 	TimerIcon,
-	XCircleIcon
+	XCircleIcon,
+	XIcon
 } from 'lucide-react';

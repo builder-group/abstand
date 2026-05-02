@@ -147,7 +147,7 @@ const CatalogSearchItem: React.FC<TCatalogSearchItemProps> = (props) => {
 
 	return (
 		<ComboboxItem key={key} value={item} onClick={() => cx.toggle(item)}>
-			<CatalogItemIcon item={item} icon={icon} />
+			<CatalogItemIcon item={item} icon={icon} isSelected={isSelected} />
 			<div className="flex min-w-0 flex-1 flex-col gap-0.5">
 				<span className="truncate text-sm">{getCatalogItemLabel(item)}</span>
 				<span className="text-base-400 truncate text-xs">{getCatalogItemSublabel(item)}</span>
