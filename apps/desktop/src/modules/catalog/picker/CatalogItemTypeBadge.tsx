@@ -6,12 +6,7 @@ export const CatalogItemTypeBadge: React.FC<TCatalogItemTypeBadgeProps> = (props
 	const { item } = props;
 
 	return (
-		<Badge
-			size="sm"
-			className={
-				item.type === 'app' ? 'bg-blue-500/10 text-blue-600' : 'bg-violet-500/10 text-violet-600'
-			}
-		>
+		<Badge size="sm" variant={item.type === 'app' ? 'default' : 'secondary'}>
 			{item.type === 'app' ? 'app' : 'website'}
 		</Badge>
 	);

@@ -14,7 +14,7 @@ export const CatalogItemIcon: React.FC<TCatalogItemIconProps> = (props) => {
 		<span
 			className={cn(
 				'relative flex size-8 shrink-0 items-center justify-center rounded-lg',
-				icon != null && 'bg-base-0 overflow-hidden ring-1 ring-black/5',
+				icon != null && 'bg-base-0 ring-base-950/5 overflow-hidden ring-1',
 				icon == null && item.type === 'app' && 'bg-primary/10 text-primary',
 				icon == null && item.type === 'website' && 'bg-secondary/10 text-secondary'
 			)}
@@ -41,11 +41,7 @@ const CatalogItemActionIndicator: React.FC<TCatalogItemActionIndicatorProps> = (
 	const { isSelected } = props;
 
 	return (
-		<span
-			className={cn(
-				'bg-base-950 text-base-0 ring-base-0 absolute right-0.5 bottom-0.5 flex size-3 items-center justify-center rounded-full opacity-0 ring-2 transition-opacity group-data-highlighted/combobox-item:opacity-100'
-			)}
-		>
+		<span className="bg-base-950 text-base-0 ring-base-0 absolute right-0.5 bottom-0.5 flex size-3 items-center justify-center rounded-full opacity-0 ring-2 transition-opacity group-data-highlighted/combobox-item:opacity-100">
 			{isSelected ? (
 				<MinusIcon className="size-2.5" strokeWidth={3} />
 			) : (
