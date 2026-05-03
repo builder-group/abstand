@@ -143,7 +143,7 @@ const inputGroupTextVariants = cva(
 		variants: {
 			size: {
 				default: "gap-1.5 text-sm [&_svg:not([class*='size-'])]:size-4",
-				sm: "gap-1 text-xs [&_svg:not([class*='size-'])]:size-3.5"
+				sm: "gap-1 text-[13px] [&_svg:not([class*='size-'])]:size-3.5"
 			}
 		},
 		defaultVariants: {

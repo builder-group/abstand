@@ -19,7 +19,7 @@ const groupVariants = cva(
 		variants: {
 			size: {
 				default: 'rounded-xl [&>*+*]:before:inset-x-4',
-				sm: 'rounded-lg [&>*+*]:before:inset-x-3'
+				sm: 'rounded-xl [&>*+*]:before:inset-x-3.5'
 			}
 		},
 		defaultVariants: { size: 'default' }
@@ -29,8 +29,8 @@ const groupVariants = cva(
 const titleVariants = cva('text-base-600 ml-1 px-1 font-semibold', {
 	variants: {
 		size: {
-			default: 'mb-2 text-[13px]',
-			sm: 'mb-1.5 text-xs'
+			default: 'mb-2.5 text-sm',
+			sm: 'mb-2 text-[13px]'
 		}
 	},
 	defaultVariants: { size: 'default' }

@@ -22,7 +22,7 @@ const inputVariants = cva(
 		variants: {
 			size: {
 				default: 'h-8 px-2.5 py-1 text-sm file:h-6 file:text-sm',
-				sm: 'h-7 px-2 py-0.5 text-xs file:h-5 file:text-xs'
+				sm: 'h-7 px-2 py-0.5 text-[13px] file:h-5 file:text-[13px]'
 			}
 		},
 		defaultVariants: {

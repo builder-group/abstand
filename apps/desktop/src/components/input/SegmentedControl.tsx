@@ -172,7 +172,7 @@ const segmentedControlItemVariants = cva(
 		variants: {
 			size: {
 				default: 'h-7 px-2.5 text-sm',
-				sm: "h-6 px-2 text-xs [&_svg:not([class*='size-'])]:size-3.5"
+				sm: "h-6 px-2 text-[13px] [&_svg:not([class*='size-'])]:size-3.5"
 			}
 		},
 		defaultVariants: {

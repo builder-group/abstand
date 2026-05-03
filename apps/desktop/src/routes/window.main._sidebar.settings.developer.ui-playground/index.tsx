@@ -8,15 +8,22 @@ import {
 	CircleQuestionMarkIcon,
 	CodeXmlIcon,
 	Combobox,
+	ComboboxChip,
+	ComboboxChips,
+	ComboboxChipsInput,
 	ComboboxContent,
 	ComboboxEmpty,
+	ComboboxGroup,
 	ComboboxInput,
 	ComboboxItem,
+	ComboboxLabel,
 	ComboboxList,
+	ComboboxSeparator,
 	ComboboxStatus,
 	Dialog,
 	DialogBody,
 	DialogContent,
+	DialogDescription,
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
@@ -27,12 +34,14 @@ import {
 	InputGroupButton,
 	InputGroupInput,
 	InputGroupText,
+	InputGroupTextarea,
 	Kbd,
 	LibraryBigIcon,
 	MonitorIcon,
 	SearchIcon,
 	SegmentedControl,
 	SegmentedControlItem,
+	Select,
 	SettingsPage,
 	Switch,
 	Textarea,
@@ -65,6 +74,7 @@ function RouteComponent() {
 				<SwitchSection />
 				<ToggleSection />
 				<SegmentedControlSection />
+				<SelectSection />
 				<ComboboxSection />
 				<BadgeSection />
 				<KbdSection />
@@ -85,6 +95,7 @@ const ButtonSection: React.FC = () => {
 			<PlaygroundRow label="Sizes">
 				<Button>Default</Button>
 				<Button size="sm">Small</Button>
+				<Button size="xs">Extra small</Button>
 				<Button size="lg">Large</Button>
 			</PlaygroundRow>
 			<PlaygroundRow label="Variants">
@@ -93,6 +104,8 @@ const ButtonSection: React.FC = () => {
 				<Button variant="soft">Soft</Button>
 				<Button variant="ghost">Ghost</Button>
 				<Button variant="outline">Outline</Button>
+				<Button variant="destructive">Destructive</Button>
+				<Button variant="link">Link</Button>
 			</PlaygroundRow>
 			<PlaygroundRow label="States">
 				<Button disabled>Disabled</Button>
@@ -109,6 +122,9 @@ const ButtonSection: React.FC = () => {
 				</Button>
 				<Button size="icon-xs" variant="outline" aria-label="Close">
 					<XCircleIcon />
+				</Button>
+				<Button size="icon-lg" variant="primary" aria-label="Confirm">
+					<CheckIcon />
 				</Button>
 			</PlaygroundRow>
 		</PlaygroundGroup>
@@ -138,10 +154,10 @@ const InputSection: React.FC = () => {
 const InputGroupSection: React.FC = () => {
 	return (
 		<PlaygroundGroup title="Input Group">
-			<PlaygroundRow label="Examples">
+			<PlaygroundRow label="Sizes">
 				<InputGroup className="w-64">
 					<InputGroupAddon>
-						<SearchIcon className="text-base-400 size-4" />
+						<SearchIcon className="text-base-400" />
 					</InputGroupAddon>
 					<InputGroupInput placeholder="Search components" />
 					<InputGroupAddon align="inline-end">
@@ -150,6 +166,19 @@ const InputGroupSection: React.FC = () => {
 						</InputGroupButton>
 					</InputGroupAddon>
 				</InputGroup>
+				<InputGroup size="sm" className="w-56">
+					<InputGroupAddon>
+						<SearchIcon className="text-base-400" />
+					</InputGroupAddon>
+					<InputGroupInput placeholder="Search components" />
+					<InputGroupAddon align="inline-end">
+						<InputGroupButton aria-label="Submit search">
+							<CheckIcon />
+						</InputGroupButton>
+					</InputGroupAddon>
+				</InputGroup>
+			</PlaygroundRow>
+			<PlaygroundRow label="Examples">
 				<InputGroup className="w-44">
 					<InputGroupAddon>
 						<InputGroupText>cmd</InputGroupText>
@@ -160,6 +189,37 @@ const InputGroupSection: React.FC = () => {
 					<InputGroupInput placeholder="Toggle sidebar" />
 					<InputGroupAddon align="inline-end">
 						<Kbd>⌘B</Kbd>
+					</InputGroupAddon>
+				</InputGroup>
+			</PlaygroundRow>
+			<PlaygroundRow label="Block Addons">
+				<InputGroup className="w-72">
+					<InputGroupAddon align="block-start">
+						<InputGroupText>Prompt</InputGroupText>
+					</InputGroupAddon>
+					<InputGroupTextarea placeholder="Describe the change" rows={3} />
+					<InputGroupAddon align="block-end">
+						<Kbd size="sm">⌘↵</Kbd>
+					</InputGroupAddon>
+				</InputGroup>
+				<InputGroup size="sm" className="w-64">
+					<InputGroupAddon align="block-start">
+						<InputGroupText>Note</InputGroupText>
+					</InputGroupAddon>
+					<InputGroupTextarea placeholder="Compact note" rows={2} />
+				</InputGroup>
+			</PlaygroundRow>
+			<PlaygroundRow label="States">
+				<InputGroup className="w-56">
+					<InputGroupAddon>
+						<XCircleIcon className="text-error" />
+					</InputGroupAddon>
+					<InputGroupInput aria-invalid defaultValue="Missing target" />
+				</InputGroup>
+				<InputGroup size="sm" className="w-52">
+					<InputGroupInput disabled defaultValue="Disabled group" />
+					<InputGroupAddon align="inline-end">
+						<Kbd size="sm">⌥D</Kbd>
 					</InputGroupAddon>
 				</InputGroup>
 			</PlaygroundRow>
@@ -282,46 +342,199 @@ const SegmentedControlSection: React.FC = () => {
 	);
 };
 
-// MARK: - Combobox
+// MARK: - Select
 
-const ComboboxSection: React.FC = () => {
-	const anchorRef = useComboboxAnchor();
-	const [value, setValue] = React.useState<string | null>(null);
-
-	const items = ['28px default', '32px roomy', '24px compact'] as const;
-
+const SelectSection: React.FC = () => {
 	return (
-		<PlaygroundGroup title="Combobox">
-			<PlaygroundRow label="Single Select">
-				<Combobox
-					items={items}
-					value={value}
-					onValueChange={setValue}
-					itemToStringValue={(item) => item ?? ''}
-				>
-					<ComboboxInput
-						ref={anchorRef}
-						className="w-72"
-						leading={<SearchIcon className="text-base-400 size-4" />}
-						placeholder="Choose a density"
-						showClear
-					/>
-					<ComboboxContent anchor={anchorRef}>
-						<ComboboxStatus>Density presets</ComboboxStatus>
-						<ComboboxList>
-							{items.map((item) => (
-								<ComboboxItem key={item} value={item}>
-									{item}
-								</ComboboxItem>
-							))}
-							<ComboboxEmpty>No presets</ComboboxEmpty>
-						</ComboboxList>
-					</ComboboxContent>
-				</Combobox>
+		<PlaygroundGroup title="Select">
+			<PlaygroundRow label="Sizes">
+				<Select defaultValue="default" className="w-44">
+					<option value="default">Default density</option>
+					<option value="roomy">Roomy density</option>
+					<option value="compact">Compact density</option>
+				</Select>
+				<Select size="sm" defaultValue="compact" className="w-40">
+					<option value="default">Default density</option>
+					<option value="compact">Compact density</option>
+					<option value="sidebar">Sidebar density</option>
+				</Select>
+			</PlaygroundRow>
+			<PlaygroundRow label="Variants">
+				<Select defaultValue="system" className="w-40">
+					<option value="system">System</option>
+					<option value="light">Light</option>
+					<option value="dark">Dark</option>
+				</Select>
+				<Select variant="ghost" defaultValue="today">
+					<option value="today">Today</option>
+					<option value="week">This week</option>
+					<option value="month">This month</option>
+				</Select>
+				<Select variant="ghost" size="sm" defaultValue="small">
+					<option value="small">Small</option>
+					<option value="medium">Medium</option>
+					<option value="large">Large</option>
+				</Select>
+			</PlaygroundRow>
+			<PlaygroundRow label="States">
+				<Select defaultValue="disabled" disabled className="w-40">
+					<option value="disabled">Disabled</option>
+				</Select>
+				<Select defaultValue="missing" aria-invalid className="w-40">
+					<option value="missing">Missing value</option>
+					<option value="ready">Ready</option>
+				</Select>
+				<Select variant="ghost" defaultValue="invalid" aria-invalid>
+					<option value="invalid">Invalid ghost</option>
+					<option value="ready">Ready ghost</option>
+				</Select>
 			</PlaygroundRow>
 		</PlaygroundGroup>
 	);
 };
+
+// MARK: - Combobox
+
+const ComboboxSection: React.FC = () => {
+	const [value, setValue] = React.useState<string | null>(null);
+	const [smallValue, setSmallValue] = React.useState<string | null>(null);
+	const [chipValues, setChipValues] = React.useState<string[]>(['Design', 'Frontend']);
+	const [smallChipValues, setSmallChipValues] = React.useState<string[]>(['Review']);
+
+	const items = ['28px default', '32px roomy', '24px compact'] as const;
+	const chipItems = ['Design', 'Frontend', 'Backend', 'Review', 'Polish', 'Docs'] as const;
+
+	return (
+		<PlaygroundGroup title="Combobox">
+			<PlaygroundRow label="Sizes">
+				<DensityCombobox
+					items={items}
+					value={value}
+					onValueChange={setValue}
+					placeholder="Default combobox"
+				/>
+				<DensityCombobox
+					size="sm"
+					items={items}
+					value={smallValue}
+					onValueChange={setSmallValue}
+					placeholder="Small combobox"
+					className="w-60"
+				/>
+			</PlaygroundRow>
+			<PlaygroundRow label="Chips">
+				<ChipCombobox
+					items={chipItems}
+					values={chipValues}
+					onValuesChange={setChipValues}
+					placeholder="Add areas"
+				/>
+				<ChipCombobox
+					size="sm"
+					items={chipItems}
+					values={smallChipValues}
+					onValuesChange={setSmallChipValues}
+					placeholder="Add compact areas"
+					className="w-64"
+				/>
+			</PlaygroundRow>
+		</PlaygroundGroup>
+	);
+};
+
+const DensityCombobox: React.FC<TDensityComboboxProps> = (props) => {
+	const { items, value, onValueChange, placeholder, size, className } = props;
+	const anchorRef = useComboboxAnchor();
+
+	return (
+		<Combobox
+			size={size}
+			items={items}
+			value={value}
+			onValueChange={onValueChange}
+			itemToStringValue={(item) => item ?? ''}
+		>
+			<ComboboxInput
+				ref={anchorRef}
+				className={cn('w-72', className)}
+				leading={<SearchIcon className="text-base-400" />}
+				placeholder={placeholder}
+				showClear
+			/>
+			<ComboboxContent anchor={anchorRef}>
+				<ComboboxStatus>Density presets</ComboboxStatus>
+				<ComboboxList>
+					<ComboboxGroup>
+						<ComboboxLabel>Sizes</ComboboxLabel>
+						{items.map((item) => (
+							<ComboboxItem key={item} value={item}>
+								{item}
+							</ComboboxItem>
+						))}
+					</ComboboxGroup>
+					<ComboboxSeparator />
+					<ComboboxItem value="Match system density">Match system density</ComboboxItem>
+					<ComboboxEmpty>No presets</ComboboxEmpty>
+				</ComboboxList>
+			</ComboboxContent>
+		</Combobox>
+	);
+};
+
+interface TDensityComboboxProps {
+	items: readonly string[];
+	value: string | null;
+	onValueChange: (value: string | null) => void;
+	placeholder: string;
+	size?: 'default' | 'sm';
+	className?: string;
+}
+
+const ChipCombobox: React.FC<TChipComboboxProps> = (props) => {
+	const { items, values, onValuesChange, placeholder, size, className } = props;
+	const anchorRef = useComboboxAnchor();
+
+	return (
+		<Combobox
+			multiple
+			size={size}
+			items={items}
+			value={values}
+			onValueChange={onValuesChange}
+			itemToStringValue={(item) => item ?? ''}
+		>
+			<ComboboxChips ref={anchorRef} className={cn('w-80', className)}>
+				{values.map((value) => (
+					<ComboboxChip key={value}>{value}</ComboboxChip>
+				))}
+				<ComboboxChipsInput placeholder={values.length > 0 ? '' : placeholder} />
+			</ComboboxChips>
+			<ComboboxContent anchor={anchorRef}>
+				<ComboboxStatus>Areas</ComboboxStatus>
+				<ComboboxList>
+					<ComboboxGroup>
+						<ComboboxLabel>Suggested</ComboboxLabel>
+						{items.map((item) => (
+							<ComboboxItem key={item} value={item}>
+								{item}
+							</ComboboxItem>
+						))}
+					</ComboboxGroup>
+					<ComboboxEmpty>No areas</ComboboxEmpty>
+				</ComboboxList>
+			</ComboboxContent>
+		</Combobox>
+	);
+};
+
+interface TChipComboboxProps {
+	items: readonly string[];
+	values: string[];
+	onValuesChange: (value: string[]) => void;
+	placeholder: string;
+	size?: 'default' | 'sm';
+	className?: string;
+}
 
 // MARK: - Badge
 
@@ -335,8 +548,12 @@ const BadgeSection: React.FC = () => {
 			<PlaygroundRow label="Variants">
 				<Badge>Default</Badge>
 				<Badge variant="secondary">Secondary</Badge>
+				<Badge variant="success">Success</Badge>
+				<Badge variant="warning">Warning</Badge>
+				<Badge variant="destructive">Destructive</Badge>
 				<Badge variant="outline">Outline</Badge>
 				<Badge variant="ghost">Ghost</Badge>
+				<Badge variant="link">Link</Badge>
 			</PlaygroundRow>
 		</PlaygroundGroup>
 	);
@@ -349,7 +566,7 @@ const KbdSection: React.FC = () => {
 		<PlaygroundGroup title="Kbd">
 			<PlaygroundRow label="Sizes">
 				<Kbd>⌘K</Kbd>
-				<Kbd size="md">⌘⇧P</Kbd>
+				<Kbd size="sm">⌘K</Kbd>
 			</PlaygroundRow>
 			<PlaygroundRow label="Variants">
 				<Kbd>Enter</Kbd>
@@ -365,13 +582,16 @@ const IconBubbleSection: React.FC = () => {
 	return (
 		<PlaygroundGroup title="Icon Bubble">
 			<PlaygroundRow label="Sizes">
-				<IconBubble size="xs" variant="neutral">
+				<IconBubble variant="neutral">
 					<MonitorIcon />
 				</IconBubble>
 				<IconBubble size="sm" variant="neutral">
 					<MonitorIcon />
 				</IconBubble>
-				<IconBubble variant="neutral">
+				<IconBubble size="xs" variant="neutral">
+					<MonitorIcon />
+				</IconBubble>
+				<IconBubble size="lg" variant="neutral">
 					<MonitorIcon />
 				</IconBubble>
 			</PlaygroundRow>
@@ -388,6 +608,12 @@ const IconBubbleSection: React.FC = () => {
 				<IconBubble size="sm" variant="warning">
 					<CircleQuestionMarkIcon />
 				</IconBubble>
+				<IconBubble size="sm" variant="destructive">
+					<XCircleIcon />
+				</IconBubble>
+				<IconBubble size="sm" variant="neutral">
+					<MonitorIcon />
+				</IconBubble>
 			</PlaygroundRow>
 		</PlaygroundGroup>
 	);
@@ -398,13 +624,25 @@ const IconBubbleSection: React.FC = () => {
 const TooltipSection: React.FC = () => {
 	return (
 		<PlaygroundGroup title="Tooltip">
-			<PlaygroundRow label="Examples">
+			<PlaygroundRow label="Sizes">
 				<Tooltip content="Open the command palette" shortcut="⌘K">
 					<Button variant="soft">Hover me</Button>
 				</Tooltip>
-				<Tooltip content="Compact help">
+				<Tooltip size="sm" content="Compact help" shortcut="⌘?">
 					<Button size="sm" variant="ghost">
 						Help
+					</Button>
+				</Tooltip>
+			</PlaygroundRow>
+			<PlaygroundRow label="Placement">
+				<Tooltip side="top" content="Appears above">
+					<Button size="sm" variant="outline">
+						Top
+					</Button>
+				</Tooltip>
+				<Tooltip side="right" content="Appears to the right">
+					<Button size="sm" variant="outline">
+						Right
 					</Button>
 				</Tooltip>
 			</PlaygroundRow>
@@ -415,18 +653,23 @@ const TooltipSection: React.FC = () => {
 // MARK: - Dialog
 
 const DialogSection: React.FC = () => {
-	const [isOpen, setIsOpen] = React.useState(false);
+	const [isDefaultOpen, setIsDefaultOpen] = React.useState(false);
+	const [isSmallOpen, setIsSmallOpen] = React.useState(false);
 
 	return (
 		<PlaygroundGroup title="Dialog">
-			<PlaygroundRow label="Preview">
-				<Button variant="primary" onClick={() => setIsOpen(true)}>
-					Open Dialog
+			<PlaygroundRow label="Sizes">
+				<Button variant="primary" onClick={() => setIsDefaultOpen(true)}>
+					Default
 				</Button>
-				<Dialog open={isOpen} onOpenChange={setIsOpen}>
-					<DialogContent className="max-w-md">
+				<Button size="sm" variant="primary" onClick={() => setIsSmallOpen(true)}>
+					Small
+				</Button>
+				<Dialog open={isDefaultOpen} onOpenChange={setIsDefaultOpen}>
+					<DialogContent>
 						<DialogHeader>
 							<DialogTitle>Playground Dialog</DialogTitle>
+							<DialogDescription>Default spacing and typography.</DialogDescription>
 						</DialogHeader>
 						<DialogBody className="space-y-3">
 							<p className="text-base-500 text-sm">
@@ -436,8 +679,30 @@ const DialogSection: React.FC = () => {
 							<Input placeholder="Dialog input" />
 						</DialogBody>
 						<DialogFooter>
-							<Button onClick={() => setIsOpen(false)}>Cancel</Button>
-							<Button variant="primary" onClick={() => setIsOpen(false)}>
+							<Button onClick={() => setIsDefaultOpen(false)}>Cancel</Button>
+							<Button variant="primary" onClick={() => setIsDefaultOpen(false)}>
+								Done
+							</Button>
+						</DialogFooter>
+					</DialogContent>
+				</Dialog>
+				<Dialog size="sm" open={isSmallOpen} onOpenChange={setIsSmallOpen}>
+					<DialogContent>
+						<DialogHeader>
+							<DialogTitle>Small Dialog</DialogTitle>
+							<DialogDescription>Compact desktop spacing.</DialogDescription>
+						</DialogHeader>
+						<DialogBody className="space-y-2">
+							<p className="text-base-500">
+								Small dialogs keep controls readable while trimming padding.
+							</p>
+							<Input size="sm" placeholder="Dialog input" />
+						</DialogBody>
+						<DialogFooter>
+							<Button size="sm" onClick={() => setIsSmallOpen(false)}>
+								Cancel
+							</Button>
+							<Button size="sm" variant="primary" onClick={() => setIsSmallOpen(false)}>
 								Done
 							</Button>
 						</DialogFooter>
@@ -458,7 +723,7 @@ const SettingsSection: React.FC = () => {
 
 	return (
 		<PlaygroundGroup title="Settings Group and Row" variant="outline">
-			<PlaygroundRow label="Default" contentClassName="flex-col items-start">
+			<PlaygroundRow label="Sizes" contentClassName="flex-col items-start">
 				<SettingsGroup title="Appearance" className="w-full">
 					<SettingsRow label="Theme" description="Choose a display mode.">
 						<SegmentedControl value={defaultTheme} onValueChange={setDefaultTheme}>
@@ -474,8 +739,6 @@ const SettingsSection: React.FC = () => {
 						/>
 					</SettingsRow>
 				</SettingsGroup>
-			</PlaygroundRow>
-			<PlaygroundRow label="Small" contentClassName="flex-col items-start">
 				<SettingsGroup title="Appearance" size="sm" className="w-full">
 					<SettingsRow size="sm" label="Theme" description="Choose a display mode.">
 						<SegmentedControl value={smallTheme} onValueChange={setSmallTheme} size="sm">
@@ -500,7 +763,7 @@ const SettingsSection: React.FC = () => {
 // MARK: - Playground Helpers
 
 const PlaygroundGroup: React.FC<TPlaygroundGroupProps> = (props) => {
-	const { title, variant = 'default', className, children } = props;
+	const { title, variant = 'default', children, className } = props;
 
 	return (
 		<SettingsGroup title={title} className={cn(playgroundGroupVariants({ variant }), className)}>
@@ -536,8 +799,8 @@ const PlaygroundRow: React.FC<TPlaygroundRowProps> = (props) => {
 
 interface TPlaygroundGroupProps extends VariantProps<typeof playgroundGroupVariants> {
 	title: string;
-	className?: string;
 	children: React.ReactNode;
+	className?: string;
 }
 
 interface TPlaygroundRowProps {

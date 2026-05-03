@@ -30,7 +30,7 @@ const toggleVariants = cva(
 			},
 			size: {
 				'default': "h-8 min-w-8 px-2 text-sm [&_svg:not([class*='size-'])]:size-4",
-				'sm': "h-7 min-w-7 px-1.5 text-xs [&_svg:not([class*='size-'])]:size-3.5",
+				'sm': "h-7 min-w-7 px-1.5 text-[13px] [&_svg:not([class*='size-'])]:size-3.5",
 				'lg': "h-9 min-w-9 px-2.5 text-sm [&_svg:not([class*='size-'])]:size-4",
 				'icon': "size-8 rounded-full [&_svg:not([class*='size-'])]:size-4",
 				'icon-sm': "size-7 rounded-full [&_svg:not([class*='size-'])]:size-3.5",

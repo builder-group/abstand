@@ -276,7 +276,7 @@ const comboboxItemVariants = cva(
 		variants: {
 			size: {
 				default: "gap-2 px-2 py-1.5 text-sm [&_svg:not([class*='size-'])]:size-4",
-				sm: "gap-1.5 px-1.5 py-1 text-xs [&_svg:not([class*='size-'])]:size-3.5"
+				sm: "gap-1.5 px-1.5 py-1 text-[13px] [&_svg:not([class*='size-'])]:size-3.5"
 			}
 		},
 		defaultVariants: {
@@ -395,7 +395,7 @@ const comboboxEmptyVariants = cva(
 		variants: {
 			size: {
 				default: 'px-3 py-3 text-sm',
-				sm: 'px-2.5 py-2.5 text-xs'
+				sm: 'px-2.5 py-2.5 text-[13px]'
 			}
 		},
 		defaultVariants: {
@@ -487,7 +487,7 @@ const comboboxChipVariants = cva(
 		variants: {
 			size: {
 				default: 'h-5 gap-1 pr-0.5 pl-1.5 text-xs',
-				sm: 'h-4 gap-0.5 pr-0.5 pl-1 text-[10px]'
+				sm: 'h-4.5 gap-0.5 pr-0.5 pl-1 text-[11px]'
 			}
 		},
 		defaultVariants: {
@@ -520,7 +520,7 @@ const comboboxChipsInputVariants = cva(
 		variants: {
 			size: {
 				default: 'text-sm',
-				sm: 'text-xs'
+				sm: 'text-[13px]'
 			}
 		},
 		defaultVariants: {

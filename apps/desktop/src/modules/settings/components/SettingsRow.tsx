@@ -47,8 +47,8 @@ const settingsRowVariants = cva(
 	{
 		variants: {
 			size: {
-				default: 'min-h-10 gap-6 px-3.5 py-2.5',
-				sm: 'min-h-8 gap-4 px-3 py-2'
+				default: 'min-h-12 gap-6 px-4 py-3',
+				sm: 'min-h-10 gap-5 px-3.5 py-2.5'
 			}
 		},
 		defaultVariants: {
@@ -60,8 +60,8 @@ const settingsRowVariants = cva(
 const labelVariants = cva('text-base-950', {
 	variants: {
 		size: {
-			default: 'text-[13px]',
-			sm: 'text-xs'
+			default: 'text-sm',
+			sm: 'text-[13px]'
 		}
 	},
 	defaultVariants: {
@@ -72,8 +72,8 @@ const labelVariants = cva('text-base-950', {
 const descriptionVariants = cva('text-base-500', {
 	variants: {
 		size: {
-			default: 'text-xs',
-			sm: 'text-[11px]'
+			default: 'text-[13px]',
+			sm: 'text-xs'
 		}
 	},
 	defaultVariants: {
@@ -84,8 +84,8 @@ const descriptionVariants = cva('text-base-500', {
 const controlVariants = cva('flex shrink-0 items-center', {
 	variants: {
 		size: {
-			default: 'gap-2',
-			sm: 'gap-1.5'
+			default: 'gap-2.5',
+			sm: 'gap-2'
 		}
 	},
 	defaultVariants: {

@@ -29,7 +29,7 @@ const kbdVariants = cva(
 			},
 			size: {
 				default: 'h-5 min-w-5 px-1.5 text-xs',
-				sm: 'h-4 min-w-4 px-1.5 text-[11px]'
+				sm: 'h-4.5 min-w-4.5 px-1.5 text-[11px]'
 			}
 		},
 		defaultVariants: {

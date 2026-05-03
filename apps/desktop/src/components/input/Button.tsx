@@ -18,7 +18,7 @@ export const Button: React.FC<TButtonProps> = (props) => {
 };
 
 const buttonVariants = cva(
-	"inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition select-none focus-ring active:not-aria-[haspopup]:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 invalid-ring [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+	"inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent text-sm font-medium whitespace-nowrap transition select-none focus-ring active:not-aria-[haspopup]:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 invalid-ring [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
 	{
 		variants: {
 			variant: {
@@ -38,7 +38,7 @@ const buttonVariants = cva(
 			size: {
 				'default': 'h-8 gap-1.5 px-3 has-[>svg]:px-2.5',
 				'xs': "h-6 gap-1 px-2.5 text-xs has-[>svg]:px-2 [&_svg:not([class*='size-'])]:size-3",
-				'sm': "h-7 gap-1 px-2.5 text-xs has-[>svg]:px-2 [&_svg:not([class*='size-'])]:size-3.5",
+				'sm': "h-7 gap-1 px-2.5 text-[13px] has-[>svg]:px-2 [&_svg:not([class*='size-'])]:size-3.5",
 				'lg': 'h-9 gap-1.5 px-3.5 has-[>svg]:px-3',
 				'icon': 'size-8 rounded-full',
 				'icon-xs': "size-6 rounded-full [&_svg:not([class*='size-'])]:size-3",

@@ -19,7 +19,11 @@ export const SidebarItem: React.FC<TSidebarItemProps> = (props) => {
 		<>
 			{icon}
 			<span className="min-w-0 flex-1 truncate">{label}</span>
-			{shortcut != null && <Kbd variant="ghost">{shortcut}</Kbd>}
+			{shortcut != null && (
+				<Kbd variant="ghost" size="sm">
+					{shortcut}
+				</Kbd>
+			)}
 		</>
 	);
 

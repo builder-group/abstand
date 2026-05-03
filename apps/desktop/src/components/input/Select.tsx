@@ -55,7 +55,7 @@ export const Select: React.FC<TSelectProps> = (props) => {
 					aria-hidden
 					className={cn(
 						'pointer-events-none invisible absolute whitespace-pre',
-						size === 'sm' ? 'text-xs' : 'text-sm'
+						size === 'sm' ? 'text-[13px]' : 'text-sm'
 					)}
 				/>
 			)}
@@ -96,24 +96,16 @@ export const Select: React.FC<TSelectProps> = (props) => {
 };
 
 const selectVariants = cva(
-	[
-		'appearance-none cursor-default select-none rounded-lg transition-colors',
-		'border border-transparent bg-clip-padding outline-none',
-		'disabled:pointer-events-none'
-	],
+	'appearance-none cursor-default select-none rounded-lg border border-transparent outline-none transition-colors disabled:pointer-events-none',
 	{
 		variants: {
 			variant: {
-				default: [
-					'w-full bg-base-100 text-base-950 hover:bg-base-200',
-					'focus-ring',
-					'invalid-ring'
-				],
+				default: 'w-full bg-base-100 text-base-950 hover:bg-base-200 invalid-ring focus-ring',
 				ghost: 'bg-transparent text-base-950 hover:bg-base-100 hover:text-base-950'
 			},
 			size: {
 				default: 'h-8 pl-3 pr-9 text-sm',
-				sm: 'h-7 pl-2.5 pr-7 text-xs'
+				sm: 'h-7 pl-2.5 pr-7 text-[13px]'
 			}
 		},
 		defaultVariants: {
@@ -129,11 +121,8 @@ const chevronWrapperVariants = cva(
 		variants: {
 			variant: {
 				default: '',
-				ghost: [
-					'rounded-full border border-transparent bg-base-100 group-has-[select:hover]/select:bg-transparent',
-					'peer-focus-ring',
-					'peer-invalid-ring'
-				]
+				ghost:
+					'peer-focus-ring rounded-full border border-transparent bg-base-100 group-has-[select:hover]/select:bg-transparent peer-invalid-ring'
 			},
 			size: {
 				default: 'size-6',

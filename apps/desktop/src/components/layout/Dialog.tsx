@@ -1,13 +1,32 @@
 import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';
+import { cva, type VariantProps } from 'class-variance-authority';
 import React from 'react';
 import { cn } from '@/lib';
 import { WindowControlsInset, WindowHeaderRow } from './WindowHeader';
 
+const DialogContext = React.createContext<TDialogContext>({
+	size: 'default'
+});
+
+interface TDialogContext {
+	size: TDialogSize;
+}
+
+type TDialogSize = NonNullable<VariantProps<typeof dialogContentVariants>['size']>;
+
 export const Dialog: React.FC<TDialogProps> = (props) => {
-	return <DialogPrimitive.Root data-slot="dialog" {...props} />;
+	const { size = 'default', ...rest } = props;
+
+	return (
+		<DialogContext.Provider value={{ size }}>
+			<DialogPrimitive.Root data-slot="dialog" data-size={size} {...rest} />
+		</DialogContext.Provider>
+	);
 };
 
-export type TDialogProps = DialogPrimitive.Root.Props;
+export type TDialogProps = DialogPrimitive.Root.Props & {
+	size?: TDialogSize;
+};
 
 export const DialogTrigger: React.FC<TDialogTriggerProps> = (props) => {
 	return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />;
@@ -49,7 +68,8 @@ export const DialogBackdrop: React.FC<TDialogBackdropProps> = (props) => {
 export type TDialogBackdropProps = DialogPrimitive.Backdrop.Props;
 
 export const DialogContent: React.FC<TDialogContentProps> = (props) => {
-	const { className, children, showWindowDragRegion = true, ...rest } = props;
+	const { showWindowDragRegion = true, children, className, ...rest } = props;
+	const { size } = React.useContext(DialogContext);
 
 	return (
 		<DialogPortal>
@@ -66,15 +86,8 @@ export const DialogContent: React.FC<TDialogContentProps> = (props) => {
 			)}
 			<DialogPrimitive.Popup
 				data-slot="dialog-content"
-				className={cn(
-					'fixed top-1/2 left-1/2 z-50 w-full max-w-sm',
-					'-translate-x-1/2 -translate-y-1/2',
-					'bg-base-0 border-base-100 rounded-2xl border shadow-xl outline-none',
-					'origin-center transition-[opacity,scale] duration-200 ease-out',
-					'data-starting-style:scale-[0.97] data-starting-style:opacity-0',
-					'data-ending-style:scale-[0.97] data-ending-style:opacity-0',
-					className
-				)}
+				data-size={size}
+				className={cn(dialogContentVariants({ size }), className)}
 				{...rest}
 			>
 				{children}
@@ -83,74 +96,164 @@ export const DialogContent: React.FC<TDialogContentProps> = (props) => {
 	);
 };
 
+const dialogContentVariants = cva(
+	'fixed top-1/2 left-1/2 z-50 w-full -translate-x-1/2 -translate-y-1/2 bg-base-0 border-base-100 border shadow-xl outline-none origin-center transition-[opacity,scale] duration-200 ease-out data-starting-style:scale-[0.97] data-starting-style:opacity-0 data-ending-style:scale-[0.97] data-ending-style:opacity-0',
+	{
+		variants: {
+			size: {
+				default: 'max-w-md rounded-xl',
+				sm: 'max-w-sm rounded-xl'
+			}
+		},
+		defaultVariants: {
+			size: 'default'
+		}
+	}
+);
+
 export interface TDialogContentProps extends DialogPrimitive.Popup.Props {
 	showWindowDragRegion?: boolean;
 }
 
 export const DialogHeader: React.FC<TDialogHeaderProps> = (props) => {
 	const { className, ...rest } = props;
+	const { size } = React.useContext(DialogContext);
 
 	return (
 		<div
 			data-slot="dialog-header"
-			className={cn('flex flex-col gap-1 px-4 pt-4 pb-3', className)}
+			data-size={size}
+			className={cn(dialogHeaderVariants({ size }), className)}
 			{...rest}
 		/>
 	);
 };
+
+const dialogHeaderVariants = cva('flex flex-col gap-1', {
+	variants: {
+		size: {
+			default: 'px-5 pt-5 pb-4',
+			sm: 'px-4 pt-4 pb-3.5'
+		}
+	},
+	defaultVariants: {
+		size: 'default'
+	}
+});
 
 export type TDialogHeaderProps = React.ComponentProps<'div'>;
 
 export const DialogTitle: React.FC<TDialogTitleProps> = (props) => {
 	const { className, ...rest } = props;
+	const { size } = React.useContext(DialogContext);
 
 	return (
 		<DialogPrimitive.Title
 			data-slot="dialog-title"
-			className={cn('text-base-950 text-sm font-semibold', className)}
+			data-size={size}
+			className={cn(dialogTitleVariants({ size }), className)}
 			{...rest}
 		/>
 	);
 };
+
+const dialogTitleVariants = cva('text-base-950 font-semibold', {
+	variants: {
+		size: {
+			default: 'text-base',
+			sm: 'text-sm'
+		}
+	},
+	defaultVariants: {
+		size: 'default'
+	}
+});
 
 export type TDialogTitleProps = DialogPrimitive.Title.Props;
 
 export const DialogDescription: React.FC<TDialogDescriptionProps> = (props) => {
 	const { className, ...rest } = props;
+	const { size } = React.useContext(DialogContext);
 
 	return (
 		<DialogPrimitive.Description
 			data-slot="dialog-description"
-			className={cn('text-base-500 text-sm', className)}
+			data-size={size}
+			className={cn(dialogDescriptionVariants({ size }), className)}
 			{...rest}
 		/>
 	);
 };
+
+const dialogDescriptionVariants = cva('text-base-500', {
+	variants: {
+		size: {
+			default: 'text-sm',
+			sm: 'text-[13px]'
+		}
+	},
+	defaultVariants: {
+		size: 'default'
+	}
+});
 
 export type TDialogDescriptionProps = DialogPrimitive.Description.Props;
 
 export const DialogBody: React.FC<TDialogBodyProps> = (props) => {
 	const { className, ...rest } = props;
+	const { size } = React.useContext(DialogContext);
 
-	return <div data-slot="dialog-body" className={cn('px-4 py-3', className)} {...rest} />;
+	return (
+		<div
+			data-slot="dialog-body"
+			data-size={size}
+			className={cn(dialogBodyVariants({ size }), className)}
+			{...rest}
+		/>
+	);
 };
+
+const dialogBodyVariants = cva('', {
+	variants: {
+		size: {
+			default: 'px-5 py-4 text-sm',
+			sm: 'px-4 py-3 text-[13px]'
+		}
+	},
+	defaultVariants: {
+		size: 'default'
+	}
+});
 
 export type TDialogBodyProps = React.ComponentProps<'div'>;
 
 export const DialogFooter: React.FC<TDialogFooterProps> = (props) => {
 	const { className, ...rest } = props;
+	const { size } = React.useContext(DialogContext);
 
 	return (
 		<div
 			data-slot="dialog-footer"
-			className={cn(
-				'flex items-center justify-end gap-2',
-				'border-base-100 bg-base-50/60 rounded-b-2xl border-t px-4 py-3',
-				className
-			)}
+			data-size={size}
+			className={cn(dialogFooterVariants({ size }), className)}
 			{...rest}
 		/>
 	);
 };
+
+const dialogFooterVariants = cva(
+	'border-base-100 bg-base-50/60 flex items-center justify-end border-t',
+	{
+		variants: {
+			size: {
+				default: 'gap-2.5 rounded-b-xl px-5 py-4',
+				sm: 'gap-2 rounded-b-xl px-4 py-3'
+			}
+		},
+		defaultVariants: {
+			size: 'default'
+		}
+	}
+);
 
 export type TDialogFooterProps = React.ComponentProps<'div'>;
