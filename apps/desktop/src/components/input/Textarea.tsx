@@ -3,7 +3,7 @@ import React from 'react';
 import { cn } from '@/lib';
 
 export const Textarea: React.FC<TTextareaProps> = (props) => {
-	const { className, size = 'default', ...rest } = props;
+	const { size = 'default', className, ...rest } = props;
 
 	return (
 		<textarea

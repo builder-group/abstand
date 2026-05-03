@@ -4,7 +4,7 @@ import React from 'react';
 import { cn } from '@/lib';
 
 export const Input: React.FC<TInputProps> = (props) => {
-	const { className, size = 'default', ...rest } = props;
+	const { size = 'default', className, ...rest } = props;
 
 	return (
 		<InputPrimitive

@@ -4,11 +4,13 @@ import React from 'react';
 import { cn } from '@/lib';
 
 export const Toggle: React.FC<TToggleProps> = (props) => {
-	const { className, variant = 'default', size = 'default', ...rest } = props;
+	const { variant = 'default', size = 'default', className, ...rest } = props;
 
 	return (
 		<TogglePrimitive
 			data-slot="toggle"
+			data-variant={variant}
+			data-size={size}
 			className={cn(toggleVariants({ variant, size }), className)}
 			{...rest}
 		/>

@@ -4,13 +4,13 @@ import React from 'react';
 import { cn } from '@/lib';
 
 export const Button: React.FC<TButtonProps> = (props) => {
-	const { className, variant = 'default', size = 'default', ...rest } = props;
+	const { variant = 'default', size = 'default', className, ...rest } = props;
 
 	return (
 		<ButtonPrimitive
 			data-slot="button"
-			data-size={size}
 			data-variant={variant}
+			data-size={size}
 			className={cn(buttonVariants({ variant, size }), className)}
 			{...rest}
 		/>

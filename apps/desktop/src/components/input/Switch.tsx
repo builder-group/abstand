@@ -4,15 +4,20 @@ import React from 'react';
 import { cn } from '@/lib';
 
 export const Switch: React.FC<TSwitchProps> = (props) => {
-	const { className, size = 'default', ...rest } = props;
+	const { size = 'default', className, ...rest } = props;
 
 	return (
 		<SwitchPrimitive.Root
 			data-slot="switch"
+			data-size={size}
 			className={cn(switchVariants({ size }), className)}
 			{...rest}
 		>
-			<SwitchPrimitive.Thumb data-slot="switch-thumb" className={thumbVariants({ size })} />
+			<SwitchPrimitive.Thumb
+				data-slot="switch-thumb"
+				data-size={size}
+				className={thumbVariants({ size })}
+			/>
 		</SwitchPrimitive.Root>
 	);
 };

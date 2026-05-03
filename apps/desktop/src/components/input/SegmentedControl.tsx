@@ -14,10 +14,10 @@ interface TSegmentedControlContext {
 	size: TSegmentedControlSize;
 }
 
-export type TSegmentedControlSize = 'default' | 'sm';
+type TSegmentedControlSize = NonNullable<VariantProps<typeof segmentedControlVariants>['size']>;
 
 export const SegmentedControl: React.FC<TSegmentedControlProps> = (props) => {
-	const { value, onValueChange, className, size = 'default', children } = props;
+	const { value, onValueChange, size = 'default', children, className } = props;
 	const groupRef = React.useRef<HTMLDivElement | null>(null);
 	const itemElementsRef = React.useRef(new Map<string, HTMLButtonElement>());
 	const [pill, setPill] = React.useState<TPillRect | null>(null);
@@ -128,12 +128,12 @@ const segmentedControlVariants = cva(
 	}
 );
 
-export interface TSegmentedControlProps extends VariantProps<typeof segmentedControlVariants> {
+export interface TSegmentedControlProps {
 	value: string | undefined;
 	onValueChange: (value: string) => void;
-	className?: string;
-	children: React.ReactNode;
 	size?: TSegmentedControlSize;
+	children: React.ReactNode;
+	className?: string;
 }
 
 interface TPillRect {
@@ -144,7 +144,7 @@ interface TPillRect {
 }
 
 export const SegmentedControlItem: React.FC<TSegmentedControlItemProps> = (props) => {
-	const { className, value, ...rest } = props;
+	const { value, className, ...rest } = props;
 	const { registerItem, size } = React.useContext(SegmentedControlContext);
 
 	const ref = React.useCallback(
@@ -157,6 +157,7 @@ export const SegmentedControlItem: React.FC<TSegmentedControlItemProps> = (props
 	return (
 		<Toggle
 			data-slot="segmented-control-item"
+			data-size={size}
 			ref={ref}
 			className={cn(segmentedControlItemVariants({ size }), className)}
 			value={value}
@@ -182,9 +183,8 @@ const segmentedControlItemVariants = cva(
 
 export type TSegmentedControlItemProps = Omit<
 	React.ComponentProps<typeof Toggle>,
-	'className' | 'value'
-> &
-	VariantProps<typeof segmentedControlItemVariants> & {
-		className?: string;
-		value: string;
-	};
+	'className' | 'size' | 'value'
+> & {
+	value: string;
+	className?: string;
+};

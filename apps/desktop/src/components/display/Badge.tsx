@@ -5,11 +5,17 @@ import React from 'react';
 import { cn } from '@/lib';
 
 export const Badge: React.FC<TBadgeProps> = (props) => {
-	const { className, variant = 'default', size = 'default', render, ...rest } = props;
+	const { variant = 'default', size = 'default', render, children, className, ...rest } = props;
 
 	return useRender({
 		defaultTagName: 'span',
-		props: mergeProps<'span'>({ className: cn(badgeVariants({ variant, size }), className) }, rest),
+		props: mergeProps<'span'>(
+			{
+				className: cn(badgeVariants({ variant, size }), className),
+				children
+			},
+			rest
+		),
 		render,
 		state: { slot: 'badge', variant, size }
 	});

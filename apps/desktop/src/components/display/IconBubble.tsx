@@ -3,11 +3,13 @@ import React from 'react';
 import { cn } from '@/lib';
 
 export const IconBubble: React.FC<TIconBubbleProps> = (props) => {
-	const { className, variant = 'default', size = 'default', children, ...rest } = props;
+	const { variant = 'default', size = 'default', children, className, ...rest } = props;
 
 	return (
 		<span
 			data-slot="icon-bubble"
+			data-size={size}
+			data-variant={variant}
 			className={cn(iconBubbleVariants({ variant, size }), className)}
 			{...rest}
 		>
@@ -29,9 +31,9 @@ const iconBubbleVariants = cva(
 				neutral: 'bg-base-950 text-base-0'
 			},
 			size: {
+				default: "size-10 [&>svg:not([class*='size-'])]:size-7",
 				xs: "size-5.5 rounded-lg [&>svg:not([class*='size-'])]:size-3.5",
 				sm: "size-8 [&>svg:not([class*='size-'])]:size-5",
-				default: "size-10 [&>svg:not([class*='size-'])]:size-7",
 				lg: "size-12 [&>svg:not([class*='size-'])]:size-9"
 			}
 		},
