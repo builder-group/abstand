@@ -20,14 +20,13 @@ export const Select: React.FC<TSelectProps> = (props) => {
 	const selectRef = React.useRef<HTMLSelectElement>(null);
 	const [ghostWidth, setGhostWidth] = React.useState<number | undefined>(undefined);
 
-	const paddingPx = React.useMemo(() => {
-		// Matches pl-2.5+pr-7 (default) and pl-3+pr-9 (md) in selectVariants
+	const ghostWidthOffsetPx = React.useMemo(() => {
 		switch (size) {
 			case 'default':
 			default:
-				return 38;
+				return 10 + 36; // pl-2.5 + pr-9
 			case 'md':
-				return 48;
+				return 12 + 44; // pl-3 + pr-11
 		}
 	}, [size]);
 
@@ -43,8 +42,10 @@ export const Select: React.FC<TSelectProps> = (props) => {
 
 		sizerRef.current.textContent = selectedOption.text;
 		// +1 compensates for native <select> rendering text slightly wider than a <span>
-		setGhostWidth(Math.ceil(sizerRef.current.getBoundingClientRect().width) + paddingPx + 1);
-	}, [variant, paddingPx]);
+		setGhostWidth(
+			Math.ceil(sizerRef.current.getBoundingClientRect().width) + ghostWidthOffsetPx + 1
+		);
+	}, [variant, ghostWidthOffsetPx]);
 
 	React.useLayoutEffect(() => {
 		measureWidth();
@@ -98,10 +99,16 @@ const selectVariants = cva(
 				ghost: 'text-base-950 hover:bg-base-100 hover:text-base-950 bg-transparent'
 			},
 			size: {
-				default: 'h-7 pr-7 pl-2.5 text-[13px]',
-				md: 'h-8 pr-9 pl-3 text-sm'
+				default: 'h-7 pl-2.5 text-[13px]',
+				md: 'h-8 pl-3 text-sm'
 			}
 		},
+		compoundVariants: [
+			{ variant: 'default', size: 'default', className: 'pr-7' },
+			{ variant: 'default', size: 'md', className: 'pr-9' },
+			{ variant: 'ghost', size: 'default', className: 'pr-9' },
+			{ variant: 'ghost', size: 'md', className: 'pr-11' }
+		],
 		defaultVariants: {
 			variant: 'default',
 			size: 'default'
@@ -131,14 +138,14 @@ const chevronWrapperVariants = cva(
 					'peer-focus-ring bg-base-100 peer-invalid-ring rounded-full border border-transparent group-has-[select:hover]/select:bg-transparent'
 			},
 			size: {
-				default: 'size-5',
-				md: 'size-6'
+				default: 'size-6',
+				md: 'size-7'
 			}
 		},
 		compoundVariants: [
-			{ variant: 'default', size: 'default', className: 'right-1.5' },
-			{ variant: 'default', size: 'md', className: 'right-2' },
-			{ variant: 'ghost', size: 'default', className: 'right-0.5' },
+			{ variant: 'default', size: 'default', className: 'right-1' },
+			{ variant: 'default', size: 'md', className: 'right-1.5' },
+			{ variant: 'ghost', size: 'default', className: 'right-0.75' },
 			{ variant: 'ghost', size: 'md', className: 'right-1' }
 		],
 		defaultVariants: {

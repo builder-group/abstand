@@ -1,6 +1,6 @@
 import { cva } from 'class-variance-authority';
 import React from 'react';
-import { XCircleIcon } from '@/components';
+import { Button, XCircleIcon } from '@/components';
 import { specta } from '@/environment';
 import { formatShortcut } from './format';
 
@@ -109,14 +109,16 @@ export const ShortcutRecorder: React.FC<TShortcutRecorderProps> = (props) => {
 				<span className="truncate">{label}</span>
 			</button>
 			{!recording && !isEmpty ? (
-				<button
+				<Button
 					type="button"
+					variant="ghost"
+					size="icon-xs"
 					onClick={handleClear}
-					className={clearButtonVariants()}
+					className="text-base-300 hover:text-base-500 focus-visible:text-base-500 mr-1 shadow-none"
 					aria-label="Clear shortcut"
 				>
-					<XCircleIcon className="size-3.5" />
-				</button>
+					<XCircleIcon />
+				</Button>
 			) : null}
 		</div>
 	);
@@ -125,13 +127,13 @@ export const ShortcutRecorder: React.FC<TShortcutRecorderProps> = (props) => {
 const MODIFIER_KEYS = new Set(['Meta', 'Control', 'Alt', 'Shift']);
 
 const shortcutRecorderVariants = cva(
-	'border-base-200 bg-base-0 text-base-950 inline-flex h-8 min-w-32 shrink-0 items-center rounded-lg border bg-clip-padding text-sm transition disabled:pointer-events-none disabled:opacity-50',
+	'border-base-200 bg-base-0 text-base-950 inline-flex h-7 min-w-32 shrink-0 items-center rounded-lg border bg-clip-padding text-[13px] transition disabled:pointer-events-none disabled:opacity-50',
 	{
 		variants: {
 			state: {
-				idle: 'focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/30',
-				empty: 'focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/30',
-				recording: 'border-primary text-primary ring-2 ring-primary/30'
+				idle: 'focus-within:border-primary focus-within:ring-primary/30 focus-within:ring-2',
+				empty: 'focus-within:border-primary focus-within:ring-primary/30 focus-within:ring-2',
+				recording: 'border-primary text-primary ring-primary/30 ring-2'
 			}
 		},
 		defaultVariants: {
@@ -141,7 +143,7 @@ const shortcutRecorderVariants = cva(
 );
 
 const mainButtonVariants = cva(
-	'flex min-w-0 flex-1 items-center rounded-[inherit] px-2.5 text-left outline-none',
+	'flex min-w-0 flex-1 items-center rounded-[inherit] px-2 text-left outline-none',
 	{
 		variants: {
 			state: {
@@ -154,10 +156,6 @@ const mainButtonVariants = cva(
 			state: 'idle'
 		}
 	}
-);
-
-const clearButtonVariants = cva(
-	'text-base-300 mr-1 inline-flex size-6 shrink-0 items-center justify-center rounded-full outline-none transition hover:text-base-500 focus-visible:text-base-500'
 );
 
 interface TShortcutRecorderProps {

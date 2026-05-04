@@ -27,7 +27,7 @@ const switchVariants = cva(
 	{
 		variants: {
 			size: {
-				default: 'h-4 w-9 rounded-full',
+				default: 'h-4.5 w-9.5 rounded-full',
 				md: 'h-5 w-11 rounded-full'
 			}
 		},
@@ -38,7 +38,7 @@ const switchVariants = cva(
 const thumbVariants = cva('pointer-events-none block shrink-0 bg-white transition-transform', {
 	variants: {
 		size: {
-			default: 'h-3.5 w-5.5 rounded-full data-checked:translate-x-3 data-unchecked:translate-x-0',
+			default: 'h-4 w-6 rounded-full data-checked:translate-x-3 data-unchecked:translate-x-0',
 			md: 'h-4.5 w-6.5 rounded-full data-checked:translate-x-4 data-unchecked:translate-x-0'
 		}
 	},

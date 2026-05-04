@@ -18,15 +18,15 @@ const groupVariants = cva(
 	{
 		variants: {
 			size: {
-				default: 'rounded-xl [&>*+*]:before:inset-x-3.5',
-				md: 'rounded-xl [&>*+*]:before:inset-x-4'
+				default: 'rounded-xl [&>*+*]:before:inset-x-3',
+				md: 'rounded-xl [&>*+*]:before:inset-x-3.5'
 			}
 		},
 		defaultVariants: { size: 'default' }
 	}
 );
 
-const titleVariants = cva('text-base-600 ml-1 px-1 font-semibold', {
+const titleVariants = cva('text-base-600 ml-2.5 font-semibold', {
 	variants: {
 		size: {
 			default: 'mb-2 text-[13px]',

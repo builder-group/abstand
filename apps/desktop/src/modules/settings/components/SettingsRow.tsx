@@ -23,7 +23,7 @@ export const SettingsRow: React.FC<TSettingsRowProps> = (props) => {
 				className: cn(settingsRowVariants({ size }), className),
 				children: (
 					<>
-						<div className="flex min-w-0 flex-col gap-0.5">
+						<div className="flex min-w-0 flex-col">
 							<span className={labelVariants({ size })}>{label}</span>
 							{description != null && (
 								<span className={descriptionVariants({ size })}>{description}</span>
@@ -47,8 +47,8 @@ const settingsRowVariants = cva(
 	{
 		variants: {
 			size: {
-				default: 'min-h-10 gap-5 px-3.5 py-2.5',
-				md: 'min-h-12 gap-6 px-4 py-3'
+				default: 'min-h-8 gap-4 px-2.5 py-2.25',
+				md: 'min-h-10 gap-5 px-3 py-2.5'
 			}
 		},
 		defaultVariants: {

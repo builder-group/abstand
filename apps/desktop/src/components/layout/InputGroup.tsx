@@ -113,7 +113,7 @@ export const InputGroupButton: React.FC<TInputGroupButtonProps> = (props) => {
 			type={type}
 			variant={variant}
 			size="icon-xs"
-			className={cn('shrink-0 rounded-md shadow-none', className)}
+			className={cn('shrink-0 shadow-none', className)}
 			{...rest}
 		/>
 	);

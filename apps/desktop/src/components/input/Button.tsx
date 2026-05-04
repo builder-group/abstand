@@ -18,7 +18,7 @@ export const Button: React.FC<TButtonProps> = (props) => {
 };
 
 const buttonVariants = cva(
-	'focus-ring invalid-ring inline-flex shrink-0 items-center justify-center border border-transparent font-medium whitespace-nowrap transition select-none active:not-aria-[haspopup]:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0',
+	'focus-ring invalid-ring inline-flex shrink-0 items-center justify-center border border-transparent whitespace-nowrap transition select-none active:not-aria-[haspopup]:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0',
 	{
 		variants: {
 			variant: {
@@ -39,7 +39,7 @@ const buttonVariants = cva(
 				'default':
 					"h-7 gap-1 rounded-lg px-2.5 text-[13px] has-[>svg]:px-2 [&_svg:not([class*='size-'])]:size-3.5",
 				'md': "h-8 gap-1.5 rounded-lg px-3 text-sm has-[>svg]:px-2.5 [&_svg:not([class*='size-'])]:size-4",
-				'icon-xs': "size-6 rounded-full [&_svg:not([class*='size-'])]:size-3",
+				'icon-xs': "size-5 rounded-full [&_svg:not([class*='size-'])]:size-3",
 				'icon': "size-7 rounded-full [&_svg:not([class*='size-'])]:size-3.5",
 				'icon-md': "size-8 rounded-full [&_svg:not([class*='size-'])]:size-4"
 			}

@@ -712,6 +712,36 @@ const SettingsSection: React.FC = () => {
 	const [mdTheme, setMdTheme] = React.useState('system');
 	const [defaultDeveloperEnabled, setDefaultDeveloperEnabled] = React.useState(true);
 	const [mdDeveloperEnabled, setMdDeveloperEnabled] = React.useState(false);
+	const [colorProfile, setColorProfile] = React.useState('40c1r');
+	const [refreshRate, setRefreshRate] = React.useState('100');
+	const [highDynamicRange, setHighDynamicRange] = React.useState(false);
+	const [rotation, setRotation] = React.useState('standard');
+	const [tvBehavior, setTvBehavior] = React.useState('ask');
+
+	const handleColorProfileChange = React.useCallback(
+		(event: React.ChangeEvent<HTMLSelectElement>) => {
+			setColorProfile(event.target.value);
+		},
+		[]
+	);
+
+	const handleRefreshRateChange = React.useCallback(
+		(event: React.ChangeEvent<HTMLSelectElement>) => {
+			setRefreshRate(event.target.value);
+		},
+		[]
+	);
+
+	const handleRotationChange = React.useCallback((event: React.ChangeEvent<HTMLSelectElement>) => {
+		setRotation(event.target.value);
+	}, []);
+
+	const handleTvBehaviorChange = React.useCallback(
+		(event: React.ChangeEvent<HTMLSelectElement>) => {
+			setTvBehavior(event.target.value);
+		},
+		[]
+	);
 
 	return (
 		<PlaygroundGroup title="Settings Group and Row" variant="outline">
@@ -745,6 +775,59 @@ const SettingsSection: React.FC = () => {
 							checked={mdDeveloperEnabled}
 							onCheckedChange={setMdDeveloperEnabled}
 						/>
+					</SettingsRow>
+				</SettingsGroup>
+			</PlaygroundRow>
+			<PlaygroundRow
+				label="Native showcase"
+				contentClassName="flex-col items-start gap-2.5 max-w-[460px]"
+			>
+				<SettingsGroup className="w-full">
+					<SettingsRow label="Color profile">
+						<Select variant="ghost" value={colorProfile} onChange={handleColorProfileChange}>
+							<option value="40c1r">40C1R</option>
+							<option value="display-p3">Display P3</option>
+							<option value="srgb">sRGB</option>
+						</Select>
+					</SettingsRow>
+				</SettingsGroup>
+				<SettingsGroup className="w-full">
+					<SettingsRow label="Refresh rate">
+						<Select variant="ghost" value={refreshRate} onChange={handleRefreshRateChange}>
+							<option value="100">100 Hertz</option>
+							<option value="60">60 Hertz</option>
+							<option value="120">120 Hertz</option>
+						</Select>
+					</SettingsRow>
+					<SettingsRow
+						label="High Dynamic Range"
+						description="Automatically adjust the display to show high dynamic range content."
+						className="items-start"
+					>
+						<Switch checked={highDynamicRange} onCheckedChange={setHighDynamicRange} />
+					</SettingsRow>
+				</SettingsGroup>
+				<SettingsGroup className="w-full">
+					<SettingsRow label="Rotation">
+						<Select variant="ghost" value={rotation} onChange={handleRotationChange}>
+							<option value="standard">Standard</option>
+							<option value="90">90 Degrees</option>
+							<option value="180">180 Degrees</option>
+							<option value="270">270 Degrees</option>
+						</Select>
+					</SettingsRow>
+				</SettingsGroup>
+				<SettingsGroup className="w-full">
+					<SettingsRow
+						label="When connected to TV"
+						description="Choose what to show or use the TV as a secondary display."
+						className="items-start"
+					>
+						<Select variant="ghost" value={tvBehavior} onChange={handleTvBehaviorChange}>
+							<option value="ask">Ask What to Show</option>
+							<option value="mirror">Mirror Display</option>
+							<option value="extend">Extend Display</option>
+						</Select>
 					</SettingsRow>
 				</SettingsGroup>
 			</PlaygroundRow>
