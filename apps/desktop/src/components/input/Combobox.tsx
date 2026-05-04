@@ -68,8 +68,8 @@ export const ComboboxTrigger: React.FC<TComboboxTriggerProps> = (props) => {
 const comboboxTriggerVariants = cva('text-base-400 [&_svg]:pointer-events-none [&_svg]:shrink-0', {
 	variants: {
 		size: {
-			default: "[&_svg:not([class*='size-'])]:size-4",
-			sm: "[&_svg:not([class*='size-'])]:size-3.5"
+			default: "[&_svg:not([class*='size-'])]:size-3.5",
+			md: "[&_svg:not([class*='size-'])]:size-4"
 		}
 	},
 	defaultVariants: {
@@ -184,7 +184,7 @@ const comboboxContentVariants = cva(
 		variants: {
 			size: {
 				default: 'rounded-xl',
-				sm: 'rounded-lg'
+				md: 'rounded-xl'
 			}
 		},
 		defaultVariants: {
@@ -213,7 +213,7 @@ const comboboxListVariants = cva(
 		variants: {
 			size: {
 				default: 'p-1',
-				sm: 'p-0.5'
+				md: 'p-1'
 			}
 		},
 		defaultVariants: {
@@ -271,12 +271,13 @@ export const ComboboxItem: React.FC<TComboboxItemProps> = (props) => {
 };
 
 const comboboxItemVariants = cva(
-	'group/combobox-item text-base-700 data-highlighted:bg-base-950/6 data-highlighted:text-base-950 relative flex w-full cursor-default items-center rounded-lg outline-none select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0',
+	'group/combobox-item text-base-700 data-highlighted:bg-base-950/6 data-highlighted:text-base-950 relative flex w-full cursor-default items-center outline-none select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0',
 	{
 		variants: {
 			size: {
-				default: "gap-2 px-2 py-1.5 text-sm [&_svg:not([class*='size-'])]:size-4",
-				sm: "gap-1.5 px-1.5 py-1 text-[13px] [&_svg:not([class*='size-'])]:size-3.5"
+				default:
+					"gap-1.5 rounded-lg px-1.5 py-1 text-[13px] [&_svg:not([class*='size-'])]:size-3.5",
+				md: "gap-2 rounded-lg px-2 py-1.5 text-sm [&_svg:not([class*='size-'])]:size-4"
 			}
 		},
 		defaultVariants: {
@@ -290,8 +291,8 @@ const comboboxItemIndicatorVariants = cva(
 	{
 		variants: {
 			size: {
-				default: 'right-2 size-4',
-				sm: 'right-1.5 size-3.5'
+				default: 'right-1.5 size-3.5',
+				md: 'right-2 size-4'
 			}
 		},
 		defaultVariants: {
@@ -327,8 +328,8 @@ export const ComboboxLabel: React.FC<TComboboxLabelProps> = (props) => {
 const comboboxLabelVariants = cva('text-base-500 font-medium', {
 	variants: {
 		size: {
-			default: 'px-2 py-1 text-xs',
-			sm: 'px-1.5 py-0.5 text-[11px]'
+			default: 'px-1.5 py-0.5 text-[11px]',
+			md: 'px-2 py-1 text-xs'
 		}
 	},
 	defaultVariants: {
@@ -363,8 +364,8 @@ const comboboxStatusVariants = cva(
 	{
 		variants: {
 			size: {
-				default: 'px-3 py-2 text-xs',
-				sm: 'px-2.5 py-1.5 text-[11px]'
+				default: 'px-2.5 py-1.5 text-[11px]',
+				md: 'px-3 py-2 text-xs'
 			}
 		},
 		defaultVariants: {
@@ -394,8 +395,8 @@ const comboboxEmptyVariants = cva(
 	{
 		variants: {
 			size: {
-				default: 'px-3 py-3 text-sm',
-				sm: 'px-2.5 py-2.5 text-[13px]'
+				default: 'px-2.5 py-2.5 text-[13px]',
+				md: 'px-3 py-3 text-sm'
 			}
 		},
 		defaultVariants: {
@@ -408,15 +409,29 @@ export type TComboboxEmptyProps = ComboboxPrimitive.Empty.Props;
 
 export const ComboboxSeparator: React.FC<TComboboxSeparatorProps> = (props) => {
 	const { className, ...rest } = props;
+	const { size } = React.useContext(ComboboxContext);
 
 	return (
 		<ComboboxPrimitive.Separator
 			data-slot="combobox-separator"
-			className={cn('bg-base-100 -mx-1 my-1 h-px', className)}
+			data-size={size}
+			className={cn(comboboxSeparatorVariants({ size }), className)}
 			{...rest}
 		/>
 	);
 };
+
+const comboboxSeparatorVariants = cva('bg-base-100 my-1 h-px', {
+	variants: {
+		size: {
+			default: '-mx-0.5',
+			md: '-mx-1'
+		}
+	},
+	defaultVariants: {
+		size: 'default'
+	}
+});
 
 export type TComboboxSeparatorProps = ComboboxPrimitive.Separator.Props;
 
@@ -435,12 +450,12 @@ export const ComboboxChips: React.FC<TComboboxChipsProps> = (props) => {
 };
 
 const comboboxChipsVariants = cva(
-	'border-base-200 bg-base-0 text-base-950 focus-within:border-primary focus-within:ring-primary/30 has-aria-invalid:border-error has-aria-invalid:ring-error/20 flex w-full flex-wrap items-center rounded-lg border transition focus-within:ring-2 has-aria-invalid:ring-2',
+	'border-base-200 bg-base-0 text-base-950 focus-within:border-primary focus-within:ring-primary/30 has-aria-invalid:border-error has-aria-invalid:ring-error/20 flex w-full flex-wrap items-center border transition focus-within:ring-2 has-aria-invalid:ring-2',
 	{
 		variants: {
 			size: {
-				default: 'min-h-8 gap-1 px-2 py-1',
-				sm: 'min-h-7 gap-1 px-1.5 py-0.5'
+				default: 'min-h-7 gap-1 rounded-lg px-1.5 py-0.5',
+				md: 'min-h-8 gap-1 rounded-lg px-2 py-1'
 			}
 		},
 		defaultVariants: {
@@ -486,8 +501,8 @@ const comboboxChipVariants = cva(
 	{
 		variants: {
 			size: {
-				default: 'h-5 gap-1 pr-0.5 pl-1.5 text-xs',
-				sm: 'h-4.5 gap-0.5 pr-0.5 pl-1 text-[11px]'
+				default: 'h-4.5 gap-0.5 pr-0.5 pl-1 text-[11px]',
+				md: 'h-5 gap-1 pr-0.5 pl-1.5 text-xs'
 			}
 		},
 		defaultVariants: {
@@ -519,8 +534,8 @@ const comboboxChipsInputVariants = cva(
 	{
 		variants: {
 			size: {
-				default: 'text-sm',
-				sm: 'text-[13px]'
+				default: 'text-[13px]',
+				md: 'text-sm'
 			}
 		},
 		defaultVariants: {

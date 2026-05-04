@@ -23,32 +23,26 @@ export const Switch: React.FC<TSwitchProps> = (props) => {
 };
 
 const switchVariants = cva(
-	'group/switch inline-flex shrink-0 cursor-default items-center rounded-full border border-transparent select-none transition-colors data-unchecked:bg-base-200 data-checked:bg-primary focus-ring data-disabled:pointer-events-none data-disabled:opacity-50',
+	'group/switch data-unchecked:bg-base-200 data-checked:bg-primary focus-ring inline-flex shrink-0 cursor-default items-center border border-transparent transition-colors select-none data-disabled:pointer-events-none data-disabled:opacity-50',
 	{
 		variants: {
 			size: {
-				default: 'h-5 w-11',
-				sm: 'h-4 w-9'
+				default: 'h-4 w-9 rounded-full',
+				md: 'h-5 w-11 rounded-full'
 			}
 		},
 		defaultVariants: { size: 'default' }
 	}
 );
 
-const thumbVariants = cva(
-	[
-		'pointer-events-none block shrink-0 rounded-full bg-white transition-transform',
-		'shadow-[0_1px_3px_rgba(0,0,0,0.15),0_1px_2px_rgba(0,0,0,0.08)]'
-	],
-	{
-		variants: {
-			size: {
-				default: 'h-4.5 w-6.5 data-unchecked:translate-x-0 data-checked:translate-x-4',
-				sm: 'h-3.5 w-5.5 data-unchecked:translate-x-0 data-checked:translate-x-3'
-			}
-		},
-		defaultVariants: { size: 'default' }
-	}
-);
+const thumbVariants = cva('pointer-events-none block shrink-0 bg-white transition-transform', {
+	variants: {
+		size: {
+			default: 'h-3.5 w-5.5 rounded-full data-checked:translate-x-3 data-unchecked:translate-x-0',
+			md: 'h-4.5 w-6.5 rounded-full data-checked:translate-x-4 data-unchecked:translate-x-0'
+		}
+	},
+	defaultVariants: { size: 'default' }
+});
 
 export type TSwitchProps = SwitchPrimitive.Root.Props & VariantProps<typeof switchVariants>;

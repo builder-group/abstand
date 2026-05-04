@@ -22,7 +22,7 @@ export const Badge: React.FC<TBadgeProps> = (props) => {
 };
 
 const badgeVariants = cva(
-	'focus-ring inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-transparent font-medium whitespace-nowrap transition-colors select-none [&_svg]:pointer-events-none [&_svg]:shrink-0',
+	'focus-ring inline-flex shrink-0 items-center justify-center overflow-hidden border border-transparent font-medium whitespace-nowrap transition-colors select-none [&_svg]:pointer-events-none [&_svg]:shrink-0',
 	{
 		variants: {
 			variant: {
@@ -36,8 +36,9 @@ const badgeVariants = cva(
 				link: 'text-primary underline-offset-4 [a&]:hover:underline'
 			},
 			size: {
-				default: "h-4.5 gap-1 px-1.5 text-[11px] [&_svg:not([class*='size-'])]:size-2.5",
-				md: "h-5 gap-1 px-2 py-0.5 text-xs [&_svg:not([class*='size-'])]:size-3"
+				default:
+					"h-4.5 gap-1 rounded-full px-1.5 text-[11px] [&_svg:not([class*='size-'])]:size-2.5",
+				md: "h-5 gap-1 rounded-full px-2 py-0.5 text-xs [&_svg:not([class*='size-'])]:size-3"
 			}
 		},
 		defaultVariants: {

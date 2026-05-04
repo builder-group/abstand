@@ -20,8 +20,16 @@ export const Select: React.FC<TSelectProps> = (props) => {
 	const selectRef = React.useRef<HTMLSelectElement>(null);
 	const [ghostWidth, setGhostWidth] = React.useState<number | undefined>(undefined);
 
-	// Matches pl-3+pr-9 (default) and pl-2.5+pr-7 (sm) in selectVariants
-	const paddingPx = size === 'sm' ? 38 : 48;
+	const paddingPx = React.useMemo(() => {
+		// Matches pl-3+pr-9 (default) and pl-2.5+pr-7 (sm) in selectVariants
+		switch (size) {
+			case 'default':
+			default:
+				return 38;
+			case 'md':
+				return 48;
+		}
+	}, [size]);
 
 	const measureWidth = React.useCallback(() => {
 		if (variant !== 'ghost' || sizerRef.current == null || selectRef.current == null) {
@@ -50,14 +58,7 @@ export const Select: React.FC<TSelectProps> = (props) => {
 			className="group/select relative w-fit has-[select:disabled]:opacity-50"
 		>
 			{variant === 'ghost' && (
-				<span
-					ref={sizerRef}
-					aria-hidden
-					className={cn(
-						'pointer-events-none invisible absolute whitespace-pre',
-						size === 'sm' ? 'text-[13px]' : 'text-sm'
-					)}
-				/>
+				<span ref={sizerRef} aria-hidden className={ghostSizerVariants({ size })} />
 			)}
 			<select
 				ref={selectRef}
@@ -82,30 +83,23 @@ export const Select: React.FC<TSelectProps> = (props) => {
 				data-size={size}
 				className={chevronWrapperVariants({ size, variant })}
 			>
-				<ChevronsUpDownIcon
-					aria-hidden
-					className={cn(
-						'select-none',
-						variant === 'ghost' ? 'text-base-950' : 'text-base-500',
-						size === 'sm' ? 'size-3' : 'size-3.5'
-					)}
-				/>
+				<ChevronsUpDownIcon aria-hidden className={chevronIconVariants({ variant, size })} />
 			</div>
 		</div>
 	);
 };
 
 const selectVariants = cva(
-	'appearance-none cursor-default select-none rounded-lg border border-transparent outline-none transition-colors disabled:pointer-events-none',
+	'cursor-default appearance-none rounded-lg border border-transparent transition-colors outline-none select-none disabled:pointer-events-none',
 	{
 		variants: {
 			variant: {
-				default: 'w-full bg-base-100 text-base-950 hover:bg-base-200 invalid-ring focus-ring',
-				ghost: 'bg-transparent text-base-950 hover:bg-base-100 hover:text-base-950'
+				default: 'bg-base-100 text-base-950 hover:bg-base-200 invalid-ring focus-ring w-full',
+				ghost: 'text-base-950 hover:bg-base-100 hover:text-base-950 bg-transparent'
 			},
 			size: {
-				default: 'h-8 pl-3 pr-9 text-sm',
-				sm: 'h-7 pl-2.5 pr-7 text-[13px]'
+				default: 'h-7 pr-7 pl-2.5 text-[13px]',
+				md: 'h-8 pr-9 pl-3 text-sm'
 			}
 		},
 		defaultVariants: {
@@ -114,6 +108,18 @@ const selectVariants = cva(
 		}
 	}
 );
+
+const ghostSizerVariants = cva('pointer-events-none invisible absolute whitespace-pre', {
+	variants: {
+		size: {
+			default: 'text-[13px]',
+			md: 'text-sm'
+		}
+	},
+	defaultVariants: {
+		size: 'default'
+	}
+});
 
 const chevronWrapperVariants = cva(
 	'pointer-events-none absolute top-1/2 flex -translate-y-1/2 items-center justify-center transition-colors',
@@ -122,18 +128,18 @@ const chevronWrapperVariants = cva(
 			variant: {
 				default: '',
 				ghost:
-					'peer-focus-ring rounded-full border border-transparent bg-base-100 group-has-[select:hover]/select:bg-transparent peer-invalid-ring'
+					'peer-focus-ring bg-base-100 peer-invalid-ring rounded-full border border-transparent group-has-[select:hover]/select:bg-transparent'
 			},
 			size: {
-				default: 'size-6',
-				sm: 'size-5'
+				default: 'size-5',
+				md: 'size-6'
 			}
 		},
 		compoundVariants: [
-			{ variant: 'default', size: 'default', className: 'right-2' },
-			{ variant: 'default', size: 'sm', className: 'right-1.5' },
-			{ variant: 'ghost', size: 'default', className: 'right-1' },
-			{ variant: 'ghost', size: 'sm', className: 'right-0.5' }
+			{ variant: 'default', size: 'default', className: 'right-1.5' },
+			{ variant: 'default', size: 'md', className: 'right-2' },
+			{ variant: 'ghost', size: 'default', className: 'right-0.5' },
+			{ variant: 'ghost', size: 'md', className: 'right-1' }
 		],
 		defaultVariants: {
 			variant: 'default',
@@ -141,6 +147,23 @@ const chevronWrapperVariants = cva(
 		}
 	}
 );
+
+const chevronIconVariants = cva('select-none', {
+	variants: {
+		variant: {
+			default: 'text-base-500',
+			ghost: 'text-base-950'
+		},
+		size: {
+			default: 'size-3.5',
+			md: 'size-4'
+		}
+	},
+	defaultVariants: {
+		variant: 'default',
+		size: 'default'
+	}
+});
 
 export type TSelectProps = Omit<React.ComponentPropsWithoutRef<'select'>, 'size'> &
 	VariantProps<typeof selectVariants>;

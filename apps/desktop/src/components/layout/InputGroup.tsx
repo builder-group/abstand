@@ -30,12 +30,12 @@ export const InputGroup: React.FC<TInputGroupProps> = (props) => {
 };
 
 const inputGroupVariants = cva(
-	'group/input-group border-base-200 bg-base-0 text-base-950 has-[[data-slot=input-group-control]:focus-visible]:border-primary has-[[data-slot=input-group-control]:focus-visible]:ring-primary/30 has-[[data-slot=input-group-control][aria-invalid=true]]:border-error has-[[data-slot=input-group-control][aria-invalid=true]]:ring-error/20 relative flex w-full min-w-0 items-center rounded-lg border bg-clip-padding transition has-disabled:opacity-50 has-[[data-slot=input-group-control]:focus-visible]:ring-2 has-[[data-slot=input-group-control][aria-invalid=true]]:ring-2 has-[textarea]:items-stretch has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-end]]:items-stretch has-[>[data-align=block-start]]:h-auto has-[>[data-align=block-start]]:flex-col has-[>[data-align=block-start]]:items-stretch has-[>textarea]:h-auto',
+	'group/input-group border-base-200 bg-base-0 text-base-950 has-[[data-slot=input-group-control]:focus-visible]:border-primary has-[[data-slot=input-group-control]:focus-visible]:ring-primary/30 has-[[data-slot=input-group-control][aria-invalid=true]]:border-error has-[[data-slot=input-group-control][aria-invalid=true]]:ring-error/20 relative flex w-full min-w-0 items-center border bg-clip-padding transition has-disabled:opacity-50 has-[[data-slot=input-group-control]:focus-visible]:ring-2 has-[[data-slot=input-group-control][aria-invalid=true]]:ring-2 has-[textarea]:items-stretch has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-end]]:items-stretch has-[>[data-align=block-start]]:h-auto has-[>[data-align=block-start]]:flex-col has-[>[data-align=block-start]]:items-stretch has-[>textarea]:h-auto',
 	{
 		variants: {
 			size: {
-				default: 'h-8',
-				sm: 'h-7'
+				default: 'h-7 rounded-lg',
+				md: 'h-8 rounded-lg'
 			}
 		},
 		defaultVariants: {
@@ -80,12 +80,12 @@ export const InputGroupAddon: React.FC<TInputGroupAddonProps> = (props) => {
 };
 
 const inputGroupAddonVariants = cva(
-	'text-base-500 flex shrink-0 cursor-text items-center font-medium select-none [&>kbd]:rounded-md [&>svg]:shrink-0',
+	'text-base-500 flex shrink-0 cursor-text items-center font-medium select-none [&_svg]:pointer-events-none [&_svg]:shrink-0',
 	{
 		variants: {
 			size: {
-				default: "gap-1.5 [&>svg:not([class*='size-'])]:size-4",
-				sm: "gap-1 [&>svg:not([class*='size-'])]:size-3.5"
+				default: "gap-1 [&>svg:not([class*='size-'])]:size-3.5",
+				md: "gap-1.5 [&>svg:not([class*='size-'])]:size-4"
 			},
 			align: {
 				'inline-start': 'order-first pl-2',
@@ -142,8 +142,8 @@ const inputGroupTextVariants = cva(
 	{
 		variants: {
 			size: {
-				default: "gap-1.5 text-sm [&_svg:not([class*='size-'])]:size-4",
-				sm: "gap-1 text-[13px] [&_svg:not([class*='size-'])]:size-3.5"
+				default: "gap-1 text-[13px] [&_svg:not([class*='size-'])]:size-3.5",
+				md: "gap-1.5 text-sm [&_svg:not([class*='size-'])]:size-4"
 			}
 		},
 		defaultVariants: {

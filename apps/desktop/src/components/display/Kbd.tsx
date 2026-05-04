@@ -19,7 +19,7 @@ export const Kbd: React.FC<TKbdProps> = (props) => {
 };
 
 const kbdVariants = cva(
-	'inline-flex shrink-0 items-center justify-center rounded-full font-sans font-medium whitespace-nowrap select-none',
+	'inline-flex shrink-0 items-center justify-center font-sans font-medium whitespace-nowrap select-none',
 	{
 		variants: {
 			variant: {
@@ -28,8 +28,8 @@ const kbdVariants = cva(
 				ghost: 'text-base-400'
 			},
 			size: {
-				default: 'h-3.5 min-w-3.5 px-1.5 text-[11px]',
-				md: 'h-4 min-w-4 px-1.5 text-xs'
+				default: 'h-3.5 min-w-3.5 rounded-full px-1.5 text-[11px]',
+				md: 'h-4 min-w-4 rounded-full px-1.5 text-xs'
 			}
 		},
 		defaultVariants: {

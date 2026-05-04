@@ -16,12 +16,12 @@ export const Textarea: React.FC<TTextareaProps> = (props) => {
 };
 
 const textareaVariants = cva(
-	'border-base-200 bg-base-0 text-base-950 flex min-h-16 w-full min-w-0 rounded-lg border bg-clip-padding px-2.5 py-2 placeholder:text-base-400 transition resize-y focus-ring disabled:pointer-events-none disabled:opacity-50 invalid-ring',
+	'border-base-200 bg-base-0 text-base-950 placeholder:text-base-400 focus-ring invalid-ring flex w-full min-w-0 resize-y border bg-clip-padding transition disabled:pointer-events-none disabled:opacity-50',
 	{
 		variants: {
 			size: {
-				default: 'text-sm',
-				sm: 'min-h-14 px-2 py-1.5 text-[13px]'
+				default: 'min-h-14 rounded-lg px-2 py-1.5 text-[13px]',
+				md: 'min-h-16 rounded-lg px-2.5 py-2 text-sm'
 			}
 		},
 		defaultVariants: {
