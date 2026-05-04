@@ -89,7 +89,7 @@ export const ContentPage: React.FC<TContentPageProps> = (props) => {
 							<Button
 								render={<Link to={backTo} />}
 								variant="soft"
-								size={isCollapsed ? 'icon-sm' : 'sm'}
+								size={isCollapsed ? 'icon' : 'default'}
 								className="pointer-events-auto rounded-full"
 							>
 								<ArrowLeftIcon />
@@ -133,7 +133,7 @@ export const ContentPage: React.FC<TContentPageProps> = (props) => {
 				)}
 				backgroundClassName={cn(
 					isCollapsed &&
-						'border-base-100 bg-base-0/90 border-b supports-backdrop-filter:bg-base-0/80 supports-backdrop-filter:backdrop-blur-xl',
+						'border-base-100 bg-base-0/90 supports-backdrop-filter:bg-base-0/80 border-b supports-backdrop-filter:backdrop-blur-xl',
 					!isCollapsed &&
 						hasBackButton &&
 						"before:from-base-0 before:pointer-events-none before:absolute before:h-16 before:w-full before:bg-linear-to-b before:from-55% before:to-transparent before:content-['']"

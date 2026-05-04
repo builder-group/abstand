@@ -130,7 +130,7 @@ export const CommandPaletteModal: React.FC = () => {
 					/>
 					<Button
 						variant="ghost"
-						size="icon-sm"
+						size="icon"
 						aria-label="Close command palette"
 						onClick={() => cx.close()}
 					>

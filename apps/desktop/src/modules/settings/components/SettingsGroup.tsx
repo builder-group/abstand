@@ -14,12 +14,12 @@ export const SettingsGroup: React.FC<TSettingsGroupProps> = (props) => {
 };
 
 const groupVariants = cva(
-	"bg-base-50/70 overflow-hidden *:relative [&>*+*]:before:absolute [&>*+*]:before:top-0 [&>*+*]:before:h-px [&>*+*]:before:bg-base-100 [&>*+*]:before:content-['']",
+	"bg-base-50/70 [&>*+*]:before:bg-base-100 overflow-hidden *:relative [&>*+*]:before:absolute [&>*+*]:before:top-0 [&>*+*]:before:h-px [&>*+*]:before:content-['']",
 	{
 		variants: {
 			size: {
-				default: 'rounded-xl [&>*+*]:before:inset-x-4',
-				sm: 'rounded-xl [&>*+*]:before:inset-x-3.5'
+				default: 'rounded-xl [&>*+*]:before:inset-x-3.5',
+				md: 'rounded-xl [&>*+*]:before:inset-x-4'
 			}
 		},
 		defaultVariants: { size: 'default' }
@@ -29,8 +29,8 @@ const groupVariants = cva(
 const titleVariants = cva('text-base-600 ml-1 px-1 font-semibold', {
 	variants: {
 		size: {
-			default: 'mb-2.5 text-sm',
-			sm: 'mb-2 text-[13px]'
+			default: 'mb-2 text-[13px]',
+			md: 'mb-2.5 text-sm'
 		}
 	},
 	defaultVariants: { size: 'default' }

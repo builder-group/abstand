@@ -34,9 +34,7 @@ function RouteComponent() {
 						<div>
 							<div className="flex items-center gap-1.5">
 								<p className="text-base-950 text-[13px]">Break</p>
-								<Badge variant="outline" size="sm">
-									Coming soon
-								</Badge>
+								<Badge variant="outline">Coming soon</Badge>
 							</div>
 							<p className="text-base-500 mt-0.5 text-xs">
 								A rhythm of forced breaks over a longer window, with a one-minute warning before

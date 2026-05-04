@@ -48,7 +48,7 @@ export const WindowHeader: React.FC<TWindowHeaderProps> = (props) => {
 			<Button
 				aria-label="Help"
 				variant="ghost"
-				size="icon-sm"
+				size="icon"
 				className="ml-2"
 				onClick={() => {
 					console.log('[Help] current path:', pathname);

@@ -9,10 +9,10 @@ export const SettingsRow: React.FC<TSettingsRowProps> = (props) => {
 		label,
 		description,
 		size = 'default',
-		className,
-		contentClassName,
 		render,
 		children,
+		contentClassName,
+		className,
 		...rest
 	} = props;
 
@@ -43,12 +43,12 @@ export const SettingsRow: React.FC<TSettingsRowProps> = (props) => {
 };
 
 const settingsRowVariants = cva(
-	'flex items-center justify-between [button]:w-full [button]:cursor-default [button]:text-left [button]:hover:bg-base-950/6 [button]:active:bg-base-950/10 [a]:w-full [a]:cursor-default [a]:text-left [a]:hover:bg-base-950/6 [a]:active:bg-base-950/10',
+	'[button]:hover:bg-base-950/6 [button]:active:bg-base-950/10 [a]:hover:bg-base-950/6 [a]:active:bg-base-950/10 flex items-center justify-between [a]:w-full [a]:cursor-default [a]:text-left [button]:w-full [button]:cursor-default [button]:text-left',
 	{
 		variants: {
 			size: {
-				default: 'min-h-12 gap-6 px-4 py-3',
-				sm: 'min-h-10 gap-5 px-3.5 py-2.5'
+				default: 'min-h-10 gap-5 px-3.5 py-2.5',
+				md: 'min-h-12 gap-6 px-4 py-3'
 			}
 		},
 		defaultVariants: {
@@ -60,8 +60,8 @@ const settingsRowVariants = cva(
 const labelVariants = cva('text-base-950', {
 	variants: {
 		size: {
-			default: 'text-sm',
-			sm: 'text-[13px]'
+			default: 'text-[13px]',
+			md: 'text-sm'
 		}
 	},
 	defaultVariants: {
@@ -72,8 +72,8 @@ const labelVariants = cva('text-base-950', {
 const descriptionVariants = cva('text-base-500', {
 	variants: {
 		size: {
-			default: 'text-[13px]',
-			sm: 'text-xs'
+			default: 'text-xs',
+			md: 'text-[13px]'
 		}
 	},
 	defaultVariants: {
@@ -84,8 +84,8 @@ const descriptionVariants = cva('text-base-500', {
 const controlVariants = cva('flex shrink-0 items-center', {
 	variants: {
 		size: {
-			default: 'gap-2.5',
-			sm: 'gap-2'
+			default: 'gap-2',
+			md: 'gap-2.5'
 		}
 	},
 	defaultVariants: {

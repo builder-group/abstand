@@ -97,12 +97,12 @@ export const DialogContent: React.FC<TDialogContentProps> = (props) => {
 };
 
 const dialogContentVariants = cva(
-	'fixed top-1/2 left-1/2 z-50 w-full -translate-x-1/2 -translate-y-1/2 bg-base-0 border-base-100 border shadow-xl outline-none origin-center transition-[opacity,scale] duration-200 ease-out data-starting-style:scale-[0.97] data-starting-style:opacity-0 data-ending-style:scale-[0.97] data-ending-style:opacity-0',
+	'bg-base-0 border-base-100 fixed top-1/2 left-1/2 z-50 w-full origin-center -translate-x-1/2 -translate-y-1/2 border shadow-xl transition-[opacity,scale] duration-200 ease-out outline-none data-ending-style:scale-[0.97] data-ending-style:opacity-0 data-starting-style:scale-[0.97] data-starting-style:opacity-0',
 	{
 		variants: {
 			size: {
-				default: 'max-w-md rounded-xl',
-				sm: 'max-w-sm rounded-xl'
+				default: 'max-w-sm rounded-xl',
+				md: 'max-w-md rounded-xl'
 			}
 		},
 		defaultVariants: {
@@ -132,8 +132,8 @@ export const DialogHeader: React.FC<TDialogHeaderProps> = (props) => {
 const dialogHeaderVariants = cva('flex flex-col gap-1', {
 	variants: {
 		size: {
-			default: 'px-5 pt-5 pb-4',
-			sm: 'px-4 pt-4 pb-3.5'
+			default: 'px-4 pt-4 pb-3.5',
+			md: 'px-5 pt-5 pb-4'
 		}
 	},
 	defaultVariants: {
@@ -160,8 +160,8 @@ export const DialogTitle: React.FC<TDialogTitleProps> = (props) => {
 const dialogTitleVariants = cva('text-base-950 font-semibold', {
 	variants: {
 		size: {
-			default: 'text-base',
-			sm: 'text-sm'
+			default: 'text-sm',
+			md: 'text-base'
 		}
 	},
 	defaultVariants: {
@@ -188,8 +188,8 @@ export const DialogDescription: React.FC<TDialogDescriptionProps> = (props) => {
 const dialogDescriptionVariants = cva('text-base-500', {
 	variants: {
 		size: {
-			default: 'text-sm',
-			sm: 'text-[13px]'
+			default: 'text-[13px]',
+			md: 'text-sm'
 		}
 	},
 	defaultVariants: {
@@ -213,11 +213,11 @@ export const DialogBody: React.FC<TDialogBodyProps> = (props) => {
 	);
 };
 
-const dialogBodyVariants = cva('', {
+const dialogBodyVariants = cva('text-base-950', {
 	variants: {
 		size: {
-			default: 'px-5 py-4 text-sm',
-			sm: 'px-4 py-3 text-[13px]'
+			default: 'px-4 py-3 text-[13px]',
+			md: 'px-5 py-4 text-sm'
 		}
 	},
 	defaultVariants: {
@@ -246,8 +246,8 @@ const dialogFooterVariants = cva(
 	{
 		variants: {
 			size: {
-				default: 'gap-2.5 rounded-b-xl px-5 py-4',
-				sm: 'gap-2 rounded-b-xl px-4 py-3'
+				default: 'gap-2 rounded-b-xl px-4 py-3',
+				md: 'gap-2.5 rounded-b-xl px-5 py-4'
 			}
 		},
 		defaultVariants: {

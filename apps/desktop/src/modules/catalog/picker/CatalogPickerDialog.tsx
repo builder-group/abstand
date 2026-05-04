@@ -108,7 +108,7 @@ const SelectedItemRow: React.FC<TSelectedItemRowProps> = (props) => {
 				<CatalogItemTypeBadge item={item} />
 				<Button
 					variant="ghost"
-					size="icon-sm"
+					size="icon"
 					className="w-0 shrink-0 overflow-hidden transition-[width] group-focus-within/selected-item:w-7 group-hover/selected-item:w-7 focus-visible:w-7"
 					aria-label={`Remove ${getCatalogItemLabel(item)}`}
 					onClick={() => cx.remove(item)}
