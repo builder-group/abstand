@@ -47,7 +47,7 @@ const settingsRowVariants = cva(
 	{
 		variants: {
 			size: {
-				default: 'min-h-8 gap-4 px-2.5 py-2.25',
+				default: 'min-h-8 gap-4 px-2.5 py-2',
 				md: 'min-h-10 gap-5 px-3 py-2.5'
 			}
 		},
