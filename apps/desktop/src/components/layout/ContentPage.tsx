@@ -106,7 +106,9 @@ export const ContentPage: React.FC<TContentPageProps> = (props) => {
 							)}
 						>
 							{collapsedHeader ?? (
-								<span className="text-base-950 block truncate text-sm font-semibold">{title}</span>
+								<span className="text-base-950 block truncate text-[13px] font-semibold">
+									{title}
+								</span>
 							)}
 						</div>
 						{hasTrailing && isCollapsed && (

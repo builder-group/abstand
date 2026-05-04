@@ -26,15 +26,15 @@ export const SettingsPage: React.FC<TSettingsPageProps> = (props) => {
 			backLabel={backLabel}
 			header={
 				header ?? (
-					<div className="bg-base-50/70 mb-6 flex items-start gap-3 rounded-xl px-4 py-4">
+					<div className="bg-base-50/70 mb-6 flex items-start gap-2 rounded-xl p-3">
 						{icon != null && (
-							<IconBubble variant={iconVariant} size="default" className="shrink-0">
+							<IconBubble variant={iconVariant} size="md" className="mt-1 shrink-0">
 								{icon}
 							</IconBubble>
 						)}
 						<div className="min-w-0 flex-1">
-							<h1 className="text-base-950 text-xl font-semibold">{title}</h1>
-							{subtitle != null && <p className="text-base-500 text-xs">{subtitle}</p>}
+							<h1 className="text-base-950 text-lg font-semibold">{title}</h1>
+							{subtitle != null && <p className="text-base-500 -mt-1 text-[13px]">{subtitle}</p>}
 						</div>
 					</div>
 				)
