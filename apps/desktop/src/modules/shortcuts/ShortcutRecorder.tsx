@@ -100,6 +100,8 @@ export const ShortcutRecorder: React.FC<TShortcutRecorderProps> = (props) => {
 			<button
 				ref={buttonRef}
 				type="button"
+				// Note: Works around WebKit/macOS dropping focus on pressed buttons when tabIndex is implicit (WebKit #229895)
+				tabIndex={0}
 				onBlur={recording ? handleStopRecording : undefined}
 				onClick={recording ? undefined : handleStartRecording}
 				onKeyDown={handleRecorderKeyDown}
