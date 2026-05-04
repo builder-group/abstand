@@ -28,8 +28,8 @@ const kbdVariants = cva(
 				ghost: 'text-base-400'
 			},
 			size: {
-				default: 'h-5 min-w-5 px-1.5 text-xs',
-				sm: 'h-4.5 min-w-4.5 px-1.5 text-[11px]'
+				default: 'h-3.5 min-w-3.5 px-1.5 text-[11px]',
+				md: 'h-4 min-w-4 px-1.5 text-xs'
 			}
 		},
 		defaultVariants: {
