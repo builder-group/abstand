@@ -21,7 +21,7 @@ export const Select: React.FC<TSelectProps> = (props) => {
 	const [ghostWidth, setGhostWidth] = React.useState<number | undefined>(undefined);
 
 	const paddingPx = React.useMemo(() => {
-		// Matches pl-3+pr-9 (default) and pl-2.5+pr-7 (sm) in selectVariants
+		// Matches pl-2.5+pr-7 (default) and pl-3+pr-9 (md) in selectVariants
 		switch (size) {
 			case 'default':
 			default:

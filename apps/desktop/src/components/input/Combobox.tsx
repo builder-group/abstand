@@ -208,7 +208,7 @@ export const ComboboxList: React.FC<TComboboxListProps> = (props) => {
 };
 
 const comboboxListVariants = cva(
-	'no-scrollbar max-h-[min(18rem,var(--available-height))] overflow-y-auto overscroll-contain',
+	'no-scrollbar max-h-[min(18rem,var(--available-height))] overflow-x-hidden overflow-y-auto overscroll-contain',
 	{
 		variants: {
 			size: {
@@ -424,7 +424,7 @@ export const ComboboxSeparator: React.FC<TComboboxSeparatorProps> = (props) => {
 const comboboxSeparatorVariants = cva('bg-base-100 my-1 h-px', {
 	variants: {
 		size: {
-			default: '-mx-0.5',
+			default: '-mx-1',
 			md: '-mx-1'
 		}
 	},
