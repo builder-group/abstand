@@ -14,7 +14,7 @@ export const SettingsPage: React.FC<TSettingsPageProps> = (props) => {
 		backLabel,
 		header,
 		children,
-		collapseAt = 96,
+		collapseAt = 90,
 		className,
 		contentClassName
 	} = props;
