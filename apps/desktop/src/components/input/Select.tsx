@@ -24,7 +24,7 @@ export const Select: React.FC<TSelectProps> = (props) => {
 		switch (size) {
 			case 'default':
 			default:
-				return 10 + 36; // pl-2.5 + pr-9
+				return 10 + 34; // pl-2.5 + pr-8.5
 			case 'md':
 				return 12 + 44; // pl-3 + pr-11
 		}
@@ -106,7 +106,7 @@ const selectVariants = cva(
 		compoundVariants: [
 			{ variant: 'default', size: 'default', className: 'pr-7' },
 			{ variant: 'default', size: 'md', className: 'pr-9' },
-			{ variant: 'ghost', size: 'default', className: 'pr-9' },
+			{ variant: 'ghost', size: 'default', className: 'pr-8.5' },
 			{ variant: 'ghost', size: 'md', className: 'pr-11' }
 		],
 		defaultVariants: {
@@ -138,8 +138,8 @@ const chevronWrapperVariants = cva(
 					'peer-focus-ring bg-base-100 peer-invalid-ring rounded-full border border-transparent group-has-[select:hover]/select:bg-transparent'
 			},
 			size: {
-				default: 'size-6',
-				md: 'size-7'
+				default: 'size-5',
+				md: 'size-6'
 			}
 		},
 		compoundVariants: [
