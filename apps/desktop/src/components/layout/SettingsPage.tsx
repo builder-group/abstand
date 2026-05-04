@@ -14,7 +14,7 @@ export const SettingsPage: React.FC<TSettingsPageProps> = (props) => {
 		backLabel,
 		header,
 		children,
-		collapseAt = 90,
+		collapseAt = 84,
 		className,
 		contentClassName
 	} = props;
@@ -26,7 +26,7 @@ export const SettingsPage: React.FC<TSettingsPageProps> = (props) => {
 			backLabel={backLabel}
 			header={
 				header ?? (
-					<div className="bg-base-50/70 mb-6 flex items-start gap-2 rounded-xl p-3">
+					<div className="bg-base-50/70 mb-6 flex items-start gap-3 rounded-xl px-3 py-2">
 						{icon != null && (
 							<IconBubble variant={iconVariant} size="md" className="mt-1 shrink-0">
 								{icon}
