@@ -2,10 +2,12 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useCompute } from 'feature-react/state';
 import React from 'react';
 import {
+	Button,
 	MonitorIcon,
 	MoonIcon,
 	SegmentedControl,
 	SegmentedControlItem,
+	Select,
 	SettingsIcon,
 	SettingsPage,
 	SunIcon,
@@ -25,6 +27,9 @@ function RouteComponent() {
 		settingsCx.$appSettings,
 		({ value }) => value.developer.enabled
 	);
+	const [automaticallyCheckUpdates, setAutomaticallyCheckUpdates] = React.useState(true);
+	const [automaticallyDownloadUpdates, setAutomaticallyDownloadUpdates] = React.useState(false);
+	const [releaseChannel, setReleaseChannel] = React.useState('production');
 
 	// MARK: - Actions
 
@@ -42,6 +47,13 @@ function RouteComponent() {
 			await settingsCx.update({ developer: { enabled: pressed } });
 		},
 		[settingsCx]
+	);
+
+	const handleReleaseChannelChange = React.useCallback(
+		(event: React.ChangeEvent<HTMLSelectElement>) => {
+			setReleaseChannel(event.target.value);
+		},
+		[]
 	);
 
 	// MARK: - UI
@@ -71,6 +83,28 @@ function RouteComponent() {
 			<SettingsGroup title="Features">
 				<SettingsRow label="Developer" description="Enable developer tools and settings.">
 					<Switch checked={developerEnabled} onCheckedChange={handleDeveloperToggle} />
+				</SettingsRow>
+			</SettingsGroup>
+			<SettingsGroup title="Updates">
+				<SettingsRow label="Automatically check for updates">
+					<Switch
+						checked={automaticallyCheckUpdates}
+						onCheckedChange={setAutomaticallyCheckUpdates}
+					/>
+				</SettingsRow>
+				<SettingsRow label="Automatically download updates">
+					<Switch
+						checked={automaticallyDownloadUpdates}
+						onCheckedChange={setAutomaticallyDownloadUpdates}
+					/>
+				</SettingsRow>
+				<SettingsRow label="Release channel">
+					<Select variant="ghost" value={releaseChannel} onChange={handleReleaseChannelChange}>
+						<option value="production">Production</option>
+						<option value="beta">Beta</option>
+						<option value="nightly">Nightly</option>
+					</Select>
+					<Button type="button">Check for updates</Button>
 				</SettingsRow>
 			</SettingsGroup>
 		</SettingsPage>

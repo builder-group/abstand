@@ -14,10 +14,10 @@ interface TSegmentedControlContext {
 	size: TSegmentedControlSize;
 }
 
-export type TSegmentedControlSize = 'default' | 'sm';
+type TSegmentedControlSize = NonNullable<VariantProps<typeof segmentedControlVariants>['size']>;
 
 export const SegmentedControl: React.FC<TSegmentedControlProps> = (props) => {
-	const { value, onValueChange, className, size = 'default', children } = props;
+	const { value, onValueChange, size = 'default', children, className } = props;
 	const groupRef = React.useRef<HTMLDivElement | null>(null);
 	const itemElementsRef = React.useRef(new Map<string, HTMLButtonElement>());
 	const [pill, setPill] = React.useState<TPillRect | null>(null);
@@ -113,27 +113,24 @@ export const SegmentedControl: React.FC<TSegmentedControlProps> = (props) => {
 	);
 };
 
-const segmentedControlVariants = cva(
-	'relative inline-flex items-center gap-0.5 rounded-lg bg-base-100',
-	{
-		variants: {
-			size: {
-				default: 'p-0.5',
-				sm: 'p-0.5'
-			}
-		},
-		defaultVariants: {
-			size: 'default'
+const segmentedControlVariants = cva('bg-base-100 relative inline-flex items-center', {
+	variants: {
+		size: {
+			default: 'gap-0.5 rounded-lg p-0.5',
+			md: 'gap-0.5 rounded-lg p-0.5'
 		}
+	},
+	defaultVariants: {
+		size: 'default'
 	}
-);
+});
 
-export interface TSegmentedControlProps extends VariantProps<typeof segmentedControlVariants> {
+export interface TSegmentedControlProps {
 	value: string | undefined;
 	onValueChange: (value: string) => void;
-	className?: string;
-	children: React.ReactNode;
 	size?: TSegmentedControlSize;
+	children: React.ReactNode;
+	className?: string;
 }
 
 interface TPillRect {
@@ -144,7 +141,7 @@ interface TPillRect {
 }
 
 export const SegmentedControlItem: React.FC<TSegmentedControlItemProps> = (props) => {
-	const { className, value, ...rest } = props;
+	const { value, className, ...rest } = props;
 	const { registerItem, size } = React.useContext(SegmentedControlContext);
 
 	const ref = React.useCallback(
@@ -157,6 +154,7 @@ export const SegmentedControlItem: React.FC<TSegmentedControlItemProps> = (props
 	return (
 		<Toggle
 			data-slot="segmented-control-item"
+			data-size={size}
 			ref={ref}
 			className={cn(segmentedControlItemVariants({ size }), className)}
 			value={value}
@@ -166,12 +164,12 @@ export const SegmentedControlItem: React.FC<TSegmentedControlItemProps> = (props
 };
 
 const segmentedControlItemVariants = cva(
-	"relative inline-flex items-center justify-center gap-1.5 rounded-md font-medium whitespace-nowrap transition-colors select-none text-base-500 hover:text-base-950 data-pressed:text-apple-gray-dark-6 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 focus-ring",
+	'text-base-500 hover:text-base-950 data-pressed:text-apple-gray-dark-6 focus-ring relative inline-flex items-center justify-center font-medium whitespace-nowrap transition-colors select-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0',
 	{
 		variants: {
 			size: {
-				default: 'h-7 px-2.5 text-sm',
-				sm: "h-6 px-2 text-xs [&_svg:not([class*='size-'])]:size-3.5"
+				default: "h-6 gap-1.5 rounded-md px-2 text-[13px] [&_svg:not([class*='size-'])]:size-3.5",
+				md: "h-7 gap-1.5 rounded-md px-2.5 text-sm [&_svg:not([class*='size-'])]:size-4"
 			}
 		},
 		defaultVariants: {
@@ -182,9 +180,8 @@ const segmentedControlItemVariants = cva(
 
 export type TSegmentedControlItemProps = Omit<
 	React.ComponentProps<typeof Toggle>,
-	'className' | 'value'
-> &
-	VariantProps<typeof segmentedControlItemVariants> & {
-		className?: string;
-		value: string;
-	};
+	'className' | 'size' | 'value'
+> & {
+	value: string;
+	className?: string;
+};

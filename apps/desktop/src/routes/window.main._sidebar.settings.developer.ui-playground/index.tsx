@@ -8,15 +8,22 @@ import {
 	CircleQuestionMarkIcon,
 	CodeXmlIcon,
 	Combobox,
+	ComboboxChip,
+	ComboboxChips,
+	ComboboxChipsInput,
 	ComboboxContent,
 	ComboboxEmpty,
+	ComboboxGroup,
 	ComboboxInput,
 	ComboboxItem,
+	ComboboxLabel,
 	ComboboxList,
+	ComboboxSeparator,
 	ComboboxStatus,
 	Dialog,
 	DialogBody,
 	DialogContent,
+	DialogDescription,
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
@@ -27,12 +34,14 @@ import {
 	InputGroupButton,
 	InputGroupInput,
 	InputGroupText,
+	InputGroupTextarea,
 	Kbd,
 	LibraryBigIcon,
 	MonitorIcon,
 	SearchIcon,
 	SegmentedControl,
 	SegmentedControlItem,
+	Select,
 	SettingsPage,
 	Switch,
 	Textarea,
@@ -65,6 +74,7 @@ function RouteComponent() {
 				<SwitchSection />
 				<ToggleSection />
 				<SegmentedControlSection />
+				<SelectSection />
 				<ComboboxSection />
 				<BadgeSection />
 				<KbdSection />
@@ -83,9 +93,8 @@ const ButtonSection: React.FC = () => {
 	return (
 		<PlaygroundGroup title="Button">
 			<PlaygroundRow label="Sizes">
-				<Button>Default</Button>
-				<Button size="sm">Small</Button>
-				<Button size="lg">Large</Button>
+				<Button>Default (sm)</Button>
+				<Button size="md">Medium (md)</Button>
 			</PlaygroundRow>
 			<PlaygroundRow label="Variants">
 				<Button>Default</Button>
@@ -93,6 +102,8 @@ const ButtonSection: React.FC = () => {
 				<Button variant="soft">Soft</Button>
 				<Button variant="ghost">Ghost</Button>
 				<Button variant="outline">Outline</Button>
+				<Button variant="destructive">Destructive</Button>
+				<Button variant="link">Link</Button>
 			</PlaygroundRow>
 			<PlaygroundRow label="States">
 				<Button disabled>Disabled</Button>
@@ -101,14 +112,14 @@ const ButtonSection: React.FC = () => {
 				</Button>
 			</PlaygroundRow>
 			<PlaygroundRow label="Icon Buttons">
-				<Button size="icon" aria-label="Search">
+				<Button size="icon-xs" variant="outline" aria-label="Extra small icon">
+					<XCircleIcon />
+				</Button>
+				<Button size="icon" aria-label="Default icon">
 					<SearchIcon />
 				</Button>
-				<Button size="icon-sm" variant="ghost" aria-label="Developer">
-					<CodeXmlIcon />
-				</Button>
-				<Button size="icon-xs" variant="outline" aria-label="Close">
-					<XCircleIcon />
+				<Button size="icon-md" variant="primary" aria-label="Medium icon">
+					<CheckIcon />
 				</Button>
 			</PlaygroundRow>
 		</PlaygroundGroup>
@@ -121,8 +132,12 @@ const InputSection: React.FC = () => {
 	return (
 		<PlaygroundGroup title="Input">
 			<PlaygroundRow label="Sizes">
-				<Input placeholder="Default input" className="w-44" />
-				<Input size="sm" placeholder="Small input" className="w-44" />
+				<Input placeholder="Search files" className="w-44" />
+				<Input size="md" placeholder="Search files" className="w-44" />
+			</PlaygroundRow>
+			<PlaygroundRow label="File">
+				<Input type="file" className="w-56" />
+				<Input type="file" size="md" className="w-60" />
 			</PlaygroundRow>
 			<PlaygroundRow label="States">
 				<Input defaultValue="With value" className="w-44" />
@@ -138,18 +153,31 @@ const InputSection: React.FC = () => {
 const InputGroupSection: React.FC = () => {
 	return (
 		<PlaygroundGroup title="Input Group">
-			<PlaygroundRow label="Examples">
-				<InputGroup className="w-64">
+			<PlaygroundRow label="Sizes">
+				<InputGroup className="w-56">
 					<InputGroupAddon>
-						<SearchIcon className="text-base-400 size-4" />
+						<SearchIcon className="text-base-400" />
 					</InputGroupAddon>
 					<InputGroupInput placeholder="Search components" />
 					<InputGroupAddon align="inline-end">
 						<InputGroupButton aria-label="Submit search">
-							<CheckIcon className="size-3.5" />
+							<CheckIcon />
 						</InputGroupButton>
 					</InputGroupAddon>
 				</InputGroup>
+				<InputGroup size="md" className="w-64">
+					<InputGroupAddon>
+						<SearchIcon className="text-base-400" />
+					</InputGroupAddon>
+					<InputGroupInput placeholder="Search components" />
+					<InputGroupAddon align="inline-end">
+						<InputGroupButton aria-label="Submit search">
+							<CheckIcon />
+						</InputGroupButton>
+					</InputGroupAddon>
+				</InputGroup>
+			</PlaygroundRow>
+			<PlaygroundRow label="Examples">
 				<InputGroup className="w-44">
 					<InputGroupAddon>
 						<InputGroupText>cmd</InputGroupText>
@@ -163,6 +191,37 @@ const InputGroupSection: React.FC = () => {
 					</InputGroupAddon>
 				</InputGroup>
 			</PlaygroundRow>
+			<PlaygroundRow label="Block Addons">
+				<InputGroup className="w-72">
+					<InputGroupAddon align="block-start">
+						<InputGroupText>Prompt</InputGroupText>
+					</InputGroupAddon>
+					<InputGroupTextarea placeholder="Describe the change" rows={3} />
+					<InputGroupAddon align="block-end">
+						<Kbd>⌘↵</Kbd>
+					</InputGroupAddon>
+				</InputGroup>
+				<InputGroup size="md" className="w-72">
+					<InputGroupAddon align="block-start">
+						<InputGroupText>Note</InputGroupText>
+					</InputGroupAddon>
+					<InputGroupTextarea placeholder="Roomy note" rows={2} />
+				</InputGroup>
+			</PlaygroundRow>
+			<PlaygroundRow label="States">
+				<InputGroup className="w-56">
+					<InputGroupAddon>
+						<XCircleIcon className="text-error" />
+					</InputGroupAddon>
+					<InputGroupInput aria-invalid defaultValue="Missing target" />
+				</InputGroup>
+				<InputGroup size="md" className="w-56">
+					<InputGroupInput disabled defaultValue="Disabled group" />
+					<InputGroupAddon align="inline-end">
+						<Kbd size="md">⌥D</Kbd>
+					</InputGroupAddon>
+				</InputGroup>
+			</PlaygroundRow>
 		</PlaygroundGroup>
 	);
 };
@@ -173,8 +232,8 @@ const TextareaSection: React.FC = () => {
 	return (
 		<PlaygroundGroup title="Textarea">
 			<PlaygroundRow label="Sizes">
-				<Textarea defaultValue="Default textarea" className="w-60" />
-				<Textarea size="sm" defaultValue="Small textarea" className="w-60" />
+				<Textarea defaultValue="Quick note" className="w-60" />
+				<Textarea size="md" defaultValue="Quick note" className="w-60" />
 			</PlaygroundRow>
 			<PlaygroundRow label="States">
 				<Textarea placeholder="Invalid textarea" aria-invalid className="w-60" />
@@ -188,13 +247,13 @@ const TextareaSection: React.FC = () => {
 
 const SwitchSection: React.FC = () => {
 	const [defaultValue, setDefaultValue] = React.useState(true);
-	const [smallValue, setSmallValue] = React.useState(false);
+	const [mdValue, setMdValue] = React.useState(false);
 
 	return (
 		<PlaygroundGroup title="Switch">
 			<PlaygroundRow label="Sizes">
 				<Switch checked={defaultValue} onCheckedChange={setDefaultValue} />
-				<Switch size="sm" checked={smallValue} onCheckedChange={setSmallValue} />
+				<Switch size="md" checked={mdValue} onCheckedChange={setMdValue} />
 			</PlaygroundRow>
 			<PlaygroundRow label="States">
 				<Switch disabled />
@@ -208,7 +267,7 @@ const SwitchSection: React.FC = () => {
 
 const ToggleSection: React.FC = () => {
 	const [defaultValue, setDefaultValue] = React.useState(false);
-	const [smallValue, setSmallValue] = React.useState(true);
+	const [mdValue, setMdValue] = React.useState(true);
 	const [outlineValue, setOutlineValue] = React.useState(false);
 	const [iconValue, setIconValue] = React.useState(false);
 
@@ -216,10 +275,10 @@ const ToggleSection: React.FC = () => {
 		<PlaygroundGroup title="Toggle">
 			<PlaygroundRow label="Sizes">
 				<Toggle pressed={defaultValue} onPressedChange={setDefaultValue}>
-					Default
+					Default (sm)
 				</Toggle>
-				<Toggle size="sm" pressed={smallValue} onPressedChange={setSmallValue}>
-					Small
+				<Toggle size="md" pressed={mdValue} onPressedChange={setMdValue}>
+					Medium (md)
 				</Toggle>
 			</PlaygroundRow>
 			<PlaygroundRow label="Variants">
@@ -235,17 +294,17 @@ const ToggleSection: React.FC = () => {
 				</Toggle>
 			</PlaygroundRow>
 			<PlaygroundRow label="Icon">
+				<Toggle size="icon" variant="icon" aria-label="Help">
+					<CircleQuestionMarkIcon />
+				</Toggle>
 				<Toggle
-					size="icon"
+					size="icon-md"
 					variant="icon"
 					pressed={iconValue}
 					onPressedChange={setIconValue}
 					aria-label="Developer tools"
 				>
 					<CodeXmlIcon />
-				</Toggle>
-				<Toggle size="icon-sm" variant="icon" aria-label="Help">
-					<CircleQuestionMarkIcon />
 				</Toggle>
 			</PlaygroundRow>
 		</PlaygroundGroup>
@@ -256,18 +315,18 @@ const ToggleSection: React.FC = () => {
 
 const SegmentedControlSection: React.FC = () => {
 	const [defaultValue, setDefaultValue] = React.useState('default');
-	const [smallValue, setSmallValue] = React.useState('default');
+	const [mdValue, setMdValue] = React.useState('medium');
 
 	return (
 		<PlaygroundGroup title="Segmented Control">
 			<PlaygroundRow label="Sizes">
 				<SegmentedControl value={defaultValue} onValueChange={setDefaultValue}>
-					<SegmentedControlItem value="default">Default</SegmentedControlItem>
+					<SegmentedControlItem value="default">Default (sm)</SegmentedControlItem>
 					<SegmentedControlItem value="compact">Compact</SegmentedControlItem>
 				</SegmentedControl>
-				<SegmentedControl value={smallValue} onValueChange={setSmallValue} size="sm">
-					<SegmentedControlItem value="default">Default</SegmentedControlItem>
-					<SegmentedControlItem value="compact">Compact</SegmentedControlItem>
+				<SegmentedControl value={mdValue} onValueChange={setMdValue} size="md">
+					<SegmentedControlItem value="medium">Medium (md)</SegmentedControlItem>
+					<SegmentedControlItem value="roomy">Roomy label</SegmentedControlItem>
 				</SegmentedControl>
 			</PlaygroundRow>
 			<PlaygroundRow label="States">
@@ -282,46 +341,199 @@ const SegmentedControlSection: React.FC = () => {
 	);
 };
 
-// MARK: - Combobox
+// MARK: - Select
 
-const ComboboxSection: React.FC = () => {
-	const anchorRef = useComboboxAnchor();
-	const [value, setValue] = React.useState<string | null>(null);
-
-	const items = ['28px default', '32px roomy', '24px compact'] as const;
-
+const SelectSection: React.FC = () => {
 	return (
-		<PlaygroundGroup title="Combobox">
-			<PlaygroundRow label="Single Select">
-				<Combobox
-					items={items}
-					value={value}
-					onValueChange={setValue}
-					itemToStringValue={(item) => item ?? ''}
-				>
-					<ComboboxInput
-						ref={anchorRef}
-						className="w-72"
-						leading={<SearchIcon className="text-base-400 size-4" />}
-						placeholder="Choose a density"
-						showClear
-					/>
-					<ComboboxContent anchor={anchorRef}>
-						<ComboboxStatus>Density presets</ComboboxStatus>
-						<ComboboxList>
-							{items.map((item) => (
-								<ComboboxItem key={item} value={item}>
-									{item}
-								</ComboboxItem>
-							))}
-							<ComboboxEmpty>No presets</ComboboxEmpty>
-						</ComboboxList>
-					</ComboboxContent>
-				</Combobox>
+		<PlaygroundGroup title="Select">
+			<PlaygroundRow label="Sizes">
+				<Select defaultValue="default" className="w-44">
+					<option value="default">Default (sm) density</option>
+					<option value="roomy">Roomy density</option>
+					<option value="compact">Compact density</option>
+				</Select>
+				<Select size="md" defaultValue="roomy" className="w-44">
+					<option value="default">Default (sm) density</option>
+					<option value="roomy">Medium (md) density</option>
+					<option value="sidebar">Sidebar density</option>
+				</Select>
+			</PlaygroundRow>
+			<PlaygroundRow label="Variants">
+				<Select defaultValue="system" className="w-40">
+					<option value="system">System</option>
+					<option value="light">Light</option>
+					<option value="dark">Dark</option>
+				</Select>
+				<Select variant="ghost" defaultValue="today">
+					<option value="today">Today</option>
+					<option value="week">This week</option>
+					<option value="month">This month</option>
+				</Select>
+				<Select variant="ghost" size="md" defaultValue="medium">
+					<option value="default">Default (sm)</option>
+					<option value="medium">Medium (md)</option>
+					<option value="roomy">Roomy</option>
+				</Select>
+			</PlaygroundRow>
+			<PlaygroundRow label="States">
+				<Select defaultValue="disabled" disabled className="w-40">
+					<option value="disabled">Disabled</option>
+				</Select>
+				<Select defaultValue="missing" aria-invalid className="w-40">
+					<option value="missing">Missing value</option>
+					<option value="ready">Ready</option>
+				</Select>
+				<Select variant="ghost" defaultValue="invalid" aria-invalid>
+					<option value="invalid">Invalid ghost</option>
+					<option value="ready">Ready ghost</option>
+				</Select>
 			</PlaygroundRow>
 		</PlaygroundGroup>
 	);
 };
+
+// MARK: - Combobox
+
+const ComboboxSection: React.FC = () => {
+	const [value, setValue] = React.useState<string | null>(null);
+	const [mdValue, setMdValue] = React.useState<string | null>(null);
+	const [chipValues, setChipValues] = React.useState<string[]>(['Design', 'Frontend']);
+	const [mdChipValues, setMdChipValues] = React.useState<string[]>(['Review']);
+
+	const items = ['Sidebar density', 'Document density', 'Roomy density'] as const;
+	const chipItems = ['Design', 'Frontend', 'Backend', 'Review', 'Polish', 'Docs'] as const;
+
+	return (
+		<PlaygroundGroup title="Combobox">
+			<PlaygroundRow label="Sizes">
+				<DensityCombobox
+					items={items}
+					value={value}
+					onValueChange={setValue}
+					placeholder="Choose density"
+				/>
+				<DensityCombobox
+					size="md"
+					items={items}
+					value={mdValue}
+					onValueChange={setMdValue}
+					placeholder="Choose density"
+					className="w-72"
+				/>
+			</PlaygroundRow>
+			<PlaygroundRow label="Chips">
+				<ChipCombobox
+					items={chipItems}
+					values={chipValues}
+					onValuesChange={setChipValues}
+					placeholder="Add areas"
+				/>
+				<ChipCombobox
+					size="md"
+					items={chipItems}
+					values={mdChipValues}
+					onValuesChange={setMdChipValues}
+					placeholder="Add areas"
+					className="w-80"
+				/>
+			</PlaygroundRow>
+		</PlaygroundGroup>
+	);
+};
+
+const DensityCombobox: React.FC<TDensityComboboxProps> = (props) => {
+	const { items, value, onValueChange, placeholder, size, className } = props;
+	const anchorRef = useComboboxAnchor();
+
+	return (
+		<Combobox
+			size={size}
+			items={items}
+			value={value}
+			onValueChange={onValueChange}
+			itemToStringValue={(item) => item ?? ''}
+		>
+			<ComboboxInput
+				ref={anchorRef}
+				className={cn('w-72', className)}
+				leading={<SearchIcon className="text-base-400" />}
+				placeholder={placeholder}
+				showClear
+			/>
+			<ComboboxContent anchor={anchorRef}>
+				<ComboboxStatus>Density presets</ComboboxStatus>
+				<ComboboxList>
+					<ComboboxGroup>
+						<ComboboxLabel>Sizes</ComboboxLabel>
+						{items.map((item) => (
+							<ComboboxItem key={item} value={item}>
+								{item}
+							</ComboboxItem>
+						))}
+					</ComboboxGroup>
+					<ComboboxSeparator />
+					<ComboboxItem value="Match system density">Match system density</ComboboxItem>
+					<ComboboxEmpty>No presets</ComboboxEmpty>
+				</ComboboxList>
+			</ComboboxContent>
+		</Combobox>
+	);
+};
+
+interface TDensityComboboxProps {
+	items: readonly string[];
+	value: string | null;
+	onValueChange: (value: string | null) => void;
+	placeholder: string;
+	size?: 'default' | 'md';
+	className?: string;
+}
+
+const ChipCombobox: React.FC<TChipComboboxProps> = (props) => {
+	const { items, values, onValuesChange, placeholder, size, className } = props;
+	const anchorRef = useComboboxAnchor();
+
+	return (
+		<Combobox
+			multiple
+			size={size}
+			items={items}
+			value={values}
+			onValueChange={onValuesChange}
+			itemToStringValue={(item) => item ?? ''}
+		>
+			<ComboboxChips ref={anchorRef} className={cn('w-80', className)}>
+				{values.map((value) => (
+					<ComboboxChip key={value}>{value}</ComboboxChip>
+				))}
+				<ComboboxChipsInput placeholder={values.length > 0 ? '' : placeholder} />
+			</ComboboxChips>
+			<ComboboxContent anchor={anchorRef}>
+				<ComboboxStatus>Areas</ComboboxStatus>
+				<ComboboxList>
+					<ComboboxGroup>
+						<ComboboxLabel>Suggested</ComboboxLabel>
+						{items.map((item) => (
+							<ComboboxItem key={item} value={item}>
+								{item}
+							</ComboboxItem>
+						))}
+					</ComboboxGroup>
+					<ComboboxEmpty>No areas</ComboboxEmpty>
+				</ComboboxList>
+			</ComboboxContent>
+		</Combobox>
+	);
+};
+
+interface TChipComboboxProps {
+	items: readonly string[];
+	values: string[];
+	onValuesChange: (value: string[]) => void;
+	placeholder: string;
+	size?: 'default' | 'md';
+	className?: string;
+}
 
 // MARK: - Badge
 
@@ -329,14 +541,18 @@ const BadgeSection: React.FC = () => {
 	return (
 		<PlaygroundGroup title="Badge">
 			<PlaygroundRow label="Sizes">
-				<Badge>Default</Badge>
-				<Badge size="sm">Small</Badge>
+				<Badge>Default (sm)</Badge>
+				<Badge size="md">Medium (md)</Badge>
 			</PlaygroundRow>
 			<PlaygroundRow label="Variants">
 				<Badge>Default</Badge>
 				<Badge variant="secondary">Secondary</Badge>
+				<Badge variant="success">Success</Badge>
+				<Badge variant="warning">Warning</Badge>
+				<Badge variant="destructive">Destructive</Badge>
 				<Badge variant="outline">Outline</Badge>
 				<Badge variant="ghost">Ghost</Badge>
+				<Badge variant="link">Link</Badge>
 			</PlaygroundRow>
 		</PlaygroundGroup>
 	);
@@ -349,7 +565,7 @@ const KbdSection: React.FC = () => {
 		<PlaygroundGroup title="Kbd">
 			<PlaygroundRow label="Sizes">
 				<Kbd>⌘K</Kbd>
-				<Kbd size="md">⌘⇧P</Kbd>
+				<Kbd size="md">⌘⇧K</Kbd>
 			</PlaygroundRow>
 			<PlaygroundRow label="Variants">
 				<Kbd>Enter</Kbd>
@@ -368,25 +584,31 @@ const IconBubbleSection: React.FC = () => {
 				<IconBubble size="xs" variant="neutral">
 					<MonitorIcon />
 				</IconBubble>
-				<IconBubble size="sm" variant="neutral">
+				<IconBubble variant="neutral">
 					<MonitorIcon />
 				</IconBubble>
-				<IconBubble variant="neutral">
+				<IconBubble size="md" variant="neutral">
 					<MonitorIcon />
 				</IconBubble>
 			</PlaygroundRow>
 			<PlaygroundRow label="Variants">
-				<IconBubble size="sm">
+				<IconBubble>
 					<MonitorIcon />
 				</IconBubble>
-				<IconBubble size="sm" variant="secondary">
+				<IconBubble variant="secondary">
 					<CodeXmlIcon />
 				</IconBubble>
-				<IconBubble size="sm" variant="success">
+				<IconBubble variant="success">
 					<CheckIcon />
 				</IconBubble>
-				<IconBubble size="sm" variant="warning">
+				<IconBubble variant="warning">
 					<CircleQuestionMarkIcon />
+				</IconBubble>
+				<IconBubble variant="destructive">
+					<XCircleIcon />
+				</IconBubble>
+				<IconBubble variant="neutral">
+					<MonitorIcon />
 				</IconBubble>
 			</PlaygroundRow>
 		</PlaygroundGroup>
@@ -398,14 +620,22 @@ const IconBubbleSection: React.FC = () => {
 const TooltipSection: React.FC = () => {
 	return (
 		<PlaygroundGroup title="Tooltip">
-			<PlaygroundRow label="Examples">
+			<PlaygroundRow label="Sizes">
 				<Tooltip content="Open the command palette" shortcut="⌘K">
-					<Button variant="soft">Hover me</Button>
+					<Button variant="soft">Default (sm)</Button>
 				</Tooltip>
-				<Tooltip content="Compact help">
-					<Button size="sm" variant="ghost">
-						Help
+				<Tooltip size="md" content="Roomy help" shortcut="⌘?">
+					<Button size="md" variant="ghost">
+						Medium (md)
 					</Button>
+				</Tooltip>
+			</PlaygroundRow>
+			<PlaygroundRow label="Placement">
+				<Tooltip side="top" content="Appears above">
+					<Button variant="outline">Top</Button>
+				</Tooltip>
+				<Tooltip side="right" content="Appears to the right">
+					<Button variant="outline">Right</Button>
 				</Tooltip>
 			</PlaygroundRow>
 		</PlaygroundGroup>
@@ -415,29 +645,56 @@ const TooltipSection: React.FC = () => {
 // MARK: - Dialog
 
 const DialogSection: React.FC = () => {
-	const [isOpen, setIsOpen] = React.useState(false);
+	const [isDefaultOpen, setIsDefaultOpen] = React.useState(false);
+	const [isMdOpen, setIsMdOpen] = React.useState(false);
 
 	return (
 		<PlaygroundGroup title="Dialog">
-			<PlaygroundRow label="Preview">
-				<Button variant="primary" onClick={() => setIsOpen(true)}>
-					Open Dialog
+			<PlaygroundRow label="Sizes">
+				<Button variant="primary" onClick={() => setIsDefaultOpen(true)}>
+					Default (sm)
 				</Button>
-				<Dialog open={isOpen} onOpenChange={setIsOpen}>
-					<DialogContent className="max-w-md">
+				<Button size="md" variant="primary" onClick={() => setIsMdOpen(true)}>
+					Medium (md)
+				</Button>
+				<Dialog open={isDefaultOpen} onOpenChange={setIsDefaultOpen}>
+					<DialogContent>
 						<DialogHeader>
 							<DialogTitle>Playground Dialog</DialogTitle>
+							<DialogDescription>Default (sm) spacing and typography.</DialogDescription>
 						</DialogHeader>
 						<DialogBody className="space-y-3">
-							<p className="text-base-500 text-sm">
+							<p className="text-base-500">
 								Use this to compare button, body, and footer spacing against the rest of the desktop
 								UI.
 							</p>
 							<Input placeholder="Dialog input" />
 						</DialogBody>
 						<DialogFooter>
-							<Button onClick={() => setIsOpen(false)}>Cancel</Button>
-							<Button variant="primary" onClick={() => setIsOpen(false)}>
+							<Button onClick={() => setIsDefaultOpen(false)}>Cancel</Button>
+							<Button variant="primary" onClick={() => setIsDefaultOpen(false)}>
+								Done
+							</Button>
+						</DialogFooter>
+					</DialogContent>
+				</Dialog>
+				<Dialog size="md" open={isMdOpen} onOpenChange={setIsMdOpen}>
+					<DialogContent>
+						<DialogHeader>
+							<DialogTitle>Medium Dialog</DialogTitle>
+							<DialogDescription>Medium (md) spacing and typography.</DialogDescription>
+						</DialogHeader>
+						<DialogBody className="space-y-2">
+							<p className="text-base-500">
+								Medium dialogs give dense workflows a little more breathing room.
+							</p>
+							<Input size="md" placeholder="Dialog input" />
+						</DialogBody>
+						<DialogFooter>
+							<Button size="md" onClick={() => setIsMdOpen(false)}>
+								Cancel
+							</Button>
+							<Button size="md" variant="primary" onClick={() => setIsMdOpen(false)}>
 								Done
 							</Button>
 						</DialogFooter>
@@ -452,14 +709,44 @@ const DialogSection: React.FC = () => {
 
 const SettingsSection: React.FC = () => {
 	const [defaultTheme, setDefaultTheme] = React.useState('system');
-	const [smallTheme, setSmallTheme] = React.useState('system');
+	const [mdTheme, setMdTheme] = React.useState('system');
 	const [defaultDeveloperEnabled, setDefaultDeveloperEnabled] = React.useState(true);
-	const [smallDeveloperEnabled, setSmallDeveloperEnabled] = React.useState(false);
+	const [mdDeveloperEnabled, setMdDeveloperEnabled] = React.useState(false);
+	const [colorProfile, setColorProfile] = React.useState('40c1r');
+	const [refreshRate, setRefreshRate] = React.useState('100');
+	const [highDynamicRange, setHighDynamicRange] = React.useState(false);
+	const [rotation, setRotation] = React.useState('standard');
+	const [tvBehavior, setTvBehavior] = React.useState('ask');
+
+	const handleColorProfileChange = React.useCallback(
+		(event: React.ChangeEvent<HTMLSelectElement>) => {
+			setColorProfile(event.target.value);
+		},
+		[]
+	);
+
+	const handleRefreshRateChange = React.useCallback(
+		(event: React.ChangeEvent<HTMLSelectElement>) => {
+			setRefreshRate(event.target.value);
+		},
+		[]
+	);
+
+	const handleRotationChange = React.useCallback((event: React.ChangeEvent<HTMLSelectElement>) => {
+		setRotation(event.target.value);
+	}, []);
+
+	const handleTvBehaviorChange = React.useCallback(
+		(event: React.ChangeEvent<HTMLSelectElement>) => {
+			setTvBehavior(event.target.value);
+		},
+		[]
+	);
 
 	return (
 		<PlaygroundGroup title="Settings Group and Row" variant="outline">
-			<PlaygroundRow label="Default" contentClassName="flex-col items-start">
-				<SettingsGroup title="Appearance" className="w-full">
+			<PlaygroundRow label="Sizes" contentClassName="flex-col items-start">
+				<SettingsGroup title="Appearance">
 					<SettingsRow label="Theme" description="Choose a display mode.">
 						<SegmentedControl value={defaultTheme} onValueChange={setDefaultTheme}>
 							<SegmentedControlItem value="system">System</SegmentedControlItem>
@@ -474,22 +761,73 @@ const SettingsSection: React.FC = () => {
 						/>
 					</SettingsRow>
 				</SettingsGroup>
-			</PlaygroundRow>
-			<PlaygroundRow label="Small" contentClassName="flex-col items-start">
-				<SettingsGroup title="Appearance" size="sm" className="w-full">
-					<SettingsRow size="sm" label="Theme" description="Choose a display mode.">
-						<SegmentedControl value={smallTheme} onValueChange={setSmallTheme} size="sm">
+				<SettingsGroup title="Appearance" size="md">
+					<SettingsRow size="md" label="Theme" description="Choose a display mode.">
+						<SegmentedControl value={mdTheme} onValueChange={setMdTheme} size="md">
 							<SegmentedControlItem value="system">System</SegmentedControlItem>
 							<SegmentedControlItem value="light">Light</SegmentedControlItem>
 							<SegmentedControlItem value="dark">Dark</SegmentedControlItem>
 						</SegmentedControl>
 					</SettingsRow>
-					<SettingsRow size="sm" label="Developer" description="Enable internal tools.">
+					<SettingsRow size="md" label="Developer" description="Enable internal tools.">
 						<Switch
-							size="sm"
-							checked={smallDeveloperEnabled}
-							onCheckedChange={setSmallDeveloperEnabled}
+							size="md"
+							checked={mdDeveloperEnabled}
+							onCheckedChange={setMdDeveloperEnabled}
 						/>
+					</SettingsRow>
+				</SettingsGroup>
+			</PlaygroundRow>
+			<PlaygroundRow
+				label="Native showcase"
+				contentClassName="flex-col items-start gap-2.5 max-w-[460px]"
+			>
+				<SettingsGroup>
+					<SettingsRow label="Color profile">
+						<Select variant="ghost" value={colorProfile} onChange={handleColorProfileChange}>
+							<option value="40c1r">40C1R</option>
+							<option value="display-p3">Display P3</option>
+							<option value="srgb">sRGB</option>
+						</Select>
+					</SettingsRow>
+				</SettingsGroup>
+				<SettingsGroup>
+					<SettingsRow label="Refresh rate">
+						<Select variant="ghost" value={refreshRate} onChange={handleRefreshRateChange}>
+							<option value="100">100 Hertz</option>
+							<option value="60">60 Hertz</option>
+							<option value="120">120 Hertz</option>
+						</Select>
+					</SettingsRow>
+					<SettingsRow
+						label="High Dynamic Range"
+						description="Automatically adjust the display to show high dynamic range content."
+						className="items-start"
+					>
+						<Switch checked={highDynamicRange} onCheckedChange={setHighDynamicRange} />
+					</SettingsRow>
+				</SettingsGroup>
+				<SettingsGroup>
+					<SettingsRow label="Rotation">
+						<Select variant="ghost" value={rotation} onChange={handleRotationChange}>
+							<option value="standard">Standard</option>
+							<option value="90">90 Degrees</option>
+							<option value="180">180 Degrees</option>
+							<option value="270">270 Degrees</option>
+						</Select>
+					</SettingsRow>
+				</SettingsGroup>
+				<SettingsGroup>
+					<SettingsRow
+						label="When connected to TV"
+						description="Choose what to show or use the TV as a secondary display."
+						className="items-start"
+					>
+						<Select variant="ghost" value={tvBehavior} onChange={handleTvBehaviorChange}>
+							<option value="ask">Ask What to Show</option>
+							<option value="mirror">Mirror Display</option>
+							<option value="extend">Extend Display</option>
+						</Select>
 					</SettingsRow>
 				</SettingsGroup>
 			</PlaygroundRow>
@@ -500,10 +838,14 @@ const SettingsSection: React.FC = () => {
 // MARK: - Playground Helpers
 
 const PlaygroundGroup: React.FC<TPlaygroundGroupProps> = (props) => {
-	const { title, variant = 'default', className, children } = props;
+	const { title, variant = 'default', children, className } = props;
 
 	return (
-		<SettingsGroup title={title} className={cn(playgroundGroupVariants({ variant }), className)}>
+		<SettingsGroup
+			title={title}
+			className={className}
+			contentClassName={playgroundGroupVariants({ variant })}
+		>
 			{children}
 		</SettingsGroup>
 	);
@@ -513,7 +855,7 @@ const playgroundGroupVariants = cva('', {
 	variants: {
 		variant: {
 			default: '',
-			outline: 'border border-base-100 bg-base-0'
+			outline: 'border-base-100 bg-base-0 border'
 		}
 	},
 	defaultVariants: {
@@ -536,8 +878,8 @@ const PlaygroundRow: React.FC<TPlaygroundRowProps> = (props) => {
 
 interface TPlaygroundGroupProps extends VariantProps<typeof playgroundGroupVariants> {
 	title: string;
-	className?: string;
 	children: React.ReactNode;
+	className?: string;
 }
 
 interface TPlaygroundRowProps {

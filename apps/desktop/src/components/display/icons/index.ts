@@ -10,6 +10,7 @@ export {
 	CheckIcon,
 	ChevronDownIcon,
 	ChevronRightIcon,
+	ChevronsUpDownIcon,
 	CircleQuestionMarkIcon,
 	CodeXmlIcon,
 	CommandIcon,

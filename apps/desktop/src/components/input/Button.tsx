@@ -4,13 +4,13 @@ import React from 'react';
 import { cn } from '@/lib';
 
 export const Button: React.FC<TButtonProps> = (props) => {
-	const { className, variant = 'default', size = 'default', ...rest } = props;
+	const { variant = 'default', size = 'default', className, ...rest } = props;
 
 	return (
 		<ButtonPrimitive
 			data-slot="button"
-			data-size={size}
 			data-variant={variant}
+			data-size={size}
 			className={cn(buttonVariants({ variant, size }), className)}
 			{...rest}
 		/>
@@ -18,7 +18,7 @@ export const Button: React.FC<TButtonProps> = (props) => {
 };
 
 const buttonVariants = cva(
-	"inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition select-none focus-ring active:not-aria-[haspopup]:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 invalid-ring [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+	'focus-ring invalid-ring inline-flex shrink-0 items-center justify-center border border-transparent whitespace-nowrap transition select-none active:not-aria-[haspopup]:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0',
 	{
 		variants: {
 			variant: {
@@ -32,18 +32,16 @@ const buttonVariants = cva(
 				ghost:
 					'text-base-600 hover:bg-base-950/6 hover:text-base-950 aria-expanded:bg-base-950/6 aria-expanded:text-base-950',
 				outline:
-					'border-base-200 bg-transparent text-base-600 hover:bg-base-950/6 hover:text-base-950 aria-expanded:bg-base-950/6 aria-expanded:text-base-950',
+					'border-base-200 text-base-600 hover:bg-base-950/6 hover:text-base-950 aria-expanded:bg-base-950/6 aria-expanded:text-base-950 bg-transparent',
 				link: 'text-primary underline-offset-4 hover:underline'
 			},
 			size: {
-				'default': 'h-8 gap-1.5 px-3 has-[>svg]:px-2.5',
-				'xs': "h-6 gap-1 px-2.5 text-xs has-[>svg]:px-2 [&_svg:not([class*='size-'])]:size-3",
-				'sm': "h-7 gap-1 px-2.5 text-xs has-[>svg]:px-2 [&_svg:not([class*='size-'])]:size-3.5",
-				'lg': 'h-9 gap-1.5 px-3.5 has-[>svg]:px-3',
-				'icon': 'size-8 rounded-full',
-				'icon-xs': "size-6 rounded-full [&_svg:not([class*='size-'])]:size-3",
-				'icon-sm': "size-7 rounded-full [&_svg:not([class*='size-'])]:size-3.5",
-				'icon-lg': 'size-9 rounded-full'
+				'default':
+					"h-7 gap-1 rounded-lg px-2.5 text-[13px] has-[>svg]:px-2 [&_svg:not([class*='size-'])]:size-3.5",
+				'md': "h-8 gap-1.5 rounded-lg px-3 text-sm has-[>svg]:px-2.5 [&_svg:not([class*='size-'])]:size-4",
+				'icon-xs': "size-5 rounded-full [&_svg:not([class*='size-'])]:size-3.5",
+				'icon': "size-7 rounded-full [&_svg:not([class*='size-'])]:size-3.5",
+				'icon-md': "size-8 rounded-full [&_svg:not([class*='size-'])]:size-4"
 			}
 		},
 		defaultVariants: {

@@ -16,12 +16,12 @@ export const ContentPage: React.FC<TContentPageProps> = (props) => {
 		trailing,
 		footer,
 		collapsedHeader,
-		children,
 		collapseAt = 52,
-		className,
+		children,
 		headerClassName,
 		contentClassName,
-		footerClassName
+		footerClassName,
+		className
 	} = props;
 	const mainRef = React.useRef<HTMLElement | null>(null);
 	const contentRef = React.useRef<HTMLDivElement | null>(null);
@@ -89,7 +89,7 @@ export const ContentPage: React.FC<TContentPageProps> = (props) => {
 							<Button
 								render={<Link to={backTo} />}
 								variant="soft"
-								size={isCollapsed ? 'icon-sm' : 'sm'}
+								size={isCollapsed ? 'icon' : 'default'}
 								className="pointer-events-auto rounded-full"
 							>
 								<ArrowLeftIcon />
@@ -106,7 +106,9 @@ export const ContentPage: React.FC<TContentPageProps> = (props) => {
 							)}
 						>
 							{collapsedHeader ?? (
-								<span className="text-base-950 block truncate text-sm font-semibold">{title}</span>
+								<span className="text-base-950 block truncate text-[13px] font-semibold">
+									{title}
+								</span>
 							)}
 						</div>
 						{hasTrailing && isCollapsed && (
@@ -133,7 +135,7 @@ export const ContentPage: React.FC<TContentPageProps> = (props) => {
 				)}
 				backgroundClassName={cn(
 					isCollapsed &&
-						'border-base-100 bg-base-0/90 border-b supports-backdrop-filter:bg-base-0/80 supports-backdrop-filter:backdrop-blur-xl',
+						'border-base-100 bg-base-0/90 supports-backdrop-filter:bg-base-0/80 border-b supports-backdrop-filter:backdrop-blur-xl',
 					!isCollapsed &&
 						hasBackButton &&
 						"before:from-base-0 before:pointer-events-none before:absolute before:h-16 before:w-full before:bg-linear-to-b before:from-55% before:to-transparent before:content-['']"
@@ -147,8 +149,8 @@ export const ContentPage: React.FC<TContentPageProps> = (props) => {
 				{header ?? (
 					<div className="mb-5 flex flex-wrap items-start justify-between gap-3">
 						<div className="min-w-0 flex-1">
-							<h1 className="text-base-950 text-xl font-semibold">{title}</h1>
-							{subtitle != null && <p className="text-base-500 mt-1 text-sm">{subtitle}</p>}
+							<h1 className="text-base-950 text-lg font-semibold">{title}</h1>
+							{subtitle != null && <p className="text-base-500 text-[13px]">{subtitle}</p>}
 						</div>
 						{hasTrailing && <div className="flex shrink-0 items-center gap-2">{trailing}</div>}
 					</div>
@@ -187,10 +189,10 @@ export interface TContentPageProps {
 	trailing?: React.ReactNode;
 	footer?: React.ReactNode;
 	collapsedHeader?: React.ReactNode;
-	children?: React.ReactNode;
 	collapseAt?: number;
-	className?: string;
+	children?: React.ReactNode;
 	headerClassName?: string;
 	contentClassName?: string;
 	footerClassName?: string;
+	className?: string;
 }

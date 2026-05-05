@@ -20,7 +20,7 @@ function RouteComponent() {
 
 	return (
 		<ContentPage title={intention.name} subtitle="Intention placeholder.">
-			<p className="text-base-500 text-sm">ID {intention.id}</p>
+			<p className="text-base-500 text-[13px]">ID {intention.id}</p>
 		</ContentPage>
 	);
 }

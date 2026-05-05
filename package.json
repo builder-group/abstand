@@ -23,16 +23,16 @@
 		"update:latest": "turbo run update:latest --force && pnpm update --latest '!eslint' '!@eslint/js' && pnpm build"
 	},
 	"devDependencies": {
-		"@blgc/config": "^0.0.41",
+		"@blgc/config": "^0.0.42",
 		"@eslint/js": "^9.39.2",
 		"@ianvs/prettier-plugin-sort-imports": "^4.7.1",
 		"eslint": "^9.39.2",
 		"prettier": "^3.8.3",
 		"shx": "^0.4.0",
-		"turbo": "^2.9.6",
+		"turbo": "^2.9.8",
 		"typescript": "^6.0.3",
-		"vite": "^8.0.9",
-		"vitest": "^4.1.4"
+		"vite": "^8.0.10",
+		"vitest": "^4.1.5"
 	},
 	"packageManager": "pnpm@10.33.2",
 	"engines": {

@@ -11,7 +11,7 @@ import {
 import { type specta } from '@/environment';
 import { cn } from '@/lib';
 import { useCatalogPicker, type TCatalogItem } from '@/modules/catalog';
-import { SettingsGroup } from '@/modules/settings';
+import { SettingsGroup, SettingsRow } from '@/modules/settings';
 import { useNewIntentionCx } from '../new';
 
 export const BlockModeCard: React.FC = () => {
@@ -63,76 +63,66 @@ export const BlockModeCard: React.FC = () => {
 		openPicker(selectedTargets);
 	}, [openPicker, selectedTargets]);
 
+	const handleToggleModeExpanded = React.useCallback(() => {
+		setIsModeExpanded((value) => !value);
+	}, []);
+
 	// MARK: - UI
 
 	return (
 		<>
 			<SettingsGroup title="Block">
-				<div>
-					<button
-						type="button"
-						onClick={() => setIsModeExpanded((v) => !v)}
-						className="hover:bg-base-950/6 active:bg-base-950/10 flex min-h-10 w-full cursor-default items-center justify-between gap-6 px-3.5 py-2.5"
-					>
-						<span className="text-base-950 text-[13px]">Mode</span>
-						<span className="flex items-center gap-2">
-							<span className="text-base-500 text-sm">{currentMode.label}</span>
-							<ChevronDownIcon
-								className={cn(
-									'text-base-400 size-4 transition-transform',
-									isModeExpanded && 'rotate-180'
-								)}
-							/>
-						</span>
-					</button>
+				<SettingsRow
+					label="Mode"
+					render={<button type="button" onClick={handleToggleModeExpanded} />}
+				>
+					<span className="text-base-500 text-[13px]">{currentMode.label}</span>
+					<ChevronDownIcon
+						className={cn(
+							'text-base-400 size-3.5 transition-transform',
+							isModeExpanded && 'rotate-180'
+						)}
+					/>
+				</SettingsRow>
 
-					{isModeExpanded && (
-						<div>
-							{BLOCK_MODE_OPTIONS.map((mode) => (
-								<button
-									key={mode.value}
-									type="button"
-									onClick={() => handleSelectMode(mode.value)}
-									className="before:bg-base-100 hover:bg-base-950/6 active:bg-base-950/10 relative flex w-full cursor-default items-start gap-3 px-4 py-3 before:absolute before:inset-x-4 before:top-0 before:h-px before:content-['']"
-								>
-									<mode.Icon className="text-base-400 mt-0.5 size-4 shrink-0" />
-									<div className="flex min-w-0 flex-1 flex-col gap-0.5 text-left">
-										<span className="text-base-950 text-[13px]">{mode.label}</span>
-										<span className="text-base-500 text-xs">{mode.description}</span>
-									</div>
-									{blockMode === mode.value && (
-										<CheckIcon className="text-primary mt-0.5 size-4 shrink-0" />
-									)}
-								</button>
-							))}
-						</div>
-					)}
-				</div>
+				{isModeExpanded &&
+					BLOCK_MODE_OPTIONS.map((mode) => (
+						<button
+							key={mode.value}
+							type="button"
+							onClick={() => handleSelectMode(mode.value)}
+							className="hover:bg-base-950/6 active:bg-base-950/10 flex w-full cursor-default items-start gap-2.5 px-2.5 py-2"
+						>
+							<mode.Icon className="text-base-400 mt-0.5 size-3.5 shrink-0" />
+							<div className="flex min-w-0 flex-1 flex-col text-left">
+								<span className="text-base-950 text-[13px]">{mode.label}</span>
+								<span className="text-base-500 text-xs">{mode.description}</span>
+							</div>
+							{blockMode === mode.value && (
+								<CheckIcon className="text-primary mt-0.5 size-3.5 shrink-0" />
+							)}
+						</button>
+					))}
 
 				{isTargetsSelectable ? (
-					<button
-						type="button"
-						onClick={handleOpenTargets}
-						className="hover:bg-base-950/6 active:bg-base-950/10 flex min-h-10 w-full cursor-default items-center justify-between gap-6 px-3.5 py-2.5"
+					<SettingsRow
+						label="Targets"
+						render={<button type="button" onClick={handleOpenTargets} />}
 					>
-						<span className="text-base-950 text-[13px]">Targets</span>
-						<span className="flex items-center gap-2">
-							<span
-								className={cn(
-									selectedTargets.length > 0 ? 'text-base-500' : 'text-base-400',
-									'text-sm'
-								)}
-							>
-								{targetsLabel}
-							</span>
-							<ChevronRightIcon className="text-base-400 size-4" />
+						<span
+							className={cn(
+								selectedTargets.length > 0 ? 'text-base-500' : 'text-base-400',
+								'text-[13px]'
+							)}
+						>
+							{targetsLabel}
 						</span>
-					</button>
+						<ChevronRightIcon className="text-base-400 size-3.5" />
+					</SettingsRow>
 				) : (
-					<div className="flex min-h-10 items-center justify-between gap-6 px-4 py-2.5">
-						<span className="text-base-950 text-sm">Targets</span>
-						<span className="text-base-500 text-sm">{targetsLabel}</span>
-					</div>
+					<SettingsRow label="Targets">
+						<span className="text-base-500 text-[13px]">{targetsLabel}</span>
+					</SettingsRow>
 				)}
 			</SettingsGroup>
 			<PickerDialog />

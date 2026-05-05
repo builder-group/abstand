@@ -9,10 +9,11 @@ export const SettingsRow: React.FC<TSettingsRowProps> = (props) => {
 		label,
 		description,
 		size = 'default',
-		className,
-		contentClassName,
 		render,
+		interactive = render != null,
 		children,
+		contentClassName,
+		className,
 		...rest
 	} = props;
 
@@ -20,10 +21,10 @@ export const SettingsRow: React.FC<TSettingsRowProps> = (props) => {
 		defaultTagName: 'div',
 		props: mergeProps<'div'>(
 			{
-				className: cn(settingsRowVariants({ size }), className),
+				className: cn(settingsRowVariants({ size, interactive }), className),
 				children: (
 					<>
-						<div className="flex min-w-0 flex-col gap-0.5">
+						<div className="flex min-w-0 flex-col">
 							<span className={labelVariants({ size })}>{label}</span>
 							{description != null && (
 								<span className={descriptionVariants({ size })}>{description}</span>
@@ -42,26 +43,28 @@ export const SettingsRow: React.FC<TSettingsRowProps> = (props) => {
 	});
 };
 
-const settingsRowVariants = cva(
-	'flex items-center justify-between [button]:w-full [button]:cursor-default [button]:text-left [button]:hover:bg-base-950/6 [button]:active:bg-base-950/10 [a]:w-full [a]:cursor-default [a]:text-left [a]:hover:bg-base-950/6 [a]:active:bg-base-950/10',
-	{
-		variants: {
-			size: {
-				default: 'min-h-10 gap-6 px-3.5 py-2.5',
-				sm: 'min-h-8 gap-4 px-3 py-2'
-			}
+const settingsRowVariants = cva('flex w-full items-center justify-between text-left', {
+	variants: {
+		size: {
+			default: 'min-h-9 gap-4 px-2.5 py-2',
+			md: 'min-h-11 gap-5 px-3 py-2.5'
 		},
-		defaultVariants: {
-			size: 'default'
+		interactive: {
+			true: 'hover:bg-base-950/6 active:bg-base-950/10 cursor-default',
+			false: ''
 		}
+	},
+	defaultVariants: {
+		size: 'default',
+		interactive: false
 	}
-);
+});
 
 const labelVariants = cva('text-base-950', {
 	variants: {
 		size: {
 			default: 'text-[13px]',
-			sm: 'text-xs'
+			md: 'text-sm'
 		}
 	},
 	defaultVariants: {
@@ -73,7 +76,7 @@ const descriptionVariants = cva('text-base-500', {
 	variants: {
 		size: {
 			default: 'text-xs',
-			sm: 'text-[11px]'
+			md: 'text-[13px]'
 		}
 	},
 	defaultVariants: {
@@ -85,7 +88,7 @@ const controlVariants = cva('flex shrink-0 items-center', {
 	variants: {
 		size: {
 			default: 'gap-2',
-			sm: 'gap-1.5'
+			md: 'gap-2.5'
 		}
 	},
 	defaultVariants: {
@@ -97,5 +100,6 @@ type TSettingsRowProps = useRender.ComponentProps<'div'> &
 	VariantProps<typeof settingsRowVariants> & {
 		label: string;
 		description?: string;
+		interactive?: boolean;
 		contentClassName?: string;
 	};

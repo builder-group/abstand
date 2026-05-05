@@ -5,18 +5,24 @@ import React from 'react';
 import { cn } from '@/lib';
 
 export const Badge: React.FC<TBadgeProps> = (props) => {
-	const { className, variant = 'default', size = 'default', render, ...rest } = props;
+	const { variant = 'default', size = 'default', render, children, className, ...rest } = props;
 
 	return useRender({
 		defaultTagName: 'span',
-		props: mergeProps<'span'>({ className: cn(badgeVariants({ variant, size }), className) }, rest),
+		props: mergeProps<'span'>(
+			{
+				className: cn(badgeVariants({ variant, size }), className),
+				children
+			},
+			rest
+		),
 		render,
 		state: { slot: 'badge', variant, size }
 	});
 };
 
 const badgeVariants = cva(
-	'inline-flex shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border border-transparent font-medium whitespace-nowrap select-none transition-[color,box-shadow] focus-ring [&_svg]:pointer-events-none [&_svg]:shrink-0',
+	'focus-ring inline-flex shrink-0 items-center justify-center overflow-hidden border border-transparent font-medium whitespace-nowrap transition-colors select-none [&_svg]:pointer-events-none [&_svg]:shrink-0',
 	{
 		variants: {
 			variant: {
@@ -30,8 +36,9 @@ const badgeVariants = cva(
 				link: 'text-primary underline-offset-4 [a&]:hover:underline'
 			},
 			size: {
-				default: "h-5 px-2 py-0.5 text-xs [&_svg:not([class*='size-'])]:size-3",
-				sm: "h-4 px-1.5 text-[10px] [&_svg:not([class*='size-'])]:size-2.5"
+				default:
+					"h-4.5 gap-1 rounded-full px-1.5 text-[11px] [&_svg:not([class*='size-'])]:size-2.5",
+				md: "h-5 gap-1 rounded-full px-2 py-0.5 text-xs [&_svg:not([class*='size-'])]:size-3"
 			}
 		},
 		defaultVariants: {
