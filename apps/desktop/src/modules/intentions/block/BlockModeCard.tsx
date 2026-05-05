@@ -11,7 +11,7 @@ import {
 import { type specta } from '@/environment';
 import { cn } from '@/lib';
 import { CatalogIconPeek, useCatalogPicker, type TCatalogItem } from '@/modules/catalog';
-import { SettingsGroup, SettingsRow } from '@/modules/settings';
+import { SettingsGroup, SettingsRow, SettingsRowFrame } from '@/modules/settings';
 import { useNewIntentionCx } from '../new';
 
 export const BlockModeCard: React.FC = () => {
@@ -91,11 +91,11 @@ export const BlockModeCard: React.FC = () => {
 
 				{isModeExpanded &&
 					BLOCK_MODE_OPTIONS.map((mode) => (
-						<button
+						<SettingsRowFrame
 							key={mode.value}
-							type="button"
+							render={<button type="button" />}
 							onClick={() => handleSelectMode(mode.value)}
-							className="hover:bg-base-950/6 active:bg-base-950/10 flex w-full cursor-default items-start gap-2.5 px-2.5 py-2"
+							className="items-start gap-2.5"
 						>
 							<mode.Icon className="text-base-400 mt-0.5 size-3.5 shrink-0" />
 							<div className="flex min-w-0 flex-1 flex-col text-left">
@@ -105,7 +105,7 @@ export const BlockModeCard: React.FC = () => {
 							{blockMode === mode.value && (
 								<CheckIcon className="text-primary mt-0.5 size-3.5 shrink-0" />
 							)}
-						</button>
+						</SettingsRowFrame>
 					))}
 
 				{isTargetsSelectable ? (

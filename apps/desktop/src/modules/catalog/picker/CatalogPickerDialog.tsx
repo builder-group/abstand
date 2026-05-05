@@ -10,7 +10,7 @@ import {
 	DialogTitle,
 	XCircleIcon
 } from '@/components';
-import { SettingsGroup } from '@/modules/settings';
+import { SettingsGroup, SettingsRowFrame } from '@/modules/settings';
 import { CatalogItemIcon } from './CatalogItemIcon';
 import { CatalogItemTypeBadge } from './CatalogItemTypeBadge';
 import {
@@ -84,7 +84,7 @@ const SelectedItemRow: React.FC<TSelectedItemRowProps> = (props) => {
 	const icon = useCompute(cx.$iconAssets, ({ value }) => value[key]);
 
 	return (
-		<div className="group/selected-item hover:bg-base-950/6 relative flex w-full items-center gap-2.5 px-2.5 py-2">
+		<SettingsRowFrame className="group/selected-item relative gap-2.5">
 			<CatalogItemIcon item={item} icon={icon} />
 			<div className="flex min-w-0 flex-1 flex-col">
 				<span className="text-base-950 truncate text-[13px]">{getCatalogItemLabel(item)}</span>
@@ -102,7 +102,7 @@ const SelectedItemRow: React.FC<TSelectedItemRowProps> = (props) => {
 					<XCircleIcon />
 				</Button>
 			</div>
-		</div>
+		</SettingsRowFrame>
 	);
 };
 
