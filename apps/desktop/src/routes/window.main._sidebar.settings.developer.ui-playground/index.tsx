@@ -746,7 +746,7 @@ const SettingsSection: React.FC = () => {
 	return (
 		<PlaygroundGroup title="Settings Group and Row" variant="outline">
 			<PlaygroundRow label="Sizes" contentClassName="flex-col items-start">
-				<SettingsGroup title="Appearance" className="w-full">
+				<SettingsGroup title="Appearance">
 					<SettingsRow label="Theme" description="Choose a display mode.">
 						<SegmentedControl value={defaultTheme} onValueChange={setDefaultTheme}>
 							<SegmentedControlItem value="system">System</SegmentedControlItem>
@@ -761,7 +761,7 @@ const SettingsSection: React.FC = () => {
 						/>
 					</SettingsRow>
 				</SettingsGroup>
-				<SettingsGroup title="Appearance" size="md" className="w-full">
+				<SettingsGroup title="Appearance" size="md">
 					<SettingsRow size="md" label="Theme" description="Choose a display mode.">
 						<SegmentedControl value={mdTheme} onValueChange={setMdTheme} size="md">
 							<SegmentedControlItem value="system">System</SegmentedControlItem>
@@ -782,7 +782,7 @@ const SettingsSection: React.FC = () => {
 				label="Native showcase"
 				contentClassName="flex-col items-start gap-2.5 max-w-[460px]"
 			>
-				<SettingsGroup className="w-full">
+				<SettingsGroup>
 					<SettingsRow label="Color profile">
 						<Select variant="ghost" value={colorProfile} onChange={handleColorProfileChange}>
 							<option value="40c1r">40C1R</option>
@@ -791,7 +791,7 @@ const SettingsSection: React.FC = () => {
 						</Select>
 					</SettingsRow>
 				</SettingsGroup>
-				<SettingsGroup className="w-full">
+				<SettingsGroup>
 					<SettingsRow label="Refresh rate">
 						<Select variant="ghost" value={refreshRate} onChange={handleRefreshRateChange}>
 							<option value="100">100 Hertz</option>
@@ -807,7 +807,7 @@ const SettingsSection: React.FC = () => {
 						<Switch checked={highDynamicRange} onCheckedChange={setHighDynamicRange} />
 					</SettingsRow>
 				</SettingsGroup>
-				<SettingsGroup className="w-full">
+				<SettingsGroup>
 					<SettingsRow label="Rotation">
 						<Select variant="ghost" value={rotation} onChange={handleRotationChange}>
 							<option value="standard">Standard</option>
@@ -817,7 +817,7 @@ const SettingsSection: React.FC = () => {
 						</Select>
 					</SettingsRow>
 				</SettingsGroup>
-				<SettingsGroup className="w-full">
+				<SettingsGroup>
 					<SettingsRow
 						label="When connected to TV"
 						description="Choose what to show or use the TV as a secondary display."
@@ -841,7 +841,11 @@ const PlaygroundGroup: React.FC<TPlaygroundGroupProps> = (props) => {
 	const { title, variant = 'default', children, className } = props;
 
 	return (
-		<SettingsGroup title={title} className={cn(playgroundGroupVariants({ variant }), className)}>
+		<SettingsGroup
+			title={title}
+			className={className}
+			contentClassName={playgroundGroupVariants({ variant })}
+		>
 			{children}
 		</SettingsGroup>
 	);

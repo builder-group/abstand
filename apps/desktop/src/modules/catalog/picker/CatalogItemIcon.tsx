@@ -13,18 +13,22 @@ export const CatalogItemIcon: React.FC<TCatalogItemIconProps> = (props) => {
 	return (
 		<span
 			className={cn(
-				'relative flex size-8 shrink-0 items-center justify-center rounded-lg',
+				'relative flex size-7 shrink-0 items-center justify-center rounded-lg',
 				icon != null && 'bg-base-0 ring-base-950/5 overflow-hidden ring-1',
 				icon == null && item.type === 'app' && 'bg-primary/10 text-primary',
 				icon == null && item.type === 'website' && 'bg-secondary/10 text-secondary'
 			)}
 		>
 			{icon != null ? (
-				<img src={icon} alt="" className="size-6 object-contain" />
+				<img
+					src={icon}
+					alt=""
+					className={cn('object-contain', item.type === 'app' ? 'size-6' : 'size-5')}
+				/>
 			) : item.type === 'app' ? (
-				<AppWindowIcon className="size-4" />
+				<AppWindowIcon className="size-3.5" />
 			) : (
-				<GlobeIcon className="size-4" />
+				<GlobeIcon className="size-3.5" />
 			)}
 			<CatalogItemActionIndicator isSelected={isSelected} />
 		</span>

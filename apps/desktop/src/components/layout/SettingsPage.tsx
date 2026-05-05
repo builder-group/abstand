@@ -13,10 +13,10 @@ export const SettingsPage: React.FC<TSettingsPageProps> = (props) => {
 		backTo,
 		backLabel,
 		header,
-		children,
 		collapseAt = 84,
-		className,
-		contentClassName
+		children,
+		contentClassName,
+		className
 	} = props;
 
 	return (
@@ -56,8 +56,8 @@ export interface TSettingsPageProps {
 	backTo?: FileRouteTypes['to'];
 	backLabel?: string;
 	header?: React.ReactNode;
-	children?: React.ReactNode;
 	collapseAt?: number;
-	className?: string;
+	children?: React.ReactNode;
 	contentClassName?: string;
+	className?: string;
 }

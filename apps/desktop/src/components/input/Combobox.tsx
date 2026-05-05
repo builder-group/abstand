@@ -208,7 +208,7 @@ export const ComboboxList: React.FC<TComboboxListProps> = (props) => {
 };
 
 const comboboxListVariants = cva(
-	'no-scrollbar max-h-[min(18rem,var(--available-height))] overflow-x-hidden overflow-y-auto overscroll-contain',
+	'max-h-[min(18rem,var(--available-height))] overflow-x-hidden overflow-y-auto overscroll-contain',
 	{
 		variants: {
 			size: {

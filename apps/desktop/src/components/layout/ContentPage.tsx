@@ -16,12 +16,12 @@ export const ContentPage: React.FC<TContentPageProps> = (props) => {
 		trailing,
 		footer,
 		collapsedHeader,
-		children,
 		collapseAt = 52,
-		className,
+		children,
 		headerClassName,
 		contentClassName,
-		footerClassName
+		footerClassName,
+		className
 	} = props;
 	const mainRef = React.useRef<HTMLElement | null>(null);
 	const contentRef = React.useRef<HTMLDivElement | null>(null);
@@ -189,10 +189,10 @@ export interface TContentPageProps {
 	trailing?: React.ReactNode;
 	footer?: React.ReactNode;
 	collapsedHeader?: React.ReactNode;
-	children?: React.ReactNode;
 	collapseAt?: number;
-	className?: string;
+	children?: React.ReactNode;
 	headerClassName?: string;
 	contentClassName?: string;
 	footerClassName?: string;
+	className?: string;
 }

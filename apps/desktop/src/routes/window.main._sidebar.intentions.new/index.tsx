@@ -9,7 +9,7 @@ export const Route = createFileRoute('/window/main/_sidebar/intentions/new/')({
 function RouteComponent() {
 	return (
 		<ContentPage title="New Intention" subtitle="Choose a behavior." backTo="/window/main/today">
-			<SettingsGroup className="grid grid-cols-2 gap-3 px-2.5 py-2">
+			<SettingsGroup contentClassName="grid grid-cols-2 gap-3 px-2.5 py-2">
 				<Link
 					to="/window/main/intentions/new/block"
 					className="group flex flex-col gap-2 outline-none"
