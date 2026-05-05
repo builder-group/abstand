@@ -23,7 +23,11 @@ export const CatalogItemIcon: React.FC<TCatalogItemIconProps> = (props) => {
 				<img
 					src={icon}
 					alt=""
-					className={cn('object-contain', item.type === 'app' ? 'size-6' : 'size-5')}
+					className={cn(
+						'object-contain',
+						item.type === 'app' && 'size-6',
+						item.type === 'website' && 'size-5'
+					)}
 				/>
 			) : item.type === 'app' ? (
 				<AppWindowIcon className="size-3.5" />

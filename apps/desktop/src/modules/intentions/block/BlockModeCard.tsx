@@ -10,7 +10,7 @@ import {
 } from '@/components';
 import { type specta } from '@/environment';
 import { cn } from '@/lib';
-import { useCatalogPicker, type TCatalogItem } from '@/modules/catalog';
+import { CatalogIconPeek, useCatalogPicker, type TCatalogItem } from '@/modules/catalog';
 import { SettingsGroup, SettingsRow } from '@/modules/settings';
 import { useNewIntentionCx } from '../new';
 
@@ -40,7 +40,11 @@ export const BlockModeCard: React.FC = () => {
 		return 'None';
 	}, [isTargetsSelectable, selectedTargets]);
 
-	const { open: openPicker, Dialog: PickerDialog } = useCatalogPicker({
+	const {
+		open: openPicker,
+		Dialog: PickerDialog,
+		cx: catalogPickerCx
+	} = useCatalogPicker({
 		onConfirm: React.useCallback(
 			(items: TCatalogItem[]) => {
 				cx.$blockForm.fields.selectedTargets.set(items);
@@ -111,10 +115,11 @@ export const BlockModeCard: React.FC = () => {
 					>
 						<span
 							className={cn(
-								selectedTargets.length > 0 ? 'text-base-500' : 'text-base-400',
-								'text-[13px]'
+								'inline-flex items-center gap-1.5 text-[13px]',
+								selectedTargets.length > 0 ? 'text-base-500' : 'text-base-400'
 							)}
 						>
+							<CatalogIconPeek items={selectedTargets} cx={catalogPickerCx} />
 							{targetsLabel}
 						</span>
 						<ChevronRightIcon className="text-base-400 size-3.5" />

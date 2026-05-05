@@ -127,7 +127,7 @@ export function useCatalogPicker(options: TUseCatalogPickerOptions): TCatalogPic
 		[cx, title]
 	);
 
-	return { open: (items) => cx.open(items), Dialog };
+	return { open: (items) => cx.open(items), Dialog, cx };
 }
 
 export interface TUseCatalogPickerOptions {
@@ -138,4 +138,5 @@ export interface TUseCatalogPickerOptions {
 export interface TCatalogPickerHandle {
 	open: (items: TCatalogItem[]) => void;
 	Dialog: React.FC;
+	cx: CatalogPickerCx;
 }
