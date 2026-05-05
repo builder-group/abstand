@@ -26,14 +26,14 @@ export class NewIntentionCx {
 	});
 	public readonly $blockForm = createForm<TNewIntentionBlockFormData>({
 		fields: {
-			enforcementMode: {
-				defaultValue: 'balanced'
-			},
 			blockMode: {
 				defaultValue: 'blockList'
 			},
 			selectedTargets: {
 				defaultValue: []
+			},
+			enforcementMode: {
+				defaultValue: 'balanced'
 			}
 		}
 	});
@@ -94,9 +94,9 @@ interface TNewIntentionBaseFormData {
 }
 
 interface TNewIntentionBlockFormData {
-	enforcementMode: specta.IntentionEnforcementMode;
 	blockMode: specta.IntentionBlockMode;
 	selectedTargets: TCatalogItem[];
+	enforcementMode: specta.IntentionEnforcementMode;
 }
 
 type TIntentionBehaviorType = 'block' | 'break';
