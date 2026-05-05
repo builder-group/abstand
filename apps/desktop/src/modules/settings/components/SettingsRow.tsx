@@ -54,8 +54,8 @@ const labelVariants = cva('text-base-950', {
 const descriptionVariants = cva('text-base-500', {
 	variants: {
 		size: {
-			default: 'text-xs',
-			md: 'text-[13px]'
+			default: 'text-[11px]',
+			md: 'text-xs'
 		}
 	},
 	defaultVariants: {

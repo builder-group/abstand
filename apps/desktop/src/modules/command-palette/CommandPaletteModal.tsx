@@ -158,7 +158,7 @@ export const CommandPaletteModal: React.FC = () => {
 				</div>
 
 				{/* Footer */}
-				<div className="border-base-100 text-base-400 flex items-center gap-2.5 border-t px-3 py-1.5 text-xs">
+				<div className="border-base-100 text-base-400 flex items-center gap-2.5 border-t px-3 py-1.5 text-[11px]">
 					<span className="flex items-center gap-1">
 						<span>↑↓</span>
 						<span>to navigate</span>
@@ -191,7 +191,7 @@ const CommandPaletteItem: React.FC<TCommandPaletteItemProps> = (props) => {
 			onPointerMove={onPointerMove}
 		>
 			<span className="flex-1 truncate">{item.label}</span>
-			<span className="text-base-400 shrink-0 text-xs">{item.group}</span>
+			<span className="text-base-400 shrink-0 text-[11px]">{item.group}</span>
 		</div>
 	);
 };
