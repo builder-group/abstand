@@ -84,11 +84,11 @@ const SelectedItemRow: React.FC<TSelectedItemRowProps> = (props) => {
 	const icon = useCompute(cx.$iconAssets, ({ value }) => value[key]);
 
 	return (
-		<SettingsRowFrame className="group/selected-item relative gap-2.5">
+		<SettingsRowFrame className="group/selected-item relative gap-1.5">
 			<CatalogItemIcon item={item} icon={icon} />
 			<div className="flex min-w-0 flex-1 flex-col">
 				<span className="text-base-950 truncate text-[13px]">{getCatalogItemLabel(item)}</span>
-				<span className="text-base-500 truncate text-xs">{getCatalogItemSublabel(item)}</span>
+				<span className="text-base-400 truncate text-xs">{getCatalogItemSublabel(item)}</span>
 			</div>
 			<div className="flex shrink-0 items-center gap-0 transition-[gap] group-focus-within/selected-item:gap-2 group-hover/selected-item:gap-2">
 				<CatalogItemTypeBadge item={item} />

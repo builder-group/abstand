@@ -61,8 +61,8 @@ const descriptionVariants = cva('', {
 			error: 'text-error'
 		},
 		size: {
-			default: 'text-xs',
-			md: 'text-[13px]'
+			default: 'text-[11px]',
+			md: 'text-xs'
 		}
 	},
 	defaultVariants: {

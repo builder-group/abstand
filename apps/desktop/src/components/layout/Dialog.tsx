@@ -188,8 +188,8 @@ export const DialogDescription: React.FC<TDialogDescriptionProps> = (props) => {
 const dialogDescriptionVariants = cva('text-base-500', {
 	variants: {
 		size: {
-			default: 'text-xs',
-			md: 'text-[13px]'
+			default: 'text-[13px]',
+			md: 'text-sm'
 		}
 	},
 	defaultVariants: {
