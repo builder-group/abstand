@@ -24,12 +24,13 @@ const settingsGroupVariants = cva('flex w-full flex-col', {
 });
 
 const contentVariants = cva(
-	"bg-base-50/70 [&>*+*]:before:bg-base-100 overflow-hidden *:relative [&>*+*]:before:absolute [&>*+*]:before:top-0 [&>*+*]:before:h-px [&>*+*]:before:content-['']",
+	"bg-base-50/70 [&>*+*]:before:bg-base-100 overflow-hidden *:relative [&>*+*]:before:absolute [&>*+*]:before:top-0 [&>*+*]:before:right-(--settings-row-separator-right) [&>*+*]:before:left-(--settings-row-separator-left) [&>*+*]:before:h-px [&>*+*]:before:content-['']",
 	{
 		variants: {
 			size: {
-				default: 'rounded-xl [&>*+*]:before:inset-x-2.5',
-				md: 'rounded-xl [&>*+*]:before:inset-x-3'
+				default:
+					'rounded-xl [--settings-row-separator-left:--spacing(2.5)] [--settings-row-separator-right:--spacing(2.5)]',
+				md: 'rounded-xl [--settings-row-separator-left:--spacing(3)] [--settings-row-separator-right:--spacing(3)]'
 			}
 		},
 		defaultVariants: { size: 'default' }
