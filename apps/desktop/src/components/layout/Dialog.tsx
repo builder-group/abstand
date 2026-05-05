@@ -129,11 +129,11 @@ export const DialogHeader: React.FC<TDialogHeaderProps> = (props) => {
 	);
 };
 
-const dialogHeaderVariants = cva('flex flex-col gap-1', {
+const dialogHeaderVariants = cva('flex flex-col', {
 	variants: {
 		size: {
-			default: 'px-4 pt-4 pb-3.5',
-			md: 'px-5 pt-5 pb-4'
+			default: 'gap-0.5 px-4 pt-4',
+			md: 'gap-0.5 px-5 pt-5'
 		}
 	},
 	defaultVariants: {
@@ -188,8 +188,8 @@ export const DialogDescription: React.FC<TDialogDescriptionProps> = (props) => {
 const dialogDescriptionVariants = cva('text-base-500', {
 	variants: {
 		size: {
-			default: 'text-[13px]',
-			md: 'text-sm'
+			default: 'text-xs',
+			md: 'text-[13px]'
 		}
 	},
 	defaultVariants: {

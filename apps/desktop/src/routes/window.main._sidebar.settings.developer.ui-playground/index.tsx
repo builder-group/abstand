@@ -664,7 +664,7 @@ const DialogSection: React.FC = () => {
 							<DialogDescription>Default (sm) spacing and typography.</DialogDescription>
 						</DialogHeader>
 						<DialogBody className="space-y-3">
-							<p className="text-base-500 text-sm">
+							<p className="text-base-500">
 								Use this to compare button, body, and footer spacing against the rest of the desktop
 								UI.
 							</p>

@@ -149,8 +149,8 @@ export const ContentPage: React.FC<TContentPageProps> = (props) => {
 				{header ?? (
 					<div className="mb-5 flex flex-wrap items-start justify-between gap-3">
 						<div className="min-w-0 flex-1">
-							<h1 className="text-base-950 text-xl font-semibold">{title}</h1>
-							{subtitle != null && <p className="text-base-500 mt-1 text-sm">{subtitle}</p>}
+							<h1 className="text-base-950 text-lg font-semibold">{title}</h1>
+							{subtitle != null && <p className="text-base-500 text-[13px]">{subtitle}</p>}
 						</div>
 						{hasTrailing && <div className="flex shrink-0 items-center gap-2">{trailing}</div>}
 					</div>

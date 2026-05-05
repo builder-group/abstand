@@ -10,6 +10,7 @@ export const SettingsRow: React.FC<TSettingsRowProps> = (props) => {
 		description,
 		size = 'default',
 		render,
+		interactive = render != null,
 		children,
 		contentClassName,
 		className,
@@ -20,7 +21,7 @@ export const SettingsRow: React.FC<TSettingsRowProps> = (props) => {
 		defaultTagName: 'div',
 		props: mergeProps<'div'>(
 			{
-				className: cn(settingsRowVariants({ size }), className),
+				className: cn(settingsRowVariants({ size, interactive }), className),
 				children: (
 					<>
 						<div className="flex min-w-0 flex-col">
@@ -42,20 +43,22 @@ export const SettingsRow: React.FC<TSettingsRowProps> = (props) => {
 	});
 };
 
-const settingsRowVariants = cva(
-	'[button]:hover:bg-base-950/6 [button]:active:bg-base-950/10 [a]:hover:bg-base-950/6 [a]:active:bg-base-950/10 flex items-center justify-between [a]:w-full [a]:cursor-default [a]:text-left [button]:w-full [button]:cursor-default [button]:text-left',
-	{
-		variants: {
-			size: {
-				default: 'min-h-9 gap-4 px-2.5 py-2',
-				md: 'min-h-11 gap-5 px-3 py-2.5'
-			}
+const settingsRowVariants = cva('flex w-full items-center justify-between text-left', {
+	variants: {
+		size: {
+			default: 'min-h-9 gap-4 px-2.5 py-2',
+			md: 'min-h-11 gap-5 px-3 py-2.5'
 		},
-		defaultVariants: {
-			size: 'default'
+		interactive: {
+			true: 'hover:bg-base-950/6 active:bg-base-950/10 cursor-default',
+			false: ''
 		}
+	},
+	defaultVariants: {
+		size: 'default',
+		interactive: false
 	}
-);
+});
 
 const labelVariants = cva('text-base-950', {
 	variants: {
@@ -97,5 +100,6 @@ type TSettingsRowProps = useRender.ComponentProps<'div'> &
 	VariantProps<typeof settingsRowVariants> & {
 		label: string;
 		description?: string;
+		interactive?: boolean;
 		contentClassName?: string;
 	};
