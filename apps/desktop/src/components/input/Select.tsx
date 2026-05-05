@@ -129,7 +129,7 @@ const ghostSizerVariants = cva('pointer-events-none invisible absolute whitespac
 });
 
 const chevronWrapperVariants = cva(
-	'pointer-events-none absolute top-1/2 flex -translate-y-1/2 items-center justify-center transition-colors',
+	'pointer-events-none absolute top-1/2 right-1 flex -translate-y-1/2 items-center justify-center transition-colors',
 	{
 		variants: {
 			variant: {
@@ -138,16 +138,10 @@ const chevronWrapperVariants = cva(
 					'peer-focus-ring bg-base-100 peer-invalid-ring rounded-full border border-transparent group-has-[select:hover]/select:bg-transparent'
 			},
 			size: {
-				default: 'size-5',
+				default: 'size-5.5',
 				md: 'size-6'
 			}
 		},
-		compoundVariants: [
-			{ variant: 'default', size: 'default', className: 'right-1' },
-			{ variant: 'default', size: 'md', className: 'right-1.5' },
-			{ variant: 'ghost', size: 'default', className: 'right-0.75' },
-			{ variant: 'ghost', size: 'md', className: 'right-1' }
-		],
 		defaultVariants: {
 			variant: 'default',
 			size: 'default'
