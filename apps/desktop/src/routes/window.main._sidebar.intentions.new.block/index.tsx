@@ -17,6 +17,7 @@ function RouteComponent() {
 	const { handleSubmit, register, status } = useForm(intentionCx.$baseForm);
 	const isSubmitting = useFeatureState(intentionCx.$baseForm.isSubmitting);
 	const nameStatus = useFeatureState(status('name'));
+	const nameError = nameStatus.type === 'INVALID' ? nameStatus.errors[0]?.message : undefined;
 
 	// MARK: - Actions
 
@@ -42,19 +43,15 @@ function RouteComponent() {
 				<SettingsGroup>
 					<SettingsRow
 						label="Name"
-						description="Give this intention a name you will recognize later."
+						description={nameError}
+						descriptionVariant={nameError != null ? 'error' : 'default'}
 					>
-						<div className="flex flex-col items-end gap-1">
-							<Input
-								{...register('name')}
-								autoFocus
-								placeholder="Deep work"
-								aria-invalid={nameStatus.type === 'INVALID'}
-							/>
-							{nameStatus.type === 'INVALID' && (
-								<p className="text-error text-xs">{nameStatus.errors[0]?.message}</p>
-							)}
-						</div>
+						<Input
+							{...register('name')}
+							autoFocus
+							placeholder="Deep work"
+							aria-invalid={nameStatus.type === 'INVALID'}
+						/>
 					</SettingsRow>
 				</SettingsGroup>
 

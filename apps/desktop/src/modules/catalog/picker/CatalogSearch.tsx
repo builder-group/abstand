@@ -150,7 +150,7 @@ const CatalogSearchItem: React.FC<TCatalogSearchItemProps> = (props) => {
 			<CatalogItemIcon item={item} icon={icon} isSelected={isSelected} />
 			<div className="flex min-w-0 flex-1 flex-col">
 				<span className="truncate">{getCatalogItemLabel(item)}</span>
-				<span className="text-base-400 truncate text-[11px]">{getCatalogItemSublabel(item)}</span>
+				<span className="text-base-400 truncate text-xs">{getCatalogItemSublabel(item)}</span>
 			</div>
 			{isSelected && (
 				<Badge variant="success">

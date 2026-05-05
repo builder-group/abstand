@@ -8,6 +8,7 @@ export const SettingsRow: React.FC<TSettingsRowProps> = (props) => {
 	const {
 		label,
 		description,
+		descriptionVariant = 'default',
 		size = 'default',
 		render,
 		interactive = render != null,
@@ -29,7 +30,9 @@ export const SettingsRow: React.FC<TSettingsRowProps> = (props) => {
 			<div className="flex min-w-0 flex-col">
 				<span className={labelVariants({ size })}>{label}</span>
 				{description != null && (
-					<span className={descriptionVariants({ size })}>{description}</span>
+					<span className={descriptionVariants({ size, variant: descriptionVariant })}>
+						{description}
+					</span>
 				)}
 			</div>
 			{children != null && (
@@ -51,14 +54,19 @@ const labelVariants = cva('text-base-950', {
 	}
 });
 
-const descriptionVariants = cva('text-base-500', {
+const descriptionVariants = cva('', {
 	variants: {
+		variant: {
+			default: 'text-base-500',
+			error: 'text-error'
+		},
 		size: {
 			default: 'text-[11px]',
 			md: 'text-xs'
 		}
 	},
 	defaultVariants: {
+		variant: 'default',
 		size: 'default'
 	}
 });
@@ -78,6 +86,7 @@ const controlVariants = cva('flex shrink-0 items-center', {
 interface TSettingsRowProps extends TSettingsRowFrameProps {
 	label: string;
 	description?: string;
+	descriptionVariant?: VariantProps<typeof descriptionVariants>['variant'];
 	contentClassName?: string;
 }
 
