@@ -134,7 +134,7 @@ export const BlockModeCard: React.FC = () => {
 							<mode.Icon className="text-base-400 mt-0.5 size-3.5 shrink-0" />
 							<div className="flex min-w-0 flex-1 flex-col text-left">
 								<span className="text-base-950 text-[13px]">{mode.label}</span>
-								<span className="text-base-500 text-[11px]">{mode.description}</span>
+								<span className="text-base-500 text-xs">{mode.description}</span>
 							</div>
 							{blockMode === mode.value && (
 								<CheckIcon className="text-primary mt-0.5 size-3.5 shrink-0" />
@@ -189,7 +189,7 @@ export const BlockModeCard: React.FC = () => {
 						>
 							<div className="flex min-w-0 flex-1 flex-col text-left">
 								<span className="text-base-950 text-[13px]">{mode.label}</span>
-								<span className="text-base-500 text-[11px]">{mode.description}</span>
+								<span className="text-base-500 text-xs">{mode.description}</span>
 							</div>
 							{enforcementMode === mode.value && (
 								<CheckIcon className="text-primary mt-0.5 size-3.5 shrink-0" />
