@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router';
 import { useCompute } from 'feature-react/state';
 import React from 'react';
 import {
@@ -29,7 +30,7 @@ export const SettingsSidebarContent: React.FC<TSettingsSidebarContentProps> = (p
 				<SidebarItem
 					icon={<ArrowLeftIcon />}
 					label="Back to app"
-					to="/window/main/today"
+					render={<Link to="/window/main/today" />}
 					isAction
 				/>
 			</div>
@@ -43,7 +44,7 @@ export const SettingsSidebarContent: React.FC<TSettingsSidebarContentProps> = (p
 						</IconBubble>
 					}
 					label="General"
-					to="/window/main/settings/general"
+					render={<Link to="/window/main/settings/general" />}
 					className="py-0.75"
 				/>
 				<SidebarItem
@@ -53,7 +54,7 @@ export const SettingsSidebarContent: React.FC<TSettingsSidebarContentProps> = (p
 						</IconBubble>
 					}
 					label="Shortcuts"
-					to="/window/main/settings/shortcuts"
+					render={<Link to="/window/main/settings/shortcuts" />}
 					className="py-0.75"
 				/>
 				{developerEnabled && (
@@ -64,7 +65,7 @@ export const SettingsSidebarContent: React.FC<TSettingsSidebarContentProps> = (p
 							</IconBubble>
 						}
 						label="Developer"
-						to="/window/main/settings/developer"
+						render={<Link to="/window/main/settings/developer" />}
 						className="py-0.75"
 					/>
 				)}

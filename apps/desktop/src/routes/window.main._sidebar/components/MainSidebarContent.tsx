@@ -32,11 +32,11 @@ export const MainSidebarContent: React.FC<TMainSidebarContentProps> = (props) =>
 
 			{/* Top nav */}
 			<div className="border-base-100/80 flex flex-col gap-0.5 border-b px-2 py-2">
-				<SidebarItem icon={<SunIcon />} label="Today" to="/window/main/today" exact />
+				<SidebarItem icon={<SunIcon />} label="Today" render={<Link to="/window/main/today" />} />
 				<SidebarItem
 					icon={<PlusIcon />}
 					label="New Intention"
-					to="/window/main/intentions/new"
+					render={<Link to="/window/main/intentions/new" />}
 					isAction
 				/>
 				<SidebarItem
@@ -55,12 +55,12 @@ export const MainSidebarContent: React.FC<TMainSidebarContentProps> = (props) =>
 					{intentionIds.length > 0 ? (
 						intentionIds.map((id) => <IntentionListItem key={id} id={id} />)
 					) : areIntentionsLoading ? (
-						<div className="text-base-400 flex items-center gap-1 px-2 py-1.5 text-sm">
+						<div className="text-base-400 flex items-center gap-1 px-2 py-1 text-sm">
 							<Spinner />
 							<span>Loading intentions...</span>
 						</div>
 					) : (
-						<p className="text-base-400 px-2 py-1.5 text-sm">
+						<p className="text-base-400 px-2 py-1 text-sm">
 							No intentions yet.{' '}
 							<Link
 								to="/window/main/intentions/new"
@@ -75,7 +75,11 @@ export const MainSidebarContent: React.FC<TMainSidebarContentProps> = (props) =>
 
 			{/* Footer */}
 			<div className="border-base-100/80 flex flex-col gap-0.5 border-t px-2 py-2">
-				<SidebarItem icon={<SettingsIcon />} label="Settings" to="/window/main/settings" />
+				<SidebarItem
+					icon={<SettingsIcon />}
+					label="Settings"
+					render={<Link to="/window/main/settings" />}
+				/>
 			</div>
 		</div>
 	);
@@ -97,19 +101,13 @@ const IntentionListItem: React.FC<TIntentionListItemProps> = (props) => {
 	}
 
 	return (
-		<Link
-			to="/window/main/intentions/$intentionId"
-			params={{ intentionId: String(id) }}
-			className={cn(
-				'flex w-full items-center gap-2 rounded-lg px-2 py-1 text-left',
-				'text-base-600 text-sm transition-colors',
-				"hover:bg-base-950/6 hover:text-base-950 focus-ring border border-transparent select-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-				'data-[status=active]:bg-base-950/10 data-[status=active]:text-base-950'
-			)}
-		>
-			<IntentionBehaviorIcon behavior={intention.behavior} />
-			<span className="min-w-0 flex-1 truncate">{intention.name}</span>
-		</Link>
+		<SidebarItem
+			icon={<IntentionBehaviorIcon behavior={intention.behavior} />}
+			label={intention.name}
+			render={
+				<Link to="/window/main/intentions/$intentionId" params={{ intentionId: String(id) }} />
+			}
+		/>
 	);
 };
 
@@ -122,9 +120,9 @@ const IntentionBehaviorIcon: React.FC<TIntentionBehaviorIconProps> = (props) => 
 
 	switch (behavior.type) {
 		case 'block':
-			return <ShieldIcon className="text-base-400 size-3.5" />;
+			return <ShieldIcon className="text-base-400" />;
 		case 'break':
-			return <TimerIcon className="text-base-400 size-3.5" />;
+			return <TimerIcon className="text-base-400" />;
 	}
 };
 
