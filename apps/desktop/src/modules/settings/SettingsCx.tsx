@@ -35,7 +35,7 @@ export class SettingsCx {
 		return lifecycle.unmount;
 	}
 
-	public async update(updates: Partial<specta.AppSettings>): Promise<TResult<null, string>> {
+	public async update(updates: TSettingsUpdates): Promise<TResult<null, string>> {
 		const currentSettings = this.$appSettings._v;
 		const nextSettings: specta.AppSettings = {
 			...currentSettings,
@@ -62,6 +62,14 @@ export class SettingsCx {
 		return toTuple(await specta.commands.resetSettings());
 	}
 }
+
+type TSettingsUpdates = Partial<
+	Omit<specta.AppSettings, 'appearance' | 'developer' | 'shortcuts'>
+> & {
+	appearance?: Partial<specta.AppearanceSettings>;
+	developer?: Partial<specta.DeveloperSettings>;
+	shortcuts?: specta.AppSettings['shortcuts'];
+};
 
 const ReactSettingsCx = React.createContext<SettingsCx | null>(null);
 
