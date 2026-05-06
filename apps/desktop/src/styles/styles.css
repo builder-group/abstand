@@ -1,6 +1,12 @@
 @import 'tailwindcss';
 @import './apple.css';
 
+:root {
+	/* MARK: - Typography */
+	--app-font-size-small: 11px;
+	--app-font-size-base: 13px;
+}
+
 /* Desktop app convention: use arrow cursor for all clickable elements */
 a {
 	cursor: default;
@@ -9,6 +15,11 @@ a {
 /* MARK: - Theme */
 
 @theme {
+	--text-xs: var(--app-font-size-small);
+	--text-xs--line-height: normal;
+	--text-sm: var(--app-font-size-base);
+	--text-sm--line-height: normal;
+
 	--color-base-0: #ffffff;
 	--color-base-50: var(--color-apple-gray-6);
 	--color-base-100: var(--color-apple-gray-5);

@@ -47,3 +47,21 @@ pub enum Stage {
     Dev,
     Prod,
 }
+
+#[tauri::command]
+#[specta::specta]
+pub fn get_system_typography() -> SystemTypographyDto {
+    let font_sizes = abstand_macos::get_system_font_sizes();
+
+    return SystemTypographyDto {
+        base_font_size: font_sizes.base,
+        small_font_size: font_sizes.small,
+    };
+}
+
+#[derive(Debug, Clone, Copy, Serialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct SystemTypographyDto {
+    pub base_font_size: f64,
+    pub small_font_size: f64,
+}
