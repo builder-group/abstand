@@ -7,6 +7,9 @@ export const TypographyProvider: React.FC<TTypographyProviderProps> = (props) =>
 
 	// MARK: - Effects
 
+	// Note: on macOS, systemFontSize and smallSystemFontSize are fixed constants (13pt/11pt)
+	// and match the CSS fallbacks, so this has no visible effect today. The hook exists
+	// for platforms where the OS exposes a user-adjustable font size (e.g. Windows).
 	React.useEffect(() => {
 		const lifecycle = createMountLifecycle();
 
