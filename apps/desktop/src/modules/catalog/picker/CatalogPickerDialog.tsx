@@ -49,7 +49,7 @@ const CatalogPickerDialog: React.FC<TCatalogPickerDialogProps> = (props) => {
 				<DialogBody className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
 					<CatalogSearch selectedKeys={selectedKeys} cx={cx} />
 
-					<SettingsGroup title="Selected" contentClassName="h-72 overflow-y-auto">
+					<SettingsGroup title="Selected" contentClassName="h-77 overflow-y-auto">
 						{selectedItems.length > 0 ? (
 							selectedItems.map((item) => (
 								<SelectedItemRow key={getCatalogItemKey(item)} item={item} cx={cx} />
