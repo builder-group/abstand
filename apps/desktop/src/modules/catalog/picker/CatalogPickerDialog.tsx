@@ -49,7 +49,7 @@ const CatalogPickerDialog: React.FC<TCatalogPickerDialogProps> = (props) => {
 				<DialogBody className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
 					<CatalogSearch selectedKeys={selectedKeys} cx={cx} />
 
-					<SettingsGroup title="Selected" contentClassName="h-75 overflow-y-auto">
+					<SettingsGroup title="Selected" contentClassName="h-72 overflow-y-auto">
 						{selectedItems.length > 0 ? (
 							selectedItems.map((item) => (
 								<SelectedItemRow key={getCatalogItemKey(item)} item={item} cx={cx} />
@@ -84,7 +84,7 @@ const SelectedItemRow: React.FC<TSelectedItemRowProps> = (props) => {
 	const icon = useCompute(cx.$iconAssets, ({ value }) => value[key]);
 
 	return (
-		<SettingsRowFrame className="group/selected-item relative gap-1.5">
+		<SettingsRowFrame className="group/selected-item relative gap-1.5" variant="compact">
 			<CatalogItemIcon item={item} icon={icon} />
 			<div className="flex min-w-0 flex-1 flex-col">
 				<span className="text-base-950 truncate text-sm">{getCatalogItemLabel(item)}</span>

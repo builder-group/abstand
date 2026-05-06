@@ -835,7 +835,7 @@ const SettingsSection: React.FC = () => {
 				contentClassName="flex-col items-start gap-2.5 max-w-[460px]"
 			>
 				<SettingsGroup>
-					<SettingsRow label="Color profile">
+					<SettingsRow label="Color profile" variant="compact">
 						<Select variant="ghost" value={colorProfile} onChange={handleColorProfileChange}>
 							<option value="40c1r">40C1R</option>
 							<option value="display-p3">Display P3</option>
@@ -844,7 +844,7 @@ const SettingsSection: React.FC = () => {
 					</SettingsRow>
 				</SettingsGroup>
 				<SettingsGroup>
-					<SettingsRow label="Refresh rate">
+					<SettingsRow label="Refresh rate" variant="compact">
 						<Select variant="ghost" value={refreshRate} onChange={handleRefreshRateChange}>
 							<option value="100">100 Hertz</option>
 							<option value="60">60 Hertz</option>
@@ -860,7 +860,7 @@ const SettingsSection: React.FC = () => {
 					</SettingsRow>
 				</SettingsGroup>
 				<SettingsGroup>
-					<SettingsRow label="Rotation">
+					<SettingsRow label="Rotation" variant="compact">
 						<Select variant="ghost" value={rotation} onChange={handleRotationChange}>
 							<option value="standard">Standard</option>
 							<option value="90">90 Degrees</option>

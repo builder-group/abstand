@@ -90,7 +90,7 @@ function RouteComponent() {
 			iconVariant="neutral"
 		>
 			<SettingsGroup title="Appearance">
-				<SettingsRow label="Theme" description="Choose how Abstand should appear across the app.">
+				<SettingsRow label="Theme" variant="compact">
 					<SegmentedControl value={theme} onValueChange={handleThemeChange}>
 						<SegmentedControlItem value="auto" aria-label="Auto theme" title="Auto theme">
 							<MonitorIcon />
@@ -142,13 +142,13 @@ function RouteComponent() {
 				</SettingsRow>
 			</SettingsGroup>
 			<SettingsGroup title="Updates">
-				<SettingsRow label="Automatically check for updates">
+				<SettingsRow label="Automatically check for updates" variant="compact">
 					<Switch
 						checked={automaticallyCheckUpdates}
 						onCheckedChange={setAutomaticallyCheckUpdates}
 					/>
 				</SettingsRow>
-				<SettingsRow label="Automatically download updates">
+				<SettingsRow label="Automatically download updates" variant="compact">
 					<Switch
 						checked={automaticallyDownloadUpdates}
 						onCheckedChange={setAutomaticallyDownloadUpdates}

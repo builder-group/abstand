@@ -9,6 +9,7 @@ export const SettingsRow: React.FC<TSettingsRowProps> = (props) => {
 		label,
 		description,
 		descriptionVariant = 'default',
+		variant: rowVariant = 'default',
 		size = 'sm',
 		render,
 		interactive = render != null,
@@ -20,6 +21,7 @@ export const SettingsRow: React.FC<TSettingsRowProps> = (props) => {
 
 	return (
 		<SettingsRowFrame
+			variant={rowVariant}
 			size={size}
 			interactive={interactive}
 			render={render}
@@ -61,8 +63,8 @@ const descriptionVariants = cva('', {
 			error: 'text-error'
 		},
 		size: {
-			sm: 'text-xs',
-			md: 'text-xs'
+			sm: 'mt-0.5 text-xs',
+			md: 'mt-0.5 text-xs'
 		}
 	},
 	defaultVariants: {
@@ -92,6 +94,7 @@ interface TSettingsRowProps extends TSettingsRowFrameProps {
 
 export const SettingsRowFrame: React.FC<TSettingsRowFrameProps> = (props) => {
 	const {
+		variant = 'default',
 		size = 'sm',
 		render,
 		renderStateSlot = 'settings-row-frame',
@@ -105,29 +108,40 @@ export const SettingsRowFrame: React.FC<TSettingsRowFrameProps> = (props) => {
 		defaultTagName: 'div',
 		props: mergeProps<'div'>(
 			{
-				className: cn(settingsRowFrameVariants({ size, interactive }), className),
+				className: cn(settingsRowFrameVariants({ variant, interactive, size }), className),
 				children
 			},
 			rest
 		),
 		render,
-		state: { slot: renderStateSlot, size }
+		state: { slot: renderStateSlot, variant, size }
 	});
 };
 
 const settingsRowFrameVariants = cva('flex w-full items-center justify-between text-left', {
 	variants: {
-		size: {
-			sm: 'min-h-9 gap-4 px-2.5 py-2',
-			md: 'min-h-11 gap-5 px-3 py-2.5'
+		variant: {
+			default: '',
+			compact: ''
 		},
 		interactive: {
 			true: 'hover:bg-base-950/6 active:bg-base-950/10 cursor-default',
 			false: ''
+		},
+		size: {
+			sm: 'min-h-9 gap-4 px-2.5',
+			md: 'min-h-11 gap-5 px-3'
 		}
 	},
+	compoundVariants: [
+		{ size: 'sm', variant: 'default', className: 'py-2.5' },
+		{ size: 'sm', variant: 'compact', className: 'py-1.5' },
+		{ size: 'md', variant: 'default', className: 'py-2.5' },
+		{ size: 'md', variant: 'compact', className: 'py-1.5' }
+	],
 	defaultVariants: {
 		size: 'sm',
+		variant: 'default',
 		interactive: false
 	}
 });

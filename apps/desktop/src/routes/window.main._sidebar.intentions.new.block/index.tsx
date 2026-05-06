@@ -45,6 +45,7 @@ function RouteComponent() {
 						label="Name"
 						description={nameError}
 						descriptionVariant={nameError != null ? 'error' : 'default'}
+						variant="compact"
 					>
 						<Input
 							{...register('name')}
