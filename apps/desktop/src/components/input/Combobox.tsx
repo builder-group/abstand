@@ -7,7 +7,7 @@ import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '
 import { Button } from './Button';
 
 const ComboboxContext = React.createContext<TComboboxContext>({
-	size: 'default'
+	size: 'sm'
 });
 
 interface TComboboxContext {
@@ -19,7 +19,7 @@ type TComboboxSize = NonNullable<VariantProps<typeof comboboxContentVariants>['s
 export const Combobox = <GValue, GMultiple extends boolean | undefined = false>(
 	props: TComboboxProps<GValue, GMultiple>
 ) => {
-	const { size = 'default', children, ...rest } = props;
+	const { size = 'sm', children, ...rest } = props;
 
 	return (
 		<ComboboxContext.Provider value={{ size }}>
@@ -68,12 +68,12 @@ export const ComboboxTrigger: React.FC<TComboboxTriggerProps> = (props) => {
 const comboboxTriggerVariants = cva('text-base-400 [&_svg]:pointer-events-none [&_svg]:shrink-0', {
 	variants: {
 		size: {
-			default: "[&_svg:not([class*='size-'])]:size-3.5",
+			sm: "[&_svg:not([class*='size-'])]:size-3.5",
 			md: "[&_svg:not([class*='size-'])]:size-4"
 		}
 	},
 	defaultVariants: {
-		size: 'default'
+		size: 'sm'
 	}
 });
 
@@ -183,12 +183,12 @@ const comboboxContentVariants = cva(
 	{
 		variants: {
 			size: {
-				default: 'rounded-xl',
+				sm: 'rounded-xl',
 				md: 'rounded-xl'
 			}
 		},
 		defaultVariants: {
-			size: 'default'
+			size: 'sm'
 		}
 	}
 );
@@ -212,12 +212,12 @@ const comboboxListVariants = cva(
 	{
 		variants: {
 			size: {
-				default: 'p-1',
+				sm: 'p-1',
 				md: 'p-1'
 			}
 		},
 		defaultVariants: {
-			size: 'default'
+			size: 'sm'
 		}
 	}
 );
@@ -275,13 +275,12 @@ const comboboxItemVariants = cva(
 	{
 		variants: {
 			size: {
-				default:
-					"gap-1.5 rounded-lg px-1.5 py-1 text-[13px] [&_svg:not([class*='size-'])]:size-3.5",
+				sm: "gap-1.5 rounded-lg px-1.5 py-1 text-sm [&_svg:not([class*='size-'])]:size-3.5",
 				md: "gap-2 rounded-lg px-2 py-1.5 text-sm [&_svg:not([class*='size-'])]:size-4"
 			}
 		},
 		defaultVariants: {
-			size: 'default'
+			size: 'sm'
 		}
 	}
 );
@@ -291,12 +290,12 @@ const comboboxItemIndicatorVariants = cva(
 	{
 		variants: {
 			size: {
-				default: 'right-1.5 size-3.5',
+				sm: 'right-1.5 size-3.5',
 				md: 'right-2 size-4'
 			}
 		},
 		defaultVariants: {
-			size: 'default'
+			size: 'sm'
 		}
 	}
 );
@@ -328,12 +327,12 @@ export const ComboboxLabel: React.FC<TComboboxLabelProps> = (props) => {
 const comboboxLabelVariants = cva('text-base-500 font-medium', {
 	variants: {
 		size: {
-			default: 'px-1.5 py-0.5 text-[11px]',
+			sm: 'px-1.5 py-0.5 text-xs',
 			md: 'px-2 py-1 text-xs'
 		}
 	},
 	defaultVariants: {
-		size: 'default'
+		size: 'sm'
 	}
 });
 
@@ -364,12 +363,12 @@ const comboboxStatusVariants = cva(
 	{
 		variants: {
 			size: {
-				default: 'px-2.5 py-1.5 text-[11px]',
+				sm: 'px-2.5 py-1.5 text-xs',
 				md: 'px-3 py-2 text-xs'
 			}
 		},
 		defaultVariants: {
-			size: 'default'
+			size: 'sm'
 		}
 	}
 );
@@ -395,12 +394,12 @@ const comboboxEmptyVariants = cva(
 	{
 		variants: {
 			size: {
-				default: 'px-2.5 py-2.5 text-[13px]',
+				sm: 'px-2.5 py-2.5 text-sm',
 				md: 'px-3 py-3 text-sm'
 			}
 		},
 		defaultVariants: {
-			size: 'default'
+			size: 'sm'
 		}
 	}
 );
@@ -424,12 +423,12 @@ export const ComboboxSeparator: React.FC<TComboboxSeparatorProps> = (props) => {
 const comboboxSeparatorVariants = cva('bg-base-100 my-1 h-px', {
 	variants: {
 		size: {
-			default: '-mx-1',
+			sm: '-mx-1',
 			md: '-mx-1'
 		}
 	},
 	defaultVariants: {
-		size: 'default'
+		size: 'sm'
 	}
 });
 
@@ -454,12 +453,12 @@ const comboboxChipsVariants = cva(
 	{
 		variants: {
 			size: {
-				default: 'min-h-7 gap-1 rounded-lg px-1.5 py-0.5',
+				sm: 'min-h-7 gap-1 rounded-lg px-1.5 py-0.5',
 				md: 'min-h-8 gap-1 rounded-lg px-2 py-1'
 			}
 		},
 		defaultVariants: {
-			size: 'default'
+			size: 'sm'
 		}
 	}
 );
@@ -501,12 +500,12 @@ const comboboxChipVariants = cva(
 	{
 		variants: {
 			size: {
-				default: 'h-4.5 gap-0.5 pr-0.5 pl-1 text-[11px]',
+				sm: 'h-4.5 gap-0.5 pr-0.5 pl-1 text-xs',
 				md: 'h-5 gap-1 pr-0.5 pl-1.5 text-xs'
 			}
 		},
 		defaultVariants: {
-			size: 'default'
+			size: 'sm'
 		}
 	}
 );
@@ -534,12 +533,12 @@ const comboboxChipsInputVariants = cva(
 	{
 		variants: {
 			size: {
-				default: 'text-[13px]',
+				sm: 'text-sm',
 				md: 'text-sm'
 			}
 		},
 		defaultVariants: {
-			size: 'default'
+			size: 'sm'
 		}
 	}
 );

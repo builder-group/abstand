@@ -48,7 +48,7 @@ export const MainSidebarContent: React.FC<TMainSidebarContentProps> = (props) =>
 
 			{/* Intentions */}
 			<div className="flex flex-1 flex-col overflow-y-auto px-2 py-3">
-				<span className="text-base-500 mb-1 px-2 py-0.5 text-[13px] font-light">Intentions</span>
+				<span className="text-base-500 mb-1 px-2 py-0.5 text-sm font-light">Intentions</span>
 				<div className="flex flex-col gap-0.5">
 					{intentionIds?.map((id) => (
 						<IntentionListItem key={id} id={id} />
@@ -85,7 +85,7 @@ const IntentionListItem: React.FC<TIntentionListItemProps> = (props) => {
 			params={{ intentionId: String(id) }}
 			className={cn(
 				'flex w-full items-center gap-2 rounded-lg px-2 py-1 text-left',
-				'text-base-600 text-[13px] transition-colors',
+				'text-base-600 text-sm transition-colors',
 				"hover:bg-base-950/6 hover:text-base-950 focus-ring border border-transparent select-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
 				'data-[status=active]:bg-base-950/10 data-[status=active]:text-base-950'
 			)}

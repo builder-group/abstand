@@ -114,7 +114,7 @@ export const BlockModeCard: React.FC = () => {
 					description="Choose the blocking policy for this intention."
 					render={<button type="button" onClick={handleToggleModeExpanded} />}
 				>
-					<span className="text-base-500 text-[13px]">{currentMode.label}</span>
+					<span className="text-base-500 text-sm">{currentMode.label}</span>
 					<ChevronDownIcon
 						className={cn(
 							'text-base-400 size-3.5 transition-transform',
@@ -133,8 +133,8 @@ export const BlockModeCard: React.FC = () => {
 						>
 							<mode.Icon className="text-base-400 mt-0.5 size-3.5 shrink-0" />
 							<div className="flex min-w-0 flex-1 flex-col text-left">
-								<span className="text-base-950 text-[13px]">{mode.label}</span>
-								<span className="text-base-500 text-[11px]">{mode.description}</span>
+								<span className="text-base-950 text-sm">{mode.label}</span>
+								<span className="text-base-500 text-xs">{mode.description}</span>
 							</div>
 							{blockMode === mode.value && (
 								<CheckIcon className="text-primary mt-0.5 size-3.5 shrink-0" />
@@ -150,7 +150,7 @@ export const BlockModeCard: React.FC = () => {
 					>
 						<span
 							className={cn(
-								'inline-flex items-center gap-1.5 text-[13px]',
+								'inline-flex items-center gap-1.5 text-sm',
 								selectedTargets.length > 0 ? 'text-base-500' : 'text-base-400'
 							)}
 						>
@@ -161,7 +161,7 @@ export const BlockModeCard: React.FC = () => {
 					</SettingsRow>
 				) : (
 					<SettingsRow label="Targets" description={targetsDescription}>
-						<span className="text-base-500 text-[13px]">{targetsLabel}</span>
+						<span className="text-base-500 text-sm">{targetsLabel}</span>
 					</SettingsRow>
 				)}
 
@@ -170,7 +170,7 @@ export const BlockModeCard: React.FC = () => {
 					description="Choose how hard this block is to pause or bypass."
 					render={<button type="button" onClick={handleToggleEnforcementExpanded} />}
 				>
-					<span className="text-base-500 text-[13px]">{currentEnforcementMode.label}</span>
+					<span className="text-base-500 text-sm">{currentEnforcementMode.label}</span>
 					<ChevronDownIcon
 						className={cn(
 							'text-base-400 size-3.5 transition-transform',
@@ -188,8 +188,8 @@ export const BlockModeCard: React.FC = () => {
 							className="items-start gap-2.5 pl-5 [--settings-row-separator-left:--spacing(5)]"
 						>
 							<div className="flex min-w-0 flex-1 flex-col text-left">
-								<span className="text-base-950 text-[13px]">{mode.label}</span>
-								<span className="text-base-500 text-[11px]">{mode.description}</span>
+								<span className="text-base-950 text-sm">{mode.label}</span>
+								<span className="text-base-500 text-xs">{mode.description}</span>
 							</div>
 							{enforcementMode === mode.value && (
 								<CheckIcon className="text-primary mt-0.5 size-3.5 shrink-0" />

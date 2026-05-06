@@ -3,7 +3,7 @@ import React from 'react';
 import { cn } from '@/lib';
 
 export const Kbd: React.FC<TKbdProps> = (props) => {
-	const { variant = 'default', size = 'default', children, className, ...rest } = props;
+	const { variant = 'default', size = 'sm', children, className, ...rest } = props;
 
 	return (
 		<kbd
@@ -28,13 +28,13 @@ const kbdVariants = cva(
 				ghost: 'text-base-400'
 			},
 			size: {
-				default: 'h-3.5 min-w-3.5 rounded-full px-1.5 text-[11px]',
+				sm: 'h-3.5 min-w-3.5 rounded-full px-1.5 text-xs',
 				md: 'h-4 min-w-4 rounded-full px-1.5 text-xs'
 			}
 		},
 		defaultVariants: {
 			variant: 'default',
-			size: 'default'
+			size: 'sm'
 		}
 	}
 );

@@ -55,7 +55,7 @@ const CatalogPickerDialog: React.FC<TCatalogPickerDialogProps> = (props) => {
 								<SelectedItemRow key={getCatalogItemKey(item)} item={item} cx={cx} />
 							))
 						) : (
-							<div className="text-base-400 flex h-full items-center justify-center text-[13px]">
+							<div className="text-base-400 flex h-full items-center justify-center text-sm">
 								No targets selected
 							</div>
 						)}
@@ -87,14 +87,14 @@ const SelectedItemRow: React.FC<TSelectedItemRowProps> = (props) => {
 		<SettingsRowFrame className="group/selected-item relative gap-1.5">
 			<CatalogItemIcon item={item} icon={icon} />
 			<div className="flex min-w-0 flex-1 flex-col">
-				<span className="text-base-950 truncate text-[13px]">{getCatalogItemLabel(item)}</span>
+				<span className="text-base-950 truncate text-sm">{getCatalogItemLabel(item)}</span>
 				<span className="text-base-400 truncate text-xs">{getCatalogItemSublabel(item)}</span>
 			</div>
 			<div className="flex shrink-0 items-center gap-0 transition-[gap] group-focus-within/selected-item:gap-2 group-hover/selected-item:gap-2">
 				<CatalogItemTypeBadge item={item} />
 				<Button
 					variant="ghost"
-					size="icon"
+					size="icon-sm"
 					className="w-0 shrink-0 overflow-hidden transition-[width] group-focus-within/selected-item:w-7 group-hover/selected-item:w-7 focus-visible:w-7"
 					aria-label={`Remove ${getCatalogItemLabel(item)}`}
 					onClick={() => cx.remove(item)}

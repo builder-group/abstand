@@ -3,7 +3,7 @@ import React from 'react';
 import { cn } from '@/lib';
 
 export const Textarea: React.FC<TTextareaProps> = (props) => {
-	const { size = 'default', className, ...rest } = props;
+	const { size = 'sm', className, ...rest } = props;
 
 	return (
 		<textarea
@@ -20,12 +20,12 @@ const textareaVariants = cva(
 	{
 		variants: {
 			size: {
-				default: 'min-h-14 rounded-lg px-2 py-1.5 text-[13px]',
+				sm: 'min-h-14 rounded-lg px-2 py-1.5 text-sm',
 				md: 'min-h-16 rounded-lg px-2.5 py-2 text-sm'
 			}
 		},
 		defaultVariants: {
-			size: 'default'
+			size: 'sm'
 		}
 	}
 );

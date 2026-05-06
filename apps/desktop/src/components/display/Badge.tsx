@@ -5,7 +5,7 @@ import React from 'react';
 import { cn } from '@/lib';
 
 export const Badge: React.FC<TBadgeProps> = (props) => {
-	const { variant = 'default', size = 'default', render, children, className, ...rest } = props;
+	const { variant = 'default', size = 'sm', render, children, className, ...rest } = props;
 
 	return useRender({
 		defaultTagName: 'span',
@@ -36,14 +36,13 @@ const badgeVariants = cva(
 				link: 'text-primary underline-offset-4 [a&]:hover:underline'
 			},
 			size: {
-				default:
-					"h-4.5 gap-1 rounded-full px-1.5 text-[11px] [&_svg:not([class*='size-'])]:size-2.5",
+				sm: "h-4.5 gap-1 rounded-full px-1.5 text-xs [&_svg:not([class*='size-'])]:size-2.5",
 				md: "h-5 gap-1 rounded-full px-2 py-0.5 text-xs [&_svg:not([class*='size-'])]:size-3"
 			}
 		},
 		defaultVariants: {
 			variant: 'default',
-			size: 'default'
+			size: 'sm'
 		}
 	}
 );

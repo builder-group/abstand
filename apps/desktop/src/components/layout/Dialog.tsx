@@ -5,7 +5,7 @@ import { cn } from '@/lib';
 import { WindowControlsInset, WindowHeaderRow } from './WindowHeader';
 
 const DialogContext = React.createContext<TDialogContext>({
-	size: 'default'
+	size: 'sm'
 });
 
 interface TDialogContext {
@@ -15,7 +15,7 @@ interface TDialogContext {
 type TDialogSize = NonNullable<VariantProps<typeof dialogContentVariants>['size']>;
 
 export const Dialog: React.FC<TDialogProps> = (props) => {
-	const { size = 'default', ...rest } = props;
+	const { size = 'sm', ...rest } = props;
 
 	return (
 		<DialogContext.Provider value={{ size }}>
@@ -101,12 +101,12 @@ const dialogContentVariants = cva(
 	{
 		variants: {
 			size: {
-				default: 'max-w-sm rounded-xl',
+				sm: 'max-w-sm rounded-xl',
 				md: 'max-w-md rounded-xl'
 			}
 		},
 		defaultVariants: {
-			size: 'default'
+			size: 'sm'
 		}
 	}
 );
@@ -132,12 +132,12 @@ export const DialogHeader: React.FC<TDialogHeaderProps> = (props) => {
 const dialogHeaderVariants = cva('flex flex-col', {
 	variants: {
 		size: {
-			default: 'gap-0.5 px-4 pt-4',
+			sm: 'gap-0.5 px-4 pt-4',
 			md: 'gap-0.5 px-5 pt-5'
 		}
 	},
 	defaultVariants: {
-		size: 'default'
+		size: 'sm'
 	}
 });
 
@@ -160,12 +160,12 @@ export const DialogTitle: React.FC<TDialogTitleProps> = (props) => {
 const dialogTitleVariants = cva('text-base-950 font-semibold', {
 	variants: {
 		size: {
-			default: 'text-sm',
+			sm: 'text-sm',
 			md: 'text-base'
 		}
 	},
 	defaultVariants: {
-		size: 'default'
+		size: 'sm'
 	}
 });
 
@@ -188,12 +188,12 @@ export const DialogDescription: React.FC<TDialogDescriptionProps> = (props) => {
 const dialogDescriptionVariants = cva('text-base-500', {
 	variants: {
 		size: {
-			default: 'text-[13px]',
+			sm: 'text-sm',
 			md: 'text-sm'
 		}
 	},
 	defaultVariants: {
-		size: 'default'
+		size: 'sm'
 	}
 });
 
@@ -216,12 +216,12 @@ export const DialogBody: React.FC<TDialogBodyProps> = (props) => {
 const dialogBodyVariants = cva('text-base-950', {
 	variants: {
 		size: {
-			default: 'px-4 py-3 text-[13px]',
+			sm: 'px-4 py-3 text-sm',
 			md: 'px-5 py-4 text-sm'
 		}
 	},
 	defaultVariants: {
-		size: 'default'
+		size: 'sm'
 	}
 });
 
@@ -246,12 +246,12 @@ const dialogFooterVariants = cva(
 	{
 		variants: {
 			size: {
-				default: 'gap-2 rounded-b-xl px-4 py-3',
+				sm: 'gap-2 rounded-b-xl px-4 py-3',
 				md: 'gap-2.5 rounded-b-xl px-5 py-4'
 			}
 		},
 		defaultVariants: {
-			size: 'default'
+			size: 'sm'
 		}
 	}
 );

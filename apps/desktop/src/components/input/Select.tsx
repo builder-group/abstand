@@ -6,7 +6,7 @@ import { ChevronsUpDownIcon } from '../display';
 export const Select: React.FC<TSelectProps> = (props) => {
 	const {
 		variant = 'default',
-		size = 'default',
+		size = 'sm',
 		children,
 		className,
 		value,
@@ -22,7 +22,7 @@ export const Select: React.FC<TSelectProps> = (props) => {
 
 	const ghostWidthOffsetPx = React.useMemo(() => {
 		switch (size) {
-			case 'default':
+			case 'sm':
 			default:
 				return 10 + 34; // pl-2.5 + pr-8.5
 			case 'md':
@@ -99,19 +99,19 @@ const selectVariants = cva(
 				ghost: 'text-base-950 hover:bg-base-100 hover:text-base-950 bg-transparent'
 			},
 			size: {
-				default: 'h-7 pl-2.5 text-[13px]',
+				sm: 'h-7 pl-2.5 text-sm',
 				md: 'h-8 pl-3 text-sm'
 			}
 		},
 		compoundVariants: [
-			{ variant: 'default', size: 'default', className: 'pr-7' },
+			{ variant: 'default', size: 'sm', className: 'pr-7' },
 			{ variant: 'default', size: 'md', className: 'pr-9' },
-			{ variant: 'ghost', size: 'default', className: 'pr-8.5' },
+			{ variant: 'ghost', size: 'sm', className: 'pr-8.5' },
 			{ variant: 'ghost', size: 'md', className: 'pr-11' }
 		],
 		defaultVariants: {
 			variant: 'default',
-			size: 'default'
+			size: 'sm'
 		}
 	}
 );
@@ -119,12 +119,12 @@ const selectVariants = cva(
 const ghostSizerVariants = cva('pointer-events-none invisible absolute whitespace-pre', {
 	variants: {
 		size: {
-			default: 'text-[13px]',
+			sm: 'text-sm',
 			md: 'text-sm'
 		}
 	},
 	defaultVariants: {
-		size: 'default'
+		size: 'sm'
 	}
 });
 
@@ -138,13 +138,13 @@ const chevronWrapperVariants = cva(
 					'peer-focus-ring bg-base-100 peer-invalid-ring rounded-full border border-transparent group-has-[select:hover]/select:bg-transparent'
 			},
 			size: {
-				default: 'size-5.5',
+				sm: 'size-5.5',
 				md: 'size-6'
 			}
 		},
 		defaultVariants: {
 			variant: 'default',
-			size: 'default'
+			size: 'sm'
 		}
 	}
 );
@@ -156,13 +156,13 @@ const chevronIconVariants = cva('select-none', {
 			ghost: 'text-base-950'
 		},
 		size: {
-			default: 'size-3.5',
+			sm: 'size-3.5',
 			md: 'size-4'
 		}
 	},
 	defaultVariants: {
 		variant: 'default',
-		size: 'default'
+		size: 'sm'
 	}
 });
 

@@ -115,7 +115,7 @@ const ButtonSection: React.FC = () => {
 				<Button size="icon-xs" variant="outline" aria-label="Extra small icon">
 					<XCircleIcon />
 				</Button>
-				<Button size="icon" aria-label="Default icon">
+				<Button size="icon-sm" aria-label="Default icon">
 					<SearchIcon />
 				</Button>
 				<Button size="icon-md" variant="primary" aria-label="Medium icon">
@@ -294,7 +294,7 @@ const ToggleSection: React.FC = () => {
 				</Toggle>
 			</PlaygroundRow>
 			<PlaygroundRow label="Icon">
-				<Toggle size="icon" variant="icon" aria-label="Help">
+				<Toggle size="icon-sm" variant="icon" aria-label="Help">
 					<CircleQuestionMarkIcon />
 				</Toggle>
 				<Toggle
@@ -485,7 +485,7 @@ interface TDensityComboboxProps {
 	value: string | null;
 	onValueChange: (value: string | null) => void;
 	placeholder: string;
-	size?: 'default' | 'md';
+	size?: 'sm' | 'md';
 	className?: string;
 }
 
@@ -531,7 +531,7 @@ interface TChipComboboxProps {
 	values: string[];
 	onValuesChange: (value: string[]) => void;
 	placeholder: string;
-	size?: 'default' | 'md';
+	size?: 'sm' | 'md';
 	className?: string;
 }
 

@@ -4,7 +4,7 @@ import React from 'react';
 import { cn } from '@/lib';
 
 export const Input: React.FC<TInputProps> = (props) => {
-	const { size = 'default', className, ...rest } = props;
+	const { size = 'sm', className, ...rest } = props;
 
 	return (
 		<InputPrimitive
@@ -21,12 +21,12 @@ const inputVariants = cva(
 	{
 		variants: {
 			size: {
-				default: 'h-7 rounded-lg px-2 py-0.5 text-[13px] file:h-5 file:text-[13px]',
+				sm: 'h-7 rounded-lg px-2 py-0.5 text-sm file:h-5 file:text-sm',
 				md: 'h-8 rounded-lg px-2.5 py-1 text-sm file:h-6 file:text-sm'
 			}
 		},
 		defaultVariants: {
-			size: 'default'
+			size: 'sm'
 		}
 	}
 );
