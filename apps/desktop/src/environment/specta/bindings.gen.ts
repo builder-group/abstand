@@ -8,6 +8,9 @@ export const commands = {
 async getAppInfo() : Promise<AppInfoDto> {
     return await TAURI_INVOKE("get_app_info");
 },
+async getSystemTypography() : Promise<SystemTypographyDto> {
+    return await TAURI_INVOKE("get_system_typography");
+},
 async openDataDirectory() : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("open_data_directory") };
@@ -123,7 +126,7 @@ export type AppSettings = { version: SettingsVersion; appearance: AppearanceSett
  */
 shortcuts: Partial<{ [key in ShortcutAction]: KeyboardShortcut | null }> }
 export type AppSettingsChangedEvent = AppSettings
-export type AppearanceSettings = { theme: Theme }
+export type AppearanceSettings = { theme: Theme; fontScale: number }
 export type CatalogAppSearchResultDto = { appId: string; bundleId: string | null; name: string | null; icon: string | null; color: string | null }
 export type CatalogAssetLoadedEvent = { itemId: CatalogItemId; icon: string | null; color: string | null }
 export type CatalogIconMode = { type: "skip" } | { type: "eager"; includeColor: boolean } | { type: "lazy"; includeColor: boolean }
@@ -155,6 +158,7 @@ export type ShortcutActionConfigDto = { action: ShortcutAction; isGlobal: boolea
 export type ShortcutModifier = "meta" | "ctrl" | "alt" | "shift"
 export type ShortcutTriggeredEvent = ShortcutAction
 export type Stage = "dev" | "prod"
+export type SystemTypographyDto = { baseFontSize: number; smallFontSize: number }
 export type Theme = "light" | "dark" | "auto"
 export type Website = { 
 /**

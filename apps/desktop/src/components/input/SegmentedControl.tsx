@@ -6,7 +6,7 @@ import { cn } from '@/lib';
 
 const SegmentedControlContext = React.createContext<TSegmentedControlContext>({
 	registerItem: () => {},
-	size: 'default'
+	size: 'sm'
 });
 
 interface TSegmentedControlContext {
@@ -17,7 +17,7 @@ interface TSegmentedControlContext {
 type TSegmentedControlSize = NonNullable<VariantProps<typeof segmentedControlVariants>['size']>;
 
 export const SegmentedControl: React.FC<TSegmentedControlProps> = (props) => {
-	const { value, onValueChange, size = 'default', children, className } = props;
+	const { value, onValueChange, size = 'sm', children, className } = props;
 	const groupRef = React.useRef<HTMLDivElement | null>(null);
 	const itemElementsRef = React.useRef(new Map<string, HTMLButtonElement>());
 	const [pill, setPill] = React.useState<TPillRect | null>(null);
@@ -116,12 +116,12 @@ export const SegmentedControl: React.FC<TSegmentedControlProps> = (props) => {
 const segmentedControlVariants = cva('bg-base-100 relative inline-flex items-center', {
 	variants: {
 		size: {
-			default: 'gap-0.5 rounded-lg p-0.5',
+			sm: 'gap-0.5 rounded-lg p-0.5',
 			md: 'gap-0.5 rounded-lg p-0.5'
 		}
 	},
 	defaultVariants: {
-		size: 'default'
+		size: 'sm'
 	}
 });
 
@@ -168,12 +168,12 @@ const segmentedControlItemVariants = cva(
 	{
 		variants: {
 			size: {
-				default: "h-6 gap-1.5 rounded-md px-2 text-[13px] [&_svg:not([class*='size-'])]:size-3.5",
+				sm: "h-6 gap-1.5 rounded-md px-2 text-sm [&_svg:not([class*='size-'])]:size-3.5",
 				md: "h-7 gap-1.5 rounded-md px-2.5 text-sm [&_svg:not([class*='size-'])]:size-4"
 			}
 		},
 		defaultVariants: {
-			size: 'default'
+			size: 'sm'
 		}
 	}
 );

@@ -3,7 +3,7 @@ import React from 'react';
 import { cn } from '@/lib';
 
 export const SettingsGroup: React.FC<TSettingsGroupProps> = (props) => {
-	const { title, size = 'default', children, contentClassName, className } = props;
+	const { title, size = 'sm', children, contentClassName, className } = props;
 
 	return (
 		<div className={cn(settingsGroupVariants({ size }), className)}>
@@ -16,11 +16,11 @@ export const SettingsGroup: React.FC<TSettingsGroupProps> = (props) => {
 const settingsGroupVariants = cva('flex w-full flex-col', {
 	variants: {
 		size: {
-			default: 'gap-2',
+			sm: 'gap-2',
 			md: 'gap-2.5'
 		}
 	},
-	defaultVariants: { size: 'default' }
+	defaultVariants: { size: 'sm' }
 });
 
 const contentVariants = cva(
@@ -28,23 +28,22 @@ const contentVariants = cva(
 	{
 		variants: {
 			size: {
-				default:
-					'rounded-xl [--settings-row-separator-left:--spacing(2.5)] [--settings-row-separator-right:--spacing(2.5)]',
+				sm: 'rounded-xl [--settings-row-separator-left:--spacing(2.5)] [--settings-row-separator-right:--spacing(2.5)]',
 				md: 'rounded-xl [--settings-row-separator-left:--spacing(3)] [--settings-row-separator-right:--spacing(3)]'
 			}
 		},
-		defaultVariants: { size: 'default' }
+		defaultVariants: { size: 'sm' }
 	}
 );
 
 const titleVariants = cva('text-base-600 ml-2.5 font-semibold', {
 	variants: {
 		size: {
-			default: 'text-[13px]',
+			sm: 'text-sm',
 			md: 'text-sm'
 		}
 	},
-	defaultVariants: { size: 'default' }
+	defaultVariants: { size: 'sm' }
 });
 
 type TSettingsGroupProps = {

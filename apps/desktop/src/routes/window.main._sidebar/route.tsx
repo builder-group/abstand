@@ -36,7 +36,7 @@ function SidebarLayout() {
 						<Toggle
 							aria-label={isOpen ? 'Close sidebar' : 'Open sidebar'}
 							variant="icon"
-							size="icon"
+							size="icon-sm"
 							pressed={isOpen}
 							onPressedChange={(pressed) => (pressed ? sidebarCx.open() : sidebarCx.close())}
 							className="ml-2"

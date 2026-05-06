@@ -43,6 +43,7 @@ import {
 	SegmentedControlItem,
 	Select,
 	SettingsPage,
+	Slider,
 	Switch,
 	Textarea,
 	Toggle,
@@ -72,6 +73,7 @@ function RouteComponent() {
 				<InputGroupSection />
 				<TextareaSection />
 				<SwitchSection />
+				<SliderSection />
 				<ToggleSection />
 				<SegmentedControlSection />
 				<SelectSection />
@@ -115,7 +117,7 @@ const ButtonSection: React.FC = () => {
 				<Button size="icon-xs" variant="outline" aria-label="Extra small icon">
 					<XCircleIcon />
 				</Button>
-				<Button size="icon" aria-label="Default icon">
+				<Button size="icon-sm" aria-label="Default icon">
 					<SearchIcon />
 				</Button>
 				<Button size="icon-md" variant="primary" aria-label="Medium icon">
@@ -263,6 +265,56 @@ const SwitchSection: React.FC = () => {
 	);
 };
 
+// MARK: - Slider
+
+const SliderSection: React.FC = () => {
+	const [defaultValue, setDefaultValue] = React.useState([50]);
+	const [textSizeValue, setTextSizeValue] = React.useState([1]);
+
+	const handleDefaultValueChange = React.useCallback((values: number | readonly number[]) => {
+		setDefaultValue([getSliderValue(values, 50)]);
+	}, []);
+
+	const handleTextSizeValueChange = React.useCallback((values: number | readonly number[]) => {
+		setTextSizeValue([getSliderValue(values, 1)]);
+	}, []);
+
+	return (
+		<PlaygroundGroup title="Slider">
+			<PlaygroundRow label="Default">
+				<div className="flex w-56 items-center gap-3">
+					<Slider value={defaultValue} onValueChange={handleDefaultValueChange} />
+					<span className="text-base-400 w-8 text-right text-xs tabular-nums">
+						{getSliderValue(defaultValue, 50)}
+					</span>
+				</div>
+			</PlaygroundRow>
+			<PlaygroundRow label="Ticks">
+				<div className="flex w-64 items-center gap-2">
+					<span className="text-base-400 w-3 text-center text-xs font-medium select-none">A</span>
+					<Slider
+						min={0.85}
+						max={1.3}
+						step={0.05}
+						value={textSizeValue}
+						onValueChange={handleTextSizeValueChange}
+						showTicks
+					/>
+					<span className="text-base-400 w-4 text-center text-base leading-none font-medium select-none">
+						A
+					</span>
+					<span className="text-base-400 w-10 text-right text-xs tabular-nums">
+						{formatSliderScale(getSliderValue(textSizeValue, 1))}
+					</span>
+				</div>
+			</PlaygroundRow>
+			<PlaygroundRow label="States">
+				<Slider defaultValue={[35]} className="w-56" disabled />
+			</PlaygroundRow>
+		</PlaygroundGroup>
+	);
+};
+
 // MARK: - Toggle
 
 const ToggleSection: React.FC = () => {
@@ -294,7 +346,7 @@ const ToggleSection: React.FC = () => {
 				</Toggle>
 			</PlaygroundRow>
 			<PlaygroundRow label="Icon">
-				<Toggle size="icon" variant="icon" aria-label="Help">
+				<Toggle size="icon-sm" variant="icon" aria-label="Help">
 					<CircleQuestionMarkIcon />
 				</Toggle>
 				<Toggle
@@ -485,7 +537,7 @@ interface TDensityComboboxProps {
 	value: string | null;
 	onValueChange: (value: string | null) => void;
 	placeholder: string;
-	size?: 'default' | 'md';
+	size?: 'sm' | 'md';
 	className?: string;
 }
 
@@ -531,7 +583,7 @@ interface TChipComboboxProps {
 	values: string[];
 	onValuesChange: (value: string[]) => void;
 	placeholder: string;
-	size?: 'default' | 'md';
+	size?: 'sm' | 'md';
 	className?: string;
 }
 
@@ -887,3 +939,9 @@ interface TPlaygroundRowProps {
 	children: React.ReactNode;
 	contentClassName?: string;
 }
+
+const formatSliderScale = (value: number) => `${Math.round(value * 100)}%`;
+
+const getSliderValue = (values: number | readonly number[], fallback: number) => {
+	return Array.isArray(values) ? (values[0] ?? fallback) : values;
+};

@@ -9,7 +9,7 @@ export const SettingsRow: React.FC<TSettingsRowProps> = (props) => {
 		label,
 		description,
 		descriptionVariant = 'default',
-		size = 'default',
+		size = 'sm',
 		render,
 		interactive = render != null,
 		children,
@@ -45,12 +45,12 @@ export const SettingsRow: React.FC<TSettingsRowProps> = (props) => {
 const labelVariants = cva('text-base-950', {
 	variants: {
 		size: {
-			default: 'text-[13px]',
+			sm: 'text-sm',
 			md: 'text-sm'
 		}
 	},
 	defaultVariants: {
-		size: 'default'
+		size: 'sm'
 	}
 });
 
@@ -61,25 +61,25 @@ const descriptionVariants = cva('', {
 			error: 'text-error'
 		},
 		size: {
-			default: 'text-[11px]',
+			sm: 'text-xs',
 			md: 'text-xs'
 		}
 	},
 	defaultVariants: {
 		variant: 'default',
-		size: 'default'
+		size: 'sm'
 	}
 });
 
 const controlVariants = cva('flex shrink-0 items-center', {
 	variants: {
 		size: {
-			default: 'gap-2',
+			sm: 'gap-2',
 			md: 'gap-2.5'
 		}
 	},
 	defaultVariants: {
-		size: 'default'
+		size: 'sm'
 	}
 });
 
@@ -92,7 +92,7 @@ interface TSettingsRowProps extends TSettingsRowFrameProps {
 
 export const SettingsRowFrame: React.FC<TSettingsRowFrameProps> = (props) => {
 	const {
-		size = 'default',
+		size = 'sm',
 		render,
 		renderStateSlot = 'settings-row-frame',
 		interactive = render != null,
@@ -118,7 +118,7 @@ export const SettingsRowFrame: React.FC<TSettingsRowFrameProps> = (props) => {
 const settingsRowFrameVariants = cva('flex w-full items-center justify-between text-left', {
 	variants: {
 		size: {
-			default: 'min-h-9 gap-4 px-2.5 py-2',
+			sm: 'min-h-9 gap-4 px-2.5 py-2',
 			md: 'min-h-11 gap-5 px-3 py-2.5'
 		},
 		interactive: {
@@ -127,7 +127,7 @@ const settingsRowFrameVariants = cva('flex w-full items-center justify-between t
 		}
 	},
 	defaultVariants: {
-		size: 'default',
+		size: 'sm',
 		interactive: false
 	}
 });

@@ -4,7 +4,7 @@ import { cn } from '@/lib';
 import { Button, Input, Textarea } from '../input';
 
 const InputGroupContext = React.createContext<TInputGroupContext>({
-	size: 'default'
+	size: 'sm'
 });
 
 interface TInputGroupContext {
@@ -14,7 +14,7 @@ interface TInputGroupContext {
 type TInputGroupSize = NonNullable<VariantProps<typeof inputGroupVariants>['size']>;
 
 export const InputGroup: React.FC<TInputGroupProps> = (props) => {
-	const { size = 'default', className, ...rest } = props;
+	const { size = 'sm', className, ...rest } = props;
 
 	return (
 		<InputGroupContext.Provider value={{ size }}>
@@ -34,12 +34,12 @@ const inputGroupVariants = cva(
 	{
 		variants: {
 			size: {
-				default: 'h-7 rounded-lg',
+				sm: 'h-7 rounded-lg',
 				md: 'h-8 rounded-lg'
 			}
 		},
 		defaultVariants: {
-			size: 'default'
+			size: 'sm'
 		}
 	}
 );
@@ -84,7 +84,7 @@ const inputGroupAddonVariants = cva(
 	{
 		variants: {
 			size: {
-				default: "gap-1 [&>svg:not([class*='size-'])]:size-3.5",
+				sm: "gap-1 [&>svg:not([class*='size-'])]:size-3.5",
 				md: "gap-1.5 [&>svg:not([class*='size-'])]:size-4"
 			},
 			align: {
@@ -95,7 +95,7 @@ const inputGroupAddonVariants = cva(
 			}
 		},
 		defaultVariants: {
-			size: 'default',
+			size: 'sm',
 			align: 'inline-start'
 		}
 	}
@@ -142,12 +142,12 @@ const inputGroupTextVariants = cva(
 	{
 		variants: {
 			size: {
-				default: "gap-1 text-[13px] [&_svg:not([class*='size-'])]:size-3.5",
+				sm: "gap-1 text-sm [&_svg:not([class*='size-'])]:size-3.5",
 				md: "gap-1.5 text-sm [&_svg:not([class*='size-'])]:size-4"
 			}
 		},
 		defaultVariants: {
-			size: 'default'
+			size: 'sm'
 		}
 	}
 );

@@ -4,7 +4,7 @@ import React from 'react';
 import { cn } from '@/lib';
 
 export const Button: React.FC<TButtonProps> = (props) => {
-	const { variant = 'default', size = 'default', className, ...rest } = props;
+	const { variant = 'default', size = 'sm', className, ...rest } = props;
 
 	return (
 		<ButtonPrimitive
@@ -36,17 +36,16 @@ const buttonVariants = cva(
 				link: 'text-primary underline-offset-4 hover:underline'
 			},
 			size: {
-				'default':
-					"h-7 gap-1 rounded-lg px-2.5 text-[13px] has-[>svg]:px-2 [&_svg:not([class*='size-'])]:size-3.5",
+				'sm': "h-7 gap-1 rounded-lg px-2.5 text-sm has-[>svg]:px-2 [&_svg:not([class*='size-'])]:size-3.5",
 				'md': "h-8 gap-1.5 rounded-lg px-3 text-sm has-[>svg]:px-2.5 [&_svg:not([class*='size-'])]:size-4",
 				'icon-xs': "size-5 rounded-full [&_svg:not([class*='size-'])]:size-3.5",
-				'icon': "size-7 rounded-full [&_svg:not([class*='size-'])]:size-3.5",
+				'icon-sm': "size-7 rounded-full [&_svg:not([class*='size-'])]:size-3.5",
 				'icon-md': "size-8 rounded-full [&_svg:not([class*='size-'])]:size-4"
 			}
 		},
 		defaultVariants: {
 			variant: 'default',
-			size: 'default'
+			size: 'sm'
 		}
 	}
 );

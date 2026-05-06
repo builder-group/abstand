@@ -89,7 +89,7 @@ export const ContentPage: React.FC<TContentPageProps> = (props) => {
 							<Button
 								render={<Link to={backTo} />}
 								variant="soft"
-								size={isCollapsed ? 'icon' : 'default'}
+								size={isCollapsed ? 'icon-sm' : 'sm'}
 								className="pointer-events-auto rounded-full"
 							>
 								<ArrowLeftIcon />
@@ -106,9 +106,7 @@ export const ContentPage: React.FC<TContentPageProps> = (props) => {
 							)}
 						>
 							{collapsedHeader ?? (
-								<span className="text-base-950 block truncate text-[13px] font-semibold">
-									{title}
-								</span>
+								<span className="text-base-950 block truncate text-sm font-semibold">{title}</span>
 							)}
 						</div>
 						{hasTrailing && isCollapsed && (
@@ -150,7 +148,7 @@ export const ContentPage: React.FC<TContentPageProps> = (props) => {
 					<div className="mb-5 flex flex-wrap items-start justify-between gap-3">
 						<div className="min-w-0 flex-1">
 							<h1 className="text-base-950 text-lg font-semibold">{title}</h1>
-							{subtitle != null && <p className="text-base-500 text-[13px]">{subtitle}</p>}
+							{subtitle != null && <p className="text-base-500 text-sm">{subtitle}</p>}
 						</div>
 						{hasTrailing && <div className="flex shrink-0 items-center gap-2">{trailing}</div>}
 					</div>

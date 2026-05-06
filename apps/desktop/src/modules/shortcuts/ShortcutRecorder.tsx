@@ -129,7 +129,7 @@ export const ShortcutRecorder: React.FC<TShortcutRecorderProps> = (props) => {
 const MODIFIER_KEYS = new Set(['Meta', 'Control', 'Alt', 'Shift']);
 
 const shortcutRecorderVariants = cva(
-	'border-base-200 bg-base-0 text-base-950 inline-flex h-7 min-w-32 shrink-0 items-center rounded-lg border bg-clip-padding text-[13px] transition disabled:pointer-events-none disabled:opacity-50',
+	'border-base-200 bg-base-0 text-base-950 inline-flex h-7 min-w-32 shrink-0 items-center rounded-lg border bg-clip-padding text-sm transition disabled:pointer-events-none disabled:opacity-50',
 	{
 		variants: {
 			state: {

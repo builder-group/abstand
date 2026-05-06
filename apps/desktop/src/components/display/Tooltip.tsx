@@ -8,7 +8,7 @@ export const Tooltip: React.FC<TTooltipProps> = (props) => {
 	const {
 		content,
 		shortcut,
-		size = 'default',
+		size = 'sm',
 		side = 'bottom',
 		delay = 400,
 		disableHoverablePopup = true,
@@ -41,12 +41,12 @@ const tooltipVariants = cva(
 	{
 		variants: {
 			size: {
-				default: 'gap-1.5 rounded-lg px-2 py-1 text-[11px]',
+				sm: 'gap-1.5 rounded-lg px-2 py-1 text-xs',
 				md: 'gap-2 rounded-lg px-2.5 py-1.5 text-xs'
 			}
 		},
 		defaultVariants: {
-			size: 'default'
+			size: 'sm'
 		}
 	}
 );

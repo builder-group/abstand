@@ -126,7 +126,7 @@ export const CommandPaletteModal: React.FC = () => {
 							activeItem != null ? `command-palette-option-${activeItem.id}` : undefined
 						}
 						placeholder="Search…"
-						className="text-base-950 placeholder:text-base-400 flex-1 bg-transparent text-[13px] outline-none"
+						className="text-base-950 placeholder:text-base-400 flex-1 bg-transparent text-sm outline-none"
 					/>
 					<Button
 						variant="ghost"
@@ -153,12 +153,12 @@ export const CommandPaletteModal: React.FC = () => {
 							))}
 						</div>
 					) : (
-						<p className="text-base-400 px-3 py-8 text-center text-[13px]">No results</p>
+						<p className="text-base-400 px-3 py-8 text-center text-sm">No results</p>
 					)}
 				</div>
 
 				{/* Footer */}
-				<div className="border-base-100 text-base-400 flex items-center gap-2.5 border-t px-3 py-1.5 text-[11px]">
+				<div className="border-base-100 text-base-400 flex items-center gap-2.5 border-t px-3 py-1.5 text-xs">
 					<span className="flex items-center gap-1">
 						<span>↑↓</span>
 						<span>to navigate</span>
@@ -183,7 +183,7 @@ const CommandPaletteItem: React.FC<TCommandPaletteItemProps> = (props) => {
 			aria-selected={isActive}
 			className={cn(
 				'flex w-full cursor-default items-center gap-2 rounded-lg px-2 py-1.25',
-				'text-base-600 text-[13px] transition-colors',
+				'text-base-600 text-sm transition-colors',
 				'select-none [&_svg]:pointer-events-none [&_svg]:shrink-0',
 				isActive && 'bg-base-950/6 text-base-950'
 			)}
@@ -191,7 +191,7 @@ const CommandPaletteItem: React.FC<TCommandPaletteItemProps> = (props) => {
 			onPointerMove={onPointerMove}
 		>
 			<span className="flex-1 truncate">{item.label}</span>
-			<span className="text-base-400 shrink-0 text-[11px]">{item.group}</span>
+			<span className="text-base-400 shrink-0 text-xs">{item.group}</span>
 		</div>
 	);
 };

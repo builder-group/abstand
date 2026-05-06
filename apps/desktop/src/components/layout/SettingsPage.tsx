@@ -34,7 +34,7 @@ export const SettingsPage: React.FC<TSettingsPageProps> = (props) => {
 						)}
 						<div className="min-w-0 flex-1">
 							<h1 className="text-base-950 text-lg font-semibold">{title}</h1>
-							{subtitle != null && <p className="text-base-500 -mt-0.5 text-[13px]">{subtitle}</p>}
+							{subtitle != null && <p className="text-base-500 -mt-0.5 text-sm">{subtitle}</p>}
 						</div>
 					</div>
 				)
