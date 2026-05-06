@@ -16,9 +16,7 @@ a {
 
 @theme {
 	--text-xs: var(--app-font-size-small);
-	--text-xs--line-height: normal;
 	--text-sm: var(--app-font-size-base);
-	--text-sm--line-height: normal;
 
 	--color-base-0: #ffffff;
 	--color-base-50: var(--color-apple-gray-6);

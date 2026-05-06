@@ -275,7 +275,7 @@ const comboboxItemVariants = cva(
 	{
 		variants: {
 			size: {
-				sm: "gap-1.5 rounded-lg px-1.5 py-1 text-sm [&_svg:not([class*='size-'])]:size-3.5",
+				sm: "gap-1.5 rounded-lg px-1.5 py-1.25 text-sm [&_svg:not([class*='size-'])]:size-3.5",
 				md: "gap-2 rounded-lg px-2 py-1.5 text-sm [&_svg:not([class*='size-'])]:size-4"
 			}
 		},

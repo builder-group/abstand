@@ -63,8 +63,8 @@ const descriptionVariants = cva('', {
 			error: 'text-error'
 		},
 		size: {
-			sm: 'mt-0.5 text-xs',
-			md: 'mt-0.5 text-xs'
+			sm: 'mt-0.25 text-xs',
+			md: 'mt-0.25 text-xs'
 		}
 	},
 	defaultVariants: {

@@ -131,7 +131,7 @@ export const BlockModeCard: React.FC = () => {
 							onClick={() => handleSelectMode(mode.value)}
 							className="items-start gap-2.5 pl-5 [--settings-row-separator-left:--spacing(5)]"
 						>
-							<mode.Icon className="text-base-400 mt-0.5 size-3.5 shrink-0" />
+							<mode.Icon className="text-base-400 mt-0.5 size-4 shrink-0" />
 							<div className="flex min-w-0 flex-1 flex-col text-left">
 								<span className="text-base-950 text-sm">{mode.label}</span>
 								<span className="text-base-500 text-xs">{mode.description}</span>
