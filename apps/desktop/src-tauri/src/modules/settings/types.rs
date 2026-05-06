@@ -43,10 +43,20 @@ impl Default for SettingsVersion {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, specta::Type, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase", default)]
 pub struct AppearanceSettings {
     pub theme: Theme,
+    pub font_scale: f64,
+}
+
+impl Default for AppearanceSettings {
+    fn default() -> Self {
+        return Self {
+            theme: Theme::default(),
+            font_scale: 1.0,
+        };
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type, Default)]

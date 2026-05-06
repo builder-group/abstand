@@ -8,7 +8,8 @@ export class SettingsCx {
 	public readonly $appSettings = createState<specta.AppSettings>({
 		version: '0.0.1',
 		appearance: {
-			theme: 'auto'
+			theme: 'auto',
+			fontScale: 1
 		},
 		developer: {
 			enabled: false

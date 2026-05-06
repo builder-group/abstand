@@ -126,7 +126,7 @@ export type AppSettings = { version: SettingsVersion; appearance: AppearanceSett
  */
 shortcuts: Partial<{ [key in ShortcutAction]: KeyboardShortcut | null }> }
 export type AppSettingsChangedEvent = AppSettings
-export type AppearanceSettings = { theme: Theme }
+export type AppearanceSettings = { theme: Theme; fontScale: number }
 export type CatalogAppSearchResultDto = { appId: string; bundleId: string | null; name: string | null; icon: string | null; color: string | null }
 export type CatalogAssetLoadedEvent = { itemId: CatalogItemId; icon: string | null; color: string | null }
 export type CatalogIconMode = { type: "skip" } | { type: "eager"; includeColor: boolean } | { type: "lazy"; includeColor: boolean }

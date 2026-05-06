@@ -10,6 +10,7 @@ import {
 	Select,
 	SettingsIcon,
 	SettingsPage,
+	Slider,
 	SunIcon,
 	Switch
 } from '@/components';
@@ -23,6 +24,7 @@ export const Route = createFileRoute('/window/main/_sidebar/settings/general/')(
 function RouteComponent() {
 	const settingsCx = useSettingsCx();
 	const theme = useCompute(settingsCx.$appSettings, ({ value }) => value.appearance.theme);
+	const fontScale = useCompute(settingsCx.$appSettings, ({ value }) => value.appearance.fontScale);
 	const developerEnabled = useCompute(
 		settingsCx.$appSettings,
 		({ value }) => value.developer.enabled
@@ -37,6 +39,28 @@ function RouteComponent() {
 		async (themeValue: string) => {
 			await settingsCx.update({
 				appearance: { theme: themeValue as specta.Theme }
+			});
+		},
+		[settingsCx]
+	);
+
+	const handleFontScaleChange = React.useCallback(
+		(values: number | readonly number[]) => {
+			const nextFontScale: number = Array.isArray(values) ? values[0] : values;
+
+			// Note: Mutate and notify immediately so subscribers (e.g. TypographyProvider) apply
+			// the new font scale live while dragging; persistence happens on commit
+			settingsCx.$appSettings._v.appearance.fontScale = nextFontScale;
+			settingsCx.$appSettings._notify();
+		},
+		[settingsCx]
+	);
+
+	const handleFontScaleCommit = React.useCallback(
+		async (values: number | readonly number[]) => {
+			const nextFontScale: number = Array.isArray(values) ? values[0] : values;
+			await settingsCx.update({
+				appearance: { fontScale: nextFontScale }
 			});
 		},
 		[settingsCx]
@@ -79,6 +103,38 @@ function RouteComponent() {
 						</SegmentedControlItem>
 					</SegmentedControl>
 				</SettingsRow>
+				<SettingsRow
+					label="Text size"
+					description="Scale interface text from the system default."
+					contentClassName="gap-2"
+				>
+					<span
+						className="text-base-400 w-3 text-center text-xs font-medium select-none"
+						aria-hidden
+					>
+						A
+					</span>
+					<Slider
+						min={0.85}
+						max={1.3}
+						step={0.05}
+						value={[fontScale]}
+						onValueChange={handleFontScaleChange}
+						onValueCommitted={handleFontScaleCommit}
+						showTicks
+						className="min-w-32"
+						aria-label="Text size"
+					/>
+					<span
+						className="text-base-400 w-4 text-center text-base leading-none font-medium select-none"
+						aria-hidden
+					>
+						A
+					</span>
+					<span className="text-base-400 w-10 text-right text-xs tabular-nums">
+						{formatFontScale(fontScale)}
+					</span>
+				</SettingsRow>
 			</SettingsGroup>
 			<SettingsGroup title="Features">
 				<SettingsRow label="Developer" description="Enable developer tools and settings.">
@@ -110,3 +166,5 @@ function RouteComponent() {
 		</SettingsPage>
 	);
 }
+
+const formatFontScale = (value: number) => `${Math.round(value * 100)}%`;

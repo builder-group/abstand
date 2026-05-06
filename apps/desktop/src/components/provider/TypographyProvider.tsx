@@ -1,42 +1,55 @@
+import { useSubscriber } from 'feature-react/state';
 import React from 'react';
 import { specta } from '@/environment';
-import { createMountLifecycle } from '@/lib';
+import { useSettingsCx } from '@/modules/settings';
 
 export const TypographyProvider: React.FC<TTypographyProviderProps> = (props) => {
 	const { children } = props;
+	const settingsCx = useSettingsCx();
 
 	// MARK: - Effects
 
 	// Note: on macOS, systemFontSize and smallSystemFontSize are fixed constants (13pt/11pt)
 	// and match the CSS fallbacks, so this has no visible effect today. The hook exists
 	// for platforms where the OS exposes a user-adjustable font size (e.g. Windows).
-	React.useEffect(() => {
-		const lifecycle = createMountLifecycle();
-
-		void (async () => {
-			const typography = await specta.commands.getSystemTypography();
-			if (!lifecycle.isUnmounted()) {
-				setFontSizeVariable('--app-font-size-base', typography.baseFontSize);
-				setFontSizeVariable('--app-font-size-small', typography.smallFontSize);
+	useSubscriber(
+		settingsCx.$appSettings,
+		async ({ value, prevValue }) => {
+			if (
+				prevValue != null &&
+				prevValue !== value &&
+				value.appearance.fontScale === prevValue.appearance.fontScale
+			) {
+				return;
 			}
-		})();
 
-		return () => lifecycle.unmount();
-	}, []);
+			const systemTypography = await specta.commands.getSystemTypography();
+
+			setFontSizeVariable(
+				'--app-font-size-base',
+				systemTypography.baseFontSize * value.appearance.fontScale
+			);
+			setFontSizeVariable(
+				'--app-font-size-small',
+				systemTypography.smallFontSize * value.appearance.fontScale
+			);
+		},
+		[]
+	);
 
 	// MARK: - UI
 
 	return <>{children}</>;
 };
 
-const setFontSizeVariable = (name: string, value: number) => {
+export interface TTypographyProviderProps {
+	children: React.ReactNode;
+}
+
+function setFontSizeVariable(name: string, value: number) {
 	if (!Number.isFinite(value) || value <= 0) {
 		return;
 	}
 
 	document.documentElement.style.setProperty(name, `${value}px`);
-};
-
-export interface TTypographyProviderProps {
-	children: React.ReactNode;
 }
