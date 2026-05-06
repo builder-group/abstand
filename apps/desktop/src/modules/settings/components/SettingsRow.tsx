@@ -121,24 +121,18 @@ export const SettingsRowFrame: React.FC<TSettingsRowFrameProps> = (props) => {
 const settingsRowFrameVariants = cva('flex w-full items-center justify-between text-left', {
 	variants: {
 		variant: {
-			default: '',
-			compact: ''
+			default: 'py-2.5',
+			compact: 'py-1.5'
 		},
 		interactive: {
 			true: 'hover:bg-base-950/6 active:bg-base-950/10 cursor-default',
 			false: ''
 		},
 		size: {
-			sm: 'min-h-9 gap-4 px-2.5',
-			md: 'min-h-11 gap-5 px-3'
+			sm: "min-h-9 gap-4 px-2.5 [&_svg:not([class*='size-'])]:size-3.5",
+			md: "min-h-11 gap-5 px-3 [&_svg:not([class*='size-'])]:size-4"
 		}
 	},
-	compoundVariants: [
-		{ size: 'sm', variant: 'default', className: 'py-2.5' },
-		{ size: 'sm', variant: 'compact', className: 'py-1.5' },
-		{ size: 'md', variant: 'default', className: 'py-2.5' },
-		{ size: 'md', variant: 'compact', className: 'py-1.5' }
-	],
 	defaultVariants: {
 		size: 'sm',
 		variant: 'default',

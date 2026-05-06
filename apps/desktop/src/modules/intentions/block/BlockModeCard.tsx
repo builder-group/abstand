@@ -116,10 +116,7 @@ export const BlockModeCard: React.FC = () => {
 				>
 					<span className="text-base-500 text-sm">{currentMode.label}</span>
 					<ChevronDownIcon
-						className={cn(
-							'text-base-400 size-3.5 transition-transform',
-							isModeExpanded && 'rotate-180'
-						)}
+						className={cn('text-base-400 transition-transform', isModeExpanded && 'rotate-180')}
 					/>
 				</SettingsRow>
 
@@ -136,9 +133,7 @@ export const BlockModeCard: React.FC = () => {
 								<span className="text-base-950 text-sm">{mode.label}</span>
 								<span className="text-base-500 mt-px text-xs">{mode.description}</span>
 							</div>
-							{blockMode === mode.value && (
-								<CheckIcon className="text-primary mt-0.5 size-3.5 shrink-0" />
-							)}
+							{blockMode === mode.value && <CheckIcon className="text-primary mt-0.5 shrink-0" />}
 						</SettingsRowFrame>
 					))}
 
@@ -157,7 +152,7 @@ export const BlockModeCard: React.FC = () => {
 							<CatalogIconPeek items={selectedTargets} cx={catalogPickerCx} />
 							{targetsLabel}
 						</span>
-						<ChevronRightIcon className="text-base-400 size-3.5" />
+						<ChevronRightIcon className="text-base-400" />
 					</SettingsRow>
 				) : (
 					<SettingsRow label="Targets" description={targetsDescription}>
@@ -173,7 +168,7 @@ export const BlockModeCard: React.FC = () => {
 					<span className="text-base-500 text-sm">{currentEnforcementMode.label}</span>
 					<ChevronDownIcon
 						className={cn(
-							'text-base-400 size-3.5 transition-transform',
+							'text-base-400 transition-transform',
 							isEnforcementExpanded && 'rotate-180'
 						)}
 					/>
@@ -192,7 +187,7 @@ export const BlockModeCard: React.FC = () => {
 								<span className="text-base-500 mt-px text-xs">{mode.description}</span>
 							</div>
 							{enforcementMode === mode.value && (
-								<CheckIcon className="text-primary mt-0.5 size-3.5 shrink-0" />
+								<CheckIcon className="text-primary mt-0.5 shrink-0" />
 							)}
 						</SettingsRowFrame>
 					))}

@@ -1,11 +1,12 @@
 import { Link } from '@tanstack/react-router';
-import { useFeatureState } from 'feature-react/state';
+import { useCompute, useFeatureState } from 'feature-react/state';
 import React from 'react';
 import {
 	PlusIcon,
 	SearchIcon,
 	SettingsIcon,
 	ShieldIcon,
+	Spinner,
 	SunIcon,
 	TimerIcon,
 	WindowHeaderRow
@@ -23,6 +24,7 @@ export const MainSidebarContent: React.FC<TMainSidebarContentProps> = (props) =>
 	const searchHint = useShortcutHint('search');
 	const intentionsCx = useIntentionsCx();
 	const intentionIds = useFeatureState(intentionsCx.$intentionIds);
+	const areIntentionsLoading = useCompute(intentionsCx.$hasLoaded, ({ value }) => !value);
 
 	return (
 		<div className={cn('flex h-full flex-col', className)}>
@@ -48,11 +50,26 @@ export const MainSidebarContent: React.FC<TMainSidebarContentProps> = (props) =>
 
 			{/* Intentions */}
 			<div className="flex flex-1 flex-col overflow-y-auto px-2 py-3">
-				<span className="text-base-500 mb-1 px-2 py-0.5 text-sm font-light">Intentions</span>
-				<div className="flex flex-col gap-0.5">
-					{intentionIds?.map((id) => (
-						<IntentionListItem key={id} id={id} />
-					))}
+				<span className="text-base-500 px-2 text-sm font-light">Intentions</span>
+				<div className="flex flex-col gap-0.5 py-1.5">
+					{intentionIds.length > 0 ? (
+						intentionIds.map((id) => <IntentionListItem key={id} id={id} />)
+					) : areIntentionsLoading ? (
+						<div className="text-base-400 flex items-center gap-1 px-2 py-1.5 text-sm">
+							<Spinner />
+							<span>Loading intentions...</span>
+						</div>
+					) : (
+						<p className="text-base-400 px-2 py-1.5 text-sm">
+							No intentions yet.{' '}
+							<Link
+								to="/window/main/intentions/new"
+								className="text-primary hover:text-primary/80 rounded-xs underline-offset-2 transition-colors focus-visible:underline focus-visible:outline-none"
+							>
+								Create Intention
+							</Link>
+						</p>
+					)}
 				</div>
 			</div>
 

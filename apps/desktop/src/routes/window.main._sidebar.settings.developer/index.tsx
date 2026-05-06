@@ -28,15 +28,15 @@ function RouteComponent() {
 					description="Open app data folder in Finder."
 					render={<button onClick={handleOpenDataDirectory} />}
 				>
-					<FolderOpenIcon size={16} className="text-base-400" />
-					<ChevronRightIcon size={14} className="text-base-400" />
+					<FolderOpenIcon className="text-base-400 size-4" />
+					<ChevronRightIcon className="text-base-400" />
 				</SettingsRow>
 				<SettingsRow
 					label="UI Playground"
 					description="Preview shared desktop components and sizing."
 					render={<Link to="/window/main/settings/developer/ui-playground" />}
 				>
-					<ChevronRightIcon size={14} className="text-base-400" />
+					<ChevronRightIcon className="text-base-400" />
 				</SettingsRow>
 			</SettingsGroup>
 		</SettingsPage>

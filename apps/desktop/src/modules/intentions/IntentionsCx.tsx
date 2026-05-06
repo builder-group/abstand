@@ -7,6 +7,7 @@ import { createMountLifecycle, toTuple } from '@/lib';
 export class IntentionsCx {
 	public readonly intentions: Record<number, TState<specta.Intention, []>> = {};
 	public readonly $intentionIds = createState<number[]>([]);
+	public readonly $hasLoaded = createState(false);
 
 	public mount(): () => void {
 		const lifecycle = createMountLifecycle();
@@ -20,6 +21,7 @@ export class IntentionsCx {
 				}
 				this.$intentionIds.set(intentions.map((i) => i.id));
 			}
+			this.$hasLoaded.set(true);
 
 			lifecycle.addCleanup(
 				await specta.events.intentionCreatedEvent.listen(async ({ payload }) => {

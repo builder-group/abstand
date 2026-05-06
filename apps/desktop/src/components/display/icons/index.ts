@@ -17,6 +17,7 @@ export {
 	FolderOpenIcon,
 	GlobeIcon,
 	LibraryBigIcon,
+	LoaderIcon,
 	MinusIcon,
 	MonitorIcon,
 	MoonIcon,
