@@ -44,6 +44,7 @@ export const SettingsSidebarContent: React.FC<TSettingsSidebarContentProps> = (p
 					}
 					label="General"
 					to="/window/main/settings/general"
+					className="py-1"
 				/>
 				<SidebarItem
 					icon={
@@ -53,6 +54,7 @@ export const SettingsSidebarContent: React.FC<TSettingsSidebarContentProps> = (p
 					}
 					label="Shortcuts"
 					to="/window/main/settings/shortcuts"
+					className="py-1"
 				/>
 				{developerEnabled && (
 					<SidebarItem
@@ -63,6 +65,7 @@ export const SettingsSidebarContent: React.FC<TSettingsSidebarContentProps> = (p
 						}
 						label="Developer"
 						to="/window/main/settings/developer"
+						className="py-1"
 					/>
 				)}
 			</div>
