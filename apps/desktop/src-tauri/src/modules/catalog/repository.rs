@@ -54,7 +54,7 @@ impl CatalogRepository {
         }
 
         let mut query_builder = QueryBuilder::<Sqlite>::new(
-            "SELECT id, domain, name, icon, color FROM website WHERE id IN (",
+            "SELECT id, hostname, name, icon, color FROM website WHERE id IN (",
         );
         let mut separated = query_builder.separated(", ");
         for website_id in website_ids {
@@ -76,7 +76,7 @@ impl CatalogRepository {
             .map(|row| {
                 let WebsiteRow {
                     id,
-                    domain,
+                    hostname,
                     name,
                     icon,
                     color,
@@ -84,8 +84,8 @@ impl CatalogRepository {
 
                 return Website {
                     id,
-                    name: name.unwrap_or_else(|| domain.clone()),
-                    domain,
+                    name: name.unwrap_or_else(|| hostname.clone()),
+                    hostname,
                     icon,
                     color,
                 };
@@ -137,7 +137,7 @@ struct AppRow {
 #[derive(Debug, Clone, FromRow)]
 struct WebsiteRow {
     id: i64,
-    domain: String,
+    hostname: String,
     name: Option<String>,
     icon: Option<String>,
     color: Option<String>,

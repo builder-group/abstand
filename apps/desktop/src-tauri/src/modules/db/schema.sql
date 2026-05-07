@@ -28,7 +28,7 @@ CREATE TABLE app (
 -- Global registry of known websites
 CREATE TABLE website (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    domain TEXT UNIQUE NOT NULL, -- e.g. "reddit.com"
+    hostname TEXT UNIQUE NOT NULL, -- e.g. "app.slack.com" or "reddit.com"
     name TEXT,
     icon TEXT, -- base64 favicon
     color TEXT, -- hex color
@@ -59,7 +59,7 @@ CREATE TABLE intention_block (
     intention_id INTEGER PRIMARY KEY,
     -- Discriminator for the composite FK to intention
     behavior_type TEXT NOT NULL DEFAULT 'block' CHECK (behavior_type = 'block'),
-    enforcement_mode TEXT NOT NULL DEFAULT 'balanced' CHECK (enforcement_mode IN ('casual', 'balanced', 'hardcore')),
+    enforcement_mode TEXT NOT NULL DEFAULT 'balanced' CHECK (enforcement_mode IN ('casual', 'balanced', 'strict')),
     scope TEXT NOT NULL DEFAULT 'block_targets' CHECK (scope IN ('block_targets', 'allow_targets', 'whole_device')),
     FOREIGN KEY (intention_id, behavior_type) REFERENCES intention (id, behavior_type) ON DELETE CASCADE
 );
@@ -190,6 +190,91 @@ END;
 
 CREATE TRIGGER intention_block_touch_intention_after_delete
 AFTER DELETE ON intention_block
+FOR EACH ROW
+BEGIN
+    UPDATE intention
+    SET updated_at = CASE
+        WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= updated_at THEN updated_at + 1
+        ELSE CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)
+    END
+    WHERE id = OLD.intention_id;
+END;
+
+CREATE TRIGGER intention_block_app_target_touch_intention_after_insert
+AFTER INSERT ON intention_block_app_target
+FOR EACH ROW
+BEGIN
+    UPDATE intention
+    SET updated_at = CASE
+        WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= updated_at THEN updated_at + 1
+        ELSE CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)
+    END
+    WHERE id = NEW.intention_id;
+END;
+
+CREATE TRIGGER intention_block_app_target_touch_intention_after_delete
+AFTER DELETE ON intention_block_app_target
+FOR EACH ROW
+BEGIN
+    UPDATE intention
+    SET updated_at = CASE
+        WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= updated_at THEN updated_at + 1
+        ELSE CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)
+    END
+    WHERE id = OLD.intention_id;
+END;
+
+CREATE TRIGGER intention_block_website_target_touch_intention_after_insert
+AFTER INSERT ON intention_block_website_target
+FOR EACH ROW
+BEGIN
+    UPDATE intention
+    SET updated_at = CASE
+        WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= updated_at THEN updated_at + 1
+        ELSE CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)
+    END
+    WHERE id = NEW.intention_id;
+END;
+
+CREATE TRIGGER intention_block_website_target_touch_intention_after_delete
+AFTER DELETE ON intention_block_website_target
+FOR EACH ROW
+BEGIN
+    UPDATE intention
+    SET updated_at = CASE
+        WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= updated_at THEN updated_at + 1
+        ELSE CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)
+    END
+    WHERE id = OLD.intention_id;
+END;
+
+CREATE TRIGGER intention_condition_touch_intention_after_insert
+AFTER INSERT ON intention_condition
+FOR EACH ROW
+BEGIN
+    UPDATE intention
+    SET updated_at = CASE
+        WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= updated_at THEN updated_at + 1
+        ELSE CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)
+    END
+    WHERE id = NEW.intention_id;
+END;
+
+CREATE TRIGGER intention_condition_touch_intention_after_update
+AFTER UPDATE ON intention_condition
+FOR EACH ROW
+WHEN NEW.updated_at != OLD.updated_at
+BEGIN
+    UPDATE intention
+    SET updated_at = CASE
+        WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= updated_at THEN updated_at + 1
+        ELSE CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)
+    END
+    WHERE id = NEW.intention_id;
+END;
+
+CREATE TRIGGER intention_condition_touch_intention_after_delete
+AFTER DELETE ON intention_condition
 FOR EACH ROW
 BEGIN
     UPDATE intention

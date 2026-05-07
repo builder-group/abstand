@@ -27,15 +27,15 @@ END;
 -- Create "website" table
 CREATE TABLE `website` (
   `id` integer NULL PRIMARY KEY AUTOINCREMENT,
-  `domain` text NOT NULL,
+  `hostname` text NOT NULL,
   `name` text NULL,
   `icon` text NULL,
   `color` text NULL,
   `updated_at` integer NOT NULL DEFAULT (CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)),
   `created_at` integer NOT NULL DEFAULT (CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER))
 );
--- Create index "website_domain" to table: "website"
-CREATE UNIQUE INDEX `website_domain` ON `website` (`domain`);
+-- Create index "website_hostname" to table: "website"
+CREATE UNIQUE INDEX `website_hostname` ON `website` (`hostname`);
 -- Create trigger "website_set_updated_at"
 CREATE TRIGGER `website_set_updated_at` AFTER UPDATE ON `website` FOR EACH ROW WHEN NEW.updated_at = OLD.updated_at BEGIN
     UPDATE website
@@ -74,7 +74,7 @@ CREATE TABLE `intention_block` (
   PRIMARY KEY (`intention_id`),
   CONSTRAINT `0` FOREIGN KEY (`intention_id`, `behavior_type`) REFERENCES `intention` (`id`, `behavior_type`) ON UPDATE NO ACTION ON DELETE CASCADE,
   CHECK (behavior_type = 'block'),
-  CHECK (enforcement_mode IN ('casual', 'balanced', 'hardcore')),
+  CHECK (enforcement_mode IN ('casual', 'balanced', 'strict')),
   CHECK (scope IN ('block_targets', 'allow_targets', 'whole_device'))
 );
 -- Create trigger "intention_block_touch_intention_after_insert"
@@ -113,6 +113,24 @@ CREATE TABLE `intention_block_app_target` (
   CONSTRAINT `0` FOREIGN KEY (`app_id`) REFERENCES `app` (`id`) ON UPDATE NO ACTION ON DELETE CASCADE,
   CONSTRAINT `1` FOREIGN KEY (`intention_id`) REFERENCES `intention_block` (`intention_id`) ON UPDATE NO ACTION ON DELETE CASCADE
 );
+-- Create trigger "intention_block_app_target_touch_intention_after_insert"
+CREATE TRIGGER `intention_block_app_target_touch_intention_after_insert` AFTER INSERT ON `intention_block_app_target` FOR EACH ROW BEGIN
+    UPDATE intention
+    SET updated_at = CASE
+        WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= updated_at THEN updated_at + 1
+        ELSE CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)
+    END
+    WHERE id = NEW.intention_id;
+END;
+-- Create trigger "intention_block_app_target_touch_intention_after_delete"
+CREATE TRIGGER `intention_block_app_target_touch_intention_after_delete` AFTER DELETE ON `intention_block_app_target` FOR EACH ROW BEGIN
+    UPDATE intention
+    SET updated_at = CASE
+        WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= updated_at THEN updated_at + 1
+        ELSE CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)
+    END
+    WHERE id = OLD.intention_id;
+END;
 -- Create "intention_block_website_target" table
 CREATE TABLE `intention_block_website_target` (
   `intention_id` integer NOT NULL,
@@ -122,6 +140,24 @@ CREATE TABLE `intention_block_website_target` (
   CONSTRAINT `0` FOREIGN KEY (`website_id`) REFERENCES `website` (`id`) ON UPDATE NO ACTION ON DELETE CASCADE,
   CONSTRAINT `1` FOREIGN KEY (`intention_id`) REFERENCES `intention_block` (`intention_id`) ON UPDATE NO ACTION ON DELETE CASCADE
 );
+-- Create trigger "intention_block_website_target_touch_intention_after_insert"
+CREATE TRIGGER `intention_block_website_target_touch_intention_after_insert` AFTER INSERT ON `intention_block_website_target` FOR EACH ROW BEGIN
+    UPDATE intention
+    SET updated_at = CASE
+        WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= updated_at THEN updated_at + 1
+        ELSE CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)
+    END
+    WHERE id = NEW.intention_id;
+END;
+-- Create trigger "intention_block_website_target_touch_intention_after_delete"
+CREATE TRIGGER `intention_block_website_target_touch_intention_after_delete` AFTER DELETE ON `intention_block_website_target` FOR EACH ROW BEGIN
+    UPDATE intention
+    SET updated_at = CASE
+        WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= updated_at THEN updated_at + 1
+        ELSE CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)
+    END
+    WHERE id = OLD.intention_id;
+END;
 -- Create "intention_condition" table
 CREATE TABLE `intention_condition` (
   `id` integer NULL PRIMARY KEY AUTOINCREMENT,
@@ -138,6 +174,33 @@ CREATE TABLE `intention_condition` (
 CREATE INDEX `idx_intention_condition_intention_id` ON `intention_condition` (`intention_id`);
 -- Create index "intention_condition_id_rule_type" to table: "intention_condition"
 CREATE UNIQUE INDEX `intention_condition_id_rule_type` ON `intention_condition` (`id`, `rule_type`);
+-- Create trigger "intention_condition_touch_intention_after_insert"
+CREATE TRIGGER `intention_condition_touch_intention_after_insert` AFTER INSERT ON `intention_condition` FOR EACH ROW BEGIN
+    UPDATE intention
+    SET updated_at = CASE
+        WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= updated_at THEN updated_at + 1
+        ELSE CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)
+    END
+    WHERE id = NEW.intention_id;
+END;
+-- Create trigger "intention_condition_touch_intention_after_update"
+CREATE TRIGGER `intention_condition_touch_intention_after_update` AFTER UPDATE ON `intention_condition` FOR EACH ROW WHEN NEW.updated_at != OLD.updated_at BEGIN
+    UPDATE intention
+    SET updated_at = CASE
+        WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= updated_at THEN updated_at + 1
+        ELSE CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)
+    END
+    WHERE id = NEW.intention_id;
+END;
+-- Create trigger "intention_condition_touch_intention_after_delete"
+CREATE TRIGGER `intention_condition_touch_intention_after_delete` AFTER DELETE ON `intention_condition` FOR EACH ROW BEGIN
+    UPDATE intention
+    SET updated_at = CASE
+        WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= updated_at THEN updated_at + 1
+        ELSE CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)
+    END
+    WHERE id = OLD.intention_id;
+END;
 -- Create trigger "intention_condition_set_updated_at"
 CREATE TRIGGER `intention_condition_set_updated_at` AFTER UPDATE ON `intention_condition` FOR EACH ROW WHEN NEW.updated_at = OLD.updated_at BEGIN
     UPDATE intention_condition

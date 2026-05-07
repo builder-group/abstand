@@ -72,11 +72,11 @@ mod tests {
         );
     }
 
-    fn website(name: &str, domain: &str) -> SearchableItem {
+    fn website(name: &str, hostname: &str) -> SearchableItem {
         return SearchableItem::website(
-            domain.to_string(),
+            hostname.to_string(),
             Some(name.to_string()),
-            vec![domain.to_string()],
+            vec![hostname.to_string()],
         );
     }
 
@@ -126,7 +126,7 @@ mod tests {
     }
 
     #[test]
-    fn matches_website_domain_keyword() {
+    fn matches_website_hostname_keyword() {
         let items = vec![website("Notion", "notion.so")];
 
         let results = fuzzy_match(items.iter(), "notion.so");

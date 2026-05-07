@@ -130,9 +130,9 @@ export type AppearanceSettings = { theme: Theme; fontScale: number }
 export type CatalogAppSearchResultDto = { stableId: string; bundleId: string | null; name: string | null; icon: string | null; color: string | null }
 export type CatalogAssetLoadedEvent = { itemId: CatalogItemId; icon: string | null; color: string | null }
 export type CatalogIconMode = { type: "skip" } | { type: "eager"; includeColor: boolean } | { type: "lazy"; includeColor: boolean }
-export type CatalogItemId = { type: "app"; stableId: string; bundleId: string | null } | { type: "website"; domain: string }
+export type CatalogItemId = { type: "app"; stableId: string; bundleId: string | null } | { type: "website"; hostname: string }
 export type CatalogSearchResultDto = { type: "app"; app: CatalogAppSearchResultDto; score: number } | { type: "website"; website: CatalogWebsiteSearchResultDto; score: number }
-export type CatalogWebsiteSearchResultDto = { domain: string; name: string | null; icon: string | null; color: string | null }
+export type CatalogWebsiteSearchResultDto = { hostname: string; name: string | null; icon: string | null; color: string | null }
 export type CreateIntentionBehaviorParams = { type: "block" } | { type: "break" }
 export type CreateIntentionParams = { name: string; behavior: CreateIntentionBehaviorParams }
 export type DeveloperSettings = { enabled: boolean }
@@ -145,7 +145,7 @@ export type IntentionConditionPhase = "start" | "end"
 export type IntentionConditionRule = ({ type: "time" } & IntentionConditionTimeRule) | { type: "manual" }
 export type IntentionConditionTimeRule = { timeOfDay: string; weekdays: IntentionWeekday[] | null }
 export type IntentionCreatedEvent = { intentionId: number }
-export type IntentionEnforcementMode = "casual" | "balanced" | "hardcore"
+export type IntentionEnforcementMode = "casual" | "balanced" | "strict"
 export type IntentionUpdatedEvent = { intentionId: number }
 export type IntentionWeekday = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun"
 export type KeyboardShortcut = { modifiers: ShortcutModifier[]; 
@@ -168,9 +168,9 @@ export type Website = {
  */
 id: number; 
 /**
- * Canonical website domain used as the stable website key.
+ * Canonical website hostname used as the stable website key.
  */
-domain: string; name: string; icon: string | null; color: string | null }
+hostname: string; name: string; icon: string | null; color: string | null }
 
 /** tauri-specta globals **/
 

@@ -32,8 +32,8 @@ pub struct App {
 pub struct Website {
     /// Database row identifier for persisted website records.
     pub id: i64,
-    /// Canonical website domain used as the stable website key.
-    pub domain: String,
+    /// Canonical website hostname used as the stable website key.
+    pub hostname: String,
     pub name: String,
     pub icon: Option<String>,
     pub color: Option<String>,
@@ -50,7 +50,7 @@ pub enum CatalogItemId {
         bundle_id: Option<String>,
     },
     Website {
-        domain: String,
+        hostname: String,
     },
 }
 

@@ -1,7 +1,7 @@
 use super::{
     app_identity::resolve_app_identity, matcher::fuzzy_match, predefined::PREDEFINED_SERVICES,
 };
-use crate::common::url::extract_domain;
+use crate::common::url::extract_hostname;
 use mado::{get_installed_apps, InstalledAppsConfig};
 use std::collections::HashSet;
 
@@ -26,11 +26,11 @@ impl CatalogSearch {
         }
 
         // Normalize URL-like input so `https://docs.example.com/page` matches on the host
-        let (match_query, custom_domain) = match extract_domain(trimmed_query) {
-            Some(domain) => {
-                let custom_domain = (!self.has_website_domain(&domain))
-                    .then(|| SearchableItem::custom_domain(domain.clone()));
-                (domain, custom_domain)
+        let (match_query, custom_hostname) = match extract_hostname(trimmed_query) {
+            Some(hostname) => {
+                let custom_hostname = (!self.has_website_hostname(&hostname))
+                    .then(|| SearchableItem::custom_hostname(hostname.clone()));
+                (hostname, custom_hostname)
             }
             None => (trimmed_query.to_string(), None),
         };
@@ -39,7 +39,7 @@ impl CatalogSearch {
             .apps
             .iter()
             .chain(self.websites.iter())
-            .chain(custom_domain.iter());
+            .chain(custom_hostname.iter());
         let matches = fuzzy_match(items, &match_query);
 
         let mut seen_ids = HashSet::<String>::new();
@@ -75,16 +75,21 @@ impl CatalogSearch {
 
         for service in PREDEFINED_SERVICES {
             let mut keywords = Vec::with_capacity(
-                service.domains.len() + service.aliases.len() + service.bundle_ids.len(),
+                service.hostnames.len() + service.aliases.len() + service.bundle_ids.len(),
             );
-            keywords.extend(service.domains.iter().map(|domain| (*domain).to_string()));
+            keywords.extend(
+                service
+                    .hostnames
+                    .iter()
+                    .map(|hostname| (*hostname).to_string()),
+            );
             keywords.extend(service.aliases.iter().map(|alias| (*alias).to_string()));
 
             // Note: Keep the bundle IDs on the service model for future grouping work,
             // but do not feed them into website matching yet
-            for domain in service.domains {
+            for hostname in service.hostnames {
                 items.push(SearchableItem::website(
-                    (*domain).to_string(),
+                    (*hostname).to_string(),
                     Some(service.name.to_string()),
                     keywords.clone(),
                 ));
@@ -94,8 +99,8 @@ impl CatalogSearch {
         return items;
     }
 
-    fn has_website_domain(&self, domain: &str) -> bool {
-        return self.websites.iter().any(|item| item.id() == domain);
+    fn has_website_hostname(&self, hostname: &str) -> bool {
+        return self.websites.iter().any(|item| item.id() == hostname);
     }
 }
 
@@ -130,21 +135,21 @@ impl SearchableItem {
         };
     }
 
-    pub fn website(domain: String, name: Option<String>, keywords: Vec<String>) -> Self {
+    pub fn website(hostname: String, name: Option<String>, keywords: Vec<String>) -> Self {
         return Self::Website {
-            website: SearchableWebsite { domain, name },
+            website: SearchableWebsite { hostname, name },
             keywords,
         };
     }
 
-    pub fn custom_domain(domain: String) -> Self {
-        return Self::website(domain.clone(), Some(domain.clone()), vec![domain]);
+    pub fn custom_hostname(hostname: String) -> Self {
+        return Self::website(hostname.clone(), Some(hostname.clone()), vec![hostname]);
     }
 
     pub fn id(&self) -> &str {
         return match self {
             Self::App { app, .. } => &app.stable_id,
-            Self::Website { website, .. } => &website.domain,
+            Self::Website { website, .. } => &website.hostname,
         };
     }
 
@@ -155,7 +160,7 @@ impl SearchableItem {
                 .as_deref()
                 .or(app.bundle_id.as_deref())
                 .unwrap_or(&app.stable_id),
-            Self::Website { website, .. } => website.name.as_deref().unwrap_or(&website.domain),
+            Self::Website { website, .. } => website.name.as_deref().unwrap_or(&website.hostname),
         };
     }
 
@@ -197,6 +202,6 @@ pub struct SearchableApp {
 
 #[derive(Debug, Clone)]
 pub struct SearchableWebsite {
-    pub domain: String,
+    pub hostname: String,
     pub name: Option<String>,
 }

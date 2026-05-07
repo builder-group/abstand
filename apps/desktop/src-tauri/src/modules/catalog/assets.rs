@@ -75,7 +75,7 @@ impl From<&CatalogItemId> for CatalogAssetKey {
     fn from(item_id: &CatalogItemId) -> Self {
         return match item_id {
             CatalogItemId::App { stable_id, .. } => Self::App(stable_id.clone()),
-            CatalogItemId::Website { domain } => Self::Website(domain.clone()),
+            CatalogItemId::Website { hostname } => Self::Website(hostname.clone()),
         };
     }
 }
@@ -117,7 +117,7 @@ fn resolve_asset(item_id: &CatalogItemId, include_color: bool) -> Option<Catalog
             let bundle_id = bundle_id.as_deref()?;
             resolve_app_asset(bundle_id, include_color)
         }
-        CatalogItemId::Website { domain } => resolve_website_asset(domain),
+        CatalogItemId::Website { hostname } => resolve_website_asset(hostname),
     };
 }
 
@@ -139,10 +139,10 @@ fn resolve_app_asset(_bundle_id: &str, _include_color: bool) -> Option<CatalogAs
     return None;
 }
 
-fn resolve_website_asset(domain: &str) -> Option<CatalogAsset> {
+fn resolve_website_asset(hostname: &str) -> Option<CatalogAsset> {
     return Some(CatalogAsset {
         icon: Some(format!(
-            "https://www.google.com/s2/favicons?domain={domain}&sz=64"
+            "https://www.google.com/s2/favicons?domain={hostname}&sz=64"
         )),
         color: None,
     });

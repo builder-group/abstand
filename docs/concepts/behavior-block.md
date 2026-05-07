@@ -18,6 +18,6 @@ Enforcement controls whether the Abstand can be ended early.
 
 - `casual`: exit anytime
 - `balanced`: exit after a deliberate pause
-- `hardcore`: no exit until the end condition is met
+- `strict`: no exit until the end condition is met
 
-The right level depends on the Intention. An overnight block probably wants `hardcore`. A morning focus window might want `balanced`.
+The right level depends on the Intention. An overnight block probably wants `strict`. A morning focus window might want `balanced`.

@@ -1,5 +1,5 @@
-/// Extracts a normalized domain from input.
-pub fn extract_domain(input: &str) -> Option<String> {
+/// Extracts a normalized hostname from input.
+pub fn extract_hostname(input: &str) -> Option<String> {
     let trimmed = input.trim().to_lowercase();
     if trimmed.is_empty() {
         return None;
@@ -90,38 +90,38 @@ fn is_domain_like(value: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::extract_domain;
+    use super::extract_hostname;
 
     #[test]
-    fn extracts_domains_from_urls() {
+    fn extracts_hostnames_from_urls() {
         assert_eq!(
-            extract_domain("https://sub.example.com/path?query=1"),
+            extract_hostname("https://sub.example.com/path?query=1"),
             Some("sub.example.com".to_string())
         );
         assert_eq!(
-            extract_domain("user:pass@example.com:8080"),
+            extract_hostname("user:pass@example.com:8080"),
             Some("example.com".to_string())
         );
     }
 
     #[test]
-    fn extracts_domains_without_a_scheme() {
+    fn extracts_hostnames_without_a_scheme() {
         assert_eq!(
-            extract_domain("docs.example.com/reference"),
+            extract_hostname("docs.example.com/reference"),
             Some("docs.example.com".to_string())
         );
         assert_eq!(
-            extract_domain("EXAMPLE.com"),
+            extract_hostname("EXAMPLE.com"),
             Some("example.com".to_string())
         );
     }
 
     #[test]
-    fn ignores_non_domains() {
-        assert_eq!(extract_domain("about"), None);
-        assert_eq!(extract_domain("localhost:3000"), None);
-        assert_eq!(extract_domain("not a domain"), None);
-        assert_eq!(extract_domain("benno@example.com"), None);
-        assert_eq!(extract_domain("mailto:benno@example.com"), None);
+    fn ignores_non_hostnames() {
+        assert_eq!(extract_hostname("about"), None);
+        assert_eq!(extract_hostname("localhost:3000"), None);
+        assert_eq!(extract_hostname("not a domain"), None);
+        assert_eq!(extract_hostname("benno@example.com"), None);
+        assert_eq!(extract_hostname("mailto:benno@example.com"), None);
     }
 }

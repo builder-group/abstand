@@ -12,7 +12,7 @@ Break is a behavior that creates a rhythm of forced breaks over a longer window.
 
 - `casual`: breaks can be skipped from the warning
 - `balanced`: breaks can be skipped from the warning, but not once the overlay appears
-- `hardcore`: no skipping, the break runs its full duration
+- `strict`: no skipping, the break runs its full duration
 
 ## With Block
 

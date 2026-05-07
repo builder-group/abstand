@@ -52,7 +52,7 @@ pub struct IntentionBlock {
 pub enum IntentionEnforcementMode {
     Casual,
     Balanced,
-    Hardcore,
+    Strict,
 }
 
 impl IntentionEnforcementMode {
@@ -60,7 +60,7 @@ impl IntentionEnforcementMode {
         return match value {
             "casual" => Ok(Self::Casual),
             "balanced" => Ok(Self::Balanced),
-            "hardcore" => Ok(Self::Hardcore),
+            "strict" => Ok(Self::Strict),
             _ => Err(format!("Unknown intention enforcement mode: {}", value)),
         };
     }

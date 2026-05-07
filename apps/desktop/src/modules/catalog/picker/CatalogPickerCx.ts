@@ -84,11 +84,11 @@ export type TCatalogItem =
 	| { type: 'website'; website: specta.CatalogWebsiteSearchResultDto };
 
 export function getCatalogItemKey(item: TCatalogItem): string {
-	return item.type === 'app' ? `app:${item.app.stableId}` : `website:${item.website.domain}`;
+	return item.type === 'app' ? `app:${item.app.stableId}` : `website:${item.website.hostname}`;
 }
 
 export function catalogItemIdToKey(itemId: specta.CatalogItemId): string {
-	return itemId.type === 'app' ? `app:${itemId.stableId}` : `website:${itemId.domain}`;
+	return itemId.type === 'app' ? `app:${itemId.stableId}` : `website:${itemId.hostname}`;
 }
 
 export function toCatalogItem(result: specta.CatalogSearchResultDto): TCatalogItem {
@@ -100,9 +100,9 @@ export function toCatalogItem(result: specta.CatalogSearchResultDto): TCatalogIt
 export function getCatalogItemLabel(item: TCatalogItem): string {
 	return item.type === 'app'
 		? (item.app.name ?? item.app.bundleId ?? item.app.stableId)
-		: (item.website.name ?? item.website.domain);
+		: (item.website.name ?? item.website.hostname);
 }
 
 export function getCatalogItemSublabel(item: TCatalogItem): string {
-	return item.type === 'app' ? (item.app.bundleId ?? item.app.stableId) : item.website.domain;
+	return item.type === 'app' ? (item.app.bundleId ?? item.app.stableId) : item.website.hostname;
 }

@@ -239,8 +239,8 @@ const ENFORCEMENT_MODE_OPTIONS = [
 		description: 'Moderate friction for regular focus sessions.'
 	},
 	{
-		value: 'hardcore',
-		label: 'Hardcore',
+		value: 'strict',
+		label: 'Strict',
 		description: 'Maximum friction for commitments you do not want to bypass.'
 	}
 ] satisfies TEnforcementModeOption[];

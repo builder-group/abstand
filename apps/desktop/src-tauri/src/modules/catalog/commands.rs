@@ -139,7 +139,7 @@ pub struct CatalogAppSearchResultDto {
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct CatalogWebsiteSearchResultDto {
-    pub domain: String,
+    pub hostname: String,
     pub name: Option<String>,
     pub icon: Option<String>,
     pub color: Option<String>,
@@ -160,7 +160,7 @@ impl CatalogSearchResultDto {
             },
             CatalogSearchResult::Website { website, score } => Self::Website {
                 website: CatalogWebsiteSearchResultDto {
-                    domain: website.domain.clone(),
+                    hostname: website.hostname.clone(),
                     name: website.name.clone(),
                     icon: asset.and_then(|a| a.icon.clone()),
                     color: asset.and_then(|a| a.color.clone()),
@@ -179,7 +179,7 @@ impl From<&CatalogSearchResult> for CatalogItemId {
                 bundle_id: app.bundle_id.clone(),
             },
             CatalogSearchResult::Website { website, .. } => Self::Website {
-                domain: website.domain.clone(),
+                hostname: website.hostname.clone(),
             },
         };
     }
@@ -193,7 +193,7 @@ impl From<&CatalogSearchResultDto> for CatalogItemId {
                 bundle_id: app.bundle_id.clone(),
             },
             CatalogSearchResultDto::Website { website, .. } => Self::Website {
-                domain: website.domain.clone(),
+                hostname: website.hostname.clone(),
             },
         };
     }
