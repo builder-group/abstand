@@ -13,8 +13,6 @@ pub struct Intention {
     pub created_at: i64,
 }
 
-// MARK: - Intention Behavior
-
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum IntentionBehavior {
@@ -47,8 +45,6 @@ pub struct IntentionBlock {
     pub scope: IntentionBlockScope,
     pub apps: Vec<App>,
     pub websites: Vec<Website>,
-    pub updated_at: i64,
-    pub created_at: i64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
@@ -121,12 +117,15 @@ impl IntentionConditionPhase {
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum IntentionConditionRule {
-    Time {
-        #[serde(rename = "timeOfDay")]
-        time_of_day: String,
-        weekdays: Option<Vec<IntentionWeekday>>,
-    },
+    Time(IntentionConditionTimeRule),
     Manual,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct IntentionConditionTimeRule {
+    pub time_of_day: String,
+    pub weekdays: Option<Vec<IntentionWeekday>>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]

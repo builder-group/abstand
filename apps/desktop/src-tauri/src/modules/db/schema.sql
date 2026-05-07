@@ -7,13 +7,15 @@
 
 -- MARK: - Apps
 
--- Apps: global registry of known apps
+-- Global registry of known apps
 CREATE TABLE app (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    stable_id TEXT UNIQUE NOT NULL, -- canonical app key; currently bundle ID when available, otherwise path-derived
+    -- Canonical app key; currently bundle ID when available, otherwise path-derived
+    stable_id TEXT UNIQUE NOT NULL,
     bundle_id TEXT UNIQUE,
     name TEXT NOT NULL,
-    process_path TEXT, -- executable or bundle path
+    -- Executable or bundle path used to derive stable IDs for unbundled apps
+    process_path TEXT,
     icon TEXT, -- base64 PNG
     color TEXT, -- hex color
     updated_at INTEGER NOT NULL DEFAULT (CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)),
@@ -23,11 +25,11 @@ CREATE TABLE app (
 
 -- MARK: - Websites
 
--- Websites: global registry of known websites
+-- Global registry of known websites
 CREATE TABLE website (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     domain TEXT UNIQUE NOT NULL, -- e.g. "reddit.com"
-    name TEXT, -- NULL = use domain
+    name TEXT,
     icon TEXT, -- base64 favicon
     color TEXT, -- hex color
     updated_at INTEGER NOT NULL DEFAULT (CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)),
@@ -36,67 +38,33 @@ CREATE TABLE website (
 
 -- MARK: - Intentions
 
--- Intentions: configured commitments that trigger an Abstand
+-- Configured commitments that trigger an Abstand
+-- Note: Behavior-specific payload lives in extension tables
 CREATE TABLE intention (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
-    -- Discriminator for the behavior-specific configuration table.
-    -- Note: Break is a product concept, but its persistence shape is not defined yet.
+    -- Discriminator for behavior payload tables
+    -- Note: Break is a product concept, but its persistence shape is not defined yet
     behavior_type TEXT NOT NULL CHECK (behavior_type IN ('block')),
     updated_at INTEGER NOT NULL DEFAULT (CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)),
     created_at INTEGER NOT NULL DEFAULT (CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER))
 );
 
--- MARK: - Intention Conditions
+-- Supports composite FKs from behavior payload tables
+CREATE UNIQUE INDEX intention_id_behavior_type ON intention (id, behavior_type);
 
--- Intention conditions: one or more per phase, evaluated as OR.
--- Each intention should have at least one start condition and one end condition; cardinality is enforced by the application.
--- time conditions fire daily at the given local wall-clock time. manual conditions fire when the user acts.
-CREATE TABLE intention_condition (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    intention_id INTEGER NOT NULL REFERENCES intention (id) ON DELETE CASCADE,
-    phase TEXT NOT NULL CHECK (phase IN ('start', 'end')),
-    rule_type TEXT NOT NULL CHECK (rule_type IN ('time', 'manual')),
-    time_of_day TEXT, -- "HH:MM", only for time conditions
-    weekdays TEXT, -- JSON array e.g. ["mon","tue","wed","thu","fri"], NULL defaults to all days for time conditions
-    updated_at INTEGER NOT NULL DEFAULT (CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)),
-    created_at INTEGER NOT NULL DEFAULT (CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)),
-    CHECK (
-        (
-            rule_type = 'time'
-            AND time_of_day IS NOT NULL
-            AND length(time_of_day) = 5
-            AND time_of_day GLOB '[0-2][0-9]:[0-5][0-9]'
-            AND CAST(substr(time_of_day, 1, 2) AS INTEGER) BETWEEN 0 AND 23
-            AND (
-                weekdays IS NULL
-                OR (json_valid(weekdays) AND json_type(weekdays) = 'array')
-            )
-        )
-        OR (
-            rule_type = 'manual'
-            AND time_of_day IS NULL
-            AND weekdays IS NULL
-        )
-    )
-);
-
-CREATE INDEX idx_intention_condition_intention_id ON intention_condition (intention_id);
-
--- MARK: - Intention Block
-
--- Block configuration: one row per intention whose behavior_type is block
+-- Block behavior payload
+-- Note: Timestamps live on the owning intention row
 CREATE TABLE intention_block (
-    intention_id INTEGER PRIMARY KEY REFERENCES intention (id) ON DELETE CASCADE,
+    intention_id INTEGER PRIMARY KEY,
+    -- Discriminator for the composite FK to intention
+    behavior_type TEXT NOT NULL DEFAULT 'block' CHECK (behavior_type = 'block'),
     enforcement_mode TEXT NOT NULL DEFAULT 'balanced' CHECK (enforcement_mode IN ('casual', 'balanced', 'hardcore')),
     scope TEXT NOT NULL DEFAULT 'block_targets' CHECK (scope IN ('block_targets', 'allow_targets', 'whole_device')),
-    updated_at INTEGER NOT NULL DEFAULT (CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)),
-    created_at INTEGER NOT NULL DEFAULT (CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER))
+    FOREIGN KEY (intention_id, behavior_type) REFERENCES intention (id, behavior_type) ON DELETE CASCADE
 );
 
--- MARK: - Intention Block Targets
-
--- App targets selected by a block intention.
+-- App targets selected by a block intention; ignored when scope = whole_device
 CREATE TABLE intention_block_app_target (
     intention_id INTEGER NOT NULL REFERENCES intention_block (intention_id) ON DELETE CASCADE,
     app_id INTEGER NOT NULL REFERENCES app (id) ON DELETE CASCADE,
@@ -104,12 +72,53 @@ CREATE TABLE intention_block_app_target (
     PRIMARY KEY (intention_id, app_id)
 );
 
--- Website targets selected by a block intention.
+-- Website targets selected by a block intention; ignored when scope = whole_device
 CREATE TABLE intention_block_website_target (
     intention_id INTEGER NOT NULL REFERENCES intention_block (intention_id) ON DELETE CASCADE,
     website_id INTEGER NOT NULL REFERENCES website (id) ON DELETE CASCADE,
     created_at INTEGER NOT NULL DEFAULT (CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)),
     PRIMARY KEY (intention_id, website_id)
+);
+
+-- MARK: - Intention Conditions
+
+-- Start or end trigger attached to an intention
+-- Note: Conditions are evaluated as OR within each phase
+-- Note: Each intention should have at least one start condition and one end condition; cardinality is enforced by the app
+-- Note: Rule-specific payload lives in extension tables
+CREATE TABLE intention_condition (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    intention_id INTEGER NOT NULL REFERENCES intention (id) ON DELETE CASCADE,
+    phase TEXT NOT NULL CHECK (phase IN ('start', 'end')),
+    -- Discriminator for rule payload tables
+    rule_type TEXT NOT NULL CHECK (rule_type IN ('time', 'manual')),
+    updated_at INTEGER NOT NULL DEFAULT (CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)),
+    created_at INTEGER NOT NULL DEFAULT (CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER))
+);
+
+CREATE INDEX idx_intention_condition_intention_id ON intention_condition (intention_id);
+
+-- Supports composite FKs from rule payload tables
+CREATE UNIQUE INDEX intention_condition_id_rule_type ON intention_condition (id, rule_type);
+
+-- Time rule payload
+-- Note: Timestamps live on the owning intention_condition row
+CREATE TABLE intention_condition_time (
+    condition_id INTEGER PRIMARY KEY,
+    -- Discriminator for the composite FK to intention_condition
+    rule_type TEXT NOT NULL DEFAULT 'time' CHECK (rule_type = 'time'),
+    time_of_day TEXT NOT NULL, -- local wall-clock HH:MM
+    weekdays TEXT, -- JSON array of weekday tokens ["mon".."sun"], NULL means every day
+    FOREIGN KEY (condition_id, rule_type) REFERENCES intention_condition (id, rule_type) ON DELETE CASCADE,
+    CHECK (
+        length(time_of_day) = 5
+        AND time_of_day GLOB '[0-2][0-9]:[0-5][0-9]'
+        AND CAST(substr(time_of_day, 1, 2) AS INTEGER) BETWEEN 0 AND 23
+    ),
+    CHECK (
+        weekdays IS NULL
+        OR (json_valid(weekdays) AND json_type(weekdays) = 'array')
+    )
 );
 
 -- MARK: - Updated At Triggers
@@ -153,6 +162,42 @@ BEGIN
     WHERE id = NEW.id;
 END;
 
+CREATE TRIGGER intention_block_touch_intention_after_insert
+AFTER INSERT ON intention_block
+FOR EACH ROW
+BEGIN
+    UPDATE intention
+    SET updated_at = CASE
+        WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= updated_at THEN updated_at + 1
+        ELSE CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)
+    END
+    WHERE id = NEW.intention_id;
+END;
+
+CREATE TRIGGER intention_block_touch_intention_after_update
+AFTER UPDATE ON intention_block
+FOR EACH ROW
+BEGIN
+    UPDATE intention
+    SET updated_at = CASE
+        WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= updated_at THEN updated_at + 1
+        ELSE CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)
+    END
+    WHERE id = NEW.intention_id;
+END;
+
+CREATE TRIGGER intention_block_touch_intention_after_delete
+AFTER DELETE ON intention_block
+FOR EACH ROW
+BEGIN
+    UPDATE intention
+    SET updated_at = CASE
+        WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= updated_at THEN updated_at + 1
+        ELSE CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)
+    END
+    WHERE id = OLD.intention_id;
+END;
+
 CREATE TRIGGER intention_condition_set_updated_at
 AFTER UPDATE ON intention_condition
 FOR EACH ROW
@@ -166,15 +211,38 @@ BEGIN
     WHERE id = NEW.id;
 END;
 
-CREATE TRIGGER intention_block_set_updated_at
-AFTER UPDATE ON intention_block
+CREATE TRIGGER intention_condition_time_touch_condition_after_insert
+AFTER INSERT ON intention_condition_time
 FOR EACH ROW
-WHEN NEW.updated_at = OLD.updated_at
 BEGIN
-    UPDATE intention_block
+    UPDATE intention_condition
     SET updated_at = CASE
-        WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= OLD.updated_at THEN OLD.updated_at + 1
+        WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= updated_at THEN updated_at + 1
         ELSE CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)
     END
-    WHERE intention_id = NEW.intention_id;
+    WHERE id = NEW.condition_id;
+END;
+
+CREATE TRIGGER intention_condition_time_touch_condition_after_update
+AFTER UPDATE ON intention_condition_time
+FOR EACH ROW
+BEGIN
+    UPDATE intention_condition
+    SET updated_at = CASE
+        WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= updated_at THEN updated_at + 1
+        ELSE CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)
+    END
+    WHERE id = NEW.condition_id;
+END;
+
+CREATE TRIGGER intention_condition_time_touch_condition_after_delete
+AFTER DELETE ON intention_condition_time
+FOR EACH ROW
+BEGIN
+    UPDATE intention_condition
+    SET updated_at = CASE
+        WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= updated_at THEN updated_at + 1
+        ELSE CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)
+    END
+    WHERE id = OLD.condition_id;
 END;
