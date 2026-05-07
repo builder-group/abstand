@@ -73,6 +73,9 @@ CREATE TABLE intention_block_app_target (
     PRIMARY KEY (intention_id, app_id)
 );
 
+-- Reverse lookup: enforcement checks which intentions target a given app
+CREATE INDEX idx_intention_block_app_target_app_id ON intention_block_app_target (app_id, intention_id);
+
 -- Website targets selected by a block intention
 -- Note: Ignored when scope = whole_device
 CREATE TABLE intention_block_website_target (
@@ -81,6 +84,9 @@ CREATE TABLE intention_block_website_target (
     created_at INTEGER NOT NULL DEFAULT (CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)),
     PRIMARY KEY (intention_id, website_id)
 );
+
+-- Reverse lookup: enforcement checks which intentions target a given website
+CREATE INDEX idx_intention_block_website_target_website_id ON intention_block_website_target (website_id, intention_id);
 
 -- MARK: - Intention Conditions
 

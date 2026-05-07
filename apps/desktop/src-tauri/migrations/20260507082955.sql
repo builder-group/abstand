@@ -113,6 +113,8 @@ CREATE TABLE `intention_block_app_target` (
   CONSTRAINT `0` FOREIGN KEY (`app_id`) REFERENCES `app` (`id`) ON UPDATE NO ACTION ON DELETE CASCADE,
   CONSTRAINT `1` FOREIGN KEY (`intention_id`) REFERENCES `intention_block` (`intention_id`) ON UPDATE NO ACTION ON DELETE CASCADE
 );
+-- Create index "idx_intention_block_app_target_app_id" to table: "intention_block_app_target"
+CREATE INDEX `idx_intention_block_app_target_app_id` ON `intention_block_app_target` (`app_id`, `intention_id`);
 -- Create trigger "intention_block_app_target_touch_intention_after_insert"
 CREATE TRIGGER `intention_block_app_target_touch_intention_after_insert` AFTER INSERT ON `intention_block_app_target` FOR EACH ROW BEGIN
     UPDATE intention
@@ -140,6 +142,8 @@ CREATE TABLE `intention_block_website_target` (
   CONSTRAINT `0` FOREIGN KEY (`website_id`) REFERENCES `website` (`id`) ON UPDATE NO ACTION ON DELETE CASCADE,
   CONSTRAINT `1` FOREIGN KEY (`intention_id`) REFERENCES `intention_block` (`intention_id`) ON UPDATE NO ACTION ON DELETE CASCADE
 );
+-- Create index "idx_intention_block_website_target_website_id" to table: "intention_block_website_target"
+CREATE INDEX `idx_intention_block_website_target_website_id` ON `intention_block_website_target` (`website_id`, `intention_id`);
 -- Create trigger "intention_block_website_target_touch_intention_after_insert"
 CREATE TRIGGER `intention_block_website_target_touch_intention_after_insert` AFTER INSERT ON `intention_block_website_target` FOR EACH ROW BEGIN
     UPDATE intention
