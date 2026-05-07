@@ -142,10 +142,10 @@ export const ContentPage: React.FC<TContentPageProps> = (props) => {
 
 			<div
 				ref={contentRef}
-				className={cn('mx-auto w-full max-w-2xl px-6 pt-2 pb-6', contentClassName)}
+				className={cn('mx-auto w-full max-w-2xl px-6 pt-2 pb-5', contentClassName)}
 			>
 				{header ?? (
-					<div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+					<div className="mb-5 flex flex-wrap items-start justify-between gap-3">
 						<div className="min-w-0 flex-1">
 							<h1 className="text-base-950 text-lg font-semibold">{title}</h1>
 							{subtitle != null && <p className="text-base-500 text-sm">{subtitle}</p>}
