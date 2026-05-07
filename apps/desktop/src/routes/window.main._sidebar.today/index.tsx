@@ -20,6 +20,7 @@ function RouteComponent() {
 	return (
 		<ContentPage title={todayLabel}>
 			<div className="text-base-950">Hello Today</div>
+			<div className="h-500 w-full bg-red-100" />
 		</ContentPage>
 	);
 }

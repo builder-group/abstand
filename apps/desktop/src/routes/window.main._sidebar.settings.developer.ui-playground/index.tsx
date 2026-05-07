@@ -67,24 +67,22 @@ function RouteComponent() {
 			iconVariant="secondary"
 			backTo="/window/main/settings/developer"
 		>
-			<div className="space-y-6">
-				<ButtonSection />
-				<InputSection />
-				<InputGroupSection />
-				<TextareaSection />
-				<SwitchSection />
-				<SliderSection />
-				<ToggleSection />
-				<SegmentedControlSection />
-				<SelectSection />
-				<ComboboxSection />
-				<BadgeSection />
-				<KbdSection />
-				<IconBubbleSection />
-				<TooltipSection />
-				<DialogSection />
-				<SettingsSection />
-			</div>
+			<ButtonSection />
+			<InputSection />
+			<InputGroupSection />
+			<TextareaSection />
+			<SwitchSection />
+			<SliderSection />
+			<ToggleSection />
+			<SegmentedControlSection />
+			<SelectSection />
+			<ComboboxSection />
+			<BadgeSection />
+			<KbdSection />
+			<IconBubbleSection />
+			<TooltipSection />
+			<DialogSection />
+			<SettingsSection />
 		</SettingsPage>
 	);
 }

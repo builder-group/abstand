@@ -13,7 +13,7 @@ export const SettingsPage: React.FC<TSettingsPageProps> = (props) => {
 		backTo,
 		backLabel,
 		header,
-		collapseAt = 84,
+		collapseAt = 76,
 		children,
 		contentClassName,
 		className
@@ -41,7 +41,7 @@ export const SettingsPage: React.FC<TSettingsPageProps> = (props) => {
 			}
 			collapseAt={collapseAt}
 			className={className}
-			contentClassName={cn('space-y-4 pt-4', contentClassName)}
+			contentClassName={cn('space-y-6', contentClassName)}
 		>
 			{children}
 		</ContentPage>

@@ -64,7 +64,7 @@ export const MainSidebarContent: React.FC<TMainSidebarContentProps> = (props) =>
 							No intentions yet.{' '}
 							<Link
 								to="/window/main/intentions/new"
-								className="text-primary hover:text-primary/80 rounded-xs underline-offset-2 transition-colors focus-visible:underline focus-visible:outline-none"
+								className="text-primary rounded-xs underline-offset-4 hover:underline focus-visible:underline focus-visible:outline-none"
 							>
 								Create Intention
 							</Link>
