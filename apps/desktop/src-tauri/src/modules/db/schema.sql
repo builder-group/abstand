@@ -64,7 +64,8 @@ CREATE TABLE intention_block (
     FOREIGN KEY (intention_id, behavior_type) REFERENCES intention (id, behavior_type) ON DELETE CASCADE
 );
 
--- App targets selected by a block intention; ignored when scope = whole_device
+-- App targets selected by a block intention
+-- Note: Ignored when scope = whole_device
 CREATE TABLE intention_block_app_target (
     intention_id INTEGER NOT NULL REFERENCES intention_block (intention_id) ON DELETE CASCADE,
     app_id INTEGER NOT NULL REFERENCES app (id) ON DELETE CASCADE,
@@ -72,7 +73,8 @@ CREATE TABLE intention_block_app_target (
     PRIMARY KEY (intention_id, app_id)
 );
 
--- Website targets selected by a block intention; ignored when scope = whole_device
+-- Website targets selected by a block intention
+-- Note: Ignored when scope = whole_device
 CREATE TABLE intention_block_website_target (
     intention_id INTEGER NOT NULL REFERENCES intention_block (intention_id) ON DELETE CASCADE,
     website_id INTEGER NOT NULL REFERENCES website (id) ON DELETE CASCADE,
@@ -84,7 +86,7 @@ CREATE TABLE intention_block_website_target (
 
 -- Start or end trigger attached to an intention
 -- Note: Conditions are evaluated as OR within each phase
--- Note: Each intention should have at least one start condition and one end condition; cardinality is enforced by the app
+-- Note: Each intention should have at least one start condition; cardinality is enforced by the app
 -- Note: Rule-specific payload lives in extension tables
 CREATE TABLE intention_condition (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
