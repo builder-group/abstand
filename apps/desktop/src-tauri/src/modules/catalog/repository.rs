@@ -5,6 +5,62 @@ use std::{collections::HashMap, fmt};
 pub struct CatalogRepository;
 
 impl CatalogRepository {
+    pub async fn upsert_app<'e, E>(
+        executor: E,
+        app: UpsertAppInput,
+    ) -> Result<i64, CatalogRepositoryError>
+    where
+        E: sqlx::Executor<'e, Database = Sqlite>,
+    {
+        let id = sqlx::query_scalar::<_, i64>(
+            "INSERT INTO app (stable_id, name, bundle_id, process_path, icon, color)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(stable_id) DO UPDATE SET
+                bundle_id = COALESCE(excluded.bundle_id, app.bundle_id),
+                name = COALESCE(excluded.name, app.name),
+                process_path = COALESCE(excluded.process_path, app.process_path),
+                icon = COALESCE(excluded.icon, app.icon),
+                color = COALESCE(excluded.color, app.color)
+            RETURNING id",
+        )
+        .bind(&app.stable_id)
+        .bind(&app.name)
+        .bind(&app.bundle_id)
+        .bind(&app.process_path)
+        .bind(&app.icon)
+        .bind(&app.color)
+        .fetch_one(executor)
+        .await?;
+
+        return Ok(id);
+    }
+
+    pub async fn upsert_website<'e, E>(
+        executor: E,
+        website: UpsertWebsiteInput,
+    ) -> Result<i64, CatalogRepositoryError>
+    where
+        E: sqlx::Executor<'e, Database = Sqlite>,
+    {
+        let id = sqlx::query_scalar::<_, i64>(
+            "INSERT INTO website (hostname, name, icon, color)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(hostname) DO UPDATE SET
+                name = COALESCE(excluded.name, website.name),
+                icon = COALESCE(excluded.icon, website.icon),
+                color = COALESCE(excluded.color, website.color)
+            RETURNING id",
+        )
+        .bind(&website.hostname)
+        .bind(&website.name)
+        .bind(&website.icon)
+        .bind(&website.color)
+        .fetch_one(executor)
+        .await?;
+
+        return Ok(id);
+    }
+
     pub async fn get_apps_by_ids(
         pool: &Pool<Sqlite>,
         app_ids: &[i64],
@@ -36,8 +92,8 @@ impl CatalogRepository {
             .map(|row| App {
                 id: row.id,
                 stable_id: row.stable_id,
-                bundle_id: row.bundle_id,
                 name: row.name,
+                bundle_id: row.bundle_id,
                 process_path: row.process_path,
                 icon: row.icon,
                 color: row.color,
@@ -84,7 +140,7 @@ impl CatalogRepository {
 
                 return Website {
                     id,
-                    name: name.unwrap_or_else(|| hostname.clone()),
+                    name,
                     hostname,
                     icon,
                     color,
@@ -121,14 +177,32 @@ impl From<sqlx::Error> for CatalogRepositoryError {
     }
 }
 
+// MARK: - Input
+
+pub struct UpsertAppInput {
+    pub stable_id: String,
+    pub name: Option<String>,
+    pub bundle_id: Option<String>,
+    pub process_path: Option<String>,
+    pub icon: Option<String>,
+    pub color: Option<String>,
+}
+
+pub struct UpsertWebsiteInput {
+    pub hostname: String,
+    pub name: Option<String>,
+    pub icon: Option<String>,
+    pub color: Option<String>,
+}
+
 // MARK: - Row
 
 #[derive(Debug, Clone, FromRow)]
 struct AppRow {
     id: i64,
     stable_id: String,
+    name: Option<String>,
     bundle_id: Option<String>,
-    name: String,
     process_path: Option<String>,
     icon: Option<String>,
     color: Option<String>,

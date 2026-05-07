@@ -109,11 +109,11 @@ id: number;
 /**
  * Stable app identifier used as the canonical app key across platforms.
  */
-stableId: string; 
+stableId: string; name: string | null; 
 /**
  * macOS bundle identifier when the app provides one.
  */
-bundleId: string | null; name: string; 
+bundleId: string | null; 
 /**
  * Executable or bundle path used to derive stable IDs for unbundled apps.
  */
@@ -127,13 +127,17 @@ export type AppSettings = { version: SettingsVersion; appearance: AppearanceSett
 shortcuts: Partial<{ [key in ShortcutAction]: KeyboardShortcut | null }> }
 export type AppSettingsChangedEvent = AppSettings
 export type AppearanceSettings = { theme: Theme; fontScale: number }
-export type CatalogAppSearchResultDto = { stableId: string; bundleId: string | null; name: string | null; icon: string | null; color: string | null }
+export type CatalogAppSearchResultDto = { stableId: string; name: string | null; bundleId: string | null; processPath: string | null; icon: string | null; color: string | null }
 export type CatalogAssetLoadedEvent = { itemId: CatalogItemId; icon: string | null; color: string | null }
 export type CatalogIconMode = { type: "skip" } | { type: "eager"; includeColor: boolean } | { type: "lazy"; includeColor: boolean }
 export type CatalogItemId = { type: "app"; stableId: string; bundleId: string | null } | { type: "website"; hostname: string }
 export type CatalogSearchResultDto = { type: "app"; app: CatalogAppSearchResultDto; score: number } | { type: "website"; website: CatalogWebsiteSearchResultDto; score: number }
 export type CatalogWebsiteSearchResultDto = { hostname: string; name: string | null; icon: string | null; color: string | null }
-export type CreateIntentionBehaviorParams = { type: "block" } | { type: "break" }
+export type CreateIntentionBehaviorParams = ({ type: "block" } & CreateIntentionBlockParams) | { type: "break" }
+export type CreateIntentionBlockAppTargetParams = { stableId: string; name: string | null; bundleId: string | null; processPath: string | null; icon: string | null; color: string | null }
+export type CreateIntentionBlockParams = { enforcementMode: IntentionEnforcementMode; scope: IntentionBlockScope; targets: CreateIntentionBlockTargetParams[] }
+export type CreateIntentionBlockTargetParams = ({ type: "app" } & CreateIntentionBlockAppTargetParams) | ({ type: "website" } & CreateIntentionBlockWebsiteTargetParams)
+export type CreateIntentionBlockWebsiteTargetParams = { hostname: string; name: string | null; icon: string | null; color: string | null }
 export type CreateIntentionParams = { name: string; behavior: CreateIntentionBehaviorParams }
 export type DeveloperSettings = { enabled: boolean }
 export type Intention = { id: number; name: string; behavior: IntentionBehavior; conditions: IntentionCondition[]; updatedAt: number; createdAt: number }
@@ -170,7 +174,7 @@ id: number;
 /**
  * Canonical website hostname used as the stable website key.
  */
-hostname: string; name: string; icon: string | null; color: string | null }
+hostname: string; name: string | null; icon: string | null; color: string | null }
 
 /** tauri-specta globals **/
 

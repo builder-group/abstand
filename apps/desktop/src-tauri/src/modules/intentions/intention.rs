@@ -56,6 +56,14 @@ pub enum IntentionEnforcementMode {
 }
 
 impl IntentionEnforcementMode {
+    pub fn as_str(&self) -> &'static str {
+        return match self {
+            Self::Casual => "casual",
+            Self::Balanced => "balanced",
+            Self::Strict => "strict",
+        };
+    }
+
     pub fn from_str(value: &str) -> Result<Self, String> {
         return match value {
             "casual" => Ok(Self::Casual),
@@ -75,6 +83,14 @@ pub enum IntentionBlockScope {
 }
 
 impl IntentionBlockScope {
+    pub fn as_str(&self) -> &'static str {
+        return match self {
+            Self::BlockTargets => "block_targets",
+            Self::AllowTargets => "allow_targets",
+            Self::WholeDevice => "whole_device",
+        };
+    }
+
     pub fn from_str(value: &str) -> Result<Self, String> {
         return match value {
             "block_targets" => Ok(Self::BlockTargets),

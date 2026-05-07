@@ -12,12 +12,12 @@ import { type specta } from '@/environment';
 import { cn } from '@/lib';
 import { CatalogIconPeek, useCatalogPicker, type TCatalogItem } from '@/modules/catalog';
 import { SettingsGroup, SettingsRow, SettingsRowFrame } from '@/modules/settings';
-import { useNewIntentionCx } from '../new';
+import { useNewBlockIntentionCx } from './NewBlockIntentionCx';
 
 export const BlockScopeCard: React.FC = () => {
-	const cx = useNewIntentionCx();
+	const cx = useNewBlockIntentionCx();
 
-	const scope = useFeatureState(cx.$blockForm.fields.scope);
+	const scope = useFeatureState(cx.$form.fields.scope);
 	const [isScopeExpanded, setIsScopeExpanded] = React.useState(false);
 	const currentScope = React.useMemo(
 		() =>
@@ -26,7 +26,7 @@ export const BlockScopeCard: React.FC = () => {
 		[scope]
 	);
 
-	const enforcementMode = useFeatureState(cx.$blockForm.fields.enforcementMode);
+	const enforcementMode = useFeatureState(cx.$form.fields.enforcementMode);
 	const [isEnforcementExpanded, setIsEnforcementExpanded] = React.useState(false);
 	const currentEnforcementMode = React.useMemo(
 		() =>
@@ -35,10 +35,7 @@ export const BlockScopeCard: React.FC = () => {
 		[enforcementMode]
 	);
 
-	const selectedTargets = useCompute(
-		cx.$blockForm.fields.selectedTargets,
-		({ value }) => value ?? []
-	);
+	const selectedTargets = useCompute(cx.$form.fields.selectedTargets, ({ value }) => value ?? []);
 	const isTargetsSelectable = scope !== 'wholeDevice';
 	const targetsLabel = React.useMemo(() => {
 		if (!isTargetsSelectable) {
@@ -68,7 +65,7 @@ export const BlockScopeCard: React.FC = () => {
 	} = useCatalogPicker({
 		onConfirm: React.useCallback(
 			(items: TCatalogItem[]) => {
-				cx.$blockForm.fields.selectedTargets.set(items);
+				cx.$form.fields.selectedTargets.set(items);
 			},
 			[cx]
 		)
@@ -78,7 +75,7 @@ export const BlockScopeCard: React.FC = () => {
 
 	const handleSelectScope = React.useCallback(
 		(value: specta.IntentionBlockScope) => {
-			cx.$blockForm.fields.scope.set(value);
+			cx.$form.fields.scope.set(value);
 			setIsScopeExpanded(false);
 		},
 		[cx]
@@ -86,7 +83,7 @@ export const BlockScopeCard: React.FC = () => {
 
 	const handleSelectEnforcementMode = React.useCallback(
 		(value: specta.IntentionEnforcementMode) => {
-			cx.$blockForm.fields.enforcementMode.set(value);
+			cx.$form.fields.enforcementMode.set(value);
 			setIsEnforcementExpanded(false);
 		},
 		[cx]

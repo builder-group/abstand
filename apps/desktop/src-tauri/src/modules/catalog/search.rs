@@ -64,7 +64,12 @@ impl CatalogSearch {
             .into_iter()
             .map(|app| {
                 let identity = resolve_app_identity(&app.bundle_id, &app.name, &app.path);
-                SearchableItem::app(identity.stable_id, identity.bundle_id, Some(app.name))
+                SearchableItem::app(SearchableApp {
+                    stable_id: identity.stable_id,
+                    name: Some(app.name),
+                    bundle_id: identity.bundle_id,
+                    process_path: Some(app.path),
+                })
             })
             .collect();
     }
@@ -89,8 +94,10 @@ impl CatalogSearch {
             // but do not feed them into website matching yet
             for hostname in service.hostnames {
                 items.push(SearchableItem::website(
-                    (*hostname).to_string(),
-                    Some(service.name.to_string()),
+                    SearchableWebsite {
+                        hostname: (*hostname).to_string(),
+                        name: Some(service.name.to_string()),
+                    },
                     keywords.clone(),
                 ));
             }
@@ -119,31 +126,30 @@ pub enum SearchableItem {
 }
 
 impl SearchableItem {
-    pub fn app(stable_id: String, bundle_id: Option<String>, name: Option<String>) -> Self {
-        let mut keywords = vec![stable_id.clone()];
-        if let Some(bundle_id) = bundle_id.as_ref() {
+    pub fn app(app: SearchableApp) -> Self {
+        let mut keywords = vec![app.stable_id.clone()];
+        if let Some(bundle_id) = app.bundle_id.as_ref() {
             keywords.push(bundle_id.clone());
         }
+        if let Some(process_path) = app.process_path.as_ref() {
+            keywords.push(process_path.clone());
+        }
 
-        return Self::App {
-            keywords,
-            app: SearchableApp {
-                stable_id,
-                bundle_id,
-                name,
-            },
-        };
+        return Self::App { keywords, app };
     }
 
-    pub fn website(hostname: String, name: Option<String>, keywords: Vec<String>) -> Self {
-        return Self::Website {
-            website: SearchableWebsite { hostname, name },
-            keywords,
-        };
+    pub fn website(website: SearchableWebsite, keywords: Vec<String>) -> Self {
+        return Self::Website { website, keywords };
     }
 
     pub fn custom_hostname(hostname: String) -> Self {
-        return Self::website(hostname.clone(), Some(hostname.clone()), vec![hostname]);
+        return Self::website(
+            SearchableWebsite {
+                hostname: hostname.clone(),
+                name: None,
+            },
+            vec![hostname],
+        );
     }
 
     pub fn id(&self) -> &str {
@@ -153,12 +159,13 @@ impl SearchableItem {
         };
     }
 
-    pub fn name(&self) -> &str {
+    pub fn display_name(&self) -> &str {
         return match self {
             Self::App { app, .. } => app
                 .name
                 .as_deref()
                 .or(app.bundle_id.as_deref())
+                .or(app.process_path.as_deref())
                 .unwrap_or(&app.stable_id),
             Self::Website { website, .. } => website.name.as_deref().unwrap_or(&website.hostname),
         };
@@ -196,8 +203,9 @@ impl From<(SearchableItem, u32)> for CatalogSearchResult {
 #[derive(Debug, Clone)]
 pub struct SearchableApp {
     pub stable_id: String,
-    pub bundle_id: Option<String>,
     pub name: Option<String>,
+    pub bundle_id: Option<String>,
+    pub process_path: Option<String>,
 }
 
 #[derive(Debug, Clone)]

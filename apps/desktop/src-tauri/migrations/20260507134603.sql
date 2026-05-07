@@ -2,8 +2,8 @@
 CREATE TABLE `app` (
   `id` integer NULL PRIMARY KEY AUTOINCREMENT,
   `stable_id` text NOT NULL,
+  `name` text NULL,
   `bundle_id` text NULL,
-  `name` text NOT NULL,
   `process_path` text NULL,
   `icon` text NULL,
   `color` text NULL,

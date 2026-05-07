@@ -7,7 +7,7 @@ use super::{
     types::IntentionBehaviorType,
 };
 use crate::modules::catalog::{
-    repository::{CatalogRepository, CatalogRepositoryError},
+    repository::{CatalogRepository, CatalogRepositoryError, UpsertAppInput, UpsertWebsiteInput},
     types::{App, Website},
 };
 use sqlx::{FromRow, Pool, QueryBuilder, Sqlite};
@@ -54,19 +54,19 @@ impl IntentionRepository {
     ) -> Result<Intention, IntentionRepositoryError> {
         let mut transaction = pool.begin().await?;
 
-        let insert_result =
-            sqlx::query("INSERT INTO intention (name, behavior_type) VALUES (?, ?)")
-                .bind(&input.name)
-                .bind(input.behavior_type.as_str())
-                .execute(&mut *transaction)
-                .await?;
-        let intention_id = insert_result.last_insert_rowid();
+        let behavior_type = IntentionBehaviorType::from(&input.behavior);
+        let intention_id = sqlx::query_scalar::<_, i64>(
+            "INSERT INTO intention (name, behavior_type) VALUES (?, ?) RETURNING id",
+        )
+        .bind(&input.name)
+        .bind(behavior_type.as_str())
+        .fetch_one(&mut *transaction)
+        .await?;
 
-        if input.behavior_type == IntentionBehaviorType::Block {
-            sqlx::query("INSERT INTO intention_block (intention_id) VALUES (?)")
-                .bind(intention_id)
-                .execute(&mut *transaction)
-                .await?;
+        match input.behavior {
+            CreateIntentionBehaviorInput::Block(block_input) => {
+                Self::create_block(&mut transaction, intention_id, block_input).await?;
+            }
         }
 
         transaction.commit().await?;
@@ -78,6 +78,45 @@ impl IntentionRepository {
                 intention_id
             ))
         });
+    }
+
+    async fn create_block(
+        transaction: &mut sqlx::Transaction<'_, Sqlite>,
+        intention_id: i64,
+        block_input: CreateIntentionBlockInput,
+    ) -> Result<(), IntentionRepositoryError> {
+        sqlx::query(
+            "INSERT INTO intention_block (intention_id, enforcement_mode, scope) VALUES (?, ?, ?)",
+        )
+        .bind(intention_id)
+        .bind(block_input.enforcement_mode.as_str())
+        .bind(block_input.scope.as_str())
+        .execute(&mut **transaction)
+        .await?;
+
+        for app in block_input.apps {
+            let app_id = CatalogRepository::upsert_app(&mut **transaction, app).await?;
+            sqlx::query(
+                "INSERT INTO intention_block_app_target (intention_id, app_id) VALUES (?, ?)",
+            )
+            .bind(intention_id)
+            .bind(app_id)
+            .execute(&mut **transaction)
+            .await?;
+        }
+
+        for website in block_input.websites {
+            let website_id = CatalogRepository::upsert_website(&mut **transaction, website).await?;
+            sqlx::query(
+                "INSERT INTO intention_block_website_target (intention_id, website_id) VALUES (?, ?)",
+            )
+            .bind(intention_id)
+            .bind(website_id)
+            .execute(&mut **transaction)
+            .await?;
+        }
+
+        return Ok(());
     }
 
     async fn hydrate_intentions(
@@ -218,6 +257,10 @@ impl IntentionRepository {
         pool: &Pool<Sqlite>,
         intention_ids: &[i64],
     ) -> Result<Vec<IntentionConditionRow>, IntentionRepositoryError> {
+        if intention_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+
         let mut query_builder = QueryBuilder::<Sqlite>::new(
             "SELECT id, intention_id, phase, rule_type, updated_at, created_at FROM intention_condition WHERE intention_id IN (",
         );
@@ -262,6 +305,10 @@ impl IntentionRepository {
         pool: &Pool<Sqlite>,
         intention_ids: &[i64],
     ) -> Result<Vec<IntentionBlockRow>, IntentionRepositoryError> {
+        if intention_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+
         let mut query_builder = QueryBuilder::<Sqlite>::new(
             "SELECT intention_id, enforcement_mode, scope FROM intention_block WHERE intention_id IN (",
         );
@@ -282,6 +329,10 @@ impl IntentionRepository {
         pool: &Pool<Sqlite>,
         intention_ids: &[i64],
     ) -> Result<Vec<IntentionBlockAppRow>, IntentionRepositoryError> {
+        if intention_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+
         let mut query_builder = QueryBuilder::<Sqlite>::new(
             "SELECT intention_id, app_id FROM intention_block_app_target WHERE intention_id IN (",
         );
@@ -302,6 +353,10 @@ impl IntentionRepository {
         pool: &Pool<Sqlite>,
         intention_ids: &[i64],
     ) -> Result<Vec<IntentionBlockWebsiteRow>, IntentionRepositoryError> {
+        if intention_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+
         let mut query_builder = QueryBuilder::<Sqlite>::new(
             "SELECT intention_id, website_id FROM intention_block_website_target WHERE intention_id IN (",
         );
@@ -466,5 +521,24 @@ struct IntentionBlockWebsiteRow {
 
 pub struct CreateIntentionInput {
     pub name: String,
-    pub behavior_type: IntentionBehaviorType,
+    pub behavior: CreateIntentionBehaviorInput,
+}
+
+pub enum CreateIntentionBehaviorInput {
+    Block(CreateIntentionBlockInput),
+}
+
+impl From<&CreateIntentionBehaviorInput> for IntentionBehaviorType {
+    fn from(value: &CreateIntentionBehaviorInput) -> Self {
+        return match value {
+            CreateIntentionBehaviorInput::Block(_) => IntentionBehaviorType::Block,
+        };
+    }
+}
+
+pub struct CreateIntentionBlockInput {
+    pub enforcement_mode: IntentionEnforcementMode,
+    pub scope: IntentionBlockScope,
+    pub apps: Vec<UpsertAppInput>,
+    pub websites: Vec<UpsertWebsiteInput>,
 }

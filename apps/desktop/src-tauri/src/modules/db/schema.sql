@@ -12,14 +12,15 @@ CREATE TABLE app (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     -- Canonical app key; currently bundle ID when available, otherwise path-derived
     stable_id TEXT UNIQUE NOT NULL,
+    name TEXT,
     bundle_id TEXT UNIQUE,
-    name TEXT NOT NULL,
     -- Executable or bundle path used to derive stable IDs for unbundled apps
     process_path TEXT,
     icon TEXT, -- base64 PNG
     color TEXT, -- hex color
     updated_at INTEGER NOT NULL DEFAULT (CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)),
     created_at INTEGER NOT NULL DEFAULT (CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)),
+    -- When a bundle ID is available it is the canonical stable app key
     CHECK (bundle_id IS NULL OR stable_id = bundle_id)
 );
 

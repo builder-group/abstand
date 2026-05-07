@@ -18,9 +18,9 @@ pub struct App {
     pub id: i64,
     /// Stable app identifier used as the canonical app key across platforms.
     pub stable_id: String,
+    pub name: Option<String>,
     /// macOS bundle identifier when the app provides one.
     pub bundle_id: Option<String>,
-    pub name: String,
     /// Executable or bundle path used to derive stable IDs for unbundled apps.
     pub process_path: Option<String>,
     pub icon: Option<String>,
@@ -34,7 +34,7 @@ pub struct Website {
     pub id: i64,
     /// Canonical website hostname used as the stable website key.
     pub hostname: String,
-    pub name: String,
+    pub name: Option<String>,
     pub icon: Option<String>,
     pub color: Option<String>,
 }

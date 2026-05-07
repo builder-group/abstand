@@ -3,7 +3,7 @@ import { useForm } from 'feature-react/form';
 import { useFeatureState } from 'feature-react/state';
 import React from 'react';
 import { Button, ContentPage, Input } from '@/components';
-import { BlockScopeCard, useNewIntentionCx } from '@/modules/intentions';
+import { BlockScopeCard, useNewBlockIntentionCx } from '@/modules/intentions';
 import { SettingsGroup, SettingsRow } from '@/modules/settings';
 
 export const Route = createFileRoute('/window/main/_sidebar/intentions/new/block/')({
@@ -12,24 +12,24 @@ export const Route = createFileRoute('/window/main/_sidebar/intentions/new/block
 
 function RouteComponent() {
 	const navigate = useNavigate();
-	const intentionCx = useNewIntentionCx();
+	const cx = useNewBlockIntentionCx();
 
-	const { handleSubmit, register, status } = useForm(intentionCx.$baseForm);
-	const isSubmitting = useFeatureState(intentionCx.$baseForm.isSubmitting);
+	const { handleSubmit, register, status } = useForm(cx.$form);
+	const isSubmitting = useFeatureState(cx.$form.isSubmitting);
 	const nameStatus = useFeatureState(status('name'));
 	const nameError = nameStatus.type === 'INVALID' ? nameStatus.errors[0]?.message : undefined;
 
 	// MARK: - Actions
 
 	const handleValidSubmit = React.useCallback(async () => {
-		const [isIntentionOk, , intention] = await intentionCx.submitBehavior('block');
+		const [isIntentionOk, , intention] = await cx.submit();
 		if (isIntentionOk) {
 			void navigate({
 				to: '/window/main/intentions/$intentionId',
 				params: { intentionId: `${intention.id}` }
 			});
 		}
-	}, [intentionCx, navigate]);
+	}, [cx, navigate]);
 
 	// MARK: - UI
 

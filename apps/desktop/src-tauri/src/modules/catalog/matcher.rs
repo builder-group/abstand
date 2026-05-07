@@ -31,7 +31,7 @@ fn get_item_score(
     item: &SearchableItem,
 ) -> u32 {
     let mut best_score = 0;
-    let name = item.name();
+    let name = item.display_name();
 
     // Favor display-name matches over raw keywords so direct app or service names surface first
     if let Some(score) = match_str(matcher, pattern, name) {
@@ -63,19 +63,23 @@ fn match_str(matcher: &mut Matcher, pattern: &Pattern, haystack: &str) -> Option
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::modules::catalog::search::{SearchableApp, SearchableWebsite};
 
     fn app(name: &str, bundle_id: &str) -> SearchableItem {
-        return SearchableItem::app(
-            bundle_id.to_string(),
-            Some(bundle_id.to_string()),
-            Some(name.to_string()),
-        );
+        return SearchableItem::app(SearchableApp {
+            stable_id: bundle_id.to_string(),
+            name: Some(name.to_string()),
+            bundle_id: Some(bundle_id.to_string()),
+            process_path: None,
+        });
     }
 
     fn website(name: &str, hostname: &str) -> SearchableItem {
         return SearchableItem::website(
-            hostname.to_string(),
-            Some(name.to_string()),
+            SearchableWebsite {
+                hostname: hostname.to_string(),
+                name: Some(name.to_string()),
+            },
             vec![hostname.to_string()],
         );
     }
@@ -89,7 +93,7 @@ mod tests {
 
         let results = fuzzy_match(items.iter(), "chrome");
 
-        assert_eq!(results[0].0.name(), "Chrome");
+        assert_eq!(results[0].0.display_name(), "Chrome");
     }
 
     #[test]
@@ -101,7 +105,7 @@ mod tests {
 
         let results = fuzzy_match(items.iter(), "chr");
 
-        assert_eq!(results[0].0.name(), "Chrome");
+        assert_eq!(results[0].0.display_name(), "Chrome");
     }
 
     #[test]
@@ -113,7 +117,7 @@ mod tests {
 
         let results = fuzzy_match(items.iter(), "vsc");
 
-        assert_eq!(results[0].0.name(), "Visual Studio Code");
+        assert_eq!(results[0].0.display_name(), "Visual Studio Code");
     }
 
     #[test]
@@ -122,7 +126,7 @@ mod tests {
 
         let results = fuzzy_match(items.iter(), "apple.safari");
 
-        assert_eq!(results[0].0.name(), "Safari");
+        assert_eq!(results[0].0.display_name(), "Safari");
     }
 
     #[test]
@@ -131,7 +135,7 @@ mod tests {
 
         let results = fuzzy_match(items.iter(), "notion.so");
 
-        assert_eq!(results[0].0.name(), "Notion");
+        assert_eq!(results[0].0.display_name(), "Notion");
     }
 
     #[test]
@@ -144,7 +148,7 @@ mod tests {
 
         let results = fuzzy_match(items.iter(), "chrome");
 
-        assert_eq!(results[0].0.name(), "Chrome");
+        assert_eq!(results[0].0.display_name(), "Chrome");
     }
 
     #[test]

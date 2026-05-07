@@ -1,9 +1,18 @@
 use super::{
-    intention::Intention,
-    repository::{CreateIntentionInput, IntentionRepository},
-    types::{IntentionBehaviorType, IntentionCreatedEvent},
+    intention::{Intention, IntentionBlockScope, IntentionEnforcementMode},
+    repository::{
+        CreateIntentionBehaviorInput, CreateIntentionBlockInput, CreateIntentionInput,
+        IntentionRepository,
+    },
+    types::IntentionCreatedEvent,
 };
-use crate::modules::db::types::DatabaseState;
+use crate::{
+    common::url::extract_hostname,
+    modules::{
+        catalog::repository::{UpsertAppInput, UpsertWebsiteInput},
+        db::types::DatabaseState,
+    },
+};
 use serde::Deserialize;
 use tauri::{AppHandle, State};
 use tauri_specta::Event;
@@ -35,10 +44,55 @@ pub async fn create_intention(
     params: CreateIntentionParams,
 ) -> Result<Intention, String> {
     let input = match params.behavior {
-        CreateIntentionBehaviorParams::Block => CreateIntentionInput {
-            name: params.name.trim().to_string(),
-            behavior_type: IntentionBehaviorType::Block,
-        },
+        CreateIntentionBehaviorParams::Block(block_params) => {
+            let mut apps = Vec::new();
+            let mut websites = Vec::new();
+            let should_persist_targets = block_params.scope != IntentionBlockScope::WholeDevice;
+            if should_persist_targets {
+                for target in block_params.targets {
+                    match target {
+                        CreateIntentionBlockTargetParams::App(app) => {
+                            let stable_id = app.stable_id.trim().to_string();
+                            if stable_id.is_empty() {
+                                return Err("App target is missing a stable ID".to_string());
+                            }
+
+                            apps.push(UpsertAppInput {
+                                stable_id,
+                                name: app.name,
+                                bundle_id: app.bundle_id,
+                                process_path: app.process_path,
+                                icon: app.icon,
+                                color: app.color,
+                            });
+                        }
+                        CreateIntentionBlockTargetParams::Website(website) => {
+                            let hostname =
+                                extract_hostname(&website.hostname).ok_or_else(|| {
+                                    format!("Invalid website hostname: {}", website.hostname)
+                                })?;
+
+                            websites.push(UpsertWebsiteInput {
+                                hostname,
+                                name: website.name,
+                                icon: website.icon,
+                                color: website.color,
+                            });
+                        }
+                    }
+                }
+            }
+
+            CreateIntentionInput {
+                name: params.name.trim().to_string(),
+                behavior: CreateIntentionBehaviorInput::Block(CreateIntentionBlockInput {
+                    enforcement_mode: block_params.enforcement_mode,
+                    scope: block_params.scope,
+                    apps,
+                    websites,
+                }),
+            }
+        }
         CreateIntentionBehaviorParams::Break => {
             return Err("Break intentions are not supported yet".to_string());
         }
@@ -69,6 +123,41 @@ pub struct CreateIntentionParams {
 #[derive(Debug, Clone, Deserialize, specta::Type)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum CreateIntentionBehaviorParams {
-    Block,
+    Block(CreateIntentionBlockParams),
     Break,
+}
+
+#[derive(Debug, Clone, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateIntentionBlockParams {
+    pub enforcement_mode: IntentionEnforcementMode,
+    pub scope: IntentionBlockScope,
+    pub targets: Vec<CreateIntentionBlockTargetParams>,
+}
+
+#[derive(Debug, Clone, Deserialize, specta::Type)]
+#[serde(tag = "type", rename_all = "camelCase")]
+pub enum CreateIntentionBlockTargetParams {
+    App(CreateIntentionBlockAppTargetParams),
+    Website(CreateIntentionBlockWebsiteTargetParams),
+}
+
+#[derive(Debug, Clone, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateIntentionBlockAppTargetParams {
+    pub stable_id: String,
+    pub name: Option<String>,
+    pub bundle_id: Option<String>,
+    pub process_path: Option<String>,
+    pub icon: Option<String>,
+    pub color: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateIntentionBlockWebsiteTargetParams {
+    pub hostname: String,
+    pub name: Option<String>,
+    pub icon: Option<String>,
+    pub color: Option<String>,
 }

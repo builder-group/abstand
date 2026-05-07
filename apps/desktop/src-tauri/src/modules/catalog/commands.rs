@@ -130,8 +130,9 @@ pub enum CatalogSearchResultDto {
 #[serde(rename_all = "camelCase")]
 pub struct CatalogAppSearchResultDto {
     pub stable_id: String,
-    pub bundle_id: Option<String>,
     pub name: Option<String>,
+    pub bundle_id: Option<String>,
+    pub process_path: Option<String>,
     pub icon: Option<String>,
     pub color: Option<String>,
 }
@@ -151,8 +152,9 @@ impl CatalogSearchResultDto {
             CatalogSearchResult::App { app, score } => Self::App {
                 app: CatalogAppSearchResultDto {
                     stable_id: app.stable_id.clone(),
-                    bundle_id: app.bundle_id.clone(),
                     name: app.name.clone(),
+                    bundle_id: app.bundle_id.clone(),
+                    process_path: app.process_path.clone(),
                     icon: asset.and_then(|a| a.icon.clone()),
                     color: asset.and_then(|a| a.color.clone()),
                 },

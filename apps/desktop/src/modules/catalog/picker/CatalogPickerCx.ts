@@ -99,10 +99,12 @@ export function toCatalogItem(result: specta.CatalogSearchResultDto): TCatalogIt
 
 export function getCatalogItemLabel(item: TCatalogItem): string {
 	return item.type === 'app'
-		? (item.app.name ?? item.app.bundleId ?? item.app.stableId)
+		? (item.app.name ?? item.app.bundleId ?? item.app.processPath ?? item.app.stableId)
 		: (item.website.name ?? item.website.hostname);
 }
 
 export function getCatalogItemSublabel(item: TCatalogItem): string {
-	return item.type === 'app' ? (item.app.bundleId ?? item.app.stableId) : item.website.hostname;
+	return item.type === 'app'
+		? (item.app.bundleId ?? item.app.processPath ?? item.app.stableId)
+		: item.website.hostname;
 }

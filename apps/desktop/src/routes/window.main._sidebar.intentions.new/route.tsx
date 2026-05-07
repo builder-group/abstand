@@ -1,6 +1,5 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 import React from 'react';
-import { NewIntentionCxProvider } from '@/modules/intentions';
 import { useSidebarCx } from '../window.main._sidebar/SidebarCx';
 
 export const Route = createFileRoute('/window/main/_sidebar/intentions/new')({
@@ -19,9 +18,5 @@ function LayoutComponent() {
 		};
 	}, [sidebarCx]);
 
-	return (
-		<NewIntentionCxProvider>
-			<Outlet />
-		</NewIntentionCxProvider>
-	);
+	return <Outlet />;
 }
