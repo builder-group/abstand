@@ -74,7 +74,7 @@ enum CatalogAssetKey {
 impl From<&CatalogItemId> for CatalogAssetKey {
     fn from(item_id: &CatalogItemId) -> Self {
         return match item_id {
-            CatalogItemId::App { app_id, .. } => Self::App(app_id.clone()),
+            CatalogItemId::App { stable_id, .. } => Self::App(stable_id.clone()),
             CatalogItemId::Website { domain } => Self::Website(domain.clone()),
         };
     }

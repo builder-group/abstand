@@ -4,9 +4,11 @@ Block is a behavior that builds hard banks around your attention for the full du
 
 ## Scope
 
-Block can target specific apps and websites, or the whole device.
+Block uses scope to decide how broadly an Intention blocks.
 
-**Specific targets:** only the configured apps and websites are blocked. The rest of the computer is unaffected.
+**Block targets:** selected apps and websites are blocked. The rest of the computer is unaffected.
+
+**Allow targets:** selected apps and websites remain available while everything else is blocked.
 
 **Whole device:** the entire computer is locked behind a full-screen immersive overlay. Suited to Intentions like overnight screen limits or deep focus windows where no access at all is the goal.
 

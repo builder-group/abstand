@@ -1,7 +1,8 @@
 use super::{
     intention::{
-        Intention, IntentionBehavior, IntentionBlock, IntentionBlockMode, IntentionCondition,
+        Intention, IntentionBehavior, IntentionBlock, IntentionBlockScope, IntentionCondition,
         IntentionConditionPhase, IntentionConditionRule, IntentionEnforcementMode,
+        IntentionWeekday,
     },
     types::IntentionBehaviorType,
 };
@@ -20,7 +21,7 @@ pub struct IntentionRepository;
 impl IntentionRepository {
     pub async fn get_all(pool: &Pool<Sqlite>) -> Result<Vec<Intention>, IntentionRepositoryError> {
         let bases = sqlx::query_as::<_, IntentionRow>(
-            "SELECT id, name, behavior_type, created_at FROM intention ORDER BY created_at ASC, id ASC",
+            "SELECT id, name, behavior_type, updated_at, created_at FROM intention ORDER BY created_at ASC, id ASC",
         )
         .fetch_all(pool)
         .await?;
@@ -33,7 +34,7 @@ impl IntentionRepository {
         intention_id: i64,
     ) -> Result<Option<Intention>, IntentionRepositoryError> {
         let base = sqlx::query_as::<_, IntentionRow>(
-            "SELECT id, name, behavior_type, created_at FROM intention WHERE id = ?",
+            "SELECT id, name, behavior_type, updated_at, created_at FROM intention WHERE id = ?",
         )
         .bind(intention_id)
         .fetch_optional(pool)
@@ -195,6 +196,7 @@ impl IntentionRepository {
                 name: base.name,
                 behavior,
                 conditions,
+                updated_at: base.updated_at,
                 created_at: base.created_at,
             });
         }
@@ -207,7 +209,7 @@ impl IntentionRepository {
         intention_ids: &[i64],
     ) -> Result<Vec<IntentionConditionRow>, IntentionRepositoryError> {
         let mut query_builder = QueryBuilder::<Sqlite>::new(
-            "SELECT id, intention_id, condition_phase, condition_type, time_of_day, weekdays, created_at FROM intention_condition WHERE intention_id IN (",
+            "SELECT id, intention_id, phase, rule_type, time_of_day, weekdays, updated_at, created_at FROM intention_condition WHERE intention_id IN (",
         );
         let mut separated = query_builder.separated(", ");
         for intention_id in intention_ids {
@@ -227,7 +229,7 @@ impl IntentionRepository {
         intention_ids: &[i64],
     ) -> Result<Vec<IntentionBlockRow>, IntentionRepositoryError> {
         let mut query_builder = QueryBuilder::<Sqlite>::new(
-            "SELECT intention_id, enforcement_mode, block_mode, created_at FROM intention_block WHERE intention_id IN (",
+            "SELECT intention_id, enforcement_mode, scope, updated_at, created_at FROM intention_block WHERE intention_id IN (",
         );
         let mut separated = query_builder.separated(", ");
         for intention_id in intention_ids {
@@ -247,7 +249,7 @@ impl IntentionRepository {
         intention_ids: &[i64],
     ) -> Result<Vec<IntentionBlockAppRow>, IntentionRepositoryError> {
         let mut query_builder = QueryBuilder::<Sqlite>::new(
-            "SELECT intention_id, app_id FROM intention_block_app WHERE intention_id IN (",
+            "SELECT intention_id, app_id FROM intention_block_app_target WHERE intention_id IN (",
         );
         let mut separated = query_builder.separated(", ");
         for intention_id in intention_ids {
@@ -267,7 +269,7 @@ impl IntentionRepository {
         intention_ids: &[i64],
     ) -> Result<Vec<IntentionBlockWebsiteRow>, IntentionRepositoryError> {
         let mut query_builder = QueryBuilder::<Sqlite>::new(
-            "SELECT intention_id, website_id FROM intention_block_website WHERE intention_id IN (",
+            "SELECT intention_id, website_id FROM intention_block_website_target WHERE intention_id IN (",
         );
         let mut separated = query_builder.separated(", ");
         for intention_id in intention_ids {
@@ -290,10 +292,11 @@ impl IntentionRepository {
         return Ok(IntentionBlock {
             enforcement_mode: IntentionEnforcementMode::from_str(&row.enforcement_mode)
                 .map_err(IntentionRepositoryError::InvalidData)?,
-            block_mode: IntentionBlockMode::from_str(&row.block_mode)
+            scope: IntentionBlockScope::from_str(&row.scope)
                 .map_err(IntentionRepositoryError::InvalidData)?,
             apps,
             websites,
+            updated_at: row.updated_at,
             created_at: row.created_at,
         });
     }
@@ -301,9 +304,9 @@ impl IntentionRepository {
     fn build_condition(
         row: IntentionConditionRow,
     ) -> Result<IntentionCondition, IntentionRepositoryError> {
-        let phase = IntentionConditionPhase::from_str(&row.condition_phase)
+        let phase = IntentionConditionPhase::from_str(&row.phase)
             .map_err(IntentionRepositoryError::InvalidData)?;
-        let rule = match row.condition_type.as_str() {
+        let rule = match row.rule_type.as_str() {
             "time" => IntentionConditionRule::Time {
                 time_of_day: row.time_of_day.ok_or_else(|| {
                     IntentionRepositoryError::InvalidData(
@@ -311,11 +314,11 @@ impl IntentionRepository {
                     )
                 })?,
                 weekdays: match row.weekdays {
-                    Some(weekdays) => {
-                        Some(serde_json::from_str::<Vec<u8>>(&weekdays).map_err(|error| {
-                            IntentionRepositoryError::InvalidData(error.to_string())
-                        })?)
-                    }
+                    Some(weekdays) => Some(
+                        serde_json::from_str::<Vec<IntentionWeekday>>(&weekdays).map_err(
+                            |error| IntentionRepositoryError::InvalidData(error.to_string()),
+                        )?,
+                    ),
                     None => None,
                 },
             },
@@ -323,7 +326,7 @@ impl IntentionRepository {
             _ => {
                 return Err(IntentionRepositoryError::InvalidData(format!(
                     "Unknown intention condition type: {}",
-                    row.condition_type
+                    row.rule_type
                 )));
             }
         };
@@ -332,6 +335,7 @@ impl IntentionRepository {
             id: row.id,
             phase,
             rule,
+            updated_at: row.updated_at,
             created_at: row.created_at,
         });
     }
@@ -373,6 +377,7 @@ struct IntentionRow {
     id: i64,
     name: String,
     behavior_type: String,
+    updated_at: i64,
     created_at: i64,
 }
 
@@ -380,10 +385,11 @@ struct IntentionRow {
 struct IntentionConditionRow {
     id: i64,
     intention_id: i64,
-    condition_phase: String,
-    condition_type: String,
+    phase: String,
+    rule_type: String,
     time_of_day: Option<String>,
     weekdays: Option<String>,
+    updated_at: i64,
     created_at: i64,
 }
 
@@ -391,7 +397,8 @@ struct IntentionConditionRow {
 struct IntentionBlockRow {
     intention_id: i64,
     enforcement_mode: String,
-    block_mode: String,
+    scope: String,
+    updated_at: i64,
     created_at: i64,
 }
 

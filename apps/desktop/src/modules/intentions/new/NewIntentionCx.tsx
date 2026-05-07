@@ -26,8 +26,8 @@ export class NewIntentionCx {
 	});
 	public readonly $blockForm = createForm<TNewIntentionBlockFormData>({
 		fields: {
-			blockMode: {
-				defaultValue: 'blockList'
+			scope: {
+				defaultValue: 'blockTargets'
 			},
 			selectedTargets: {
 				defaultValue: []
@@ -94,7 +94,7 @@ interface TNewIntentionBaseFormData {
 }
 
 interface TNewIntentionBlockFormData {
-	blockMode: specta.IntentionBlockMode;
+	scope: specta.IntentionBlockScope;
 	selectedTargets: TCatalogItem[];
 	enforcementMode: specta.IntentionEnforcementMode;
 }

@@ -109,7 +109,7 @@ id: number;
 /**
  * Stable app identifier used as the canonical app key across platforms.
  */
-appId: string; 
+stableId: string; 
 /**
  * macOS bundle identifier when the app provides one.
  */
@@ -127,25 +127,26 @@ export type AppSettings = { version: SettingsVersion; appearance: AppearanceSett
 shortcuts: Partial<{ [key in ShortcutAction]: KeyboardShortcut | null }> }
 export type AppSettingsChangedEvent = AppSettings
 export type AppearanceSettings = { theme: Theme; fontScale: number }
-export type CatalogAppSearchResultDto = { appId: string; bundleId: string | null; name: string | null; icon: string | null; color: string | null }
+export type CatalogAppSearchResultDto = { stableId: string; bundleId: string | null; name: string | null; icon: string | null; color: string | null }
 export type CatalogAssetLoadedEvent = { itemId: CatalogItemId; icon: string | null; color: string | null }
 export type CatalogIconMode = { type: "skip" } | { type: "eager"; includeColor: boolean } | { type: "lazy"; includeColor: boolean }
-export type CatalogItemId = { type: "app"; appId: string; bundleId: string | null } | { type: "website"; domain: string }
+export type CatalogItemId = { type: "app"; stableId: string; bundleId: string | null } | { type: "website"; domain: string }
 export type CatalogSearchResultDto = { type: "app"; app: CatalogAppSearchResultDto; score: number } | { type: "website"; website: CatalogWebsiteSearchResultDto; score: number }
 export type CatalogWebsiteSearchResultDto = { domain: string; name: string | null; icon: string | null; color: string | null }
 export type CreateIntentionBehaviorParams = { type: "block" } | { type: "break" }
 export type CreateIntentionParams = { name: string; behavior: CreateIntentionBehaviorParams }
 export type DeveloperSettings = { enabled: boolean }
-export type Intention = { id: number; name: string; behavior: IntentionBehavior; conditions: IntentionCondition[]; createdAt: number }
+export type Intention = { id: number; name: string; behavior: IntentionBehavior; conditions: IntentionCondition[]; updatedAt: number; createdAt: number }
 export type IntentionBehavior = ({ type: "block" } & IntentionBlock) | { type: "break" }
-export type IntentionBlock = { enforcementMode: IntentionEnforcementMode; blockMode: IntentionBlockMode; apps: App[]; websites: Website[]; createdAt: number }
-export type IntentionBlockMode = "blockList" | "allowList" | "blockAll"
-export type IntentionCondition = { id: number; phase: IntentionConditionPhase; rule: IntentionConditionRule; createdAt: number }
+export type IntentionBlock = { enforcementMode: IntentionEnforcementMode; scope: IntentionBlockScope; apps: App[]; websites: Website[]; updatedAt: number; createdAt: number }
+export type IntentionBlockScope = "blockTargets" | "allowTargets" | "wholeDevice"
+export type IntentionCondition = { id: number; phase: IntentionConditionPhase; rule: IntentionConditionRule; updatedAt: number; createdAt: number }
 export type IntentionConditionPhase = "start" | "end"
-export type IntentionConditionRule = { type: "time"; timeOfDay: string; weekdays: number[] | null } | { type: "manual" }
+export type IntentionConditionRule = { type: "time"; timeOfDay: string; weekdays: IntentionWeekday[] | null } | { type: "manual" }
 export type IntentionCreatedEvent = { intentionId: number }
 export type IntentionEnforcementMode = "casual" | "balanced" | "hardcore"
 export type IntentionUpdatedEvent = { intentionId: number }
+export type IntentionWeekday = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun"
 export type KeyboardShortcut = { modifiers: ShortcutModifier[]; 
 /**
  * A browser KeyboardEvent.code value, e.g. "KeyK", "KeyB".

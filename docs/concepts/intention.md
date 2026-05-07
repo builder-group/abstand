@@ -10,7 +10,9 @@ Intentions are not Abstands. They are the plans that make Abstands happen.
 
 ## When it fires
 
-Each Intention has start and end conditions. Conditions can be time-based (fires at 09:00) or manual (fires when the user presses Begin). Multiple conditions can be combined with OR or AND logic.
+Each Intention has start and end conditions. Conditions can be time-based (fires at a local wall-clock time like 09:00) or manual (fires when the user presses Begin).
+
+Multiple conditions in the same phase are evaluated with OR logic: any start condition can begin the Abstand, and any end condition can end it.
 
 ## What it does
 

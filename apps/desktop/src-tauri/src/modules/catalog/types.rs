@@ -17,7 +17,7 @@ pub struct App {
     /// Database row identifier for persisted app records.
     pub id: i64,
     /// Stable app identifier used as the canonical app key across platforms.
-    pub app_id: String,
+    pub stable_id: String,
     /// macOS bundle identifier when the app provides one.
     pub bundle_id: Option<String>,
     pub name: String,
@@ -43,8 +43,8 @@ pub struct Website {
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum CatalogItemId {
     App {
-        #[serde(rename = "appId")]
-        app_id: String,
+        #[serde(rename = "stableId")]
+        stable_id: String,
         // Required for icon resolution on macOS; not part of the cache key.
         #[serde(rename = "bundleId")]
         bundle_id: Option<String>,

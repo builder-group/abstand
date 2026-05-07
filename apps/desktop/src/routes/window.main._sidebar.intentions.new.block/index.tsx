@@ -3,7 +3,7 @@ import { useForm } from 'feature-react/form';
 import { useFeatureState } from 'feature-react/state';
 import React from 'react';
 import { Button, ContentPage, Input } from '@/components';
-import { BlockModeCard, useNewIntentionCx } from '@/modules/intentions';
+import { BlockScopeCard, useNewIntentionCx } from '@/modules/intentions';
 import { SettingsGroup, SettingsRow } from '@/modules/settings';
 
 export const Route = createFileRoute('/window/main/_sidebar/intentions/new/block/')({
@@ -36,7 +36,7 @@ function RouteComponent() {
 	return (
 		<ContentPage
 			title="Block Intention"
-			subtitle="Configure your Block."
+			subtitle="Choose what gets blocked and how strict it should be."
 			backTo="/window/main/intentions/new"
 		>
 			<form onSubmit={handleSubmit({ onValidSubmit: handleValidSubmit })} className="space-y-4">
@@ -56,7 +56,7 @@ function RouteComponent() {
 					</SettingsRow>
 				</SettingsGroup>
 
-				<BlockModeCard />
+				<BlockScopeCard />
 
 				<div className="flex justify-end">
 					<Button type="submit" variant="primary" disabled={isSubmitting}>

@@ -1,4 +1,6 @@
-use super::{app_id::resolve_app_identity, matcher::fuzzy_match, predefined::PREDEFINED_SERVICES};
+use super::{
+    app_identity::resolve_app_identity, matcher::fuzzy_match, predefined::PREDEFINED_SERVICES,
+};
 use crate::common::url::extract_domain;
 use mado::{get_installed_apps, InstalledAppsConfig};
 use std::collections::HashSet;
@@ -62,7 +64,7 @@ impl CatalogSearch {
             .into_iter()
             .map(|app| {
                 let identity = resolve_app_identity(&app.bundle_id, &app.name, &app.path);
-                SearchableItem::app(identity.app_id, identity.bundle_id, Some(app.name))
+                SearchableItem::app(identity.stable_id, identity.bundle_id, Some(app.name))
             })
             .collect();
     }
@@ -112,8 +114,8 @@ pub enum SearchableItem {
 }
 
 impl SearchableItem {
-    pub fn app(app_id: String, bundle_id: Option<String>, name: Option<String>) -> Self {
-        let mut keywords = vec![app_id.clone()];
+    pub fn app(stable_id: String, bundle_id: Option<String>, name: Option<String>) -> Self {
+        let mut keywords = vec![stable_id.clone()];
         if let Some(bundle_id) = bundle_id.as_ref() {
             keywords.push(bundle_id.clone());
         }
@@ -121,7 +123,7 @@ impl SearchableItem {
         return Self::App {
             keywords,
             app: SearchableApp {
-                app_id,
+                stable_id,
                 bundle_id,
                 name,
             },
@@ -141,7 +143,7 @@ impl SearchableItem {
 
     pub fn id(&self) -> &str {
         return match self {
-            Self::App { app, .. } => &app.app_id,
+            Self::App { app, .. } => &app.stable_id,
             Self::Website { website, .. } => &website.domain,
         };
     }
@@ -152,7 +154,7 @@ impl SearchableItem {
                 .name
                 .as_deref()
                 .or(app.bundle_id.as_deref())
-                .unwrap_or(&app.app_id),
+                .unwrap_or(&app.stable_id),
             Self::Website { website, .. } => website.name.as_deref().unwrap_or(&website.domain),
         };
     }
@@ -188,7 +190,7 @@ impl From<(SearchableItem, u32)> for CatalogSearchResult {
 
 #[derive(Debug, Clone)]
 pub struct SearchableApp {
-    pub app_id: String,
+    pub stable_id: String,
     pub bundle_id: Option<String>,
     pub name: Option<String>,
 }

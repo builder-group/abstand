@@ -9,6 +9,7 @@ pub struct Intention {
     pub name: String,
     pub behavior: IntentionBehavior,
     pub conditions: Vec<IntentionCondition>,
+    pub updated_at: i64,
     pub created_at: i64,
 }
 
@@ -43,9 +44,10 @@ impl From<IntentionBehavior> for IntentionBehaviorType {
 #[serde(rename_all = "camelCase")]
 pub struct IntentionBlock {
     pub enforcement_mode: IntentionEnforcementMode,
-    pub block_mode: IntentionBlockMode,
+    pub scope: IntentionBlockScope,
     pub apps: Vec<App>,
     pub websites: Vec<Website>,
+    pub updated_at: i64,
     pub created_at: i64,
 }
 
@@ -70,19 +72,19 @@ impl IntentionEnforcementMode {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
-pub enum IntentionBlockMode {
-    BlockList,
-    AllowList,
-    BlockAll,
+pub enum IntentionBlockScope {
+    BlockTargets,
+    AllowTargets,
+    WholeDevice,
 }
 
-impl IntentionBlockMode {
+impl IntentionBlockScope {
     pub fn from_str(value: &str) -> Result<Self, String> {
         return match value {
-            "block_list" => Ok(Self::BlockList),
-            "allow_list" => Ok(Self::AllowList),
-            "block_all" => Ok(Self::BlockAll),
-            _ => Err(format!("Unknown intention block mode: {}", value)),
+            "block_targets" => Ok(Self::BlockTargets),
+            "allow_targets" => Ok(Self::AllowTargets),
+            "whole_device" => Ok(Self::WholeDevice),
+            _ => Err(format!("Unknown intention block scope: {}", value)),
         };
     }
 }
@@ -95,6 +97,7 @@ pub struct IntentionCondition {
     pub id: i64,
     pub phase: IntentionConditionPhase,
     pub rule: IntentionConditionRule,
+    pub updated_at: i64,
     pub created_at: i64,
 }
 
@@ -121,7 +124,19 @@ pub enum IntentionConditionRule {
     Time {
         #[serde(rename = "timeOfDay")]
         time_of_day: String,
-        weekdays: Option<Vec<u8>>,
+        weekdays: Option<Vec<IntentionWeekday>>,
     },
     Manual,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "snake_case")]
+pub enum IntentionWeekday {
+    Mon,
+    Tue,
+    Wed,
+    Thu,
+    Fri,
+    Sat,
+    Sun,
 }

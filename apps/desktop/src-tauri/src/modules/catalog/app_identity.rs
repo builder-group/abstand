@@ -4,20 +4,20 @@ pub fn resolve_app_identity(bundle_id: &str, name: &str, path: &str) -> Resolved
     {
         if let Some(bundle_id) = normalize_bundle_id(bundle_id) {
             return ResolvedAppIdentity {
-                app_id: bundle_id.clone(),
+                stable_id: bundle_id.clone(),
                 bundle_id: Some(bundle_id),
             };
         }
     }
 
     return ResolvedAppIdentity {
-        app_id: build_path_based_app_id(name, path),
+        stable_id: build_path_based_stable_id(name, path),
         bundle_id: None,
     };
 }
 
 pub struct ResolvedAppIdentity {
-    pub app_id: String,
+    pub stable_id: String,
     pub bundle_id: Option<String>,
 }
 
@@ -30,7 +30,7 @@ fn normalize_bundle_id(bundle_id: &str) -> Option<String> {
     return Some(trimmed.to_string());
 }
 
-fn build_path_based_app_id(name: &str, path: &str) -> String {
+fn build_path_based_stable_id(name: &str, path: &str) -> String {
     let slug = slugify_name_hint(name);
     let hash = hash_fnv1a64(path.as_bytes());
 
@@ -85,7 +85,7 @@ mod tests {
         let identity =
             resolve_app_identity("com.todesktop.cursor", "Cursor", "/Applications/Cursor.app");
 
-        assert_eq!(identity.app_id, "com.todesktop.cursor");
+        assert_eq!(identity.stable_id, "com.todesktop.cursor");
         assert_eq!(identity.bundle_id.as_deref(), Some("com.todesktop.cursor"));
     }
 
@@ -97,14 +97,14 @@ mod tests {
             "/Users/benno/Library/Developer/Abstand Dev.app",
         );
 
-        assert!(identity.app_id.starts_with("local.path.abstand-dev."));
+        assert!(identity.stable_id.starts_with("local.path.abstand-dev."));
         assert_eq!(identity.bundle_id, None);
     }
 
     #[test]
     fn fallback_id_is_stable_for_the_same_input() {
-        let first = resolve_app_identity("", "Abstand Dev", "/tmp/abstand-dev").app_id;
-        let second = resolve_app_identity("", "Abstand Dev", "/tmp/abstand-dev").app_id;
+        let first = resolve_app_identity("", "Abstand Dev", "/tmp/abstand-dev").stable_id;
+        let second = resolve_app_identity("", "Abstand Dev", "/tmp/abstand-dev").stable_id;
 
         assert_eq!(first, second);
     }

@@ -14,16 +14,16 @@ import { CatalogIconPeek, useCatalogPicker, type TCatalogItem } from '@/modules/
 import { SettingsGroup, SettingsRow, SettingsRowFrame } from '@/modules/settings';
 import { useNewIntentionCx } from '../new';
 
-export const BlockModeCard: React.FC = () => {
+export const BlockScopeCard: React.FC = () => {
 	const cx = useNewIntentionCx();
 
-	const blockMode = useFeatureState(cx.$blockForm.fields.blockMode);
-	const [isModeExpanded, setIsModeExpanded] = React.useState(false);
-	const currentMode = React.useMemo(
+	const scope = useFeatureState(cx.$blockForm.fields.scope);
+	const [isScopeExpanded, setIsScopeExpanded] = React.useState(false);
+	const currentScope = React.useMemo(
 		() =>
-			BLOCK_MODE_OPTIONS.find((mode) => mode.value === blockMode) ??
-			(BLOCK_MODE_OPTIONS[0] as TBlockModeOption),
-		[blockMode]
+			BLOCK_SCOPE_OPTIONS.find((option) => option.value === scope) ??
+			(BLOCK_SCOPE_OPTIONS[0] as TBlockScopeOption),
+		[scope]
 	);
 
 	const enforcementMode = useFeatureState(cx.$blockForm.fields.enforcementMode);
@@ -39,10 +39,10 @@ export const BlockModeCard: React.FC = () => {
 		cx.$blockForm.fields.selectedTargets,
 		({ value }) => value ?? []
 	);
-	const isTargetsSelectable = blockMode !== 'blockAll';
+	const isTargetsSelectable = scope !== 'wholeDevice';
 	const targetsLabel = React.useMemo(() => {
 		if (!isTargetsSelectable) {
-			return 'All apps & websites';
+			return 'Whole device';
 		}
 		if (selectedTargets.length > 0) {
 			return `${selectedTargets.length} selected`;
@@ -50,16 +50,16 @@ export const BlockModeCard: React.FC = () => {
 		return 'None';
 	}, [isTargetsSelectable, selectedTargets]);
 	const targetsDescription = React.useMemo(() => {
-		switch (blockMode) {
-			case 'blockList':
+		switch (scope) {
+			case 'blockTargets':
 				return 'Choose which apps and websites this intention blocks.';
-			case 'allowList':
+			case 'allowTargets':
 				return 'Choose what stays available while everything else is blocked.';
-			case 'blockAll':
+			case 'wholeDevice':
 				return undefined;
 		}
 		return undefined;
-	}, [blockMode]);
+	}, [scope]);
 
 	const {
 		open: openPicker,
@@ -76,10 +76,10 @@ export const BlockModeCard: React.FC = () => {
 
 	// MARK: - Actions
 
-	const handleSelectMode = React.useCallback(
-		(value: specta.IntentionBlockMode) => {
-			cx.$blockForm.fields.blockMode.set(value);
-			setIsModeExpanded(false);
+	const handleSelectScope = React.useCallback(
+		(value: specta.IntentionBlockScope) => {
+			cx.$blockForm.fields.scope.set(value);
+			setIsScopeExpanded(false);
 		},
 		[cx]
 	);
@@ -96,8 +96,8 @@ export const BlockModeCard: React.FC = () => {
 		openPicker(selectedTargets);
 	}, [openPicker, selectedTargets]);
 
-	const handleToggleModeExpanded = React.useCallback(() => {
-		setIsModeExpanded((value) => !value);
+	const handleToggleScopeExpanded = React.useCallback(() => {
+		setIsScopeExpanded((value) => !value);
 	}, []);
 
 	const handleToggleEnforcementExpanded = React.useCallback(() => {
@@ -110,36 +110,38 @@ export const BlockModeCard: React.FC = () => {
 		<>
 			<SettingsGroup title="Block">
 				<SettingsRow
-					label="Mode"
-					description="Choose the blocking policy for this intention."
-					render={<button type="button" onClick={handleToggleModeExpanded} />}
+					label="Blocking"
+					description="Choose how broadly this intention blocks."
+					render={<button type="button" onClick={handleToggleScopeExpanded} />}
 				>
-					<span className="text-base-500 text-sm">{currentMode.label}</span>
+					<span className="text-base-500 text-sm">{currentScope.label}</span>
 					<ChevronDownIcon
-						className={cn('text-base-400 transition-transform', isModeExpanded && 'rotate-180')}
+						className={cn('text-base-400 transition-transform', isScopeExpanded && 'rotate-180')}
 					/>
 				</SettingsRow>
 
-				{isModeExpanded &&
-					BLOCK_MODE_OPTIONS.map((mode) => (
+				{isScopeExpanded &&
+					BLOCK_SCOPE_OPTIONS.map((scopeOption) => (
 						<SettingsRowFrame
-							key={mode.value}
+							key={scopeOption.value}
 							render={<button type="button" />}
-							onClick={() => handleSelectMode(mode.value)}
+							onClick={() => handleSelectScope(scopeOption.value)}
 							className="items-start gap-2.5 pl-5 [--settings-row-separator-left:--spacing(5)]"
 						>
-							<mode.Icon className="text-base-400 mt-0.5 size-4 shrink-0" />
+							<scopeOption.Icon className="text-base-400 mt-0.5 size-4 shrink-0" />
 							<div className="flex min-w-0 flex-1 flex-col text-left">
-								<span className="text-base-950 text-sm">{mode.label}</span>
-								<span className="text-base-500 mt-px text-xs">{mode.description}</span>
+								<span className="text-base-950 text-sm">{scopeOption.label}</span>
+								<span className="text-base-500 mt-px text-xs">{scopeOption.description}</span>
 							</div>
-							{blockMode === mode.value && <CheckIcon className="text-primary mt-0.5 shrink-0" />}
+							{scope === scopeOption.value && (
+								<CheckIcon className="text-primary mt-0.5 shrink-0" />
+							)}
 						</SettingsRowFrame>
 					))}
 
 				{isTargetsSelectable ? (
 					<SettingsRow
-						label="Targets"
+						label="Apps & websites"
 						description={targetsDescription}
 						render={<button type="button" onClick={handleOpenTargets} />}
 					>
@@ -155,7 +157,7 @@ export const BlockModeCard: React.FC = () => {
 						<ChevronRightIcon className="text-base-400" />
 					</SettingsRow>
 				) : (
-					<SettingsRow label="Targets" description={targetsDescription}>
+					<SettingsRow label="Apps & websites" description={targetsDescription}>
 						<span className="text-base-500 text-sm">{targetsLabel}</span>
 					</SettingsRow>
 				)}
@@ -197,29 +199,29 @@ export const BlockModeCard: React.FC = () => {
 	);
 };
 
-const BLOCK_MODE_OPTIONS = [
+const BLOCK_SCOPE_OPTIONS = [
 	{
-		value: 'blockList',
-		label: 'Block List',
+		value: 'blockTargets',
+		label: 'Block selected',
 		description: 'Block only the apps and websites you choose.',
 		Icon: ShieldIcon
 	},
 	{
-		value: 'allowList',
-		label: 'Allow List',
-		description: 'Block everything except what you choose.',
+		value: 'allowTargets',
+		label: 'Allow selected',
+		description: 'Block everything except the apps and websites you choose.',
 		Icon: ShieldCheckIcon
 	},
 	{
-		value: 'blockAll',
-		label: 'Block All',
-		description: 'Block all apps and websites.',
+		value: 'wholeDevice',
+		label: 'Whole device',
+		description: 'Lock the whole computer behind a full-screen overlay.',
 		Icon: MonitorIcon
 	}
-] satisfies TBlockModeOption[];
+] satisfies TBlockScopeOption[];
 
-interface TBlockModeOption {
-	value: specta.IntentionBlockMode;
+interface TBlockScopeOption {
+	value: specta.IntentionBlockScope;
 	label: string;
 	description: string;
 	Icon: React.ComponentType<{ className?: string }>;

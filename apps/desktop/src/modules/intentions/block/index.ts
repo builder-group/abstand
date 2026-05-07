@@ -1,1 +1,1 @@
-export * from './BlockModeCard';
+export * from './BlockScopeCard';

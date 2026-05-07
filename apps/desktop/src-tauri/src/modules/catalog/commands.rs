@@ -129,7 +129,7 @@ pub enum CatalogSearchResultDto {
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct CatalogAppSearchResultDto {
-    pub app_id: String,
+    pub stable_id: String,
     pub bundle_id: Option<String>,
     pub name: Option<String>,
     pub icon: Option<String>,
@@ -150,7 +150,7 @@ impl CatalogSearchResultDto {
         return match result {
             CatalogSearchResult::App { app, score } => Self::App {
                 app: CatalogAppSearchResultDto {
-                    app_id: app.app_id.clone(),
+                    stable_id: app.stable_id.clone(),
                     bundle_id: app.bundle_id.clone(),
                     name: app.name.clone(),
                     icon: asset.and_then(|a| a.icon.clone()),
@@ -175,7 +175,7 @@ impl From<&CatalogSearchResult> for CatalogItemId {
     fn from(result: &CatalogSearchResult) -> Self {
         return match result {
             CatalogSearchResult::App { app, .. } => Self::App {
-                app_id: app.app_id.clone(),
+                stable_id: app.stable_id.clone(),
                 bundle_id: app.bundle_id.clone(),
             },
             CatalogSearchResult::Website { website, .. } => Self::Website {
@@ -189,7 +189,7 @@ impl From<&CatalogSearchResultDto> for CatalogItemId {
     fn from(dto: &CatalogSearchResultDto) -> Self {
         return match dto {
             CatalogSearchResultDto::App { app, .. } => Self::App {
-                app_id: app.app_id.clone(),
+                stable_id: app.stable_id.clone(),
                 bundle_id: app.bundle_id.clone(),
             },
             CatalogSearchResultDto::Website { website, .. } => Self::Website {

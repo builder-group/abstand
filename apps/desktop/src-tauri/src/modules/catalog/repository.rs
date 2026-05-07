@@ -14,7 +14,7 @@ impl CatalogRepository {
         }
 
         let mut query_builder = QueryBuilder::<Sqlite>::new(
-            "SELECT id, app_id, bundle_id, name, process_path, icon, color FROM app WHERE id IN (",
+            "SELECT id, stable_id, bundle_id, name, process_path, icon, color FROM app WHERE id IN (",
         );
         let mut separated = query_builder.separated(", ");
         for app_id in app_ids {
@@ -35,7 +35,7 @@ impl CatalogRepository {
             .into_iter()
             .map(|row| App {
                 id: row.id,
-                app_id: row.app_id,
+                stable_id: row.stable_id,
                 bundle_id: row.bundle_id,
                 name: row.name,
                 process_path: row.process_path,
@@ -126,7 +126,7 @@ impl From<sqlx::Error> for CatalogRepositoryError {
 #[derive(Debug, Clone, FromRow)]
 struct AppRow {
     id: i64,
-    app_id: String,
+    stable_id: String,
     bundle_id: Option<String>,
     name: String,
     process_path: Option<String>,
