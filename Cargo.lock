@@ -13,6 +13,7 @@ name = "abstand"
 version = "0.0.1"
 dependencies = [
  "abstand-macos",
+ "chrono",
  "mado",
  "nucleo-matcher",
  "serde",

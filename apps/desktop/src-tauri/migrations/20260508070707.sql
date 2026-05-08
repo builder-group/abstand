@@ -172,7 +172,7 @@ CREATE TABLE `intention_condition` (
   `created_at` integer NOT NULL DEFAULT (CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)),
   CONSTRAINT `0` FOREIGN KEY (`intention_id`) REFERENCES `intention` (`id`) ON UPDATE NO ACTION ON DELETE CASCADE,
   CHECK (phase IN ('start', 'end')),
-  CHECK (rule_type IN ('time', 'manual'))
+  CHECK (rule_type IN ('schedule', 'date_time', 'manual'))
 );
 -- Create index "idx_intention_condition_intention_id" to table: "intention_condition"
 CREATE INDEX `idx_intention_condition_intention_id` ON `intention_condition` (`intention_id`);
@@ -214,15 +214,15 @@ CREATE TRIGGER `intention_condition_set_updated_at` AFTER UPDATE ON `intention_c
     END
     WHERE id = NEW.id;
 END;
--- Create "intention_condition_time" table
-CREATE TABLE `intention_condition_time` (
+-- Create "intention_condition_schedule" table
+CREATE TABLE `intention_condition_schedule` (
   `condition_id` integer NULL,
-  `rule_type` text NOT NULL DEFAULT 'time',
+  `rule_type` text NOT NULL DEFAULT 'schedule',
   `time_of_day` text NOT NULL,
   `weekdays` text NULL,
   PRIMARY KEY (`condition_id`),
   CONSTRAINT `0` FOREIGN KEY (`condition_id`, `rule_type`) REFERENCES `intention_condition` (`id`, `rule_type`) ON UPDATE NO ACTION ON DELETE CASCADE,
-  CHECK (rule_type = 'time'),
+  CHECK (rule_type = 'schedule'),
   CHECK (
         length(time_of_day) = 5
         AND time_of_day GLOB '[0-2][0-9]:[0-5][0-9]'
@@ -233,8 +233,8 @@ CREATE TABLE `intention_condition_time` (
         OR (json_valid(weekdays) AND json_type(weekdays) = 'array')
     )
 );
--- Create trigger "intention_condition_time_touch_condition_after_insert"
-CREATE TRIGGER `intention_condition_time_touch_condition_after_insert` AFTER INSERT ON `intention_condition_time` FOR EACH ROW BEGIN
+-- Create trigger "intention_condition_schedule_touch_condition_after_insert"
+CREATE TRIGGER `intention_condition_schedule_touch_condition_after_insert` AFTER INSERT ON `intention_condition_schedule` FOR EACH ROW BEGIN
     UPDATE intention_condition
     SET updated_at = CASE
         WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= updated_at THEN updated_at + 1
@@ -242,8 +242,8 @@ CREATE TRIGGER `intention_condition_time_touch_condition_after_insert` AFTER INS
     END
     WHERE id = NEW.condition_id;
 END;
--- Create trigger "intention_condition_time_touch_condition_after_update"
-CREATE TRIGGER `intention_condition_time_touch_condition_after_update` AFTER UPDATE ON `intention_condition_time` FOR EACH ROW BEGIN
+-- Create trigger "intention_condition_schedule_touch_condition_after_update"
+CREATE TRIGGER `intention_condition_schedule_touch_condition_after_update` AFTER UPDATE ON `intention_condition_schedule` FOR EACH ROW BEGIN
     UPDATE intention_condition
     SET updated_at = CASE
         WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= updated_at THEN updated_at + 1
@@ -251,8 +251,56 @@ CREATE TRIGGER `intention_condition_time_touch_condition_after_update` AFTER UPD
     END
     WHERE id = NEW.condition_id;
 END;
--- Create trigger "intention_condition_time_touch_condition_after_delete"
-CREATE TRIGGER `intention_condition_time_touch_condition_after_delete` AFTER DELETE ON `intention_condition_time` FOR EACH ROW BEGIN
+-- Create trigger "intention_condition_schedule_touch_condition_after_delete"
+CREATE TRIGGER `intention_condition_schedule_touch_condition_after_delete` AFTER DELETE ON `intention_condition_schedule` FOR EACH ROW BEGIN
+    UPDATE intention_condition
+    SET updated_at = CASE
+        WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= updated_at THEN updated_at + 1
+        ELSE CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)
+    END
+    WHERE id = OLD.condition_id;
+END;
+-- Create "intention_condition_date_time" table
+CREATE TABLE `intention_condition_date_time` (
+  `condition_id` integer NULL,
+  `rule_type` text NOT NULL DEFAULT 'date_time',
+  `date` text NOT NULL,
+  `time_of_day` text NOT NULL,
+  PRIMARY KEY (`condition_id`),
+  CONSTRAINT `0` FOREIGN KEY (`condition_id`, `rule_type`) REFERENCES `intention_condition` (`id`, `rule_type`) ON UPDATE NO ACTION ON DELETE CASCADE,
+  CHECK (rule_type = 'date_time'),
+  CHECK (
+        length(date) = 10
+        AND date GLOB '[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]'
+        AND CAST(substr(date, 6, 2) AS INTEGER) BETWEEN 1 AND 12
+        AND CAST(substr(date, 9, 2) AS INTEGER) BETWEEN 1 AND 31
+    ),
+  CHECK (
+        length(time_of_day) = 5
+        AND time_of_day GLOB '[0-2][0-9]:[0-5][0-9]'
+        AND CAST(substr(time_of_day, 1, 2) AS INTEGER) BETWEEN 0 AND 23
+    )
+);
+-- Create trigger "intention_condition_date_time_touch_condition_after_insert"
+CREATE TRIGGER `intention_condition_date_time_touch_condition_after_insert` AFTER INSERT ON `intention_condition_date_time` FOR EACH ROW BEGIN
+    UPDATE intention_condition
+    SET updated_at = CASE
+        WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= updated_at THEN updated_at + 1
+        ELSE CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)
+    END
+    WHERE id = NEW.condition_id;
+END;
+-- Create trigger "intention_condition_date_time_touch_condition_after_update"
+CREATE TRIGGER `intention_condition_date_time_touch_condition_after_update` AFTER UPDATE ON `intention_condition_date_time` FOR EACH ROW BEGIN
+    UPDATE intention_condition
+    SET updated_at = CASE
+        WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= updated_at THEN updated_at + 1
+        ELSE CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)
+    END
+    WHERE id = NEW.condition_id;
+END;
+-- Create trigger "intention_condition_date_time_touch_condition_after_delete"
+CREATE TRIGGER `intention_condition_date_time_touch_condition_after_delete` AFTER DELETE ON `intention_condition_date_time` FOR EACH ROW BEGIN
     UPDATE intention_condition
     SET updated_at = CASE
         WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= updated_at THEN updated_at + 1

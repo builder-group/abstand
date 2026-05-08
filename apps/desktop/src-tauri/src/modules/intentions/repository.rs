@@ -1,14 +1,19 @@
 use super::{
     intention::{
         Intention, IntentionBehavior, IntentionBlock, IntentionBlockScope, IntentionCondition,
-        IntentionConditionPhase, IntentionConditionRule, IntentionConditionTimeRule,
-        IntentionEnforcementMode, IntentionWeekday,
+        IntentionConditionDateTimeRule, IntentionConditionPhase, IntentionConditionRule,
+        IntentionConditionScheduleRule, IntentionEnforcementMode,
     },
     types::IntentionBehaviorType,
 };
-use crate::modules::catalog::{
-    repository::{CatalogRepository, CatalogRepositoryError, UpsertAppInput, UpsertWebsiteInput},
-    types::{App, Website},
+use crate::{
+    common::time::{DateOnly, TimeOnly, Weekday},
+    modules::catalog::{
+        repository::{
+            CatalogRepository, CatalogRepositoryError, UpsertAppInput, UpsertWebsiteInput,
+        },
+        types::{App, Website},
+    },
 };
 use sqlx::{FromRow, Pool, QueryBuilder, Sqlite};
 use std::{
@@ -54,20 +59,28 @@ impl IntentionRepository {
     ) -> Result<Intention, IntentionRepositoryError> {
         let mut transaction = pool.begin().await?;
 
-        let behavior_type = IntentionBehaviorType::from(&input.behavior);
+        let CreateIntentionInput {
+            name,
+            behavior,
+            conditions,
+        } = input;
+
+        let behavior_type = IntentionBehaviorType::from(&behavior);
         let intention_id = sqlx::query_scalar::<_, i64>(
             "INSERT INTO intention (name, behavior_type) VALUES (?, ?) RETURNING id",
         )
-        .bind(&input.name)
+        .bind(&name)
         .bind(behavior_type.as_str())
         .fetch_one(&mut *transaction)
         .await?;
 
-        match input.behavior {
+        match behavior {
             CreateIntentionBehaviorInput::Block(block_input) => {
                 Self::create_block(&mut transaction, intention_id, block_input).await?;
             }
         }
+
+        Self::create_conditions(&mut transaction, intention_id, conditions).await?;
 
         transaction.commit().await?;
 
@@ -119,6 +132,58 @@ impl IntentionRepository {
         return Ok(());
     }
 
+    async fn create_conditions(
+        transaction: &mut sqlx::Transaction<'_, Sqlite>,
+        intention_id: i64,
+        conditions: Vec<CreateIntentionConditionInput>,
+    ) -> Result<(), IntentionRepositoryError> {
+        for condition in conditions {
+            let condition_id = sqlx::query_scalar::<_, i64>(
+                "INSERT INTO intention_condition (intention_id, phase, rule_type) VALUES (?, ?, ?) RETURNING id",
+            )
+            .bind(intention_id)
+            .bind(condition.phase.as_str())
+            .bind(condition.rule.as_str())
+            .fetch_one(&mut **transaction)
+            .await?;
+
+            match condition.rule {
+                IntentionConditionRule::Schedule(schedule_rule) => {
+                    let weekdays = match schedule_rule.weekdays {
+                        Some(weekdays) => {
+                            Some(serde_json::to_string(&weekdays).map_err(|error| {
+                                IntentionRepositoryError::InvalidData(error.to_string())
+                            })?)
+                        }
+                        None => None,
+                    };
+
+                    sqlx::query(
+                        "INSERT INTO intention_condition_schedule (condition_id, time_of_day, weekdays) VALUES (?, ?, ?)",
+                    )
+                    .bind(condition_id)
+                    .bind(schedule_rule.time_of_day.as_str())
+                    .bind(weekdays)
+                    .execute(&mut **transaction)
+                    .await?;
+                }
+                IntentionConditionRule::DateTime(date_time_rule) => {
+                    sqlx::query(
+                        "INSERT INTO intention_condition_date_time (condition_id, date, time_of_day) VALUES (?, ?, ?)",
+                    )
+                    .bind(condition_id)
+                    .bind(date_time_rule.date.as_str())
+                    .bind(date_time_rule.time_of_day.as_str())
+                    .execute(&mut **transaction)
+                    .await?;
+                }
+                IntentionConditionRule::Manual => {}
+            }
+        }
+
+        return Ok(());
+    }
+
     async fn hydrate_intentions(
         pool: &Pool<Sqlite>,
         bases: Vec<IntentionRow>,
@@ -130,7 +195,10 @@ impl IntentionRepository {
         let intention_ids = bases.iter().map(|base| base.id).collect::<Vec<_>>();
         let condition_rows = Self::load_condition_rows(pool, &intention_ids).await?;
         let condition_ids = condition_rows.iter().map(|row| row.id).collect::<Vec<_>>();
-        let condition_time_rows = Self::load_condition_time_rows(pool, &condition_ids).await?;
+        let condition_schedule_rows =
+            Self::load_condition_schedule_rows(pool, &condition_ids).await?;
+        let condition_date_time_rows =
+            Self::load_condition_date_time_rows(pool, &condition_ids).await?;
         let block_rows = Self::load_block_rows(pool, &intention_ids).await?;
         let block_app_rows = Self::load_block_app_rows(pool, &intention_ids).await?;
         let block_website_rows = Self::load_block_website_rows(pool, &intention_ids).await?;
@@ -168,7 +236,11 @@ impl IntentionRepository {
                 .push(row);
         }
 
-        let mut condition_time_rows_by_condition_id = condition_time_rows
+        let mut condition_schedule_rows_by_condition_id = condition_schedule_rows
+            .into_iter()
+            .map(|row| (row.condition_id, row))
+            .collect::<HashMap<_, _>>();
+        let mut condition_date_time_rows_by_condition_id = condition_date_time_rows
             .into_iter()
             .map(|row| (row.condition_id, row))
             .collect::<HashMap<_, _>>();
@@ -235,8 +307,9 @@ impl IntentionRepository {
                 .unwrap_or_default()
                 .into_iter()
                 .map(|row| {
-                    let time_row = condition_time_rows_by_condition_id.remove(&row.id);
-                    return Self::build_condition(row, time_row);
+                    let schedule_row = condition_schedule_rows_by_condition_id.remove(&row.id);
+                    let date_time_row = condition_date_time_rows_by_condition_id.remove(&row.id);
+                    return Self::build_condition(row, schedule_row, date_time_row);
                 })
                 .collect::<Result<Vec<_>, _>>()?;
 
@@ -277,16 +350,16 @@ impl IntentionRepository {
             .map_err(IntentionRepositoryError::from);
     }
 
-    async fn load_condition_time_rows(
+    async fn load_condition_schedule_rows(
         pool: &Pool<Sqlite>,
         condition_ids: &[i64],
-    ) -> Result<Vec<IntentionConditionTimeRow>, IntentionRepositoryError> {
+    ) -> Result<Vec<IntentionConditionScheduleRow>, IntentionRepositoryError> {
         if condition_ids.is_empty() {
             return Ok(Vec::new());
         }
 
         let mut query_builder = QueryBuilder::<Sqlite>::new(
-            "SELECT condition_id, time_of_day, weekdays FROM intention_condition_time WHERE condition_id IN (",
+            "SELECT condition_id, time_of_day, weekdays FROM intention_condition_schedule WHERE condition_id IN (",
         );
         let mut separated = query_builder.separated(", ");
         for condition_id in condition_ids {
@@ -295,7 +368,31 @@ impl IntentionRepository {
         separated.push_unseparated(")");
 
         return query_builder
-            .build_query_as::<IntentionConditionTimeRow>()
+            .build_query_as::<IntentionConditionScheduleRow>()
+            .fetch_all(pool)
+            .await
+            .map_err(IntentionRepositoryError::from);
+    }
+
+    async fn load_condition_date_time_rows(
+        pool: &Pool<Sqlite>,
+        condition_ids: &[i64],
+    ) -> Result<Vec<IntentionConditionDateTimeRow>, IntentionRepositoryError> {
+        if condition_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        let mut query_builder = QueryBuilder::<Sqlite>::new(
+            "SELECT condition_id, date, time_of_day FROM intention_condition_date_time WHERE condition_id IN (",
+        );
+        let mut separated = query_builder.separated(", ");
+        for condition_id in condition_ids {
+            separated.push_bind(condition_id);
+        }
+        separated.push_unseparated(")");
+
+        return query_builder
+            .build_query_as::<IntentionConditionDateTimeRow>()
             .fetch_all(pool)
             .await
             .map_err(IntentionRepositoryError::from);
@@ -390,34 +487,62 @@ impl IntentionRepository {
 
     fn build_condition(
         row: IntentionConditionRow,
-        time_row: Option<IntentionConditionTimeRow>,
+        schedule_row: Option<IntentionConditionScheduleRow>,
+        date_time_row: Option<IntentionConditionDateTimeRow>,
     ) -> Result<IntentionCondition, IntentionRepositoryError> {
         let phase = IntentionConditionPhase::from_str(&row.phase)
             .map_err(IntentionRepositoryError::InvalidData)?;
         let rule = match row.rule_type.as_str() {
-            "time" => {
-                let time_row = time_row.ok_or_else(|| {
+            "schedule" => {
+                if date_time_row.is_some() {
+                    return Err(IntentionRepositoryError::InvalidData(
+                        "Schedule condition has date-time payload".to_string(),
+                    ));
+                }
+
+                let schedule_row = schedule_row.ok_or_else(|| {
                     IntentionRepositoryError::InvalidData(
-                        "Missing time payload for time condition".to_string(),
+                        "Missing schedule payload for schedule condition".to_string(),
                     )
                 })?;
 
-                IntentionConditionRule::Time(IntentionConditionTimeRule {
-                    time_of_day: time_row.time_of_day,
-                    weekdays: match time_row.weekdays {
-                        Some(weekdays) => Some(
-                            serde_json::from_str::<Vec<IntentionWeekday>>(&weekdays).map_err(
+                IntentionConditionRule::Schedule(IntentionConditionScheduleRule {
+                    time_of_day: TimeOnly::parse(&schedule_row.time_of_day)
+                        .map_err(IntentionRepositoryError::InvalidData)?,
+                    weekdays: match schedule_row.weekdays {
+                        Some(weekdays) => {
+                            Some(serde_json::from_str::<Vec<Weekday>>(&weekdays).map_err(
                                 |error| IntentionRepositoryError::InvalidData(error.to_string()),
-                            )?,
-                        ),
+                            )?)
+                        }
                         None => None,
                     },
                 })
             }
-            "manual" => {
-                if time_row.is_some() {
+            "date_time" => {
+                if schedule_row.is_some() {
                     return Err(IntentionRepositoryError::InvalidData(
-                        "Manual condition has time payload".to_string(),
+                        "Date-time condition has schedule payload".to_string(),
+                    ));
+                }
+
+                let date_time_row = date_time_row.ok_or_else(|| {
+                    IntentionRepositoryError::InvalidData(
+                        "Missing date-time payload for date-time condition".to_string(),
+                    )
+                })?;
+
+                IntentionConditionRule::DateTime(IntentionConditionDateTimeRule {
+                    date: DateOnly::parse(&date_time_row.date)
+                        .map_err(IntentionRepositoryError::InvalidData)?,
+                    time_of_day: TimeOnly::parse(&date_time_row.time_of_day)
+                        .map_err(IntentionRepositoryError::InvalidData)?,
+                })
+            }
+            "manual" => {
+                if schedule_row.is_some() || date_time_row.is_some() {
+                    return Err(IntentionRepositoryError::InvalidData(
+                        "Manual condition has rule payload".to_string(),
                     ));
                 }
 
@@ -482,23 +607,6 @@ struct IntentionRow {
 }
 
 #[derive(Debug, Clone, FromRow)]
-struct IntentionConditionRow {
-    id: i64,
-    intention_id: i64,
-    phase: String,
-    rule_type: String,
-    updated_at: i64,
-    created_at: i64,
-}
-
-#[derive(Debug, Clone, FromRow)]
-struct IntentionConditionTimeRow {
-    condition_id: i64,
-    time_of_day: String,
-    weekdays: Option<String>,
-}
-
-#[derive(Debug, Clone, FromRow)]
 struct IntentionBlockRow {
     intention_id: i64,
     enforcement_mode: String,
@@ -517,11 +625,36 @@ struct IntentionBlockWebsiteRow {
     website_id: i64,
 }
 
+#[derive(Debug, Clone, FromRow)]
+struct IntentionConditionRow {
+    id: i64,
+    intention_id: i64,
+    phase: String,
+    rule_type: String,
+    updated_at: i64,
+    created_at: i64,
+}
+
+#[derive(Debug, Clone, FromRow)]
+struct IntentionConditionScheduleRow {
+    condition_id: i64,
+    time_of_day: String,
+    weekdays: Option<String>,
+}
+
+#[derive(Debug, Clone, FromRow)]
+struct IntentionConditionDateTimeRow {
+    condition_id: i64,
+    date: String,
+    time_of_day: String,
+}
+
 // MARK: - Input
 
 pub struct CreateIntentionInput {
     pub name: String,
     pub behavior: CreateIntentionBehaviorInput,
+    pub conditions: Vec<CreateIntentionConditionInput>,
 }
 
 pub enum CreateIntentionBehaviorInput {
@@ -541,4 +674,9 @@ pub struct CreateIntentionBlockInput {
     pub scope: IntentionBlockScope,
     pub apps: Vec<UpsertAppInput>,
     pub websites: Vec<UpsertWebsiteInput>,
+}
+
+pub struct CreateIntentionConditionInput {
+    pub phase: IntentionConditionPhase,
+    pub rule: IntentionConditionRule,
 }

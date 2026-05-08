@@ -1,5 +1,8 @@
 use super::types::IntentionBehaviorType;
-use crate::modules::catalog::types::{App, Website};
+use crate::{
+    common::time::{DateOnly, TimeOnly, Weekday},
+    modules::catalog::types::{App, Website},
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
@@ -121,6 +124,13 @@ pub enum IntentionConditionPhase {
 }
 
 impl IntentionConditionPhase {
+    pub fn as_str(&self) -> &'static str {
+        return match self {
+            Self::Start => "start",
+            Self::End => "end",
+        };
+    }
+
     pub fn from_str(value: &str) -> Result<Self, String> {
         return match value {
             "start" => Ok(Self::Start),
@@ -133,25 +143,31 @@ impl IntentionConditionPhase {
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum IntentionConditionRule {
-    Time(IntentionConditionTimeRule),
+    Schedule(IntentionConditionScheduleRule),
+    DateTime(IntentionConditionDateTimeRule),
     Manual,
+}
+
+impl IntentionConditionRule {
+    pub fn as_str(&self) -> &'static str {
+        return match self {
+            Self::Schedule(_) => "schedule",
+            Self::DateTime(_) => "date_time",
+            Self::Manual => "manual",
+        };
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
-pub struct IntentionConditionTimeRule {
-    pub time_of_day: String,
-    pub weekdays: Option<Vec<IntentionWeekday>>,
+pub struct IntentionConditionScheduleRule {
+    pub time_of_day: TimeOnly,
+    pub weekdays: Option<Vec<Weekday>>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
-#[serde(rename_all = "snake_case")]
-pub enum IntentionWeekday {
-    Mon,
-    Tue,
-    Wed,
-    Thu,
-    Fri,
-    Sat,
-    Sun,
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct IntentionConditionDateTimeRule {
+    pub date: DateOnly,
+    pub time_of_day: TimeOnly,
 }

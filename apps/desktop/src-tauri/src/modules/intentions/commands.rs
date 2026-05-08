@@ -1,8 +1,11 @@
 use super::{
-    intention::{Intention, IntentionBlockScope, IntentionEnforcementMode},
+    intention::{
+        Intention, IntentionBlockScope, IntentionConditionPhase, IntentionConditionRule,
+        IntentionEnforcementMode,
+    },
     repository::{
-        CreateIntentionBehaviorInput, CreateIntentionBlockInput, CreateIntentionInput,
-        IntentionRepository,
+        CreateIntentionBehaviorInput, CreateIntentionBlockInput, CreateIntentionConditionInput,
+        CreateIntentionInput, IntentionRepository,
     },
     types::IntentionCreatedEvent,
 };
@@ -91,6 +94,14 @@ pub async fn create_intention(
                     apps,
                     websites,
                 }),
+                conditions: params
+                    .conditions
+                    .into_iter()
+                    .map(|c| CreateIntentionConditionInput {
+                        phase: c.phase,
+                        rule: c.rule,
+                    })
+                    .collect(),
             }
         }
         CreateIntentionBehaviorParams::Break => {
@@ -100,6 +111,20 @@ pub async fn create_intention(
 
     if input.name.is_empty() {
         return Err("Please enter a name".to_string());
+    }
+    if !input
+        .conditions
+        .iter()
+        .any(|condition| condition.phase == IntentionConditionPhase::Start)
+    {
+        return Err("Please add a start condition".to_string());
+    }
+    if !input
+        .conditions
+        .iter()
+        .any(|condition| condition.phase == IntentionConditionPhase::End)
+    {
+        return Err("Please add an end condition".to_string());
     }
 
     let intention = IntentionRepository::create(&state.pool, input)
@@ -118,6 +143,7 @@ pub async fn create_intention(
 pub struct CreateIntentionParams {
     pub name: String,
     pub behavior: CreateIntentionBehaviorParams,
+    pub conditions: Vec<CreateIntentionConditionParams>,
 }
 
 #[derive(Debug, Clone, Deserialize, specta::Type)]
@@ -160,4 +186,11 @@ pub struct CreateIntentionBlockWebsiteTargetParams {
     pub name: Option<String>,
     pub icon: Option<String>,
     pub color: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateIntentionConditionParams {
+    pub phase: IntentionConditionPhase,
+    pub rule: IntentionConditionRule,
 }

@@ -138,20 +138,22 @@ export type CreateIntentionBlockAppTargetParams = { stableId: string; name: stri
 export type CreateIntentionBlockParams = { enforcementMode: IntentionEnforcementMode; scope: IntentionBlockScope; targets: CreateIntentionBlockTargetParams[] }
 export type CreateIntentionBlockTargetParams = ({ type: "app" } & CreateIntentionBlockAppTargetParams) | ({ type: "website" } & CreateIntentionBlockWebsiteTargetParams)
 export type CreateIntentionBlockWebsiteTargetParams = { hostname: string; name: string | null; icon: string | null; color: string | null }
-export type CreateIntentionParams = { name: string; behavior: CreateIntentionBehaviorParams }
+export type CreateIntentionConditionParams = { phase: IntentionConditionPhase; rule: IntentionConditionRule }
+export type CreateIntentionParams = { name: string; behavior: CreateIntentionBehaviorParams; conditions: CreateIntentionConditionParams[] }
+export type DateOnly = string
 export type DeveloperSettings = { enabled: boolean }
 export type Intention = { id: number; name: string; behavior: IntentionBehavior; conditions: IntentionCondition[]; updatedAt: number; createdAt: number }
 export type IntentionBehavior = ({ type: "block" } & IntentionBlock) | { type: "break" }
 export type IntentionBlock = { enforcementMode: IntentionEnforcementMode; scope: IntentionBlockScope; apps: App[]; websites: Website[] }
 export type IntentionBlockScope = "blockTargets" | "allowTargets" | "wholeDevice"
 export type IntentionCondition = { id: number; phase: IntentionConditionPhase; rule: IntentionConditionRule; updatedAt: number; createdAt: number }
+export type IntentionConditionDateTimeRule = { date: DateOnly; timeOfDay: TimeOnly }
 export type IntentionConditionPhase = "start" | "end"
-export type IntentionConditionRule = ({ type: "time" } & IntentionConditionTimeRule) | { type: "manual" }
-export type IntentionConditionTimeRule = { timeOfDay: string; weekdays: IntentionWeekday[] | null }
+export type IntentionConditionRule = ({ type: "schedule" } & IntentionConditionScheduleRule) | ({ type: "dateTime" } & IntentionConditionDateTimeRule) | { type: "manual" }
+export type IntentionConditionScheduleRule = { timeOfDay: TimeOnly; weekdays: Weekday[] | null }
 export type IntentionCreatedEvent = { intentionId: number }
 export type IntentionEnforcementMode = "casual" | "balanced" | "strict"
 export type IntentionUpdatedEvent = { intentionId: number }
-export type IntentionWeekday = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun"
 export type KeyboardShortcut = { modifiers: ShortcutModifier[]; 
 /**
  * A browser KeyboardEvent.code value, e.g. "KeyK", "KeyB".
@@ -166,6 +168,7 @@ export type ShortcutTriggeredEvent = ShortcutAction
 export type Stage = "dev" | "prod"
 export type SystemTypographyDto = { baseFontSize: number; smallFontSize: number }
 export type Theme = "light" | "dark" | "auto"
+export type TimeOnly = string
 export type Website = { 
 /**
  * Database row identifier for persisted website records.
@@ -175,6 +178,7 @@ id: number;
  * Canonical website hostname used as the stable website key.
  */
 hostname: string; name: string | null; icon: string | null; color: string | null }
+export type Weekday = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun"
 
 /** tauri-specta globals **/
 

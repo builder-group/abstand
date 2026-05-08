@@ -100,7 +100,7 @@ CREATE TABLE intention_condition (
     intention_id INTEGER NOT NULL REFERENCES intention (id) ON DELETE CASCADE,
     phase TEXT NOT NULL CHECK (phase IN ('start', 'end')),
     -- Discriminator for rule payload tables
-    rule_type TEXT NOT NULL CHECK (rule_type IN ('time', 'manual')),
+    rule_type TEXT NOT NULL CHECK (rule_type IN ('schedule', 'date_time', 'manual')),
     updated_at INTEGER NOT NULL DEFAULT (CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)),
     created_at INTEGER NOT NULL DEFAULT (CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER))
 );
@@ -110,12 +110,12 @@ CREATE INDEX idx_intention_condition_intention_id ON intention_condition (intent
 -- Supports composite FKs from rule payload tables
 CREATE UNIQUE INDEX intention_condition_id_rule_type ON intention_condition (id, rule_type);
 
--- Time rule payload
+-- Recurring schedule rule payload
 -- Note: Timestamps live on the owning intention_condition row
-CREATE TABLE intention_condition_time (
+CREATE TABLE intention_condition_schedule (
     condition_id INTEGER PRIMARY KEY,
     -- Discriminator for the composite FK to intention_condition
-    rule_type TEXT NOT NULL DEFAULT 'time' CHECK (rule_type = 'time'),
+    rule_type TEXT NOT NULL DEFAULT 'schedule' CHECK (rule_type = 'schedule'),
     time_of_day TEXT NOT NULL, -- local wall-clock HH:MM
     weekdays TEXT, -- JSON array of weekday tokens ["mon".."sun"], NULL means every day
     FOREIGN KEY (condition_id, rule_type) REFERENCES intention_condition (id, rule_type) ON DELETE CASCADE,
@@ -127,6 +127,28 @@ CREATE TABLE intention_condition_time (
     CHECK (
         weekdays IS NULL
         OR (json_valid(weekdays) AND json_type(weekdays) = 'array')
+    )
+);
+
+-- Date-time rule payload for one upcoming local wall-clock occurrence
+-- Note: Timestamps live on the owning intention_condition row
+CREATE TABLE intention_condition_date_time (
+    condition_id INTEGER PRIMARY KEY,
+    -- Discriminator for the composite FK to intention_condition
+    rule_type TEXT NOT NULL DEFAULT 'date_time' CHECK (rule_type = 'date_time'),
+    date TEXT NOT NULL, -- local calendar date YYYY-MM-DD
+    time_of_day TEXT NOT NULL, -- local wall-clock HH:MM
+    FOREIGN KEY (condition_id, rule_type) REFERENCES intention_condition (id, rule_type) ON DELETE CASCADE,
+    CHECK (
+        length(date) = 10
+        AND date GLOB '[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]'
+        AND CAST(substr(date, 6, 2) AS INTEGER) BETWEEN 1 AND 12
+        AND CAST(substr(date, 9, 2) AS INTEGER) BETWEEN 1 AND 31
+    ),
+    CHECK (
+        length(time_of_day) = 5
+        AND time_of_day GLOB '[0-2][0-9]:[0-5][0-9]'
+        AND CAST(substr(time_of_day, 1, 2) AS INTEGER) BETWEEN 0 AND 23
     )
 );
 
@@ -305,8 +327,8 @@ BEGIN
     WHERE id = NEW.id;
 END;
 
-CREATE TRIGGER intention_condition_time_touch_condition_after_insert
-AFTER INSERT ON intention_condition_time
+CREATE TRIGGER intention_condition_schedule_touch_condition_after_insert
+AFTER INSERT ON intention_condition_schedule
 FOR EACH ROW
 BEGIN
     UPDATE intention_condition
@@ -317,8 +339,8 @@ BEGIN
     WHERE id = NEW.condition_id;
 END;
 
-CREATE TRIGGER intention_condition_time_touch_condition_after_update
-AFTER UPDATE ON intention_condition_time
+CREATE TRIGGER intention_condition_schedule_touch_condition_after_update
+AFTER UPDATE ON intention_condition_schedule
 FOR EACH ROW
 BEGIN
     UPDATE intention_condition
@@ -329,8 +351,44 @@ BEGIN
     WHERE id = NEW.condition_id;
 END;
 
-CREATE TRIGGER intention_condition_time_touch_condition_after_delete
-AFTER DELETE ON intention_condition_time
+CREATE TRIGGER intention_condition_schedule_touch_condition_after_delete
+AFTER DELETE ON intention_condition_schedule
+FOR EACH ROW
+BEGIN
+    UPDATE intention_condition
+    SET updated_at = CASE
+        WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= updated_at THEN updated_at + 1
+        ELSE CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)
+    END
+    WHERE id = OLD.condition_id;
+END;
+
+CREATE TRIGGER intention_condition_date_time_touch_condition_after_insert
+AFTER INSERT ON intention_condition_date_time
+FOR EACH ROW
+BEGIN
+    UPDATE intention_condition
+    SET updated_at = CASE
+        WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= updated_at THEN updated_at + 1
+        ELSE CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)
+    END
+    WHERE id = NEW.condition_id;
+END;
+
+CREATE TRIGGER intention_condition_date_time_touch_condition_after_update
+AFTER UPDATE ON intention_condition_date_time
+FOR EACH ROW
+BEGIN
+    UPDATE intention_condition
+    SET updated_at = CASE
+        WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= updated_at THEN updated_at + 1
+        ELSE CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)
+    END
+    WHERE id = NEW.condition_id;
+END;
+
+CREATE TRIGGER intention_condition_date_time_touch_condition_after_delete
+AFTER DELETE ON intention_condition_date_time
 FOR EACH ROW
 BEGIN
     UPDATE intention_condition
