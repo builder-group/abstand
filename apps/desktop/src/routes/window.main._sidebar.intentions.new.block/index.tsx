@@ -3,7 +3,7 @@ import { useForm } from 'feature-react/form';
 import { useFeatureState } from 'feature-react/state';
 import React from 'react';
 import { Button, ContentPage, Input } from '@/components';
-import { BlockScopeCard, useNewBlockIntentionCx } from '@/modules/intentions';
+import { BlockSection, useNewBlockIntentionCx, WhenSection } from '@/modules/intentions';
 import { SettingsGroup, SettingsRow } from '@/modules/settings';
 
 export const Route = createFileRoute('/window/main/_sidebar/intentions/new/block/')({
@@ -56,7 +56,8 @@ function RouteComponent() {
 					</SettingsRow>
 				</SettingsGroup>
 
-				<BlockScopeCard />
+				<BlockSection />
+				<WhenSection />
 
 				<div className="flex justify-end">
 					<Button type="submit" variant="primary" disabled={isSubmitting}>

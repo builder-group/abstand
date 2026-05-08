@@ -14,7 +14,7 @@ import { CatalogIconPeek, useCatalogPicker, type TCatalogItem } from '@/modules/
 import { SettingsGroup, SettingsRow, SettingsRowFrame } from '@/modules/settings';
 import { useNewBlockIntentionCx } from './NewBlockIntentionCx';
 
-export const BlockScopeCard: React.FC = () => {
+export const BlockSection: React.FC = () => {
 	const cx = useNewBlockIntentionCx();
 
 	const scope = useFeatureState(cx.$form.fields.scope);
