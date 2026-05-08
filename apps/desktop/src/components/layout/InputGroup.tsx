@@ -1,5 +1,6 @@
 import { cva, type VariantProps } from 'class-variance-authority';
 import React from 'react';
+import { useStableCallback } from '@/hooks';
 import { cn } from '@/lib';
 import { ChevronDownIcon, ChevronUpIcon } from '../display';
 import { Button, Input, Textarea } from '../input';
@@ -132,10 +133,94 @@ export const InputGroupStepper: React.FC<TInputGroupStepperProps> = (props) => {
 		decrementDisabled = false,
 		incrementLabel = 'Increase value',
 		decrementLabel = 'Decrease value',
+		repeatDelayMs = 400,
+		repeatIntervalMs = 80,
 		className,
 		...rest
 	} = props;
 	const { size } = React.useContext(InputGroupContext);
+
+	const repeatTimeoutRef = React.useRef<number | null>(null);
+	const repeatIntervalRef = React.useRef<number | null>(null);
+	const activeDirectionRef = React.useRef<TInputGroupStepperDirection | null>(null);
+	const suppressNextPointerClickRef = React.useRef(false);
+
+	// MARK: - Actions
+
+	const stopRepeating = React.useCallback(() => {
+		window.clearTimeout(repeatTimeoutRef.current ?? undefined);
+		window.clearInterval(repeatIntervalRef.current ?? undefined);
+		repeatTimeoutRef.current = null;
+		repeatIntervalRef.current = null;
+		activeDirectionRef.current = null;
+	}, []);
+
+	const runStep = useStableCallback((direction: TInputGroupStepperDirection) => {
+		if (direction === 'increment') {
+			if (incrementDisabled) {
+				stopRepeating();
+				return;
+			}
+			onIncrement();
+		} else {
+			if (decrementDisabled) {
+				stopRepeating();
+				return;
+			}
+			onDecrement();
+		}
+	});
+
+	const startRepeating = React.useCallback(
+		(direction: TInputGroupStepperDirection, event: React.PointerEvent<HTMLButtonElement>) => {
+			if (event.button !== 0) {
+				return;
+			}
+
+			suppressNextPointerClickRef.current = true;
+			event.currentTarget.setPointerCapture(event.pointerId);
+			stopRepeating();
+			activeDirectionRef.current = direction;
+			runStep(direction);
+
+			repeatTimeoutRef.current = window.setTimeout(() => {
+				repeatIntervalRef.current = window.setInterval(() => {
+					runStep(direction);
+				}, repeatIntervalMs);
+			}, repeatDelayMs);
+		},
+		[repeatDelayMs, repeatIntervalMs, runStep, stopRepeating]
+	);
+
+	const handleIncrementClick = React.useCallback(
+		(event: React.MouseEvent<HTMLButtonElement>) => {
+			if (suppressNextPointerClickRef.current && event.detail > 0) {
+				suppressNextPointerClickRef.current = false;
+				return;
+			}
+			suppressNextPointerClickRef.current = false;
+			runStep('increment');
+		},
+		[runStep]
+	);
+
+	const handleDecrementClick = React.useCallback(
+		(event: React.MouseEvent<HTMLButtonElement>) => {
+			if (suppressNextPointerClickRef.current && event.detail > 0) {
+				suppressNextPointerClickRef.current = false;
+				return;
+			}
+			suppressNextPointerClickRef.current = false;
+			runStep('decrement');
+		},
+		[runStep]
+	);
+
+	// MARK: - Effects
+
+	React.useEffect(() => stopRepeating, [stopRepeating]);
+
+	// MARK: - UI
 
 	return (
 		<div
@@ -148,7 +233,11 @@ export const InputGroupStepper: React.FC<TInputGroupStepperProps> = (props) => {
 				type="button"
 				data-slot="input-group-stepper-button"
 				className={inputGroupStepperButtonVariants({ position: 'top' })}
-				onClick={onIncrement}
+				onPointerDown={(e) => startRepeating('increment', e)}
+				onPointerUp={stopRepeating}
+				onPointerCancel={stopRepeating}
+				onLostPointerCapture={stopRepeating}
+				onClick={handleIncrementClick}
 				disabled={incrementDisabled}
 				aria-label={incrementLabel}
 			>
@@ -158,7 +247,11 @@ export const InputGroupStepper: React.FC<TInputGroupStepperProps> = (props) => {
 				type="button"
 				data-slot="input-group-stepper-button"
 				className={inputGroupStepperButtonVariants({ position: 'bottom' })}
-				onClick={onDecrement}
+				onPointerDown={(e) => startRepeating('decrement', e)}
+				onPointerUp={stopRepeating}
+				onPointerCancel={stopRepeating}
+				onLostPointerCapture={stopRepeating}
+				onClick={handleDecrementClick}
 				disabled={decrementDisabled}
 				aria-label={decrementLabel}
 			>
@@ -195,17 +288,21 @@ const inputGroupStepperButtonVariants = cva(
 	}
 );
 
-const inputGroupStepperIconVariants = cva('-translate-x-px', {
-	variants: {
-		size: {
-			sm: 'size-3',
-			md: 'size-3.5'
+const inputGroupStepperIconVariants = cva(
+	// Note: The stepper has a border-l, so the visual center sits 1px right; nudge left to compensate
+	'-translate-x-px',
+	{
+		variants: {
+			size: {
+				sm: 'size-3',
+				md: 'size-3.5'
+			}
+		},
+		defaultVariants: {
+			size: 'sm'
 		}
-	},
-	defaultVariants: {
-		size: 'sm'
 	}
-});
+);
 
 export interface TInputGroupStepperProps extends React.ComponentProps<'div'> {
 	onIncrement: () => void;
@@ -214,7 +311,11 @@ export interface TInputGroupStepperProps extends React.ComponentProps<'div'> {
 	decrementDisabled?: boolean;
 	incrementLabel?: string;
 	decrementLabel?: string;
+	repeatDelayMs?: number;
+	repeatIntervalMs?: number;
 }
+
+type TInputGroupStepperDirection = 'increment' | 'decrement';
 
 export const InputGroupText: React.FC<TInputGroupTextProps> = (props) => {
 	const { className, ...rest } = props;
