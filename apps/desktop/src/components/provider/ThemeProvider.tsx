@@ -36,25 +36,27 @@ export const ThemeProvider: React.FC<TThemeProviderProps> = (props) => {
 
 	useSubscriber(
 		settingsCx.$appSettings,
-		({ value }) => {
-			void applyTheme(value.appearance.theme);
+		({ value, prevValue }) => {
+			if (value.appearance.theme !== prevValue?.appearance.theme) {
+				void applyTheme(value.appearance.theme);
+			}
 		},
 		[applyTheme]
 	);
 
 	// Listen for system theme changes (only matters if set to 'auto')
 	React.useEffect(() => {
-		const unlistenPromise = getCurrentWindow().onThemeChanged(({ payload }) => {
+		const unlistenPromise = getCurrentWindow().onThemeChanged(() => {
 			const currentTheme = settingsCx.$appSettings._v.appearance.theme;
 			if (currentTheme === 'auto') {
-				applyThemeClass(payload);
+				applyTheme('auto');
 			}
 		});
 
 		return () => {
 			void unlistenPromise.then((unlisten) => unlisten());
 		};
-	}, [settingsCx, applyThemeClass]);
+	}, [settingsCx, applyTheme]);
 
 	// MARK: - UI
 

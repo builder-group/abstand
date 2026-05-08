@@ -39,7 +39,7 @@ function RouteComponent() {
 			subtitle="Choose what gets blocked and how strict it should be."
 			backTo="/window/main/intentions/new"
 		>
-			<form onSubmit={handleSubmit({ onValidSubmit: handleValidSubmit })} className="space-y-4">
+			<form onSubmit={handleSubmit({ onValidSubmit: handleValidSubmit })} className="space-y-5">
 				<SettingsGroup>
 					<SettingsRow
 						label="Name"

@@ -15,11 +15,7 @@ export const TypographyProvider: React.FC<TTypographyProviderProps> = (props) =>
 	useSubscriber(
 		settingsCx.$appSettings,
 		async ({ value, prevValue }) => {
-			if (
-				prevValue != null &&
-				prevValue !== value &&
-				value.appearance.fontScale === prevValue.appearance.fontScale
-			) {
+			if (value.appearance.fontScale === prevValue?.appearance.fontScale) {
 				return;
 			}
 
