@@ -33,6 +33,7 @@ import {
 	InputGroupAddon,
 	InputGroupButton,
 	InputGroupInput,
+	InputGroupStepper,
 	InputGroupText,
 	InputGroupTextarea,
 	Kbd,
@@ -53,7 +54,7 @@ import {
 	useComboboxAnchor,
 	XCircleIcon
 } from '@/components';
-import { cn } from '@/lib';
+import { clampNumber, cn } from '@/lib';
 import { SettingsGroup, SettingsRow } from '@/modules/settings';
 
 export const Route = createFileRoute('/window/main/_sidebar/settings/developer/ui-playground/')({
@@ -153,6 +154,25 @@ const InputSection: React.FC = () => {
 // MARK: - Input Group
 
 const InputGroupSection: React.FC = () => {
+	const [minutes, setMinutes] = React.useState(30);
+
+	const handleMinutesChange = React.useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+		const nextMinutes = Number(event.target.value);
+		if (!Number.isFinite(nextMinutes)) {
+			return;
+		}
+
+		setMinutes(clampNumber(nextMinutes, 0, 59));
+	}, []);
+
+	const handleIncrementMinutes = React.useCallback(() => {
+		setMinutes((value) => clampNumber(value + 1, 0, 59));
+	}, []);
+
+	const handleDecrementMinutes = React.useCallback(() => {
+		setMinutes((value) => clampNumber(value - 1, 0, 59));
+	}, []);
+
 	return (
 		<PlaygroundGroup title="Input Group">
 			<PlaygroundRow label="Sizes">
@@ -180,17 +200,36 @@ const InputGroupSection: React.FC = () => {
 				</InputGroup>
 			</PlaygroundRow>
 			<PlaygroundRow label="Examples">
-				<InputGroup className="w-44">
+				<InputGroup className="w-56">
 					<InputGroupAddon>
-						<InputGroupText>cmd</InputGroupText>
+						<InputGroupText>https://</InputGroupText>
 					</InputGroupAddon>
-					<InputGroupInput placeholder="K" />
+					<InputGroupInput placeholder="example.com" />
 				</InputGroup>
 				<InputGroup className="w-56">
 					<InputGroupInput placeholder="Toggle sidebar" />
 					<InputGroupAddon align="inline-end">
 						<Kbd>⌘B</Kbd>
 					</InputGroupAddon>
+				</InputGroup>
+				<InputGroup className="w-17">
+					<InputGroupInput
+						type="number"
+						min={0}
+						max={59}
+						value={minutes}
+						onChange={handleMinutesChange}
+						aria-label="Minutes"
+					/>
+					<InputGroupAddon align="inline-end" className="pr-2 text-xs">
+						M
+					</InputGroupAddon>
+					<InputGroupStepper
+						onIncrement={handleIncrementMinutes}
+						onDecrement={handleDecrementMinutes}
+						incrementDisabled={minutes >= 59}
+						decrementDisabled={minutes <= 0}
+					/>
 				</InputGroup>
 			</PlaygroundRow>
 			<PlaygroundRow label="Block Addons">

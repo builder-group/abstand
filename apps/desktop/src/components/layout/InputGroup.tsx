@@ -1,6 +1,7 @@
 import { cva, type VariantProps } from 'class-variance-authority';
 import React from 'react';
 import { cn } from '@/lib';
+import { ChevronDownIcon, ChevronUpIcon } from '../display';
 import { Button, Input, Textarea } from '../input';
 
 const InputGroupContext = React.createContext<TInputGroupContext>({
@@ -30,7 +31,7 @@ export const InputGroup: React.FC<TInputGroupProps> = (props) => {
 };
 
 const inputGroupVariants = cva(
-	'group/input-group border-base-200 bg-base-0 text-base-950 has-[[data-slot=input-group-control]:focus-visible]:border-primary has-[[data-slot=input-group-control]:focus-visible]:ring-primary/30 has-[[data-slot=input-group-control][aria-invalid=true]]:border-error has-[[data-slot=input-group-control][aria-invalid=true]]:ring-error/20 relative flex w-full min-w-0 items-center border bg-clip-padding transition has-disabled:opacity-50 has-[[data-slot=input-group-control]:focus-visible]:ring-2 has-[[data-slot=input-group-control][aria-invalid=true]]:ring-2 has-[textarea]:items-stretch has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-end]]:items-stretch has-[>[data-align=block-start]]:h-auto has-[>[data-align=block-start]]:flex-col has-[>[data-align=block-start]]:items-stretch has-[>textarea]:h-auto',
+	'group/input-group border-base-200 bg-base-0 text-base-950 has-[[data-slot=input-group-control]:focus-visible]:border-primary has-[[data-slot=input-group-control]:focus-visible]:ring-primary/30 has-[[data-slot=input-group-control][aria-invalid=true]]:border-error has-[[data-slot=input-group-control][aria-invalid=true]]:ring-error/20 relative flex w-full min-w-0 items-center border bg-clip-padding transition has-[[data-slot=input-group-control]:disabled]:opacity-50 has-[[data-slot=input-group-control]:focus-visible]:ring-2 has-[[data-slot=input-group-control]:is(textarea)]:items-stretch has-[[data-slot=input-group-control][aria-invalid=true]]:ring-2 has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-end]]:items-stretch has-[>[data-align=block-start]]:h-auto has-[>[data-align=block-start]]:flex-col has-[>[data-align=block-start]]:items-stretch has-[>[data-slot=input-group-control]:is(textarea)]:h-auto',
 	{
 		variants: {
 			size: {
@@ -123,6 +124,98 @@ export type TInputGroupButtonProps = Omit<React.ComponentProps<typeof Button>, '
 	type?: 'button' | 'submit' | 'reset';
 };
 
+export const InputGroupStepper: React.FC<TInputGroupStepperProps> = (props) => {
+	const {
+		onIncrement,
+		onDecrement,
+		incrementDisabled = false,
+		decrementDisabled = false,
+		incrementLabel = 'Increase value',
+		decrementLabel = 'Decrease value',
+		className,
+		...rest
+	} = props;
+	const { size } = React.useContext(InputGroupContext);
+
+	return (
+		<div
+			data-slot="input-group-stepper"
+			data-size={size}
+			className={cn(inputGroupStepperVariants({ size }), className)}
+			{...rest}
+		>
+			<button
+				type="button"
+				data-slot="input-group-stepper-button"
+				className={inputGroupStepperButtonVariants({ position: 'top' })}
+				onClick={onIncrement}
+				disabled={incrementDisabled}
+				aria-label={incrementLabel}
+			>
+				<ChevronUpIcon aria-hidden className={inputGroupStepperIconVariants({ size })} />
+			</button>
+			<button
+				type="button"
+				data-slot="input-group-stepper-button"
+				className={inputGroupStepperButtonVariants({ position: 'bottom' })}
+				onClick={onDecrement}
+				disabled={decrementDisabled}
+				aria-label={decrementLabel}
+			>
+				<ChevronDownIcon aria-hidden className={inputGroupStepperIconVariants({ size })} />
+			</button>
+		</div>
+	);
+};
+
+const inputGroupStepperVariants = cva(
+	'border-base-200 bg-base-950/2 order-last flex flex-col self-stretch overflow-hidden rounded-r-lg border-l',
+	{
+		variants: {
+			size: {
+				sm: 'w-4',
+				md: 'w-5'
+			}
+		},
+		defaultVariants: {
+			size: 'sm'
+		}
+	}
+);
+
+const inputGroupStepperButtonVariants = cva(
+	'text-base-400 hover:bg-base-950/6 hover:text-base-950 focus-visible:ring-primary/30 flex min-h-0 w-full flex-1 items-center justify-center transition-colors outline-none focus-visible:ring-1 focus-visible:ring-inset disabled:pointer-events-none disabled:opacity-30',
+	{
+		variants: {
+			position: {
+				top: 'border-base-200 rounded-tr-lg border-b',
+				bottom: 'rounded-br-lg'
+			}
+		}
+	}
+);
+
+const inputGroupStepperIconVariants = cva('-translate-x-px', {
+	variants: {
+		size: {
+			sm: 'size-3',
+			md: 'size-3.5'
+		}
+	},
+	defaultVariants: {
+		size: 'sm'
+	}
+});
+
+export interface TInputGroupStepperProps extends React.ComponentProps<'div'> {
+	onIncrement: () => void;
+	onDecrement: () => void;
+	incrementDisabled?: boolean;
+	decrementDisabled?: boolean;
+	incrementLabel?: string;
+	decrementLabel?: string;
+}
+
 export const InputGroupText: React.FC<TInputGroupTextProps> = (props) => {
 	const { className, ...rest } = props;
 	const { size } = React.useContext(InputGroupContext);
@@ -164,6 +257,7 @@ export const InputGroupInput: React.FC<TInputGroupInputProps> = (props) => {
 			size={size}
 			className={cn(
 				'h-full min-w-0 flex-1 rounded-none border-0 bg-transparent shadow-none focus-visible:ring-0 disabled:bg-transparent aria-invalid:ring-0',
+				'[[type=number]]:[appearance:textfield] [[type=number]]:text-right [&[type=number]::-webkit-inner-spin-button]:appearance-none [&[type=number]::-webkit-outer-spin-button]:appearance-none',
 				className
 			)}
 			{...rest}

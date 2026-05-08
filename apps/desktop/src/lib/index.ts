@@ -1,3 +1,4 @@
+export * from './clamp-number';
 export * from './cn';
 export * from './create-computed-state';
 export * from './create-mount-lifecycle';

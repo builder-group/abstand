@@ -23,7 +23,7 @@ export const Switch: React.FC<TSwitchProps> = (props) => {
 };
 
 const switchVariants = cva(
-	'group/switch data-unchecked:bg-base-200 data-checked:bg-primary focus-ring inline-flex shrink-0 cursor-default items-center border border-transparent transition-colors select-none data-disabled:pointer-events-none data-disabled:opacity-50',
+	'data-unchecked:bg-base-200 data-checked:bg-primary focus-ring inline-flex shrink-0 cursor-default items-center border border-transparent transition-colors select-none data-disabled:pointer-events-none data-disabled:opacity-50',
 	{
 		variants: {
 			size: {
