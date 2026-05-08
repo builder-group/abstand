@@ -24,13 +24,15 @@ const toggleVariants = cva(
 			variant: {
 				default: 'text-base-500 hover:text-base-950 aria-pressed:text-base-950 bg-transparent',
 				// Note: The icon communicates state while appearance stays the same whether pressed or not
-				icon: 'text-base-500 hover:text-base-950 aria-pressed:text-base-500 hover:aria-pressed:bg-base-950/6 hover:aria-pressed:text-base-950 bg-transparent aria-pressed:bg-transparent',
+				ghost:
+					'text-base-500 hover:text-base-950 aria-pressed:text-base-500 hover:aria-pressed:bg-base-950/6 hover:aria-pressed:text-base-950 bg-transparent aria-pressed:bg-transparent',
 				outline:
 					'border-base-200 text-base-500 hover:text-base-950 aria-pressed:text-base-950 border bg-transparent'
 			},
 			size: {
 				'sm': "h-7 min-w-7 gap-1 rounded-lg px-1.5 text-sm [&_svg:not([class*='size-'])]:size-3.5",
 				'md': "h-8 min-w-8 gap-1.5 rounded-lg px-2 text-sm [&_svg:not([class*='size-'])]:size-4",
+				'icon-xs': "size-5 rounded-full [&_svg:not([class*='size-'])]:size-3.5",
 				'icon-sm': "size-7 rounded-full [&_svg:not([class*='size-'])]:size-3.5",
 				'icon-md': "size-8 rounded-full [&_svg:not([class*='size-'])]:size-4"
 			}

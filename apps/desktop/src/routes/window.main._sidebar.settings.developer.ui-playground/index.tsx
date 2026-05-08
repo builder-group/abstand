@@ -38,12 +38,14 @@ import {
 	Kbd,
 	LibraryBigIcon,
 	MonitorIcon,
+	MoonIcon,
 	SearchIcon,
 	SegmentedControl,
 	SegmentedControlItem,
 	Select,
 	SettingsPage,
 	Slider,
+	SunIcon,
 	Switch,
 	Textarea,
 	Toggle,
@@ -320,6 +322,7 @@ const ToggleSection: React.FC = () => {
 	const [mdValue, setMdValue] = React.useState(true);
 	const [outlineValue, setOutlineValue] = React.useState(false);
 	const [iconValue, setIconValue] = React.useState(false);
+	const [ghostValue, setGhostValue] = React.useState(true);
 
 	return (
 		<PlaygroundGroup title="Toggle">
@@ -344,17 +347,22 @@ const ToggleSection: React.FC = () => {
 				</Toggle>
 			</PlaygroundRow>
 			<PlaygroundRow label="Icon">
-				<Toggle size="icon-sm" variant="icon" aria-label="Help">
-					<CircleQuestionMarkIcon />
-				</Toggle>
 				<Toggle
 					size="icon-md"
-					variant="icon"
 					pressed={iconValue}
 					onPressedChange={setIconValue}
 					aria-label="Developer tools"
 				>
 					<CodeXmlIcon />
+				</Toggle>
+				<Toggle
+					size="icon-sm"
+					variant="ghost"
+					pressed={ghostValue}
+					onPressedChange={setGhostValue}
+					aria-label={ghostValue ? 'Disable dark mode' : 'Enable dark mode'}
+				>
+					{ghostValue ? <MoonIcon /> : <SunIcon />}
 				</Toggle>
 			</PlaygroundRow>
 		</PlaygroundGroup>

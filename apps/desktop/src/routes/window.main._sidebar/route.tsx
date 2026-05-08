@@ -35,7 +35,7 @@ function SidebarLayout() {
 					<Tooltip content="Toggle sidebar" shortcut={toggleSidebarHint} side="bottom">
 						<Toggle
 							aria-label={isOpen ? 'Close sidebar' : 'Open sidebar'}
-							variant="icon"
+							variant="ghost"
 							size="icon-sm"
 							pressed={isOpen}
 							onPressedChange={(pressed) => (pressed ? sidebarCx.open() : sidebarCx.close())}
