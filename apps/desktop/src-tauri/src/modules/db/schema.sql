@@ -138,6 +138,7 @@ CREATE TABLE intention_condition_date_time (
     rule_type TEXT NOT NULL DEFAULT 'date_time' CHECK (rule_type = 'date_time'),
     date TEXT NOT NULL, -- local calendar date YYYY-MM-DD
     time_of_day TEXT NOT NULL, -- local wall-clock HH:MM
+    trigger_at INTEGER NOT NULL, -- resolved fixed Unix millisecond instant
     FOREIGN KEY (condition_id, rule_type) REFERENCES intention_condition (id, rule_type) ON DELETE CASCADE,
     CHECK (
         length(date) = 10

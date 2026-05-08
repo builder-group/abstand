@@ -169,11 +169,12 @@ impl IntentionRepository {
                 }
                 IntentionConditionRule::DateTime(date_time_rule) => {
                     sqlx::query(
-                        "INSERT INTO intention_condition_date_time (condition_id, date, time_of_day) VALUES (?, ?, ?)",
+                        "INSERT INTO intention_condition_date_time (condition_id, date, time_of_day, trigger_at) VALUES (?, ?, ?, ?)",
                     )
                     .bind(condition_id)
                     .bind(date_time_rule.date.as_str())
                     .bind(date_time_rule.time_of_day.as_str())
+                    .bind(date_time_rule.trigger_at)
                     .execute(&mut **transaction)
                     .await?;
                 }
@@ -383,7 +384,7 @@ impl IntentionRepository {
         }
 
         let mut query_builder = QueryBuilder::<Sqlite>::new(
-            "SELECT condition_id, date, time_of_day FROM intention_condition_date_time WHERE condition_id IN (",
+            "SELECT condition_id, date, time_of_day, trigger_at FROM intention_condition_date_time WHERE condition_id IN (",
         );
         let mut separated = query_builder.separated(", ");
         for condition_id in condition_ids {
@@ -537,6 +538,7 @@ impl IntentionRepository {
                         .map_err(IntentionRepositoryError::InvalidData)?,
                     time_of_day: TimeOnly::parse(&date_time_row.time_of_day)
                         .map_err(IntentionRepositoryError::InvalidData)?,
+                    trigger_at: date_time_row.trigger_at,
                 })
             }
             "manual" => {
@@ -647,6 +649,7 @@ struct IntentionConditionDateTimeRow {
     condition_id: i64,
     date: String,
     time_of_day: String,
+    trigger_at: i64,
 }
 
 // MARK: - Input

@@ -266,6 +266,7 @@ CREATE TABLE `intention_condition_date_time` (
   `rule_type` text NOT NULL DEFAULT 'date_time',
   `date` text NOT NULL,
   `time_of_day` text NOT NULL,
+  `trigger_at` integer NOT NULL,
   PRIMARY KEY (`condition_id`),
   CONSTRAINT `0` FOREIGN KEY (`condition_id`, `rule_type`) REFERENCES `intention_condition` (`id`, `rule_type`) ON UPDATE NO ACTION ON DELETE CASCADE,
   CHECK (rule_type = 'date_time'),

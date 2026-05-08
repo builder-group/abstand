@@ -1,7 +1,7 @@
 use super::{
     intention::{
-        Intention, IntentionBlockScope, IntentionConditionPhase, IntentionConditionRule,
-        IntentionEnforcementMode,
+        Intention, IntentionBlockScope, IntentionConditionDateTimeRule, IntentionConditionPhase,
+        IntentionConditionRule, IntentionConditionScheduleRule, IntentionEnforcementMode,
     },
     repository::{
         CreateIntentionBehaviorInput, CreateIntentionBlockInput, CreateIntentionConditionInput,
@@ -10,6 +10,7 @@ use super::{
     types::IntentionCreatedEvent,
 };
 use crate::{
+    common::time::{to_local_datetime, DateOnly, TimeOnly},
     common::url::extract_hostname,
     modules::{
         catalog::repository::{UpsertAppInput, UpsertWebsiteInput},
@@ -48,43 +49,78 @@ pub async fn create_intention(
 ) -> Result<Intention, String> {
     let input = match params.behavior {
         CreateIntentionBehaviorParams::Block(block_params) => {
-            let mut apps = Vec::new();
-            let mut websites = Vec::new();
-            let should_persist_targets = block_params.scope != IntentionBlockScope::WholeDevice;
-            if should_persist_targets {
-                for target in block_params.targets {
-                    match target {
-                        CreateIntentionBlockTargetParams::App(app) => {
-                            let stable_id = app.stable_id.trim().to_string();
-                            if stable_id.is_empty() {
-                                return Err("App target is missing a stable ID".to_string());
+            let (apps, websites) = match block_params.scope {
+                IntentionBlockScope::WholeDevice => (Vec::new(), Vec::new()),
+                IntentionBlockScope::BlockTargets | IntentionBlockScope::AllowTargets => {
+                    let mut apps = Vec::new();
+                    let mut websites = Vec::new();
+
+                    for target in block_params.targets {
+                        match target {
+                            CreateIntentionBlockTargetParams::App(app) => {
+                                let stable_id = app.stable_id.trim().to_string();
+                                if stable_id.is_empty() {
+                                    return Err("App target is missing a stable ID".to_string());
+                                }
+
+                                apps.push(UpsertAppInput {
+                                    stable_id,
+                                    name: app.name,
+                                    bundle_id: app.bundle_id,
+                                    process_path: app.process_path,
+                                    icon: app.icon,
+                                    color: app.color,
+                                });
                             }
+                            CreateIntentionBlockTargetParams::Website(website) => {
+                                let hostname =
+                                    extract_hostname(&website.hostname).ok_or_else(|| {
+                                        format!("Invalid website hostname: {}", website.hostname)
+                                    })?;
 
-                            apps.push(UpsertAppInput {
-                                stable_id,
-                                name: app.name,
-                                bundle_id: app.bundle_id,
-                                process_path: app.process_path,
-                                icon: app.icon,
-                                color: app.color,
-                            });
-                        }
-                        CreateIntentionBlockTargetParams::Website(website) => {
-                            let hostname =
-                                extract_hostname(&website.hostname).ok_or_else(|| {
-                                    format!("Invalid website hostname: {}", website.hostname)
-                                })?;
-
-                            websites.push(UpsertWebsiteInput {
-                                hostname,
-                                name: website.name,
-                                icon: website.icon,
-                                color: website.color,
-                            });
+                                websites.push(UpsertWebsiteInput {
+                                    hostname,
+                                    name: website.name,
+                                    icon: website.icon,
+                                    color: website.color,
+                                });
+                            }
                         }
                     }
+
+                    (apps, websites)
                 }
-            }
+            };
+
+            let conditions = params
+                .conditions
+                .into_iter()
+                .map(|condition| {
+                    let rule = match condition.rule {
+                        CreateIntentionConditionRuleParams::Schedule(rule) => {
+                            IntentionConditionRule::Schedule(rule)
+                        }
+                        CreateIntentionConditionRuleParams::DateTime(rule) => {
+                            let trigger_at = to_local_datetime(&rule.date, &rule.time_of_day)?
+                                .timestamp_millis();
+
+                            IntentionConditionRule::DateTime(IntentionConditionDateTimeRule {
+                                date: rule.date,
+                                time_of_day: rule.time_of_day,
+                                trigger_at,
+                            })
+                        }
+                        CreateIntentionConditionRuleParams::Manual => {
+                            IntentionConditionRule::Manual
+                        }
+                    };
+
+                    return Ok(CreateIntentionConditionInput {
+                        phase: condition.phase,
+                        rule,
+                    });
+                })
+                .collect::<Result<Vec<_>, String>>()?;
 
             CreateIntentionInput {
                 name: params.name.trim().to_string(),
@@ -94,14 +130,7 @@ pub async fn create_intention(
                     apps,
                     websites,
                 }),
-                conditions: params
-                    .conditions
-                    .into_iter()
-                    .map(|c| CreateIntentionConditionInput {
-                        phase: c.phase,
-                        rule: c.rule,
-                    })
-                    .collect(),
+                conditions,
             }
         }
         CreateIntentionBehaviorParams::Break => {
@@ -192,5 +221,20 @@ pub struct CreateIntentionBlockWebsiteTargetParams {
 #[serde(rename_all = "camelCase")]
 pub struct CreateIntentionConditionParams {
     pub phase: IntentionConditionPhase,
-    pub rule: IntentionConditionRule,
+    pub rule: CreateIntentionConditionRuleParams,
+}
+
+#[derive(Debug, Clone, Deserialize, specta::Type)]
+#[serde(tag = "type", rename_all = "camelCase")]
+pub enum CreateIntentionConditionRuleParams {
+    Schedule(IntentionConditionScheduleRule),
+    DateTime(CreateIntentionConditionDateTimeRuleParams),
+    Manual,
+}
+
+#[derive(Debug, Clone, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateIntentionConditionDateTimeRuleParams {
+    pub date: DateOnly,
+    pub time_of_day: TimeOnly,
 }

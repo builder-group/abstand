@@ -170,4 +170,5 @@ pub struct IntentionConditionScheduleRule {
 pub struct IntentionConditionDateTimeRule {
     pub date: DateOnly,
     pub time_of_day: TimeOnly,
+    pub trigger_at: i64,
 }
