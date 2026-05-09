@@ -13,6 +13,13 @@ export const SettingsGroup: React.FC<TSettingsGroupProps> = (props) => {
 	);
 };
 
+interface TSettingsGroupProps extends VariantProps<typeof settingsGroupVariants> {
+	title?: string;
+	children?: React.ReactNode;
+	contentClassName?: string;
+	className?: string;
+}
+
 const settingsGroupVariants = cva('flex w-full flex-col', {
 	variants: {
 		size: {
@@ -45,10 +52,3 @@ const titleVariants = cva('text-base-600 ml-2.5 font-semibold', {
 	},
 	defaultVariants: { size: 'sm' }
 });
-
-type TSettingsGroupProps = {
-	title?: string;
-	children?: React.ReactNode;
-	contentClassName?: string;
-	className?: string;
-} & VariantProps<typeof settingsGroupVariants>;

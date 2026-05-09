@@ -31,6 +31,10 @@ export const InputGroup: React.FC<TInputGroupProps> = (props) => {
 	);
 };
 
+export interface TInputGroupProps extends React.ComponentProps<'div'> {
+	size?: TInputGroupSize;
+}
+
 const inputGroupVariants = cva(
 	'group/input-group border-base-200 bg-base-0 text-base-950 has-[[data-slot=input-group-control]:focus-visible]:border-primary has-[[data-slot=input-group-control]:focus-visible]:ring-primary/30 has-[[data-slot=input-group-control][aria-invalid=true]]:border-error has-[[data-slot=input-group-control][aria-invalid=true]]:ring-error/20 relative flex w-full min-w-0 items-center border bg-clip-padding transition has-[[data-slot=input-group-control]:disabled]:opacity-50 has-[[data-slot=input-group-control]:focus-visible]:ring-2 has-[[data-slot=input-group-control]:is(textarea)]:items-stretch has-[[data-slot=input-group-control][aria-invalid=true]]:ring-2 has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-end]]:items-stretch has-[>[data-align=block-start]]:h-auto has-[>[data-align=block-start]]:flex-col has-[>[data-align=block-start]]:items-stretch has-[>[data-slot=input-group-control]:is(textarea)]:h-auto',
 	{
@@ -45,10 +49,6 @@ const inputGroupVariants = cva(
 		}
 	}
 );
-
-export interface TInputGroupProps extends React.ComponentProps<'div'> {
-	size?: TInputGroupSize;
-}
 
 export const InputGroupAddon: React.FC<TInputGroupAddonProps> = (props) => {
 	const { align = 'inline-start', onClick, className, ...rest } = props;
@@ -81,6 +81,9 @@ export const InputGroupAddon: React.FC<TInputGroupAddonProps> = (props) => {
 	);
 };
 
+export type TInputGroupAddonProps = React.ComponentProps<'div'> &
+	Omit<VariantProps<typeof inputGroupAddonVariants>, 'size'>;
+
 const inputGroupAddonVariants = cva(
 	'text-base-500 flex shrink-0 cursor-text items-center font-medium select-none [&_svg]:pointer-events-none [&_svg]:shrink-0',
 	{
@@ -102,9 +105,6 @@ const inputGroupAddonVariants = cva(
 		}
 	}
 );
-
-export type TInputGroupAddonProps = React.ComponentProps<'div'> &
-	Omit<VariantProps<typeof inputGroupAddonVariants>, 'size'>;
 
 export const InputGroupButton: React.FC<TInputGroupButtonProps> = (props) => {
 	const { variant = 'ghost', type = 'button', className, ...rest } = props;
@@ -261,6 +261,19 @@ export const InputGroupStepper: React.FC<TInputGroupStepperProps> = (props) => {
 	);
 };
 
+export interface TInputGroupStepperProps extends React.ComponentProps<'div'> {
+	onIncrement: () => void;
+	onDecrement: () => void;
+	incrementDisabled?: boolean;
+	decrementDisabled?: boolean;
+	incrementLabel?: string;
+	decrementLabel?: string;
+	repeatDelayMs?: number;
+	repeatIntervalMs?: number;
+}
+
+type TInputGroupStepperDirection = 'increment' | 'decrement';
+
 const inputGroupStepperVariants = cva(
 	'border-base-200 bg-base-950/2 order-last flex flex-col self-stretch overflow-hidden rounded-r-lg border-l',
 	{
@@ -304,19 +317,6 @@ const inputGroupStepperIconVariants = cva(
 	}
 );
 
-export interface TInputGroupStepperProps extends React.ComponentProps<'div'> {
-	onIncrement: () => void;
-	onDecrement: () => void;
-	incrementDisabled?: boolean;
-	decrementDisabled?: boolean;
-	incrementLabel?: string;
-	decrementLabel?: string;
-	repeatDelayMs?: number;
-	repeatIntervalMs?: number;
-}
-
-type TInputGroupStepperDirection = 'increment' | 'decrement';
-
 export const InputGroupText: React.FC<TInputGroupTextProps> = (props) => {
 	const { className, ...rest } = props;
 	const { size } = React.useContext(InputGroupContext);
@@ -330,6 +330,8 @@ export const InputGroupText: React.FC<TInputGroupTextProps> = (props) => {
 		/>
 	);
 };
+
+export type TInputGroupTextProps = React.ComponentProps<'span'>;
 
 const inputGroupTextVariants = cva(
 	'text-base-500 flex items-center [&_svg]:pointer-events-none [&_svg]:shrink-0',
@@ -345,8 +347,6 @@ const inputGroupTextVariants = cva(
 		}
 	}
 );
-
-export type TInputGroupTextProps = React.ComponentProps<'span'>;
 
 export const InputGroupInput: React.FC<TInputGroupInputProps> = (props) => {
 	const { className, ...rest } = props;

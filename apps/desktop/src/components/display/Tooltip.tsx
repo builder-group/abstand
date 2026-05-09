@@ -36,6 +36,16 @@ export const Tooltip: React.FC<TTooltipProps> = (props) => {
 	);
 };
 
+export interface TTooltipProps
+	extends TooltipPrimitive.Root.Props, VariantProps<typeof tooltipVariants> {
+	children: React.ReactElement;
+	content: React.ReactNode;
+	shortcut?: string;
+	side?: 'top' | 'bottom' | 'left' | 'right';
+	delay?: number;
+	className?: string;
+}
+
 const tooltipVariants = cva(
 	'bg-base-950/90 text-base-50 border-base-50/10 inline-flex origin-(--transform-origin) items-center border font-medium shadow-md transition-[opacity,scale] duration-150 ease-out data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0',
 	{
@@ -50,13 +60,3 @@ const tooltipVariants = cva(
 		}
 	}
 );
-
-export interface TTooltipProps
-	extends TooltipPrimitive.Root.Props, VariantProps<typeof tooltipVariants> {
-	children: React.ReactElement;
-	content: React.ReactNode;
-	shortcut?: string;
-	side?: 'top' | 'bottom' | 'left' | 'right';
-	delay?: number;
-	className?: string;
-}

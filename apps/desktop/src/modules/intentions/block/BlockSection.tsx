@@ -21,8 +21,8 @@ export const BlockSection: React.FC = () => {
 	const [isScopeExpanded, setIsScopeExpanded] = React.useState(false);
 	const currentScope = React.useMemo(
 		() =>
-			BLOCK_SCOPE_OPTIONS.find((option) => option.value === scope) ??
-			(BLOCK_SCOPE_OPTIONS[0] as TBlockScopeOption),
+			blockScopeOptions.find((option) => option.value === scope) ??
+			(blockScopeOptions[0] as TBlockScopeOption),
 		[scope]
 	);
 
@@ -30,8 +30,8 @@ export const BlockSection: React.FC = () => {
 	const [isEnforcementExpanded, setIsEnforcementExpanded] = React.useState(false);
 	const currentEnforcementMode = React.useMemo(
 		() =>
-			ENFORCEMENT_MODE_OPTIONS.find((mode) => mode.value === enforcementMode) ??
-			(ENFORCEMENT_MODE_OPTIONS[1] as TEnforcementModeOption),
+			enforcementModeOptions.find((mode) => mode.value === enforcementMode) ??
+			(enforcementModeOptions[1] as TEnforcementModeOption),
 		[enforcementMode]
 	);
 
@@ -118,7 +118,7 @@ export const BlockSection: React.FC = () => {
 				</SettingsRow>
 
 				{isScopeExpanded &&
-					BLOCK_SCOPE_OPTIONS.map((scopeOption) => (
+					blockScopeOptions.map((scopeOption) => (
 						<SettingsRowFrame
 							key={scopeOption.value}
 							render={<button type="button" />}
@@ -174,7 +174,7 @@ export const BlockSection: React.FC = () => {
 				</SettingsRow>
 
 				{isEnforcementExpanded &&
-					ENFORCEMENT_MODE_OPTIONS.map((mode) => (
+					enforcementModeOptions.map((mode) => (
 						<SettingsRowFrame
 							key={mode.value}
 							render={<button type="button" />}
@@ -196,7 +196,7 @@ export const BlockSection: React.FC = () => {
 	);
 };
 
-const BLOCK_SCOPE_OPTIONS = [
+const blockScopeOptions = [
 	{
 		value: 'blockTargets',
 		label: 'Block selected',
@@ -217,14 +217,7 @@ const BLOCK_SCOPE_OPTIONS = [
 	}
 ] satisfies TBlockScopeOption[];
 
-interface TBlockScopeOption {
-	value: specta.IntentionBlockScope;
-	label: string;
-	description: string;
-	Icon: React.ComponentType<{ className?: string }>;
-}
-
-const ENFORCEMENT_MODE_OPTIONS = [
+const enforcementModeOptions = [
 	{
 		value: 'casual',
 		label: 'Casual',
@@ -241,6 +234,13 @@ const ENFORCEMENT_MODE_OPTIONS = [
 		description: 'Maximum friction for commitments you do not want to bypass.'
 	}
 ] satisfies TEnforcementModeOption[];
+
+interface TBlockScopeOption {
+	value: specta.IntentionBlockScope;
+	label: string;
+	description: string;
+	Icon: React.ComponentType<{ className?: string }>;
+}
 
 interface TEnforcementModeOption {
 	value: specta.IntentionEnforcementMode;

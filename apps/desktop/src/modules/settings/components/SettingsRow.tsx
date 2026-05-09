@@ -44,6 +44,13 @@ export const SettingsRow: React.FC<TSettingsRowProps> = (props) => {
 	);
 };
 
+interface TSettingsRowProps extends TSettingsRowFrameProps {
+	label: string;
+	description?: string;
+	descriptionVariant?: VariantProps<typeof descriptionVariants>['variant'];
+	contentClassName?: string;
+}
+
 const labelVariants = cva('text-base-950', {
 	variants: {
 		size: {
@@ -85,13 +92,6 @@ const controlVariants = cva('flex shrink-0 items-center', {
 	}
 });
 
-interface TSettingsRowProps extends TSettingsRowFrameProps {
-	label: string;
-	description?: string;
-	descriptionVariant?: VariantProps<typeof descriptionVariants>['variant'];
-	contentClassName?: string;
-}
-
 export const SettingsRowFrame: React.FC<TSettingsRowFrameProps> = (props) => {
 	const {
 		variant = 'default',
@@ -118,6 +118,12 @@ export const SettingsRowFrame: React.FC<TSettingsRowFrameProps> = (props) => {
 	});
 };
 
+type TSettingsRowFrameProps = useRender.ComponentProps<'div'> &
+	VariantProps<typeof settingsRowFrameVariants> & {
+		interactive?: boolean;
+		renderStateSlot?: 'settings-row' | 'settings-row-frame';
+	};
+
 const settingsRowFrameVariants = cva('flex w-full items-center justify-between text-left', {
 	variants: {
 		variant: {
@@ -139,9 +145,3 @@ const settingsRowFrameVariants = cva('flex w-full items-center justify-between t
 		interactive: false
 	}
 });
-
-type TSettingsRowFrameProps = useRender.ComponentProps<'div'> &
-	VariantProps<typeof settingsRowFrameVariants> & {
-		interactive?: boolean;
-		renderStateSlot?: 'settings-row' | 'settings-row-frame';
-	};

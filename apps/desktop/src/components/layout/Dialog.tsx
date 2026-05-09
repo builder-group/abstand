@@ -96,6 +96,10 @@ export const DialogContent: React.FC<TDialogContentProps> = (props) => {
 	);
 };
 
+export interface TDialogContentProps extends DialogPrimitive.Popup.Props {
+	showWindowDragRegion?: boolean;
+}
+
 const dialogContentVariants = cva(
 	'bg-base-0 border-base-100 fixed top-1/2 left-1/2 z-50 w-full origin-center -translate-x-1/2 -translate-y-1/2 border shadow-xl transition-[opacity,scale] duration-200 ease-out outline-none data-ending-style:scale-[0.97] data-ending-style:opacity-0 data-starting-style:scale-[0.97] data-starting-style:opacity-0',
 	{
@@ -111,10 +115,6 @@ const dialogContentVariants = cva(
 	}
 );
 
-export interface TDialogContentProps extends DialogPrimitive.Popup.Props {
-	showWindowDragRegion?: boolean;
-}
-
 export const DialogHeader: React.FC<TDialogHeaderProps> = (props) => {
 	const { className, ...rest } = props;
 	const { size } = React.useContext(DialogContext);
@@ -129,6 +129,8 @@ export const DialogHeader: React.FC<TDialogHeaderProps> = (props) => {
 	);
 };
 
+export type TDialogHeaderProps = React.ComponentProps<'div'>;
+
 const dialogHeaderVariants = cva('flex flex-col', {
 	variants: {
 		size: {
@@ -140,8 +142,6 @@ const dialogHeaderVariants = cva('flex flex-col', {
 		size: 'sm'
 	}
 });
-
-export type TDialogHeaderProps = React.ComponentProps<'div'>;
 
 export const DialogTitle: React.FC<TDialogTitleProps> = (props) => {
 	const { className, ...rest } = props;
@@ -157,6 +157,8 @@ export const DialogTitle: React.FC<TDialogTitleProps> = (props) => {
 	);
 };
 
+export type TDialogTitleProps = DialogPrimitive.Title.Props;
+
 const dialogTitleVariants = cva('text-base-950 font-semibold', {
 	variants: {
 		size: {
@@ -168,8 +170,6 @@ const dialogTitleVariants = cva('text-base-950 font-semibold', {
 		size: 'sm'
 	}
 });
-
-export type TDialogTitleProps = DialogPrimitive.Title.Props;
 
 export const DialogDescription: React.FC<TDialogDescriptionProps> = (props) => {
 	const { className, ...rest } = props;
@@ -185,6 +185,8 @@ export const DialogDescription: React.FC<TDialogDescriptionProps> = (props) => {
 	);
 };
 
+export type TDialogDescriptionProps = DialogPrimitive.Description.Props;
+
 const dialogDescriptionVariants = cva('text-base-500', {
 	variants: {
 		size: {
@@ -196,8 +198,6 @@ const dialogDescriptionVariants = cva('text-base-500', {
 		size: 'sm'
 	}
 });
-
-export type TDialogDescriptionProps = DialogPrimitive.Description.Props;
 
 export const DialogBody: React.FC<TDialogBodyProps> = (props) => {
 	const { className, ...rest } = props;
@@ -213,6 +213,8 @@ export const DialogBody: React.FC<TDialogBodyProps> = (props) => {
 	);
 };
 
+export type TDialogBodyProps = React.ComponentProps<'div'>;
+
 const dialogBodyVariants = cva('text-base-950', {
 	variants: {
 		size: {
@@ -224,8 +226,6 @@ const dialogBodyVariants = cva('text-base-950', {
 		size: 'sm'
 	}
 });
-
-export type TDialogBodyProps = React.ComponentProps<'div'>;
 
 export const DialogFooter: React.FC<TDialogFooterProps> = (props) => {
 	const { className, ...rest } = props;
@@ -241,6 +241,8 @@ export const DialogFooter: React.FC<TDialogFooterProps> = (props) => {
 	);
 };
 
+export type TDialogFooterProps = React.ComponentProps<'div'>;
+
 const dialogFooterVariants = cva(
 	'border-base-100 bg-base-50/60 flex items-center justify-end border-t',
 	{
@@ -255,5 +257,3 @@ const dialogFooterVariants = cva(
 		}
 	}
 );
-
-export type TDialogFooterProps = React.ComponentProps<'div'>;

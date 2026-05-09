@@ -22,6 +22,8 @@ export const Switch: React.FC<TSwitchProps> = (props) => {
 	);
 };
 
+export type TSwitchProps = SwitchPrimitive.Root.Props & VariantProps<typeof switchVariants>;
+
 const switchVariants = cva(
 	'data-unchecked:bg-base-200 data-checked:bg-primary focus-ring inline-flex shrink-0 cursor-default items-center border border-transparent transition-colors select-none data-disabled:pointer-events-none data-disabled:opacity-50',
 	{
@@ -44,5 +46,3 @@ const thumbVariants = cva('pointer-events-none block shrink-0 bg-white transitio
 	},
 	defaultVariants: { size: 'sm' }
 });
-
-export type TSwitchProps = SwitchPrimitive.Root.Props & VariantProps<typeof switchVariants>;

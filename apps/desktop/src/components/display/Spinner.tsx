@@ -19,6 +19,9 @@ export const Spinner: React.FC<TSpinnerProps> = (props) => {
 	);
 };
 
+export type TSpinnerProps = React.ComponentPropsWithoutRef<'svg'> &
+	VariantProps<typeof spinnerVariants>;
+
 const spinnerVariants = cva('shrink-0 animate-spin', {
 	variants: {
 		size: {
@@ -35,6 +38,3 @@ const spinnerVariants = cva('shrink-0 animate-spin', {
 		tone: 'muted'
 	}
 });
-
-export type TSpinnerProps = React.ComponentPropsWithoutRef<'svg'> &
-	VariantProps<typeof spinnerVariants>;

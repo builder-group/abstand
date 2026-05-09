@@ -65,6 +65,8 @@ export const ComboboxTrigger: React.FC<TComboboxTriggerProps> = (props) => {
 	);
 };
 
+export type TComboboxTriggerProps = ComboboxPrimitive.Trigger.Props;
+
 const comboboxTriggerVariants = cva('text-base-400 [&_svg]:pointer-events-none [&_svg]:shrink-0', {
 	variants: {
 		size: {
@@ -76,8 +78,6 @@ const comboboxTriggerVariants = cva('text-base-400 [&_svg]:pointer-events-none [
 		size: 'sm'
 	}
 });
-
-export type TComboboxTriggerProps = ComboboxPrimitive.Trigger.Props;
 
 export const ComboboxClear: React.FC<TComboboxClearProps> = (props) => {
 	const { className, ...rest } = props;
@@ -207,6 +207,8 @@ export const ComboboxList: React.FC<TComboboxListProps> = (props) => {
 	);
 };
 
+export type TComboboxListProps = ComboboxPrimitive.List.Props;
+
 const comboboxListVariants = cva(
 	'max-h-[min(18rem,var(--available-height))] overflow-x-hidden overflow-y-auto overscroll-contain',
 	{
@@ -221,8 +223,6 @@ const comboboxListVariants = cva(
 		}
 	}
 );
-
-export type TComboboxListProps = ComboboxPrimitive.List.Props;
 
 export const ComboboxItem: React.FC<TComboboxItemProps> = (props) => {
 	const { onMouseMoveCapture, children, className, ...rest } = props;
@@ -270,6 +270,8 @@ export const ComboboxItem: React.FC<TComboboxItemProps> = (props) => {
 	);
 };
 
+export type TComboboxItemProps = ComboboxPrimitive.Item.Props;
+
 const comboboxItemVariants = cva(
 	'group/combobox-item text-base-700 data-highlighted:bg-base-950/6 data-highlighted:text-base-950 relative flex w-full cursor-default items-center outline-none select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0',
 	{
@@ -300,8 +302,6 @@ const comboboxItemIndicatorVariants = cva(
 	}
 );
 
-export type TComboboxItemProps = ComboboxPrimitive.Item.Props;
-
 export const ComboboxGroup: React.FC<TComboboxGroupProps> = (props) => {
 	const { className, ...rest } = props;
 
@@ -324,6 +324,8 @@ export const ComboboxLabel: React.FC<TComboboxLabelProps> = (props) => {
 	);
 };
 
+export type TComboboxLabelProps = ComboboxPrimitive.GroupLabel.Props;
+
 const comboboxLabelVariants = cva('text-base-500 font-medium', {
 	variants: {
 		size: {
@@ -335,8 +337,6 @@ const comboboxLabelVariants = cva('text-base-500 font-medium', {
 		size: 'sm'
 	}
 });
-
-export type TComboboxLabelProps = ComboboxPrimitive.GroupLabel.Props;
 
 export const ComboboxCollection: React.FC<TComboboxCollectionProps> = (props) => {
 	return <ComboboxPrimitive.Collection data-slot="combobox-collection" {...props} />;
@@ -358,6 +358,8 @@ export const ComboboxStatus: React.FC<TComboboxStatusProps> = (props) => {
 	);
 };
 
+export type TComboboxStatusProps = ComboboxPrimitive.Status.Props;
+
 const comboboxStatusVariants = cva(
 	'text-base-500 border-base-100 bg-base-50/60 border-b font-medium',
 	{
@@ -373,8 +375,6 @@ const comboboxStatusVariants = cva(
 	}
 );
 
-export type TComboboxStatusProps = ComboboxPrimitive.Status.Props;
-
 export const ComboboxEmpty: React.FC<TComboboxEmptyProps> = (props) => {
 	const { className, ...rest } = props;
 	const { size } = React.useContext(ComboboxContext);
@@ -388,6 +388,8 @@ export const ComboboxEmpty: React.FC<TComboboxEmptyProps> = (props) => {
 		/>
 	);
 };
+
+export type TComboboxEmptyProps = ComboboxPrimitive.Empty.Props;
 
 const comboboxEmptyVariants = cva(
 	'text-base-500 hidden justify-center text-center group-data-empty/combobox-content:flex',
@@ -404,8 +406,6 @@ const comboboxEmptyVariants = cva(
 	}
 );
 
-export type TComboboxEmptyProps = ComboboxPrimitive.Empty.Props;
-
 export const ComboboxSeparator: React.FC<TComboboxSeparatorProps> = (props) => {
 	const { className, ...rest } = props;
 	const { size } = React.useContext(ComboboxContext);
@@ -420,6 +420,8 @@ export const ComboboxSeparator: React.FC<TComboboxSeparatorProps> = (props) => {
 	);
 };
 
+export type TComboboxSeparatorProps = ComboboxPrimitive.Separator.Props;
+
 const comboboxSeparatorVariants = cva('bg-base-100 my-1 h-px', {
 	variants: {
 		size: {
@@ -431,8 +433,6 @@ const comboboxSeparatorVariants = cva('bg-base-100 my-1 h-px', {
 		size: 'sm'
 	}
 });
-
-export type TComboboxSeparatorProps = ComboboxPrimitive.Separator.Props;
 
 export const ComboboxChips: React.FC<TComboboxChipsProps> = (props) => {
 	const { className, ...rest } = props;
@@ -448,6 +448,8 @@ export const ComboboxChips: React.FC<TComboboxChipsProps> = (props) => {
 	);
 };
 
+export type TComboboxChipsProps = ComboboxPrimitive.Chips.Props;
+
 const comboboxChipsVariants = cva(
 	'border-base-200 bg-base-0 text-base-950 focus-within:border-primary focus-within:ring-primary/30 has-aria-invalid:border-error has-aria-invalid:ring-error/20 flex w-full flex-wrap items-center border transition focus-within:ring-2 has-aria-invalid:ring-2',
 	{
@@ -462,8 +464,6 @@ const comboboxChipsVariants = cva(
 		}
 	}
 );
-
-export type TComboboxChipsProps = ComboboxPrimitive.Chips.Props;
 
 export const ComboboxChip: React.FC<TComboboxChipProps> = (props) => {
 	const { showRemove = true, children, className, ...rest } = props;
@@ -495,6 +495,10 @@ export const ComboboxChip: React.FC<TComboboxChipProps> = (props) => {
 	);
 };
 
+export type TComboboxChipProps = ComboboxPrimitive.Chip.Props & {
+	showRemove?: boolean;
+};
+
 const comboboxChipVariants = cva(
 	'bg-base-950/6 text-base-700 inline-flex items-center rounded-md font-medium whitespace-nowrap has-disabled:pointer-events-none has-disabled:opacity-50',
 	{
@@ -510,10 +514,6 @@ const comboboxChipVariants = cva(
 	}
 );
 
-export type TComboboxChipProps = ComboboxPrimitive.Chip.Props & {
-	showRemove?: boolean;
-};
-
 export const ComboboxChipsInput: React.FC<TComboboxChipsInputProps> = (props) => {
 	const { className, ...rest } = props;
 	const { size } = React.useContext(ComboboxContext);
@@ -527,6 +527,8 @@ export const ComboboxChipsInput: React.FC<TComboboxChipsInputProps> = (props) =>
 		/>
 	);
 };
+
+export type TComboboxChipsInputProps = ComboboxPrimitive.Input.Props;
 
 const comboboxChipsInputVariants = cva(
 	'placeholder:text-base-400 min-w-12 flex-1 bg-transparent px-0 py-0 outline-none',
@@ -542,8 +544,6 @@ const comboboxChipsInputVariants = cva(
 		}
 	}
 );
-
-export type TComboboxChipsInputProps = ComboboxPrimitive.Input.Props;
 
 export function useComboboxAnchor() {
 	return React.useRef<HTMLDivElement | null>(null);

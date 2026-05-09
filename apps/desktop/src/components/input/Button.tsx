@@ -17,6 +17,8 @@ export const Button: React.FC<TButtonProps> = (props) => {
 	);
 };
 
+export type TButtonProps = ButtonPrimitive.Props & VariantProps<typeof buttonVariants>;
+
 const buttonVariants = cva(
 	'focus-ring invalid-ring inline-flex shrink-0 items-center justify-center border border-transparent whitespace-nowrap transition select-none active:not-aria-[haspopup]:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0',
 	{
@@ -49,5 +51,3 @@ const buttonVariants = cva(
 		}
 	}
 );
-
-export type TButtonProps = ButtonPrimitive.Props & VariantProps<typeof buttonVariants>;

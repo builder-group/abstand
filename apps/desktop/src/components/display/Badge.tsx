@@ -21,6 +21,8 @@ export const Badge: React.FC<TBadgeProps> = (props) => {
 	});
 };
 
+export type TBadgeProps = useRender.ComponentProps<'span'> & VariantProps<typeof badgeVariants>;
+
 const badgeVariants = cva(
 	'focus-ring inline-flex shrink-0 items-center justify-center overflow-hidden border border-transparent font-medium whitespace-nowrap transition-colors select-none [&_svg]:pointer-events-none [&_svg]:shrink-0',
 	{
@@ -46,5 +48,3 @@ const badgeVariants = cva(
 		}
 	}
 );
-
-export type TBadgeProps = useRender.ComponentProps<'span'> & VariantProps<typeof badgeVariants>;

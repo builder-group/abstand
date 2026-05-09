@@ -126,7 +126,7 @@ export class NewBlockIntentionCx {
 		weekday: specta.Weekday
 	): void {
 		const condition = this.getCondition(phase) ?? this.createDefaultCondition(phase);
-		const weekdays = condition.weekdays ?? DEFAULT_SELECTED_WEEKDAYS;
+		const weekdays = condition.weekdays ?? newBlockIntentionConfig.defaultSelectedWeekdays;
 		const hasWeekday = weekdays.includes(weekday);
 		if (hasWeekday && weekdays.length === 1) {
 			return;
@@ -135,7 +135,11 @@ export class NewBlockIntentionCx {
 		this.updateCondition(phase, {
 			weekdays: hasWeekday
 				? weekdays.filter((currentWeekday) => currentWeekday !== weekday)
-				: [...weekdays, weekday].sort((a, b) => WEEKDAY_ORDER.indexOf(a) - WEEKDAY_ORDER.indexOf(b))
+				: [...weekdays, weekday].sort(
+						(a, b) =>
+							weekdayOrder.indexOf(a) -
+							weekdayOrder.indexOf(b)
+					)
 		});
 	}
 
@@ -243,25 +247,26 @@ export class NewBlockIntentionCx {
 	}
 }
 
-export const WEEKDAY_OPTIONS = [
-	{ value: 'mon', shortLabel: 'M', label: 'Monday' },
-	{ value: 'tue', shortLabel: 'T', label: 'Tuesday' },
-	{ value: 'wed', shortLabel: 'W', label: 'Wednesday' },
-	{ value: 'thu', shortLabel: 'T', label: 'Thursday' },
-	{ value: 'fri', shortLabel: 'F', label: 'Friday' },
-	{ value: 'sat', shortLabel: 'S', label: 'Saturday' },
-	{ value: 'sun', shortLabel: 'S', label: 'Sunday' }
-] satisfies TWeekdayOption[];
+export const newBlockIntentionConfig = {
+	weekdayOptions: [
+		{ value: 'mon', shortLabel: 'M', label: 'Monday' },
+		{ value: 'tue', shortLabel: 'T', label: 'Tuesday' },
+		{ value: 'wed', shortLabel: 'W', label: 'Wednesday' },
+		{ value: 'thu', shortLabel: 'T', label: 'Thursday' },
+		{ value: 'fri', shortLabel: 'F', label: 'Friday' },
+		{ value: 'sat', shortLabel: 'S', label: 'Saturday' },
+		{ value: 'sun', shortLabel: 'S', label: 'Sunday' }
+	] satisfies TWeekdayOption[],
+	defaultSelectedWeekdays: ['mon', 'tue', 'wed', 'thu', 'fri'] satisfies specta.Weekday[]
+} as const;
 
-export const DEFAULT_SELECTED_WEEKDAYS = [
-	'mon',
-	'tue',
-	'wed',
-	'thu',
-	'fri'
-] satisfies specta.Weekday[];
+const weekdayOrder = newBlockIntentionConfig.weekdayOptions.map((o) => o.value);
 
-const WEEKDAY_ORDER = WEEKDAY_OPTIONS.map((weekday) => weekday.value);
+interface TWeekdayOption {
+	value: specta.Weekday;
+	shortLabel: string;
+	label: string;
+}
 
 export interface TNewBlockIntentionFormData {
 	name: string;
@@ -281,12 +286,6 @@ export interface TNewIntentionConditionFormData {
 }
 
 export type TNewIntentionConditionMode = 'now' | 'atTime' | 'inTime' | 'repeats' | 'manual';
-
-interface TWeekdayOption {
-	value: specta.Weekday;
-	shortLabel: string;
-	label: string;
-}
 
 const ReactNewBlockIntentionCx = React.createContext<NewBlockIntentionCx | null>(null);
 

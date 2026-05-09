@@ -113,18 +113,6 @@ export const SegmentedControl: React.FC<TSegmentedControlProps> = (props) => {
 	);
 };
 
-const segmentedControlVariants = cva('bg-base-100 relative inline-flex items-center', {
-	variants: {
-		size: {
-			sm: 'gap-0.5 rounded-lg p-0.5',
-			md: 'gap-0.5 rounded-lg p-0.5'
-		}
-	},
-	defaultVariants: {
-		size: 'sm'
-	}
-});
-
 export interface TSegmentedControlProps {
 	value: string | undefined;
 	onValueChange: (value: string) => void;
@@ -139,6 +127,18 @@ interface TPillRect {
 	width: number;
 	height: number;
 }
+
+const segmentedControlVariants = cva('bg-base-100 relative inline-flex items-center', {
+	variants: {
+		size: {
+			sm: 'gap-0.5 rounded-lg p-0.5',
+			md: 'gap-0.5 rounded-lg p-0.5'
+		}
+	},
+	defaultVariants: {
+		size: 'sm'
+	}
+});
 
 export const SegmentedControlItem: React.FC<TSegmentedControlItemProps> = (props) => {
 	const { value, className, ...rest } = props;
@@ -163,6 +163,14 @@ export const SegmentedControlItem: React.FC<TSegmentedControlItemProps> = (props
 	);
 };
 
+export type TSegmentedControlItemProps = Omit<
+	React.ComponentProps<typeof Toggle>,
+	'className' | 'size' | 'value'
+> & {
+	value: string;
+	className?: string;
+};
+
 const segmentedControlItemVariants = cva(
 	'text-base-500 hover:text-base-950 data-pressed:text-apple-gray-dark-6 focus-ring relative inline-flex items-center justify-center font-medium whitespace-nowrap transition-colors select-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0',
 	{
@@ -177,11 +185,3 @@ const segmentedControlItemVariants = cva(
 		}
 	}
 );
-
-export type TSegmentedControlItemProps = Omit<
-	React.ComponentProps<typeof Toggle>,
-	'className' | 'size' | 'value'
-> & {
-	value: string;
-	className?: string;
-};

@@ -15,6 +15,9 @@ export const Textarea: React.FC<TTextareaProps> = (props) => {
 	);
 };
 
+export type TTextareaProps = React.ComponentProps<'textarea'> &
+	VariantProps<typeof textareaVariants>;
+
 const textareaVariants = cva(
 	'border-base-200 bg-base-0 text-base-950 placeholder:text-base-400 focus-ring invalid-ring flex w-full min-w-0 resize-y border bg-clip-padding transition disabled:pointer-events-none disabled:opacity-50',
 	{
@@ -29,6 +32,3 @@ const textareaVariants = cva(
 		}
 	}
 );
-
-export type TTextareaProps = React.ComponentProps<'textarea'> &
-	VariantProps<typeof textareaVariants>;

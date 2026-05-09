@@ -18,6 +18,9 @@ export const IconBubble: React.FC<TIconBubbleProps> = (props) => {
 	);
 };
 
+export type TIconBubbleProps = React.ComponentPropsWithoutRef<'span'> &
+	VariantProps<typeof iconBubbleVariants>;
+
 const iconBubbleVariants = cva(
 	'relative inline-flex shrink-0 items-center justify-center overflow-hidden border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_1px_2px_rgba(0,0,0,0.12)] before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-linear-to-b before:from-white/20 before:to-transparent [&>svg]:pointer-events-none [&>svg]:shrink-0',
 	{
@@ -42,6 +45,3 @@ const iconBubbleVariants = cva(
 		}
 	}
 );
-
-export type TIconBubbleProps = React.ComponentPropsWithoutRef<'span'> &
-	VariantProps<typeof iconBubbleVariants>;

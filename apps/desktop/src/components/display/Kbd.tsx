@@ -18,6 +18,8 @@ export const Kbd: React.FC<TKbdProps> = (props) => {
 	);
 };
 
+export type TKbdProps = React.ComponentPropsWithoutRef<'kbd'> & VariantProps<typeof kbdVariants>;
+
 const kbdVariants = cva(
 	'inline-flex shrink-0 items-center justify-center font-sans font-medium whitespace-nowrap select-none',
 	{
@@ -38,5 +40,3 @@ const kbdVariants = cva(
 		}
 	}
 );
-
-export type TKbdProps = React.ComponentPropsWithoutRef<'kbd'> & VariantProps<typeof kbdVariants>;

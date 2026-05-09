@@ -17,6 +17,8 @@ export const Toggle: React.FC<TToggleProps> = (props) => {
 	);
 };
 
+export type TToggleProps = TogglePrimitive.Props & VariantProps<typeof toggleVariants>;
+
 const toggleVariants = cva(
 	'hover:bg-base-950/6 focus-ring aria-pressed:bg-base-950/10 inline-flex shrink-0 items-center justify-center border border-transparent font-medium whitespace-nowrap transition select-none active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0',
 	{
@@ -43,5 +45,3 @@ const toggleVariants = cva(
 		}
 	}
 );
-
-export type TToggleProps = TogglePrimitive.Props & VariantProps<typeof toggleVariants>;

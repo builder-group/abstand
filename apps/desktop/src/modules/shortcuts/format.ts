@@ -1,12 +1,22 @@
 import { specta } from '@/environment';
 
 export function formatShortcut(shortcut: specta.KeyboardShortcut): string {
-	const modifiers = MODIFIER_ORDER.filter((modifier) => shortcut.modifiers.includes(modifier))
-		.map((modifier) => MODIFIER_DISPLAY[modifier])
+	const modifiers = modifierOrder
+		.filter((modifier) => shortcut.modifiers.includes(modifier))
+		.map((modifier) => modifierDisplay[modifier])
 		.join('');
 
 	return modifiers + codeToLabel(shortcut.code);
 }
+
+const modifierDisplay = {
+	meta: '⌘',
+	ctrl: '⌃',
+	alt: '⌥',
+	shift: '⇧'
+} satisfies Record<specta.ShortcutModifier, string>;
+
+const modifierOrder = ['ctrl', 'alt', 'shift', 'meta'] satisfies specta.ShortcutModifier[];
 
 function codeToLabel(code: string): string {
 	if (code.startsWith('Key')) {
@@ -21,19 +31,10 @@ function codeToLabel(code: string): string {
 		return code;
 	}
 
-	return CODE_DISPLAY[code] ?? code;
+	return codeDisplay[code] ?? code;
 }
 
-const MODIFIER_DISPLAY: Record<specta.ShortcutModifier, string> = {
-	meta: '⌘',
-	ctrl: '⌃',
-	alt: '⌥',
-	shift: '⇧'
-};
-
-const MODIFIER_ORDER: specta.ShortcutModifier[] = ['ctrl', 'alt', 'shift', 'meta'];
-
-const CODE_DISPLAY: Record<string, string> = {
+const codeDisplay: Record<string, string> = {
 	Space: '␣',
 	Comma: ',',
 	Period: '.',

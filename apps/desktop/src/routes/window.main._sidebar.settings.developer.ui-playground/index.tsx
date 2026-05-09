@@ -948,6 +948,12 @@ const PlaygroundGroup: React.FC<TPlaygroundGroupProps> = (props) => {
 	);
 };
 
+interface TPlaygroundGroupProps extends VariantProps<typeof playgroundGroupVariants> {
+	title: string;
+	children: React.ReactNode;
+	className?: string;
+}
+
 const playgroundGroupVariants = cva('', {
 	variants: {
 		variant: {
@@ -972,12 +978,6 @@ const PlaygroundRow: React.FC<TPlaygroundRowProps> = (props) => {
 		</SettingsRow>
 	);
 };
-
-interface TPlaygroundGroupProps extends VariantProps<typeof playgroundGroupVariants> {
-	title: string;
-	children: React.ReactNode;
-	className?: string;
-}
 
 interface TPlaygroundRowProps {
 	label: string;

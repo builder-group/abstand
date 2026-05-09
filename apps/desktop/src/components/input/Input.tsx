@@ -16,6 +16,8 @@ export const Input: React.FC<TInputProps> = (props) => {
 	);
 };
 
+export type TInputProps = Omit<InputPrimitive.Props, 'size'> & VariantProps<typeof inputVariants>;
+
 const inputVariants = cva(
 	'border-base-200 bg-base-0 text-base-950 placeholder:text-base-400 focus-ring invalid-ring w-full min-w-0 border bg-clip-padding transition file:inline-flex file:border-0 file:bg-transparent file:font-medium disabled:pointer-events-none disabled:opacity-50',
 	{
@@ -30,5 +32,3 @@ const inputVariants = cva(
 		}
 	}
 );
-
-export type TInputProps = Omit<InputPrimitive.Props, 'size'> & VariantProps<typeof inputVariants>;

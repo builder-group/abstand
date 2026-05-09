@@ -90,6 +90,9 @@ export const Select: React.FC<TSelectProps> = (props) => {
 	);
 };
 
+export type TSelectProps = Omit<React.ComponentPropsWithoutRef<'select'>, 'size'> &
+	VariantProps<typeof selectVariants>;
+
 const selectVariants = cva(
 	'cursor-default appearance-none rounded-lg border border-transparent transition-colors outline-none select-none disabled:pointer-events-none',
 	{
@@ -165,6 +168,3 @@ const chevronIconVariants = cva('select-none', {
 		size: 'sm'
 	}
 });
-
-export type TSelectProps = Omit<React.ComponentPropsWithoutRef<'select'>, 'size'> &
-	VariantProps<typeof selectVariants>;
