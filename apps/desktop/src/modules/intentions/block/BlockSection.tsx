@@ -19,21 +19,15 @@ export const BlockSection: React.FC = () => {
 
 	const scope = useFeatureState(cx.$form.fields.scope);
 	const [isScopeExpanded, setIsScopeExpanded] = React.useState(false);
-	const currentScope = React.useMemo(
-		() =>
-			blockScopeOptions.find((option) => option.value === scope) ??
-			(blockScopeOptions[0] as TBlockScopeOption),
-		[scope]
-	);
+	const currentScope =
+		blockScopeOptions.find((option) => option.value === scope) ??
+		(blockScopeOptions[0] as TBlockScopeOption);
 
 	const enforcementMode = useFeatureState(cx.$form.fields.enforcementMode);
 	const [isEnforcementExpanded, setIsEnforcementExpanded] = React.useState(false);
-	const currentEnforcementMode = React.useMemo(
-		() =>
-			enforcementModeOptions.find((mode) => mode.value === enforcementMode) ??
-			(enforcementModeOptions[1] as TEnforcementModeOption),
-		[enforcementMode]
-	);
+	const currentEnforcementMode =
+		enforcementModeOptions.find((mode) => mode.value === enforcementMode) ??
+		(enforcementModeOptions[1] as TEnforcementModeOption);
 
 	const selectedTargets = useCompute(cx.$form.fields.selectedTargets, ({ value }) => value ?? []);
 	const isTargetsSelectable = scope !== 'wholeDevice';
@@ -53,9 +47,9 @@ export const BlockSection: React.FC = () => {
 			case 'allowTargets':
 				return 'Choose what stays available while everything else is blocked.';
 			case 'wholeDevice':
+			default:
 				return undefined;
 		}
-		return undefined;
 	}, [scope]);
 
 	const {

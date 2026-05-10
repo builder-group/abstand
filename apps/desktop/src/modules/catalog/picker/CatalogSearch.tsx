@@ -32,7 +32,7 @@ export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
 	const anchorRef = useComboboxAnchor();
 
 	const [query, setQuery] = React.useState('');
-	const trimmedQuery = React.useMemo(() => query.trim(), [query]);
+	const trimmedQuery = query.trim();
 
 	const [searchResults, setSearchResults] = React.useState<specta.CatalogSearchResultDto[]>([]);
 	const resultItems = React.useMemo(() => searchResults.map(toCatalogItem), [searchResults]);
