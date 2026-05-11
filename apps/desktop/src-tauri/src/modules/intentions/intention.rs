@@ -1,6 +1,6 @@
 use super::types::IntentionBehaviorType;
 use crate::{
-    common::time::{DateOnly, TimeOnly, Weekday},
+    common::time::{DateOnly, TimeOnly, WeekdayMask},
     modules::catalog::types::{App, Website},
 };
 use serde::{Deserialize, Serialize};
@@ -161,14 +161,14 @@ impl IntentionConditionRule {
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct IntentionConditionScheduleRule {
-    pub time_of_day: TimeOnly,
-    pub weekdays: Option<Vec<Weekday>>,
+    pub time_of_day_ms: TimeOnly,
+    pub weekdays_mask: Option<WeekdayMask>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct IntentionConditionDateTimeRule {
-    pub date: DateOnly,
-    pub time_of_day: TimeOnly,
+    pub date_epoch_days: DateOnly,
+    pub time_of_day_ms: TimeOnly,
     pub trigger_at: i64,
 }

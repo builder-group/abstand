@@ -7,7 +7,7 @@ use super::{
     types::IntentionBehaviorType,
 };
 use crate::{
-    common::time::{DateOnly, TimeOnly, Weekday},
+    common::time::{DateOnly, TimeOnly, WeekdayMask},
     modules::catalog::{
         repository::{
             CatalogRepository, CatalogRepositoryError, UpsertAppInput, UpsertWebsiteInput,
@@ -149,31 +149,22 @@ impl IntentionRepository {
 
             match condition.rule {
                 IntentionConditionRule::Schedule(schedule_rule) => {
-                    let weekdays = match schedule_rule.weekdays {
-                        Some(weekdays) => {
-                            Some(serde_json::to_string(&weekdays).map_err(|error| {
-                                IntentionRepositoryError::InvalidData(error.to_string())
-                            })?)
-                        }
-                        None => None,
-                    };
-
                     sqlx::query(
-                        "INSERT INTO intention_condition_schedule (condition_id, time_of_day, weekdays) VALUES (?, ?, ?)",
+                        "INSERT INTO intention_condition_schedule (condition_id, time_of_day_ms, weekdays_mask) VALUES (?, ?, ?)",
                     )
                     .bind(condition_id)
-                    .bind(schedule_rule.time_of_day.as_str())
-                    .bind(weekdays)
+                    .bind(schedule_rule.time_of_day_ms.as_millis_since_midnight())
+                    .bind(schedule_rule.weekdays_mask.map(|mask| mask.as_bits()))
                     .execute(&mut **transaction)
                     .await?;
                 }
                 IntentionConditionRule::DateTime(date_time_rule) => {
                     sqlx::query(
-                        "INSERT INTO intention_condition_date_time (condition_id, date, time_of_day, trigger_at) VALUES (?, ?, ?, ?)",
+                        "INSERT INTO intention_condition_date_time (condition_id, date_epoch_days, time_of_day_ms, trigger_at) VALUES (?, ?, ?, ?)",
                     )
                     .bind(condition_id)
-                    .bind(date_time_rule.date.as_str())
-                    .bind(date_time_rule.time_of_day.as_str())
+                    .bind(date_time_rule.date_epoch_days.as_epoch_days())
+                    .bind(date_time_rule.time_of_day_ms.as_millis_since_midnight())
                     .bind(date_time_rule.trigger_at)
                     .execute(&mut **transaction)
                     .await?;
@@ -360,7 +351,7 @@ impl IntentionRepository {
         }
 
         let mut query_builder = QueryBuilder::<Sqlite>::new(
-            "SELECT condition_id, time_of_day, weekdays FROM intention_condition_schedule WHERE condition_id IN (",
+            "SELECT condition_id, time_of_day_ms, weekdays_mask FROM intention_condition_schedule WHERE condition_id IN (",
         );
         let mut separated = query_builder.separated(", ");
         for condition_id in condition_ids {
@@ -384,7 +375,7 @@ impl IntentionRepository {
         }
 
         let mut query_builder = QueryBuilder::<Sqlite>::new(
-            "SELECT condition_id, date, time_of_day, trigger_at FROM intention_condition_date_time WHERE condition_id IN (",
+            "SELECT condition_id, date_epoch_days, time_of_day_ms, trigger_at FROM intention_condition_date_time WHERE condition_id IN (",
         );
         let mut separated = query_builder.separated(", ");
         for condition_id in condition_ids {
@@ -508,16 +499,15 @@ impl IntentionRepository {
                 })?;
 
                 IntentionConditionRule::Schedule(IntentionConditionScheduleRule {
-                    time_of_day: TimeOnly::parse(&schedule_row.time_of_day)
+                    time_of_day_ms: TimeOnly::from_millis_since_midnight(
+                        schedule_row.time_of_day_ms,
+                    )
+                    .map_err(IntentionRepositoryError::InvalidData)?,
+                    weekdays_mask: schedule_row
+                        .weekdays_mask
+                        .map(WeekdayMask::from_bits)
+                        .transpose()
                         .map_err(IntentionRepositoryError::InvalidData)?,
-                    weekdays: match schedule_row.weekdays {
-                        Some(weekdays) => {
-                            Some(serde_json::from_str::<Vec<Weekday>>(&weekdays).map_err(
-                                |error| IntentionRepositoryError::InvalidData(error.to_string()),
-                            )?)
-                        }
-                        None => None,
-                    },
                 })
             }
             "date_time" => {
@@ -534,10 +524,12 @@ impl IntentionRepository {
                 })?;
 
                 IntentionConditionRule::DateTime(IntentionConditionDateTimeRule {
-                    date: DateOnly::parse(&date_time_row.date)
+                    date_epoch_days: DateOnly::from_epoch_days(date_time_row.date_epoch_days)
                         .map_err(IntentionRepositoryError::InvalidData)?,
-                    time_of_day: TimeOnly::parse(&date_time_row.time_of_day)
-                        .map_err(IntentionRepositoryError::InvalidData)?,
+                    time_of_day_ms: TimeOnly::from_millis_since_midnight(
+                        date_time_row.time_of_day_ms,
+                    )
+                    .map_err(IntentionRepositoryError::InvalidData)?,
                     trigger_at: date_time_row.trigger_at,
                 })
             }
@@ -640,15 +632,15 @@ struct IntentionConditionRow {
 #[derive(Debug, Clone, FromRow)]
 struct IntentionConditionScheduleRow {
     condition_id: i64,
-    time_of_day: String,
-    weekdays: Option<String>,
+    time_of_day_ms: i32,
+    weekdays_mask: Option<i32>,
 }
 
 #[derive(Debug, Clone, FromRow)]
 struct IntentionConditionDateTimeRow {
     condition_id: i64,
-    date: String,
-    time_of_day: String,
+    date_epoch_days: i32,
+    time_of_day_ms: i32,
     trigger_at: i64,
 }
 

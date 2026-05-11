@@ -101,12 +101,13 @@ pub async fn create_intention(
                             IntentionConditionRule::Schedule(rule)
                         }
                         CreateIntentionConditionRuleParams::DateTime(rule) => {
-                            let trigger_at = to_local_datetime(&rule.date, &rule.time_of_day)?
-                                .timestamp_millis();
+                            let trigger_at =
+                                to_local_datetime(&rule.date_epoch_days, &rule.time_of_day_ms)?
+                                    .timestamp_millis();
 
                             IntentionConditionRule::DateTime(IntentionConditionDateTimeRule {
-                                date: rule.date,
-                                time_of_day: rule.time_of_day,
+                                date_epoch_days: rule.date_epoch_days,
+                                time_of_day_ms: rule.time_of_day_ms,
                                 trigger_at,
                             })
                         }
@@ -235,6 +236,6 @@ pub enum CreateIntentionConditionRuleParams {
 #[derive(Debug, Clone, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateIntentionConditionDateTimeRuleParams {
-    pub date: DateOnly,
-    pub time_of_day: TimeOnly,
+    pub date_epoch_days: DateOnly,
+    pub time_of_day_ms: TimeOnly,
 }

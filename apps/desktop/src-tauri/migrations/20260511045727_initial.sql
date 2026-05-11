@@ -218,19 +218,15 @@ END;
 CREATE TABLE `intention_condition_schedule` (
   `condition_id` integer NULL,
   `rule_type` text NOT NULL DEFAULT 'schedule',
-  `time_of_day` text NOT NULL,
-  `weekdays` text NULL,
+  `time_of_day_ms` integer NOT NULL,
+  `weekdays_mask` integer NULL,
   PRIMARY KEY (`condition_id`),
   CONSTRAINT `0` FOREIGN KEY (`condition_id`, `rule_type`) REFERENCES `intention_condition` (`id`, `rule_type`) ON UPDATE NO ACTION ON DELETE CASCADE,
   CHECK (rule_type = 'schedule'),
+  CHECK (time_of_day_ms >= 0 AND time_of_day_ms < 86400000),
   CHECK (
-        length(time_of_day) = 5
-        AND time_of_day GLOB '[0-2][0-9]:[0-5][0-9]'
-        AND CAST(substr(time_of_day, 1, 2) AS INTEGER) BETWEEN 0 AND 23
-    ),
-  CHECK (
-        weekdays IS NULL
-        OR (json_valid(weekdays) AND json_type(weekdays) = 'array')
+        weekdays_mask IS NULL
+        OR (weekdays_mask > 0 AND weekdays_mask <= 127)
     )
 );
 -- Create trigger "intention_condition_schedule_touch_condition_after_insert"
@@ -264,23 +260,14 @@ END;
 CREATE TABLE `intention_condition_date_time` (
   `condition_id` integer NULL,
   `rule_type` text NOT NULL DEFAULT 'date_time',
-  `date` text NOT NULL,
-  `time_of_day` text NOT NULL,
+  `date_epoch_days` integer NOT NULL,
+  `time_of_day_ms` integer NOT NULL,
   `trigger_at` integer NOT NULL,
   PRIMARY KEY (`condition_id`),
   CONSTRAINT `0` FOREIGN KEY (`condition_id`, `rule_type`) REFERENCES `intention_condition` (`id`, `rule_type`) ON UPDATE NO ACTION ON DELETE CASCADE,
   CHECK (rule_type = 'date_time'),
-  CHECK (
-        length(date) = 10
-        AND date GLOB '[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]'
-        AND CAST(substr(date, 6, 2) AS INTEGER) BETWEEN 1 AND 12
-        AND CAST(substr(date, 9, 2) AS INTEGER) BETWEEN 1 AND 31
-    ),
-  CHECK (
-        length(time_of_day) = 5
-        AND time_of_day GLOB '[0-2][0-9]:[0-5][0-9]'
-        AND CAST(substr(time_of_day, 1, 2) AS INTEGER) BETWEEN 0 AND 23
-    )
+  CHECK (date_epoch_days BETWEEN -719162 AND 2932896),
+  CHECK (time_of_day_ms >= 0 AND time_of_day_ms < 86400000)
 );
 -- Create trigger "intention_condition_date_time_touch_condition_after_insert"
 CREATE TRIGGER `intention_condition_date_time_touch_condition_after_insert` AFTER INSERT ON `intention_condition_date_time` FOR EACH ROW BEGIN

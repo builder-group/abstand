@@ -1,9 +1,6 @@
 -- Source of truth for the Abstand database schema.
 -- Edit this file to change the schema, then run `pnpm db:migrate <name>` to generate a migration.
 -- Migrations are applied automatically on app startup via sqlx.
---
--- Timestamp columns store Unix milliseconds.
--- updated_at is maintained by triggers for mutable tables.
 
 -- MARK: - Apps
 
@@ -116,17 +113,13 @@ CREATE TABLE intention_condition_schedule (
     condition_id INTEGER PRIMARY KEY,
     -- Discriminator for the composite FK to intention_condition
     rule_type TEXT NOT NULL DEFAULT 'schedule' CHECK (rule_type = 'schedule'),
-    time_of_day TEXT NOT NULL, -- local wall-clock HH:MM
-    weekdays TEXT, -- JSON array of weekday tokens ["mon".."sun"], NULL means every day
+    time_of_day_ms INTEGER NOT NULL, -- milliseconds since local 00:00
+    weekdays_mask INTEGER, -- NULL means every day; bits 0-6 are Mon-Sun
     FOREIGN KEY (condition_id, rule_type) REFERENCES intention_condition (id, rule_type) ON DELETE CASCADE,
+    CHECK (time_of_day_ms >= 0 AND time_of_day_ms < 86400000),
     CHECK (
-        length(time_of_day) = 5
-        AND time_of_day GLOB '[0-2][0-9]:[0-5][0-9]'
-        AND CAST(substr(time_of_day, 1, 2) AS INTEGER) BETWEEN 0 AND 23
-    ),
-    CHECK (
-        weekdays IS NULL
-        OR (json_valid(weekdays) AND json_type(weekdays) = 'array')
+        weekdays_mask IS NULL
+        OR (weekdays_mask > 0 AND weekdays_mask <= 127)
     )
 );
 
@@ -136,21 +129,12 @@ CREATE TABLE intention_condition_date_time (
     condition_id INTEGER PRIMARY KEY,
     -- Discriminator for the composite FK to intention_condition
     rule_type TEXT NOT NULL DEFAULT 'date_time' CHECK (rule_type = 'date_time'),
-    date TEXT NOT NULL, -- local calendar date YYYY-MM-DD
-    time_of_day TEXT NOT NULL, -- local wall-clock HH:MM
+    date_epoch_days INTEGER NOT NULL, -- local calendar days since 1970-01-01
+    time_of_day_ms INTEGER NOT NULL, -- milliseconds since local 00:00
     trigger_at INTEGER NOT NULL, -- resolved fixed Unix millisecond instant
     FOREIGN KEY (condition_id, rule_type) REFERENCES intention_condition (id, rule_type) ON DELETE CASCADE,
-    CHECK (
-        length(date) = 10
-        AND date GLOB '[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]'
-        AND CAST(substr(date, 6, 2) AS INTEGER) BETWEEN 1 AND 12
-        AND CAST(substr(date, 9, 2) AS INTEGER) BETWEEN 1 AND 31
-    ),
-    CHECK (
-        length(time_of_day) = 5
-        AND time_of_day GLOB '[0-2][0-9]:[0-5][0-9]'
-        AND CAST(substr(time_of_day, 1, 2) AS INTEGER) BETWEEN 0 AND 23
-    )
+    CHECK (date_epoch_days BETWEEN -719162 AND 2932896),
+    CHECK (time_of_day_ms >= 0 AND time_of_day_ms < 86400000)
 );
 
 -- MARK: - Updated At Triggers
