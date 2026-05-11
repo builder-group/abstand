@@ -51,23 +51,25 @@ export const InTimeRows: React.FC<TConditionRowsProps> = (props) => {
 	// MARK: - UI
 
 	return (
-		<SettingsRow label="After" variant="compact">
-			<div className="flex flex-wrap items-center justify-end gap-1.5">
-				<Select variant="ghost" value={selectedDurationValue} onChange={handleDurationChange}>
-					{durationOptions.map((option) => (
-						<option key={option.minutes} value={option.minutes}>
-							{option.label}
-						</option>
-					))}
-					<option value={customDurationValue}>Custom</option>
-				</Select>
-				{selectedDurationValue === customDurationValue && (
-					<CustomDurationInputs
-						offsetMinutes={condition.offsetMinutes}
-						onOffsetMinutesChange={handleOffsetMinutesChange}
-					/>
-				)}
-			</div>
+		<SettingsRow
+			label="After"
+			variant="compact"
+			contentClassName="min-w-0 shrink flex-wrap justify-end"
+		>
+			<Select variant="ghost" value={selectedDurationValue} onChange={handleDurationChange}>
+				{durationOptions.map((option) => (
+					<option key={option.minutes} value={option.minutes}>
+						{option.label}
+					</option>
+				))}
+				<option value={customDurationValue}>Custom</option>
+			</Select>
+			{selectedDurationValue === customDurationValue && (
+				<CustomDurationInputs
+					offsetMinutes={condition.offsetMinutes}
+					onOffsetMinutesChange={handleOffsetMinutesChange}
+				/>
+			)}
 		</SettingsRow>
 	);
 };
@@ -78,22 +80,12 @@ const durationOptions = [
 	{ minutes: 45, label: '45 minutes' },
 	{ minutes: 60, label: '1 hour' }
 ] as const;
-
 const customDurationValue = 'custom';
-
-function clampInTimeDuration(offsetMinutes: number): number {
-	return clampNumber(Math.trunc(offsetMinutes), minDurationMinutes, maxDurationHours * 60);
-}
-
-const minDurationMinutes = 1;
-const maxDurationHours = 24;
 
 const CustomDurationInputs: React.FC<TCustomDurationInputsProps> = (props) => {
 	const { offsetMinutes, onOffsetMinutesChange } = props;
 	const hours = Math.floor(offsetMinutes / 60);
 	const minutes = offsetMinutes % 60;
-	const minuteMinimum = hours === 0 ? minDurationMinutes : 0;
-	const minuteMaximum = hours >= maxDurationHours ? 0 : 59;
 
 	// MARK: - Actions
 
@@ -140,8 +132,8 @@ const CustomDurationInputs: React.FC<TCustomDurationInputsProps> = (props) => {
 			/>
 			<DurationNumberInput
 				unit="minutes"
-				min={minuteMinimum}
-				max={minuteMaximum}
+				min={hours === 0 ? minDurationMinutes : 0}
+				max={hours >= maxDurationHours ? 0 : 59}
 				value={minutes}
 				onValueChange={handleMinutesChange}
 				onStep={handleMinutesStep}
@@ -154,10 +146,6 @@ const CustomDurationInputs: React.FC<TCustomDurationInputsProps> = (props) => {
 interface TCustomDurationInputsProps {
 	offsetMinutes: number;
 	onOffsetMinutesChange: (offsetMinutes: number) => void;
-}
-
-function getDurationMinutes(hours: number, minutes: number): number {
-	return hours * 60 + minutes;
 }
 
 const DurationNumberInput: React.FC<TDurationNumberInputProps> = (props) => {
@@ -211,3 +199,14 @@ interface TDurationNumberInputProps {
 }
 
 type TDurationInputUnit = 'hours' | 'minutes';
+
+function getDurationMinutes(hours: number, minutes: number): number {
+	return hours * 60 + minutes;
+}
+
+function clampInTimeDuration(offsetMinutes: number): number {
+	return clampNumber(Math.trunc(offsetMinutes), minDurationMinutes, maxDurationHours * 60);
+}
+
+const minDurationMinutes = 1;
+const maxDurationHours = 24;

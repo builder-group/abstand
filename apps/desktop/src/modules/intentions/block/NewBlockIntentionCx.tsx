@@ -4,7 +4,17 @@ import { Err, type TResult } from 'tuple-result';
 import { zValidator } from 'validation-adapters/zod';
 import * as z from 'zod';
 import { specta } from '@/environment';
-import { formatLocalDate, formatTimeOfDay, getCurrentLocalDate, getCurrentTimeOfDay } from '@/lib';
+import {
+	getCurrentDateEpochDays,
+	getLocalDateEpochDays,
+	getLocalTimeOfDayMs,
+	isDateEpochDays,
+	isTimeOfDayMs,
+	isWeekdayMask,
+	timeOnlyFromMs,
+	weekdayMaskFromWeekdays,
+	type TWeekday
+} from '@/lib';
 import { type TCatalogItem } from '@/modules/catalog';
 import { IntentionsCx, useIntentionsCx } from '../IntentionsCx';
 
@@ -37,18 +47,18 @@ export class NewBlockIntentionCx {
 					{
 						phase: 'start',
 						mode: 'now',
-						date: getCurrentLocalDate(),
-						timeOfDay: '09:00',
+						dateEpochDays: getCurrentDateEpochDays(),
+						timeOfDayMs: timeOnlyFromMs(9 * 60 * 60 * 1_000),
 						offsetMinutes: 30,
-						weekdays: null
+						weekdaysMask: null
 					},
 					{
 						phase: 'end',
 						mode: 'manual',
-						date: getCurrentLocalDate(),
-						timeOfDay: '17:00',
+						dateEpochDays: getCurrentDateEpochDays(),
+						timeOfDayMs: timeOnlyFromMs(17 * 60 * 60 * 1_000),
 						offsetMinutes: 30,
-						weekdays: null
+						weekdaysMask: null
 					}
 				],
 				validator: zValidator(
@@ -57,12 +67,20 @@ export class NewBlockIntentionCx {
 							z.object({
 								phase: z.enum(['start', 'end']),
 								mode: z.enum(['now', 'atTime', 'inTime', 'repeats', 'manual']),
-								date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Enter a valid date'),
-								timeOfDay: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Enter a valid time'),
+								dateEpochDays: z.custom<specta.DateOnly>(
+									(value) => typeof value === 'number' && isDateEpochDays(value),
+									'Enter a valid date'
+								),
+								timeOfDayMs: z.custom<specta.TimeOnly>(
+									(value) => typeof value === 'number' && isTimeOfDayMs(value),
+									'Enter a valid time'
+								),
 								offsetMinutes: z.coerce.number().int().min(1).max(1440),
-								weekdays: z
-									.array(z.enum(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']))
-									.min(1, 'Please choose at least one day')
+								weekdaysMask: z
+									.custom<specta.WeekdayMask>(
+										(value) => typeof value === 'number' && isWeekdayMask(value),
+										'Please choose at least one day'
+									)
 									.nullable()
 							})
 						)
@@ -121,28 +139,6 @@ export class NewBlockIntentionCx {
 		this.updateCondition(phase, { mode });
 	}
 
-	public toggleConditionWeekday(
-		phase: specta.IntentionConditionPhase,
-		weekday: specta.Weekday
-	): void {
-		const condition = this.getCondition(phase) ?? this.createDefaultCondition(phase);
-		const weekdays = condition.weekdays ?? newBlockIntentionConfig.defaultSelectedWeekdays;
-		const hasWeekday = weekdays.includes(weekday);
-		if (hasWeekday && weekdays.length === 1) {
-			return;
-		}
-
-		this.updateCondition(phase, {
-			weekdays: hasWeekday
-				? weekdays.filter((currentWeekday) => currentWeekday !== weekday)
-				: [...weekdays, weekday].sort(
-						(a, b) =>
-							weekdayOrder.indexOf(a) -
-							weekdayOrder.indexOf(b)
-					)
-		});
-	}
-
 	public async submit(): Promise<TResult<specta.Intention, string>> {
 		const formData = this.$form.getValidData();
 		if (formData == null) {
@@ -189,24 +185,25 @@ export class NewBlockIntentionCx {
 							phase: condition.phase,
 							rule: { type: 'manual' }
 						};
-					case 'now':
+					case 'now': {
+						const now = new Date();
 						return {
 							phase: condition.phase,
 							rule: {
 								type: 'dateTime',
-								date: getCurrentLocalDate(),
-								timeOfDay: getCurrentTimeOfDay()
+								dateEpochDays: getLocalDateEpochDays(now),
+								timeOfDayMs: getLocalTimeOfDayMs(now)
 							}
 						};
+					}
 					case 'inTime': {
-						const date = new Date();
-						date.setMinutes(date.getMinutes() + condition.offsetMinutes);
+						const date = new Date(Date.now() + condition.offsetMinutes * 60_000);
 						return {
 							phase: condition.phase,
 							rule: {
 								type: 'dateTime',
-								date: formatLocalDate(date),
-								timeOfDay: formatTimeOfDay(date)
+								dateEpochDays: getLocalDateEpochDays(date),
+								timeOfDayMs: getLocalTimeOfDayMs(date)
 							}
 						};
 					}
@@ -215,8 +212,8 @@ export class NewBlockIntentionCx {
 							phase: condition.phase,
 							rule: {
 								type: 'dateTime',
-								date: condition.date,
-								timeOfDay: condition.timeOfDay
+								dateEpochDays: condition.dateEpochDays,
+								timeOfDayMs: condition.timeOfDayMs
 							}
 						};
 					case 'repeats':
@@ -224,8 +221,8 @@ export class NewBlockIntentionCx {
 							phase: condition.phase,
 							rule: {
 								type: 'schedule',
-								timeOfDay: condition.timeOfDay,
-								weekdays: condition.weekdays
+								timeOfDayMs: condition.timeOfDayMs,
+								weekdaysMask: condition.weekdaysMask
 							}
 						};
 				}
@@ -239,10 +236,13 @@ export class NewBlockIntentionCx {
 		return {
 			phase,
 			mode: phase === 'start' ? 'now' : 'manual',
-			date: getCurrentLocalDate(),
-			timeOfDay: phase === 'start' ? '09:00' : '17:00',
+			dateEpochDays: getCurrentDateEpochDays(),
+			timeOfDayMs:
+				phase === 'start'
+					? timeOnlyFromMs(9 * 60 * 60 * 1_000)
+					: timeOnlyFromMs(17 * 60 * 60 * 1_000),
 			offsetMinutes: 30,
-			weekdays: null
+			weekdaysMask: null
 		};
 	}
 }
@@ -257,13 +257,11 @@ export const newBlockIntentionConfig = {
 		{ value: 'sat', shortLabel: 'S', label: 'Saturday' },
 		{ value: 'sun', shortLabel: 'S', label: 'Sunday' }
 	] satisfies TWeekdayOption[],
-	defaultSelectedWeekdays: ['mon', 'tue', 'wed', 'thu', 'fri'] satisfies specta.Weekday[]
+	defaultSelectedWeekdaysMask: weekdayMaskFromWeekdays(['mon', 'tue', 'wed', 'thu', 'fri'])
 } as const;
 
-const weekdayOrder = newBlockIntentionConfig.weekdayOptions.map((o) => o.value);
-
 interface TWeekdayOption {
-	value: specta.Weekday;
+	value: TWeekday;
 	shortLabel: string;
 	label: string;
 }
@@ -279,10 +277,10 @@ export interface TNewBlockIntentionFormData {
 export interface TNewIntentionConditionFormData {
 	phase: specta.IntentionConditionPhase;
 	mode: TNewIntentionConditionMode;
-	date: string;
-	timeOfDay: string;
+	dateEpochDays: specta.DateOnly;
+	timeOfDayMs: specta.TimeOnly;
 	offsetMinutes: number;
-	weekdays: specta.Weekday[] | null;
+	weekdaysMask: specta.WeekdayMask | null;
 }
 
 export type TNewIntentionConditionMode = 'now' | 'atTime' | 'inTime' | 'repeats' | 'manual';

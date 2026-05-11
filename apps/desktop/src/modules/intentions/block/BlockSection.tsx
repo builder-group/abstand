@@ -211,6 +211,13 @@ const blockScopeOptions = [
 	}
 ] satisfies TBlockScopeOption[];
 
+interface TBlockScopeOption {
+	value: specta.IntentionBlockScope;
+	label: string;
+	description: string;
+	Icon: React.ComponentType<{ className?: string }>;
+}
+
 const enforcementModeOptions = [
 	{
 		value: 'casual',
@@ -228,13 +235,6 @@ const enforcementModeOptions = [
 		description: 'Maximum friction for commitments you do not want to bypass.'
 	}
 ] satisfies TEnforcementModeOption[];
-
-interface TBlockScopeOption {
-	value: specta.IntentionBlockScope;
-	label: string;
-	description: string;
-	Icon: React.ComponentType<{ className?: string }>;
-}
 
 interface TEnforcementModeOption {
 	value: specta.IntentionEnforcementMode;

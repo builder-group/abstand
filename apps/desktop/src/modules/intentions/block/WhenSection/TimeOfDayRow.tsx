@@ -1,5 +1,7 @@
 import React from 'react';
 import { InputGroup, InputGroupInput, InputGroupStepper } from '@/components';
+import { specta } from '@/environment';
+import { addTimeOfDayMs, formatTimeInput, parseTimeInput } from '@/lib';
 import { SettingsRow } from '@/modules/settings';
 import { type TConditionRowsProps } from './types';
 
@@ -7,8 +9,8 @@ export const TimeOfDayRow: React.FC<TTimeOfDayRowProps> = (props) => {
 	const { condition, cx, ariaLabel } = props;
 
 	const handleTimeChange = React.useCallback(
-		(timeOfDay: string) => {
-			cx.updateCondition(condition.phase, { timeOfDay });
+		(timeOfDayMs: specta.TimeOnly) => {
+			cx.updateCondition(condition.phase, { timeOfDayMs });
 		},
 		[condition.phase, cx]
 	);
@@ -16,7 +18,7 @@ export const TimeOfDayRow: React.FC<TTimeOfDayRowProps> = (props) => {
 	return (
 		<SettingsRow label="Time" variant="compact">
 			<TimeInput
-				value={condition.timeOfDay}
+				value={condition.timeOfDayMs}
 				onValueChange={handleTimeChange}
 				ariaLabel={ariaLabel}
 			/>
@@ -33,25 +35,30 @@ const TimeInput: React.FC<TTimeInputProps> = (props) => {
 
 	const handleChange = React.useCallback(
 		(event: React.ChangeEvent<HTMLInputElement>) => {
-			onValueChange(event.target.value);
+			const timeOfDayMs = parseTimeInput(event.target.value);
+			if (timeOfDayMs == null) {
+				return;
+			}
+
+			onValueChange(timeOfDayMs);
 		},
 		[onValueChange]
 	);
 
 	const handleIncrement = React.useCallback(() => {
-		onValueChange(stepTimeOfDay(value, stepMinutes));
+		onValueChange(addTimeOfDayMs(value, stepMs));
 	}, [onValueChange, value]);
 
 	const handleDecrement = React.useCallback(() => {
-		onValueChange(stepTimeOfDay(value, -stepMinutes));
+		onValueChange(addTimeOfDayMs(value, -stepMs));
 	}, [onValueChange, value]);
 
 	return (
 		<InputGroup className="w-25">
 			<InputGroupInput
 				type="time"
-				step={stepMinutes * 60}
-				value={value}
+				step={stepMs / 1_000}
+				value={formatTimeInput(value)}
 				onChange={handleChange}
 				aria-label={ariaLabel}
 			/>
@@ -66,29 +73,9 @@ const TimeInput: React.FC<TTimeInputProps> = (props) => {
 };
 
 interface TTimeInputProps {
-	value: string;
-	onValueChange: (value: string) => void;
+	value: specta.TimeOnly;
+	onValueChange: (value: specta.TimeOnly) => void;
 	ariaLabel: string;
 }
 
-const stepMinutes = 5;
-
-function stepTimeOfDay(timeOfDay: string, deltaMinutes: number): string {
-	const match = /^(\d{2}):(\d{2})$/.exec(timeOfDay);
-	if (match == null) {
-		return timeOfDay;
-	}
-
-	const hours = Number(match[1]);
-	const minutes = Number(match[2]);
-	if (hours >= 24 || minutes >= 60) {
-		return timeOfDay;
-	}
-
-	const totalMinutes = hours * 60 + minutes;
-	const nextTotalMinutes = (totalMinutes + deltaMinutes + 1440) % 1440;
-	const nextHours = Math.floor(nextTotalMinutes / 60);
-	const nextMinutes = nextTotalMinutes % 60;
-
-	return `${String(nextHours).padStart(2, '0')}:${String(nextMinutes).padStart(2, '0')}`;
-}
+const stepMs = 5 * 60 * 1_000;

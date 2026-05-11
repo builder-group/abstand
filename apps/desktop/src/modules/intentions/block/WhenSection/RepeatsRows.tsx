@@ -1,5 +1,6 @@
 import React from 'react';
-import { Select, Toggle } from '@/components';
+import { Select, ToggleGroup, ToggleGroupItem, Tooltip } from '@/components';
+import { isWeekday, weekdayMaskFromWeekdays, weekdaysFromWeekdayMask } from '@/lib';
 import { SettingsRow } from '@/modules/settings';
 import { newBlockIntentionConfig } from '../NewBlockIntentionCx';
 import { TimeOfDayRow } from './TimeOfDayRow';
@@ -11,9 +12,9 @@ export const RepeatsRows: React.FC<TConditionRowsProps> = (props) => {
 	const handleRepeatModeChange = React.useCallback(
 		(event: React.ChangeEvent<HTMLSelectElement>) => {
 			cx.updateCondition(condition.phase, {
-				weekdays:
+				weekdaysMask:
 					event.target.value === 'selectedDays'
-						? [...newBlockIntentionConfig.defaultSelectedWeekdays]
+						? newBlockIntentionConfig.defaultSelectedWeekdaysMask
 						: null
 			});
 		},
@@ -23,40 +24,61 @@ export const RepeatsRows: React.FC<TConditionRowsProps> = (props) => {
 	return (
 		<>
 			<TimeOfDayRow condition={condition} cx={cx} ariaLabel="Repeat time" />
-			<SettingsRow label="Days" variant="compact">
+			<SettingsRow
+				label="Days"
+				variant="compact"
+				contentClassName="min-w-0 shrink flex-wrap justify-end"
+			>
 				<Select
 					variant="ghost"
-					value={condition.weekdays == null ? 'everyDay' : 'selectedDays'}
+					value={condition.weekdaysMask == null ? 'everyDay' : 'selectedDays'}
 					onChange={handleRepeatModeChange}
 				>
 					<option value="everyDay">Every day</option>
 					<option value="selectedDays">Selected days</option>
 				</Select>
+				{condition.weekdaysMask != null && <WeekdayToggleGroup condition={condition} cx={cx} />}
 			</SettingsRow>
-			{condition.weekdays != null && <WeekdayToggleRow condition={condition} cx={cx} />}
 		</>
 	);
 };
 
-const WeekdayToggleRow: React.FC<TConditionRowsProps> = (props) => {
+const WeekdayToggleGroup: React.FC<TConditionRowsProps> = (props) => {
 	const { condition, cx } = props;
+	const selectedWeekdays = React.useMemo(() => {
+		if (condition.weekdaysMask == null) {
+			return [];
+		}
+
+		return weekdaysFromWeekdayMask(condition.weekdaysMask);
+	}, [condition.weekdaysMask]);
+
+	const handleWeekdaysChange = React.useCallback(
+		(values: string[]) => {
+			const weekdays = values.filter(isWeekday);
+			if (weekdays.length === 0) {
+				return;
+			}
+
+			cx.updateCondition(condition.phase, { weekdaysMask: weekdayMaskFromWeekdays(weekdays) });
+		},
+		[condition.phase, cx]
+	);
 
 	return (
-		<SettingsRow label="On" variant="compact">
-			<div className="flex items-center gap-1">
-				{newBlockIntentionConfig.weekdayOptions.map((weekday) => (
-					<Toggle
-						key={weekday.value}
-						size="icon-xs"
-						variant="default"
-						pressed={condition.weekdays?.includes(weekday.value) ?? false}
-						onPressedChange={() => cx.toggleConditionWeekday(condition.phase, weekday.value)}
-						aria-label={weekday.label}
-					>
-						<span className="text-xs">{weekday.shortLabel}</span>
-					</Toggle>
-				))}
-			</div>
-		</SettingsRow>
+		<ToggleGroup
+			multiple
+			variant="outline"
+			value={selectedWeekdays}
+			onValueChange={handleWeekdaysChange}
+		>
+			{newBlockIntentionConfig.weekdayOptions.map((weekday) => (
+				<Tooltip key={weekday.value} content={weekday.label}>
+					<ToggleGroupItem value={weekday.value} aria-label={weekday.label}>
+						<span className="text-sm">{weekday.shortLabel}</span>
+					</ToggleGroupItem>
+				</Tooltip>
+			))}
+		</ToggleGroup>
 	);
 };
