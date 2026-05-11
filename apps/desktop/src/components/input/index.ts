@@ -7,3 +7,4 @@ export * from './Slider';
 export * from './Switch';
 export * from './Textarea';
 export * from './Toggle';
+export * from './ToggleGroup';

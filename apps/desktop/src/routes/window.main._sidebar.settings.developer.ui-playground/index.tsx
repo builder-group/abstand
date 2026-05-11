@@ -40,6 +40,8 @@ import {
 	LibraryBigIcon,
 	MonitorIcon,
 	MoonIcon,
+	PanelLeftCloseIcon,
+	PanelLeftOpenIcon,
 	SearchIcon,
 	SegmentedControl,
 	SegmentedControlItem,
@@ -50,6 +52,8 @@ import {
 	Switch,
 	Textarea,
 	Toggle,
+	ToggleGroup,
+	ToggleGroupItem,
 	Tooltip,
 	useComboboxAnchor,
 	XCircleIcon
@@ -77,6 +81,7 @@ function RouteComponent() {
 			<SwitchSection />
 			<SliderSection />
 			<ToggleSection />
+			<ToggleGroupSection />
 			<SegmentedControlSection />
 			<SelectSection />
 			<ComboboxSection />
@@ -403,6 +408,89 @@ const ToggleSection: React.FC = () => {
 				>
 					{ghostValue ? <MoonIcon /> : <SunIcon />}
 				</Toggle>
+			</PlaygroundRow>
+		</PlaygroundGroup>
+	);
+};
+
+// MARK: - Toggle Group
+
+const ToggleGroupSection: React.FC = () => {
+	const [viewValue, setViewValue] = React.useState(['preview']);
+	const [mdViewValue, setMdViewValue] = React.useState(['preview']);
+	const [defaultVariantValue, setDefaultVariantValue] = React.useState(['default']);
+	const [ghostVariantValue, setGhostVariantValue] = React.useState(['theme']);
+	const [sidebarVariantValue, setSidebarVariantValue] = React.useState(['sidebar']);
+	const [outlineVariantValue, setOutlineVariantValue] = React.useState(['outline']);
+	const [toolValues, setToolValues] = React.useState(['inspect', 'dark']);
+	const [verticalValue, setVerticalValue] = React.useState(['local']);
+
+	return (
+		<PlaygroundGroup title="Toggle Group">
+			<PlaygroundRow label="Sizes">
+				<ToggleGroup value={viewValue} onValueChange={setViewValue}>
+					<ToggleGroupItem value="preview">Default (sm)</ToggleGroupItem>
+					<ToggleGroupItem value="code">Code</ToggleGroupItem>
+					<ToggleGroupItem value="split">Split</ToggleGroupItem>
+				</ToggleGroup>
+				<ToggleGroup size="md" value={mdViewValue} onValueChange={setMdViewValue}>
+					<ToggleGroupItem value="preview">Medium (md)</ToggleGroupItem>
+					<ToggleGroupItem value="code">Code</ToggleGroupItem>
+				</ToggleGroup>
+			</PlaygroundRow>
+			<PlaygroundRow label="Variants">
+				<ToggleGroup value={defaultVariantValue} onValueChange={setDefaultVariantValue}>
+					<ToggleGroupItem value="default">Default</ToggleGroupItem>
+					<ToggleGroupItem value="preview">Preview</ToggleGroupItem>
+				</ToggleGroup>
+				<ToggleGroup variant="ghost" value={ghostVariantValue} onValueChange={setGhostVariantValue}>
+					<ToggleGroupItem value="theme" aria-label="Toggle theme">
+						{ghostVariantValue.includes('theme') ? <MoonIcon /> : <SunIcon />}
+					</ToggleGroupItem>
+				</ToggleGroup>
+				<ToggleGroup
+					variant="ghost"
+					value={sidebarVariantValue}
+					onValueChange={setSidebarVariantValue}
+				>
+					<ToggleGroupItem value="sidebar" aria-label="Toggle sidebar">
+						{sidebarVariantValue.includes('sidebar') ? (
+							<PanelLeftOpenIcon />
+						) : (
+							<PanelLeftCloseIcon />
+						)}
+					</ToggleGroupItem>
+				</ToggleGroup>
+				<ToggleGroup
+					variant="outline"
+					value={outlineVariantValue}
+					onValueChange={setOutlineVariantValue}
+				>
+					<ToggleGroupItem value="outline">Outline</ToggleGroupItem>
+					<ToggleGroupItem value="joined">Joined</ToggleGroupItem>
+				</ToggleGroup>
+			</PlaygroundRow>
+			<PlaygroundRow label="Multiple">
+				<ToggleGroup multiple value={toolValues} onValueChange={setToolValues} variant="outline">
+					<ToggleGroupItem value="inspect">Inspect</ToggleGroupItem>
+					<ToggleGroupItem value="console">Console</ToggleGroupItem>
+					<ToggleGroupItem value="dark">
+						<MoonIcon />
+						Dark
+					</ToggleGroupItem>
+				</ToggleGroup>
+			</PlaygroundRow>
+			<PlaygroundRow label="Vertical">
+				<ToggleGroup
+					value={verticalValue}
+					onValueChange={setVerticalValue}
+					orientation="vertical"
+					variant="outline"
+				>
+					<ToggleGroupItem value="local">Local</ToggleGroupItem>
+					<ToggleGroupItem value="remote">Remote</ToggleGroupItem>
+					<ToggleGroupItem value="both">Both</ToggleGroupItem>
+				</ToggleGroup>
 			</PlaygroundRow>
 		</PlaygroundGroup>
 	);
