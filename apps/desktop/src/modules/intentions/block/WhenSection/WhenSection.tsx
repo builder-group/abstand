@@ -16,21 +16,11 @@ export const WhenSection: React.FC = () => {
 	return (
 		<div className="space-y-2.5">
 			<SettingsGroup title="When">
-				<ConditionRowSet
-					phase="start"
-					label="Starts"
-					description="Choose when this Abstand begins."
-					cx={cx}
-				/>
+				<ConditionRowSet phase="start" label="Starts" cx={cx} />
 			</SettingsGroup>
 
 			<SettingsGroup>
-				<ConditionRowSet
-					phase="end"
-					label="Ends"
-					description="Choose when this Abstand releases."
-					cx={cx}
-				/>
+				<ConditionRowSet phase="end" label="Ends" cx={cx} />
 			</SettingsGroup>
 		</div>
 	);
@@ -61,7 +51,7 @@ const ConditionRowSet: React.FC<TConditionRowSetProps> = (props) => {
 
 	return (
 		<>
-			<SettingsRow label={label} description={description}>
+			<SettingsRow label={label} description={description} variant="compact">
 				<Select variant="ghost" value={condition.mode} onChange={handleModeChange}>
 					{modeOptions.map((option) => (
 						<option key={option.value} value={option.value}>
@@ -79,7 +69,7 @@ const ConditionRowSet: React.FC<TConditionRowSetProps> = (props) => {
 interface TConditionRowSetProps {
 	phase: specta.IntentionConditionPhase;
 	label: string;
-	description: string;
+	description?: string;
 	cx: NewBlockIntentionCx;
 }
 
@@ -87,15 +77,15 @@ const modeOptionsByPhase = {
 	start: [
 		{ value: 'now', label: 'Now' },
 		{ value: 'atTime', label: 'At time' },
-		{ value: 'inTime', label: 'In time' },
+		{ value: 'afterOffset', label: 'After delay' },
 		{ value: 'repeats', label: 'Repeats' },
-		{ value: 'manual', label: 'Manual' }
+		{ value: 'manual', label: 'Manually' }
 	],
 	end: [
-		{ value: 'inTime', label: 'In time' },
+		{ value: 'afterOffset', label: 'After duration' },
 		{ value: 'atTime', label: 'At time' },
 		{ value: 'repeats', label: 'Repeats' },
-		{ value: 'manual', label: 'Manual' }
+		{ value: 'manual', label: 'Manually' }
 	]
 } as const satisfies Record<specta.IntentionConditionPhase, TConditionModeOption[]>;
 

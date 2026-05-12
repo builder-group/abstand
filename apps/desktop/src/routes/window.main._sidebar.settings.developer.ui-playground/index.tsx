@@ -944,7 +944,7 @@ const HelpPopoverSection: React.FC = () => {
 									description: (
 										<>
 											Choose how tasks are handled.{' '}
-											<span className="text-base-400">Use arrows to see each option.</span>
+											<span className="text-base-400">Use arrows to compare options.</span>
 										</>
 									)
 								},

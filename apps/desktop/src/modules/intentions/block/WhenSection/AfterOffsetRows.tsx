@@ -10,7 +10,7 @@ import { clampNumber } from '@/lib';
 import { SettingsRow } from '@/modules/settings';
 import { type TConditionRowsProps } from './types';
 
-export const InTimeRows: React.FC<TConditionRowsProps> = (props) => {
+export const AfterOffsetRows: React.FC<TConditionRowsProps> = (props) => {
 	const { condition, cx } = props;
 	const [isCustomDurationSelected, setIsCustomDurationSelected] = React.useState(false);
 
@@ -24,7 +24,7 @@ export const InTimeRows: React.FC<TConditionRowsProps> = (props) => {
 	const handleOffsetMinutesChange = React.useCallback(
 		(offsetMinutes: number) => {
 			cx.updateCondition(condition.phase, {
-				offsetMinutes: clampInTimeDuration(offsetMinutes)
+				offsetMinutes: clampOffsetMinutes(offsetMinutes)
 			});
 		},
 		[condition.phase, cx]
@@ -204,7 +204,7 @@ function getDurationMinutes(hours: number, minutes: number): number {
 	return hours * 60 + minutes;
 }
 
-function clampInTimeDuration(offsetMinutes: number): number {
+function clampOffsetMinutes(offsetMinutes: number): number {
 	return clampNumber(Math.trunc(offsetMinutes), minDurationMinutes, maxDurationHours * 60);
 }
 

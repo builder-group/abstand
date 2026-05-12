@@ -66,7 +66,7 @@ export class NewBlockIntentionCx {
 						.array(
 							z.object({
 								phase: z.enum(['start', 'end']),
-								mode: z.enum(['now', 'atTime', 'inTime', 'repeats', 'manual']),
+								mode: z.enum(['now', 'atTime', 'afterOffset', 'repeats', 'manual']),
 								dateEpochDays: z.custom<specta.DateOnly>(
 									(value) => typeof value === 'number' && isDateEpochDays(value),
 									'Enter a valid date'
@@ -196,7 +196,7 @@ export class NewBlockIntentionCx {
 							}
 						};
 					}
-					case 'inTime': {
+					case 'afterOffset': {
 						const date = new Date(Date.now() + condition.offsetMinutes * 60_000);
 						return {
 							phase: condition.phase,
@@ -283,7 +283,7 @@ export interface TNewIntentionConditionFormData {
 	weekdaysMask: specta.WeekdayMask | null;
 }
 
-export type TNewIntentionConditionMode = 'now' | 'atTime' | 'inTime' | 'repeats' | 'manual';
+export type TNewIntentionConditionMode = 'now' | 'atTime' | 'afterOffset' | 'repeats' | 'manual';
 
 const ReactNewBlockIntentionCx = React.createContext<NewBlockIntentionCx | null>(null);
 

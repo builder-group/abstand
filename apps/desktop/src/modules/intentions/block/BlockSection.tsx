@@ -11,15 +11,7 @@ export const BlockSection: React.FC = () => {
 	const cx = useNewBlockIntentionCx();
 
 	const scope = useFeatureState(cx.$form.fields.scope);
-	const currentScope =
-		blockScopeOptions.find((option) => option.value === scope) ??
-		(blockScopeOptions[0] as TBlockScopeOption);
-
 	const enforcementMode = useFeatureState(cx.$form.fields.enforcementMode);
-	const currentEnforcementMode =
-		enforcementModeOptions.find((mode) => mode.value === enforcementMode) ??
-		(enforcementModeOptions[1] as TEnforcementModeOption);
-
 	const selectedTargets = useCompute(cx.$form.fields.selectedTargets, ({ value }) => value ?? []);
 	const isTargetsSelectable = scope !== 'wholeDevice';
 	const targetsLabel = React.useMemo(() => {
@@ -34,7 +26,7 @@ export const BlockSection: React.FC = () => {
 	const targetsDescription = React.useMemo(() => {
 		switch (scope) {
 			case 'blockTargets':
-				return 'Choose which apps and websites this intention blocks.';
+				return 'Choose which apps and sites to block.';
 			case 'allowTargets':
 				return 'Choose what stays available while everything else is blocked.';
 			case 'wholeDevice':
@@ -50,7 +42,7 @@ export const BlockSection: React.FC = () => {
 				description: (
 					<>
 						Choose what gets blocked when this intention is active.{' '}
-						<span className="text-base-400">Use arrows to see each option.</span>
+						<span className="text-base-400">Use arrows to compare options.</span>
 					</>
 				)
 			},
@@ -97,15 +89,15 @@ export const BlockSection: React.FC = () => {
 				title: 'Enforcement',
 				description: (
 					<>
-						How hard this block is to pause or bypass.{' '}
-						<span className="text-base-400">Use arrows to see each option.</span>
+						Choose how hard this block is to pause or end early.{' '}
+						<span className="text-base-400">Use arrows to compare options.</span>
 					</>
 				)
 			},
 			{
 				title: 'Casual',
 				titlePrefix: 'Enforcement',
-				description: 'Easy to pause or bypass. Good for light accountability.',
+				description: 'Exit anytime. Good for light accountability.',
 				titleSuffix:
 					enforcementMode === 'casual' ? (
 						<Badge variant="success" size="xs">
@@ -116,7 +108,7 @@ export const BlockSection: React.FC = () => {
 			{
 				title: 'Balanced',
 				titlePrefix: 'Enforcement',
-				description: 'Moderate friction before bypassing. Good for regular focus sessions.',
+				description: 'A brief pause before you can exit early. Good for regular focus sessions.',
 				titleSuffix:
 					enforcementMode === 'balanced' ? (
 						<Badge variant="success" size="xs">
@@ -127,7 +119,7 @@ export const BlockSection: React.FC = () => {
 			{
 				title: 'Strict',
 				titlePrefix: 'Enforcement',
-				description: 'Hard to bypass. Best for commitments you want to keep.',
+				description: 'Cannot be ended early. Best for commitments you want to lock in.',
 				titleSuffix:
 					enforcementMode === 'strict' ? (
 						<Badge variant="success" size="xs">
@@ -184,7 +176,7 @@ export const BlockSection: React.FC = () => {
 							<HelpCarousel items={blockScopeCarouselItems} />
 						</HelpPopover>
 					}
-					description={currentScope.description}
+					variant="compact"
 				>
 					<Select variant="ghost" value={scope} onChange={handleScopeChange}>
 						{blockScopeOptions.map((scopeOption) => (
@@ -226,7 +218,7 @@ export const BlockSection: React.FC = () => {
 							<HelpCarousel items={enforcementCarouselItems} />
 						</HelpPopover>
 					}
-					description={currentEnforcementMode.description}
+					variant="compact"
 				>
 					<Select variant="ghost" value={enforcementMode} onChange={handleEnforcementModeChange}>
 						{enforcementModeOptions.map((mode) => (
@@ -242,50 +234,14 @@ export const BlockSection: React.FC = () => {
 	);
 };
 
-const blockScopeOptions = [
-	{
-		value: 'blockTargets',
-		label: 'Block selected',
-		description: 'Block only the apps and websites you choose.'
-	},
-	{
-		value: 'allowTargets',
-		label: 'Allow selected',
-		description: 'Block everything except the apps and websites you choose.'
-	},
-	{
-		value: 'wholeDevice',
-		label: 'Whole device',
-		description: 'Lock the whole computer behind a full-screen overlay.'
-	}
-] satisfies TBlockScopeOption[];
+const blockScopeOptions: { value: specta.IntentionBlockScope; label: string }[] = [
+	{ value: 'blockTargets', label: 'Block selected' },
+	{ value: 'allowTargets', label: 'Allow selected' },
+	{ value: 'wholeDevice', label: 'Whole device' }
+];
 
-interface TBlockScopeOption {
-	value: specta.IntentionBlockScope;
-	label: string;
-	description: string;
-}
-
-const enforcementModeOptions = [
-	{
-		value: 'casual',
-		label: 'Casual',
-		description: 'Light friction when you want the block to stay easy to pause.'
-	},
-	{
-		value: 'balanced',
-		label: 'Balanced',
-		description: 'Moderate friction for regular focus sessions.'
-	},
-	{
-		value: 'strict',
-		label: 'Strict',
-		description: 'Maximum friction for commitments you do not want to bypass.'
-	}
-] satisfies TEnforcementModeOption[];
-
-interface TEnforcementModeOption {
-	value: specta.IntentionEnforcementMode;
-	label: string;
-	description: string;
-}
+const enforcementModeOptions: { value: specta.IntentionEnforcementMode; label: string }[] = [
+	{ value: 'casual', label: 'Casual' },
+	{ value: 'balanced', label: 'Balanced' },
+	{ value: 'strict', label: 'Strict' }
+];

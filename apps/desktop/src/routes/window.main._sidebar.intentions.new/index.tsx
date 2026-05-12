@@ -20,8 +20,7 @@ function RouteComponent() {
 					<div>
 						<p className="text-base-950 text-sm">Block</p>
 						<p className="text-base-500 mt-px text-xs">
-							Builds a hard wall for the duration. Apps and websites stay inaccessible until the
-							end.
+							Blocks apps and websites for the time you choose. You set when it starts and ends.
 						</p>
 					</div>
 				</Link>
@@ -36,7 +35,8 @@ function RouteComponent() {
 							<Badge variant="outline">Coming soon</Badge>
 						</div>
 						<p className="text-base-500 mt-px text-xs">
-							A rhythm of forced breaks over a longer window, with a one-minute warning before each.
+							Schedules breaks during longer sessions, with a full-screen overlay and one-minute
+							warnings.
 						</p>
 					</div>
 				</div>
