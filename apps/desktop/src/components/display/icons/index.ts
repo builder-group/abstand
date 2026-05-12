@@ -7,6 +7,7 @@ export * from './LogoIcon';
 export {
 	AppWindowIcon,
 	ArrowLeftIcon,
+	BugIcon,
 	CheckIcon,
 	ChevronDownIcon,
 	ChevronLeftIcon,
@@ -16,6 +17,8 @@ export {
 	CircleQuestionMarkIcon,
 	CodeXmlIcon,
 	CommandIcon,
+	MailIcon,
+	MessageCircleIcon,
 	FolderOpenIcon,
 	GlobeIcon,
 	LibraryBigIcon,

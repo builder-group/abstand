@@ -95,3 +95,9 @@ export const PopoverDescription: React.FC<TPopoverDescriptionProps> = (props) =>
 };
 
 export type TPopoverDescriptionProps = PopoverPrimitive.Description.Props;
+
+export const PopoverClose: React.FC<TPopoverCloseProps> = (props) => {
+	return <PopoverPrimitive.Close data-slot="popover-close" {...props} />;
+};
+
+export type TPopoverCloseProps = PopoverPrimitive.Close.Props;

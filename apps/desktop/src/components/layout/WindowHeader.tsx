@@ -1,10 +1,23 @@
 import { mergeProps } from '@base-ui/react/merge-props';
 import { useRender } from '@base-ui/react/use-render';
-import { useLocation } from '@tanstack/react-router';
 import React from 'react';
+import { appConfig } from '@/environment/configs';
 import { useAppInfo, usePlatform } from '@/hooks';
-import { cn } from '@/lib';
-import { Badge, CircleQuestionMarkIcon } from '../display';
+import { cn, openExternalUrl } from '@/lib';
+import {
+	Badge,
+	BugIcon,
+	CircleQuestionMarkIcon,
+	MailIcon,
+	MessageCircleIcon,
+	Popover,
+	PopoverClose,
+	PopoverContent,
+	PopoverDescription,
+	PopoverHeader,
+	PopoverTitle,
+	PopoverTrigger
+} from '../display';
 import { Button } from '../input';
 
 export const WindowHeader: React.FC<TWindowHeaderProps> = (props) => {
@@ -19,7 +32,6 @@ export const WindowHeader: React.FC<TWindowHeaderProps> = (props) => {
 		className
 	} = props;
 	const appInfo = useAppInfo();
-	const { pathname } = useLocation();
 
 	const showDevBadge = showBadges && !appInfo.isPending && appInfo.stage === 'dev';
 	const showBetaBadge =
@@ -55,19 +67,7 @@ export const WindowHeader: React.FC<TWindowHeaderProps> = (props) => {
 			)}
 			<div data-tauri-drag-region className="h-full flex-1" />
 			{trailing}
-			{showHelp && (
-				<Button
-					aria-label="Help"
-					variant="ghost"
-					size="icon-sm"
-					className="ml-2"
-					onClick={() => {
-						console.log('[Help] current path:', pathname);
-					}}
-				>
-					<CircleQuestionMarkIcon />
-				</Button>
-			)}
+			{showHelp && <WindowHeaderHelpPopover />}
 		</WindowHeaderRow>
 	);
 };
@@ -81,6 +81,67 @@ export interface TWindowHeaderProps {
 	leading?: React.ReactNode;
 	trailing?: React.ReactNode;
 	className?: string;
+}
+
+const WindowHeaderHelpPopover: React.FC = () => {
+	const handleOpenSupportUrl = React.useCallback((url: string) => {
+		void openExternalUrl(url);
+	}, []);
+
+	return (
+		<Popover>
+			<PopoverTrigger
+				render={
+					<Button aria-label="Help" variant="ghost" size="icon-sm" className="ml-2">
+						<CircleQuestionMarkIcon />
+					</Button>
+				}
+			/>
+			<PopoverContent side="bottom" align="end" className="w-56">
+				<PopoverHeader>
+					<PopoverTitle>Support</PopoverTitle>
+					<PopoverDescription>Get help or share feedback.</PopoverDescription>
+				</PopoverHeader>
+				<div className="-mx-1 flex flex-col gap-0.5">
+					{supportLinks.map((link) => (
+						<PopoverClose
+							key={link.label}
+							type="button"
+							className="text-base-600 hover:bg-base-950/6 hover:text-base-950 focus-ring flex w-full items-center gap-2 rounded-lg border border-transparent px-2 py-1 text-left text-sm transition-colors select-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+							onClick={() => handleOpenSupportUrl(link.url)}
+						>
+							<link.Icon />
+							<span>{link.label}</span>
+						</PopoverClose>
+					))}
+				</div>
+			</PopoverContent>
+		</Popover>
+	);
+};
+
+const supportLinks = [
+	{
+		label: 'Join Discord',
+		url: appConfig.help.discord,
+		Icon: MessageCircleIcon
+	},
+	{
+		label: 'Email support',
+		url: appConfig.help.mailto('Support'),
+		Icon: MailIcon
+	},
+	{
+		label: 'Report issue',
+		url: appConfig.help.githubIssues,
+		Icon: BugIcon
+	}
+] satisfies TSupportLink[];
+
+interface TSupportLink {
+	label: string;
+	url: string;
+	Icon: React.ComponentType<{ className?: string }>;
 }
 
 export const WindowHeaderRow: React.FC<TWindowHeaderRowProps> = (props) => {
