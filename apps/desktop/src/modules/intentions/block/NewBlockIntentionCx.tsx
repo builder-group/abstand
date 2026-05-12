@@ -1,4 +1,9 @@
-import { createForm } from 'feature-form';
+import {
+	bitwiseFlag,
+	createForm,
+	FormFieldReValidateMode,
+	FormFieldValidateMode
+} from 'feature-form';
 import React from 'react';
 import { Err, type TResult } from 'tuple-result';
 import { zValidator } from 'validation-adapters/zod';
@@ -37,7 +42,17 @@ export class NewBlockIntentionCx {
 				defaultValue: 'blockTargets'
 			},
 			selectedTargets: {
-				defaultValue: []
+				defaultValue: [],
+				validator: zValidator(
+					z.array(z.custom<TCatalogItem>()).superRefine((targets, ctx) => {
+						if (this.$form.fields.scope.get() !== 'wholeDevice' && targets.length === 0) {
+							ctx.addIssue({
+								code: 'custom',
+								message: 'Choose at least one app or website'
+							});
+						}
+					})
+				)
 			},
 			enforcementMode: {
 				defaultValue: 'balanced'
@@ -94,7 +109,10 @@ export class NewBlockIntentionCx {
 						})
 				)
 			}
-		}
+		},
+		notifyOnStatusChange: false,
+		validateMode: bitwiseFlag(FormFieldValidateMode.OnSubmit),
+		reValidateMode: bitwiseFlag(FormFieldReValidateMode.OnBlur, FormFieldReValidateMode.OnChange)
 	});
 
 	public constructor(intentionsCx: IntentionsCx) {

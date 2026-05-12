@@ -52,6 +52,10 @@ pub async fn create_intention(
             let (apps, websites) = match block_params.scope {
                 IntentionBlockScope::WholeDevice => (Vec::new(), Vec::new()),
                 IntentionBlockScope::BlockTargets | IntentionBlockScope::AllowTargets => {
+                    if block_params.targets.is_empty() {
+                        return Err("Choose at least one app or website".to_string());
+                    }
+
                     let mut apps = Vec::new();
                     let mut websites = Vec::new();
 

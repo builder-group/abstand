@@ -1,10 +1,10 @@
-import { useCompute, useFeatureState } from 'feature-react/state';
-import React from 'react';
 import { Badge, ChevronRightIcon, HelpCarousel, HelpPopover, Select } from '@/components';
 import { type specta } from '@/environment';
 import { cn } from '@/lib';
 import { CatalogIconPeek, useCatalogPicker, type TCatalogItem } from '@/modules/catalog';
 import { SettingsGroup, SettingsRow } from '@/modules/settings';
+import { useCompute, useFeatureState } from 'feature-react/state';
+import React from 'react';
 import { useNewBlockIntentionCx } from './NewBlockIntentionCx';
 
 export const BlockSection: React.FC = () => {
@@ -13,6 +13,7 @@ export const BlockSection: React.FC = () => {
 	const scope = useFeatureState(cx.$form.fields.scope);
 	const enforcementMode = useFeatureState(cx.$form.fields.enforcementMode);
 	const selectedTargets = useCompute(cx.$form.fields.selectedTargets, ({ value }) => value ?? []);
+	const selectedTargetsStatus = useFeatureState(cx.$form.fields.selectedTargets.status);
 	const isTargetsSelectable = scope !== 'wholeDevice';
 	const targetsLabel = React.useMemo(() => {
 		if (!isTargetsSelectable) {
@@ -34,6 +35,10 @@ export const BlockSection: React.FC = () => {
 				return undefined;
 		}
 	}, [scope]);
+	const targetsError =
+		isTargetsSelectable && selectedTargetsStatus.type === 'INVALID'
+			? selectedTargetsStatus.errors[0]?.message
+			: undefined;
 
 	const blockScopeCarouselItems = React.useMemo(
 		() => [
@@ -149,6 +154,11 @@ export const BlockSection: React.FC = () => {
 	const handleScopeChange = React.useCallback(
 		(event: React.ChangeEvent<HTMLSelectElement>) => {
 			cx.$form.fields.scope.set(event.target.value as specta.IntentionBlockScope);
+
+			const shouldRevalidateTargets = cx.$form.fields.selectedTargets.isSubmitted.get();
+			if (shouldRevalidateTargets) {
+				void cx.$form.fields.selectedTargets.validate();
+			}
 		},
 		[cx]
 	);
@@ -190,22 +200,31 @@ export const BlockSection: React.FC = () => {
 				{isTargetsSelectable ? (
 					<SettingsRow
 						label="Apps & websites"
-						description={targetsDescription}
+						description={targetsError ?? targetsDescription}
+						descriptionVariant={targetsError != null ? 'error' : 'default'}
 						render={<button type="button" onClick={handleOpenTargets} />}
 					>
 						<span
 							className={cn(
 								'inline-flex items-center gap-1.5 text-sm',
-								selectedTargets.length > 0 ? 'text-base-500' : 'text-base-400'
+								targetsError != null
+									? 'text-red-500'
+									: selectedTargets.length > 0
+										? 'text-base-500'
+										: 'text-base-400'
 							)}
 						>
 							<CatalogIconPeek items={selectedTargets} cx={catalogPickerCx} />
 							{targetsLabel}
 						</span>
-						<ChevronRightIcon className="text-base-400" />
+						<ChevronRightIcon className={cn(targetsError != null ? 'text-red-500' : 'text-base-400')} />
 					</SettingsRow>
 				) : (
-					<SettingsRow label="Apps & websites" description={targetsDescription}>
+					<SettingsRow
+						label="Apps & websites"
+						description={targetsError ?? targetsDescription}
+						descriptionVariant={targetsError != null ? 'error' : 'default'}
+					>
 						<span className="text-base-500 text-sm">{targetsLabel}</span>
 					</SettingsRow>
 				)}
