@@ -49,7 +49,7 @@ const ShortcutSettingsRow: React.FC<TShortcutSettingsRowProps> = (props) => {
 	}
 
 	return (
-		<SettingsRow label={label}>
+		<SettingsRow label={label} variant="compact">
 			<ShortcutRecorder
 				value={config.shortcut}
 				onChange={(shortcut) => void onChange(config.action, shortcut)}
