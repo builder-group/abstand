@@ -1,6 +1,6 @@
+import { cn } from '@/lib';
 import { cva, type VariantProps } from 'class-variance-authority';
 import React from 'react';
-import { cn } from '@/lib';
 import { Button } from '../input/Button';
 import { ChevronLeftIcon, ChevronRightIcon, CircleQuestionMarkIcon } from './icons';
 import { Popover, PopoverContent, PopoverTrigger, type TPopoverContentProps } from './Popover';
@@ -91,6 +91,19 @@ export const HelpCarousel: React.FC<THelpCarouselProps> = (props) => {
 	const { items, action, className } = props;
 	const [page, setPage] = React.useState(0);
 
+	const handleKeyDown = React.useCallback(
+		(event: React.KeyboardEvent) => {
+			if (event.key === 'ArrowLeft') {
+				event.preventDefault();
+				setPage((p) => getNormalizedCarouselPage(p - 1, items.length));
+			} else if (event.key === 'ArrowRight') {
+				event.preventDefault();
+				setPage((p) => getNormalizedCarouselPage(p + 1, items.length));
+			}
+		},
+		[items.length]
+	);
+
 	if (items.length === 0) {
 		return null;
 	}
@@ -101,6 +114,7 @@ export const HelpCarousel: React.FC<THelpCarouselProps> = (props) => {
 	return (
 		<div
 			data-slot="help-carousel"
+			onKeyDown={handleKeyDown}
 			className={cn(
 				// Note: Keep the carousel at a fixed width so layout does not jump as pages with different content lengths are shown
 				'flex w-64 flex-col gap-1',
