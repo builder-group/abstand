@@ -99,7 +99,14 @@ export const HelpCarousel: React.FC<THelpCarouselProps> = (props) => {
 	const current = items[currentPage] as THelpCarouselItem;
 
 	return (
-		<div data-slot="help-carousel" className={cn('flex w-64 flex-col gap-1', className)}>
+		<div
+			data-slot="help-carousel"
+			className={cn(
+				// Note: Keep the carousel at a fixed width so layout does not jump as pages with different content lengths are shown
+				'flex w-64 flex-col gap-1',
+				className
+			)}
+		>
 			<div className="flex flex-col gap-0.5">
 				<div className="flex items-center gap-1.5">
 					{current.titlePrefix != null && (
