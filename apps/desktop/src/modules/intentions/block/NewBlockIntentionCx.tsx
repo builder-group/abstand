@@ -115,7 +115,7 @@ export class NewBlockIntentionCx {
 		reValidateMode: bitwiseFlag(FormFieldReValidateMode.OnBlur, FormFieldReValidateMode.OnChange)
 	});
 
-	public constructor(intentionsCx: IntentionsCx) {
+	constructor(intentionsCx: IntentionsCx) {
 		this.intentionsCx = intentionsCx;
 	}
 

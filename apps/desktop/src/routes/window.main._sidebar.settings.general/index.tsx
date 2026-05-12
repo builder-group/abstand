@@ -217,7 +217,7 @@ const UpdatesSection: React.FC = () => {
 				<SettingsRowFrame variant="default">
 					{updateStatus === 'checking' ? (
 						<>
-							<p className="text-base-950 truncate text-sm font-medium">Checking for updates...</p>
+							<p className="text-base-950 truncate text-sm">Checking for updates...</p>
 							<Spinner size="md" />
 						</>
 					) : (
@@ -227,16 +227,16 @@ const UpdatesSection: React.FC = () => {
 									<span className="bg-success text-success-content flex size-7 shrink-0 items-center justify-center rounded-lg">
 										<CircleCheckIcon
 											aria-hidden
-											className="[&_path]:stroke-success [&_circle]:fill-current"
+											className="[&_path]:stroke-success size-4 [&_circle]:fill-current"
 										/>
 									</span>
 								) : (
 									<span className="bg-base-100 text-base-500 flex size-7 shrink-0 items-center justify-center rounded-lg">
-										<CircleSlashIcon aria-hidden />
+										<CircleSlashIcon aria-hidden className="size-4" />
 									</span>
 								)}
 								<div className="min-w-0">
-									<p className="text-base-950 truncate text-sm font-medium">
+									<p className="text-base-950 truncate text-sm">
 										{updateStatus === 'upToDate'
 											? 'Abstand is up to date.'
 											: 'Automatic update checks are off.'}

@@ -13,7 +13,7 @@ export class CommandPaletteCx {
 
 	private readonly settingsCx: SettingsCx;
 
-	public constructor(settingsCx: SettingsCx) {
+	constructor(settingsCx: SettingsCx) {
 		this.settingsCx = settingsCx;
 	}
 

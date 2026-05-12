@@ -54,7 +54,7 @@ export const DialogBackdrop: React.FC<TDialogBackdropProps> = (props) => {
 			data-slot="dialog-backdrop"
 			className={cn(
 				'fixed inset-0 z-50',
-				'bg-base-950/12 supports-backdrop-filter:bg-base-950/6 supports-backdrop-filter:backdrop-blur-sm',
+				'bg-base-950/12 supports-backdrop-filter:bg-base-950/6 supports-backdrop-filter:backdrop-blur-md',
 				'transition-opacity duration-200 ease-out',
 				'data-starting-style:opacity-0',
 				'data-ending-style:opacity-0',
