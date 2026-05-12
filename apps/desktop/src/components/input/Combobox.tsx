@@ -179,7 +179,7 @@ export type TComboboxContentProps = ComboboxPrimitive.Popup.Props &
 	>;
 
 const comboboxContentVariants = cva(
-	'group/combobox-content bg-base-0 text-base-950 border-base-100 data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 relative max-h-(--available-height) w-(--anchor-width) max-w-(--available-width) min-w-[max(var(--anchor-width),12rem)] origin-(--transform-origin) overflow-hidden border shadow-xl duration-100 outline-none',
+	'group/combobox-content bg-base-0/90 supports-backdrop-filter:bg-base-0/80 text-base-950 border-base-100 data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 relative max-h-(--available-height) w-(--anchor-width) max-w-(--available-width) min-w-[max(var(--anchor-width),12rem)] origin-(--transform-origin) overflow-hidden border shadow-xl duration-100 outline-none supports-backdrop-filter:backdrop-blur-xl',
 	{
 		variants: {
 			size: {

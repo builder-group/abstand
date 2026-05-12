@@ -1,30 +1,21 @@
 import { useCompute, useFeatureState } from 'feature-react/state';
 import React from 'react';
-import {
-	CheckIcon,
-	ChevronDownIcon,
-	ChevronRightIcon,
-	MonitorIcon,
-	ShieldCheckIcon,
-	ShieldIcon
-} from '@/components';
+import { Badge, ChevronRightIcon, HelpCarousel, HelpPopover, Select } from '@/components';
 import { type specta } from '@/environment';
 import { cn } from '@/lib';
 import { CatalogIconPeek, useCatalogPicker, type TCatalogItem } from '@/modules/catalog';
-import { SettingsGroup, SettingsRow, SettingsRowFrame } from '@/modules/settings';
+import { SettingsGroup, SettingsRow } from '@/modules/settings';
 import { useNewBlockIntentionCx } from './NewBlockIntentionCx';
 
 export const BlockSection: React.FC = () => {
 	const cx = useNewBlockIntentionCx();
 
 	const scope = useFeatureState(cx.$form.fields.scope);
-	const [isScopeExpanded, setIsScopeExpanded] = React.useState(false);
 	const currentScope =
 		blockScopeOptions.find((option) => option.value === scope) ??
 		(blockScopeOptions[0] as TBlockScopeOption);
 
 	const enforcementMode = useFeatureState(cx.$form.fields.enforcementMode);
-	const [isEnforcementExpanded, setIsEnforcementExpanded] = React.useState(false);
 	const currentEnforcementMode =
 		enforcementModeOptions.find((mode) => mode.value === enforcementMode) ??
 		(enforcementModeOptions[1] as TEnforcementModeOption);
@@ -52,6 +43,102 @@ export const BlockSection: React.FC = () => {
 		}
 	}, [scope]);
 
+	const blockScopeCarouselItems = React.useMemo(
+		() => [
+			{
+				title: 'Blocking',
+				description: (
+					<>
+						Choose what gets blocked when this intention is active.{' '}
+						<span className="text-base-400">Use arrows to see each option.</span>
+					</>
+				)
+			},
+			{
+				title: 'Block selected',
+				titlePrefix: 'Blocking',
+				description: 'Blocks only the apps and sites you choose. Everything else stays open.',
+				titleSuffix:
+					scope === 'blockTargets' ? (
+						<Badge variant="success" size="xs">
+							Selected
+						</Badge>
+					) : undefined
+			},
+			{
+				title: 'Allow selected',
+				titlePrefix: 'Blocking',
+				description: 'Blocks everything except the apps and sites you allow.',
+				titleSuffix:
+					scope === 'allowTargets' ? (
+						<Badge variant="success" size="xs">
+							Selected
+						</Badge>
+					) : undefined
+			},
+			{
+				title: 'Whole device',
+				titlePrefix: 'Blocking',
+				description:
+					'Locks the entire computer behind a full-screen overlay. Nothing is accessible.',
+				titleSuffix:
+					scope === 'wholeDevice' ? (
+						<Badge variant="success" size="xs">
+							Selected
+						</Badge>
+					) : undefined
+			}
+		],
+		[scope]
+	);
+	const enforcementCarouselItems = React.useMemo(
+		() => [
+			{
+				title: 'Enforcement',
+				description: (
+					<>
+						How hard this block is to pause or bypass.{' '}
+						<span className="text-base-400">Use arrows to see each option.</span>
+					</>
+				)
+			},
+			{
+				title: 'Casual',
+				titlePrefix: 'Enforcement',
+				description: 'Easy to pause or bypass. Good for light accountability.',
+				titleSuffix:
+					enforcementMode === 'casual' ? (
+						<Badge variant="success" size="xs">
+							Selected
+						</Badge>
+					) : undefined
+			},
+			{
+				title: 'Balanced',
+				titlePrefix: 'Enforcement',
+				description: 'Moderate friction before bypassing. Good for regular focus sessions.',
+				titleSuffix:
+					enforcementMode === 'balanced' ? (
+						<Badge variant="success" size="xs">
+							Selected
+						</Badge>
+					) : undefined
+			},
+			{
+				title: 'Strict',
+				titlePrefix: 'Enforcement',
+				description: 'Hard to bypass. Best for commitments you want to keep.',
+				titleSuffix:
+					enforcementMode === 'strict' ? (
+						<Badge variant="success" size="xs">
+							Selected
+						</Badge>
+					) : undefined
+			}
+		],
+		[enforcementMode]
+	);
+
 	const {
 		open: openPicker,
 		Dialog: PickerDialog,
@@ -67,18 +154,16 @@ export const BlockSection: React.FC = () => {
 
 	// MARK: - Actions
 
-	const handleSelectScope = React.useCallback(
-		(value: specta.IntentionBlockScope) => {
-			cx.$form.fields.scope.set(value);
-			setIsScopeExpanded(false);
+	const handleScopeChange = React.useCallback(
+		(event: React.ChangeEvent<HTMLSelectElement>) => {
+			cx.$form.fields.scope.set(event.target.value as specta.IntentionBlockScope);
 		},
 		[cx]
 	);
 
-	const handleSelectEnforcementMode = React.useCallback(
-		(value: specta.IntentionEnforcementMode) => {
-			cx.$form.fields.enforcementMode.set(value);
-			setIsEnforcementExpanded(false);
+	const handleEnforcementModeChange = React.useCallback(
+		(event: React.ChangeEvent<HTMLSelectElement>) => {
+			cx.$form.fields.enforcementMode.set(event.target.value as specta.IntentionEnforcementMode);
 		},
 		[cx]
 	);
@@ -87,48 +172,28 @@ export const BlockSection: React.FC = () => {
 		openPicker(selectedTargets);
 	}, [openPicker, selectedTargets]);
 
-	const handleToggleScopeExpanded = React.useCallback(() => {
-		setIsScopeExpanded((value) => !value);
-	}, []);
-
-	const handleToggleEnforcementExpanded = React.useCallback(() => {
-		setIsEnforcementExpanded((value) => !value);
-	}, []);
-
 	// MARK: - UI
 
 	return (
-		<>
+		<div className="space-y-2.5">
 			<SettingsGroup title="Block">
 				<SettingsRow
 					label="Blocking"
-					description="Choose how broadly this intention blocks."
-					render={<button type="button" onClick={handleToggleScopeExpanded} />}
+					labelAccessory={
+						<HelpPopover ariaLabel="About blocking modes">
+							<HelpCarousel items={blockScopeCarouselItems} />
+						</HelpPopover>
+					}
+					description={currentScope.description}
 				>
-					<span className="text-base-500 text-sm">{currentScope.label}</span>
-					<ChevronDownIcon
-						className={cn('text-base-400 transition-transform', isScopeExpanded && 'rotate-180')}
-					/>
+					<Select variant="ghost" value={scope} onChange={handleScopeChange}>
+						{blockScopeOptions.map((scopeOption) => (
+							<option key={scopeOption.value} value={scopeOption.value}>
+								{scopeOption.label}
+							</option>
+						))}
+					</Select>
 				</SettingsRow>
-
-				{isScopeExpanded &&
-					blockScopeOptions.map((scopeOption) => (
-						<SettingsRowFrame
-							key={scopeOption.value}
-							render={<button type="button" />}
-							onClick={() => handleSelectScope(scopeOption.value)}
-							className="items-start gap-2.5 pl-5 [--settings-row-separator-left:--spacing(5)]"
-						>
-							<scopeOption.Icon className="text-base-400 mt-0.5 size-4 shrink-0" />
-							<div className="flex min-w-0 flex-1 flex-col text-left">
-								<span className="text-base-950 text-sm">{scopeOption.label}</span>
-								<span className="text-base-500 mt-px text-xs">{scopeOption.description}</span>
-							</div>
-							{scope === scopeOption.value && (
-								<CheckIcon className="text-primary mt-0.5 shrink-0" />
-							)}
-						</SettingsRowFrame>
-					))}
 
 				{isTargetsSelectable ? (
 					<SettingsRow
@@ -152,41 +217,28 @@ export const BlockSection: React.FC = () => {
 						<span className="text-base-500 text-sm">{targetsLabel}</span>
 					</SettingsRow>
 				)}
-
+			</SettingsGroup>
+			<SettingsGroup>
 				<SettingsRow
 					label="Enforcement"
-					description="Choose how hard this block is to pause or bypass."
-					render={<button type="button" onClick={handleToggleEnforcementExpanded} />}
+					labelAccessory={
+						<HelpPopover ariaLabel="About enforcement levels">
+							<HelpCarousel items={enforcementCarouselItems} />
+						</HelpPopover>
+					}
+					description={currentEnforcementMode.description}
 				>
-					<span className="text-base-500 text-sm">{currentEnforcementMode.label}</span>
-					<ChevronDownIcon
-						className={cn(
-							'text-base-400 transition-transform',
-							isEnforcementExpanded && 'rotate-180'
-						)}
-					/>
+					<Select variant="ghost" value={enforcementMode} onChange={handleEnforcementModeChange}>
+						{enforcementModeOptions.map((mode) => (
+							<option key={mode.value} value={mode.value}>
+								{mode.label}
+							</option>
+						))}
+					</Select>
 				</SettingsRow>
-
-				{isEnforcementExpanded &&
-					enforcementModeOptions.map((mode) => (
-						<SettingsRowFrame
-							key={mode.value}
-							render={<button type="button" />}
-							onClick={() => handleSelectEnforcementMode(mode.value)}
-							className="items-start gap-2.5 pl-5 [--settings-row-separator-left:--spacing(5)]"
-						>
-							<div className="flex min-w-0 flex-1 flex-col text-left">
-								<span className="text-base-950 text-sm">{mode.label}</span>
-								<span className="text-base-500 mt-px text-xs">{mode.description}</span>
-							</div>
-							{enforcementMode === mode.value && (
-								<CheckIcon className="text-primary mt-0.5 shrink-0" />
-							)}
-						</SettingsRowFrame>
-					))}
 			</SettingsGroup>
 			<PickerDialog />
-		</>
+		</div>
 	);
 };
 
@@ -194,20 +246,17 @@ const blockScopeOptions = [
 	{
 		value: 'blockTargets',
 		label: 'Block selected',
-		description: 'Block only the apps and websites you choose.',
-		Icon: ShieldIcon
+		description: 'Block only the apps and websites you choose.'
 	},
 	{
 		value: 'allowTargets',
 		label: 'Allow selected',
-		description: 'Block everything except the apps and websites you choose.',
-		Icon: ShieldCheckIcon
+		description: 'Block everything except the apps and websites you choose.'
 	},
 	{
 		value: 'wholeDevice',
 		label: 'Whole device',
-		description: 'Lock the whole computer behind a full-screen overlay.',
-		Icon: MonitorIcon
+		description: 'Lock the whole computer behind a full-screen overlay.'
 	}
 ] satisfies TBlockScopeOption[];
 
@@ -215,7 +264,6 @@ interface TBlockScopeOption {
 	value: specta.IntentionBlockScope;
 	label: string;
 	description: string;
-	Icon: React.ComponentType<{ className?: string }>;
 }
 
 const enforcementModeOptions = [

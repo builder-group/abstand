@@ -27,6 +27,9 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
+	HelpCarousel,
+	HelpPopover,
+	HelpPopoverLink,
 	IconBubble,
 	Input,
 	InputGroup,
@@ -42,6 +45,12 @@ import {
 	MoonIcon,
 	PanelLeftCloseIcon,
 	PanelLeftOpenIcon,
+	Popover,
+	PopoverContent,
+	PopoverDescription,
+	PopoverHeader,
+	PopoverTitle,
+	PopoverTrigger,
 	SearchIcon,
 	SegmentedControl,
 	SegmentedControlItem,
@@ -89,6 +98,8 @@ function RouteComponent() {
 			<KbdSection />
 			<IconBubbleSection />
 			<TooltipSection />
+			<PopoverSection />
+			<HelpPopoverSection />
 			<DialogSection />
 			<SettingsSection />
 		</SettingsPage>
@@ -726,6 +737,7 @@ const BadgeSection: React.FC = () => {
 	return (
 		<PlaygroundGroup title="Badge">
 			<PlaygroundRow label="Sizes">
+				<Badge size="xs">Extra small (xs)</Badge>
 				<Badge>Default (sm)</Badge>
 				<Badge size="md">Medium (md)</Badge>
 			</PlaygroundRow>
@@ -822,6 +834,160 @@ const TooltipSection: React.FC = () => {
 				<Tooltip side="right" content="Appears to the right">
 					<Button variant="outline">Right</Button>
 				</Tooltip>
+			</PlaygroundRow>
+		</PlaygroundGroup>
+	);
+};
+
+// MARK: - Popover
+
+const PopoverSection: React.FC = () => {
+	return (
+		<PlaygroundGroup title="Popover">
+			<PlaygroundRow label="Content">
+				<Popover>
+					<PopoverTrigger render={<Button variant="soft" />}>Display options</PopoverTrigger>
+					<PopoverContent>
+						<PopoverHeader>
+							<PopoverTitle>Display</PopoverTitle>
+							<PopoverDescription>Adjust how the current view is shown.</PopoverDescription>
+						</PopoverHeader>
+						<div className="-mx-1 flex flex-col gap-0.5">
+							<div className="flex items-center justify-between gap-3 rounded-lg px-2 py-1.5">
+								<div className="flex flex-col gap-0.5">
+									<span className="text-base-950 text-sm font-medium">Show previews</span>
+									<span className="text-base-500 text-xs">Include compact thumbnails.</span>
+								</div>
+								<Switch defaultChecked aria-label="Show previews" />
+							</div>
+							<div className="flex items-center justify-between gap-3 rounded-lg px-2 py-1.5">
+								<div className="flex flex-col gap-0.5">
+									<span className="text-base-950 text-sm font-medium">Density</span>
+									<span className="text-base-500 text-xs">Choose row spacing.</span>
+								</div>
+								<Select variant="ghost" defaultValue="comfortable" aria-label="Density">
+									<option value="compact">Compact</option>
+									<option value="comfortable">Comfortable</option>
+									<option value="spacious">Spacious</option>
+								</Select>
+							</div>
+						</div>
+					</PopoverContent>
+				</Popover>
+			</PlaygroundRow>
+			<PlaygroundRow label="Placement">
+				<Popover>
+					<PopoverTrigger render={<Button variant="outline" />}>Top</PopoverTrigger>
+					<PopoverContent side="top" className="w-56">
+						<PopoverHeader>
+							<PopoverTitle>Top placement</PopoverTitle>
+							<PopoverDescription>
+								Use when the trigger sits near the lower edge.
+							</PopoverDescription>
+						</PopoverHeader>
+					</PopoverContent>
+				</Popover>
+				<Popover>
+					<PopoverTrigger render={<Button variant="outline" />}>Right</PopoverTrigger>
+					<PopoverContent side="right" align="start" className="w-56">
+						<PopoverHeader>
+							<PopoverTitle>Right placement</PopoverTitle>
+							<PopoverDescription>Use next to compact inline controls.</PopoverDescription>
+						</PopoverHeader>
+					</PopoverContent>
+				</Popover>
+			</PlaygroundRow>
+		</PlaygroundGroup>
+	);
+};
+
+// MARK: - Help Popover
+
+const HelpPopoverSection: React.FC = () => {
+	return (
+		<PlaygroundGroup title="Help Popover">
+			<PlaygroundRow label="Sizes">
+				<div className="flex items-center gap-0.5">
+					<span className="text-base-950 text-sm">Status refresh</span>
+					<HelpPopover description="The displayed status can lag briefly while the app waits for the next sync." />
+				</div>
+				<div className="flex items-center gap-0.5">
+					<span className="text-base-950 text-sm">Status refresh</span>
+					<HelpPopover
+						size="md"
+						description="The displayed status can lag briefly while the app waits for the next sync."
+					/>
+				</div>
+			</PlaygroundRow>
+			<PlaygroundRow label="Placement">
+				<div className="flex items-center gap-0.5">
+					<span className="text-base-950 text-sm">Top</span>
+					<HelpPopover side="top" description="Appears above the trigger." />
+				</div>
+				<div className="flex items-center gap-0.5">
+					<span className="text-base-950 text-sm">Bottom</span>
+					<HelpPopover side="bottom" description="Appears below the trigger." />
+				</div>
+				<div className="flex items-center gap-0.5">
+					<span className="text-base-950 text-sm">Right</span>
+					<HelpPopover side="right" description="Appears to the right of the trigger." />
+				</div>
+			</PlaygroundRow>
+			<PlaygroundRow label="Carousel">
+				<div className="flex items-center gap-0.5">
+					<span className="text-base-950 text-sm">Processing mode</span>
+					<HelpPopover ariaLabel="About processing modes">
+						<HelpCarousel
+							items={[
+								{
+									title: 'Processing mode',
+									description: (
+										<>
+											Choose how tasks are handled.{' '}
+											<span className="text-base-400">Use arrows to see each option.</span>
+										</>
+									)
+								},
+								{
+									title: 'Automatic',
+									titlePrefix: 'Processing mode',
+									description: 'Best behavior chosen for you automatically.',
+									titleSuffix: (
+										<Badge variant="success" size="xs">
+											Selected
+										</Badge>
+									)
+								},
+								{
+									title: 'Manual',
+									titlePrefix: 'Processing mode',
+									description: 'You review each step before it runs.'
+								}
+							]}
+						/>
+					</HelpPopover>
+				</div>
+				<div className="flex items-center gap-0.5">
+					<span className="text-base-950 text-sm">With action</span>
+					<HelpPopover ariaLabel="About processing modes">
+						<HelpCarousel
+							action={<HelpPopoverLink href="#">Learn more</HelpPopoverLink>}
+							items={[
+								{ title: 'Processing mode', description: 'Choose how tasks are handled.' },
+								{
+									title: 'Automatic',
+									titlePrefix: 'Processing mode',
+									description: 'Best behavior chosen for you automatically.'
+								},
+								{
+									title: 'Manual',
+									titlePrefix: 'Processing mode',
+									description: 'You review each step before it runs.'
+								}
+							]}
+						/>
+					</HelpPopover>
+				</div>
 			</PlaygroundRow>
 		</PlaygroundGroup>
 	);

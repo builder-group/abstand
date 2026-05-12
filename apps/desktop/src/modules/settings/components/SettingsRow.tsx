@@ -7,6 +7,7 @@ import { cn } from '@/lib';
 export const SettingsRow: React.FC<TSettingsRowProps> = (props) => {
 	const {
 		label,
+		labelAccessory,
 		description,
 		descriptionVariant = 'default',
 		variant: rowVariant = 'default',
@@ -30,7 +31,10 @@ export const SettingsRow: React.FC<TSettingsRowProps> = (props) => {
 			{...rest}
 		>
 			<div className="flex min-w-0 flex-col">
-				<span className={labelVariants({ size })}>{label}</span>
+				<div className="flex min-w-0 items-center gap-0.5">
+					<span className={labelVariants({ size })}>{label}</span>
+					{labelAccessory}
+				</div>
 				{description != null && (
 					<span className={descriptionVariants({ size, variant: descriptionVariant })}>
 						{description}
@@ -46,6 +50,7 @@ export const SettingsRow: React.FC<TSettingsRowProps> = (props) => {
 
 interface TSettingsRowProps extends TSettingsRowFrameProps {
 	label: string;
+	labelAccessory?: React.ReactNode;
 	description?: string;
 	descriptionVariant?: VariantProps<typeof descriptionVariants>['variant'];
 	contentClassName?: string;

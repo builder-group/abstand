@@ -47,7 +47,7 @@ export interface TTooltipProps
 }
 
 const tooltipVariants = cva(
-	'bg-base-950/90 text-base-50 border-base-50/10 inline-flex origin-(--transform-origin) items-center border font-medium shadow-md transition-[opacity,scale] duration-150 ease-out data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0',
+	'bg-base-950/90 supports-backdrop-filter:bg-base-950/80 text-base-50 border-base-50/10 inline-flex origin-(--transform-origin) items-center border font-medium shadow-md transition-[opacity,scale] duration-150 ease-out data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0 supports-backdrop-filter:backdrop-blur-md',
 	{
 		variants: {
 			size: {
