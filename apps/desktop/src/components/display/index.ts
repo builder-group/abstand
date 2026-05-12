@@ -5,4 +5,5 @@ export * from './icons';
 export * from './Kbd';
 export * from './Popover';
 export * from './Spinner';
+export * from './Toast';
 export * from './Tooltip';

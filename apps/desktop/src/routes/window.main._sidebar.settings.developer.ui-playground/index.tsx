@@ -65,6 +65,7 @@ import {
 	ToggleGroupItem,
 	Tooltip,
 	useComboboxAnchor,
+	useToastsCx,
 	XCircleIcon
 } from '@/components';
 import { clampNumber, cn } from '@/lib';
@@ -99,6 +100,7 @@ function RouteComponent() {
 			<IconBubbleSection />
 			<TooltipSection />
 			<PopoverSection />
+			<ToastSection />
 			<HelpPopoverSection />
 			<DialogSection />
 			<SettingsSection />
@@ -896,6 +898,110 @@ const PopoverSection: React.FC = () => {
 						</PopoverHeader>
 					</PopoverContent>
 				</Popover>
+			</PlaygroundRow>
+		</PlaygroundGroup>
+	);
+};
+
+// MARK: - Toast
+
+const ToastSection: React.FC = () => {
+	const toastsCx = useToastsCx();
+
+	function showDefaultToast() {
+		toastsCx.add({
+			title: 'Sidebar updated',
+			description: 'Density is now set to compact for this window.'
+		});
+	}
+
+	function showSuccessToast() {
+		toastsCx.add({
+			type: 'success',
+			title: 'Block saved',
+			description: 'The focus block is ready to run.'
+		});
+	}
+
+	function showWarningToast() {
+		toastsCx.add({
+			type: 'warning',
+			title: 'Screen access needed',
+			description: 'Grant screen recording permission before starting a block.',
+			timeout: 0
+		});
+	}
+
+	function showDestructiveToast() {
+		toastsCx.add({
+			type: 'destructive',
+			title: 'Sync failed',
+			description: 'The latest changes could not be uploaded.',
+			priority: 'high'
+		});
+	}
+
+	function showActionToast() {
+		toastsCx.add({
+			title: 'Block archived',
+			description: 'The block was removed from Today.',
+			timeout: 0,
+			actionProps: {
+				children: 'Undo',
+				onClick: () => {
+					toastsCx.add({
+						type: 'success',
+						title: 'Block restored',
+						description: 'The archived block is back in Today.'
+					});
+				}
+			}
+		});
+	}
+
+	async function showPromiseToast() {
+		await toastsCx.promise(new Promise<void>((resolve) => window.setTimeout(resolve, 1100)), {
+			loading: {
+				type: 'info',
+				title: 'Syncing changes',
+				description: 'Uploading the latest desktop state.'
+			},
+			success: {
+				type: 'success',
+				title: 'Sync complete',
+				description: 'Everything is up to date.'
+			},
+			error: {
+				type: 'destructive',
+				title: 'Sync failed',
+				description: 'Please try again.'
+			}
+		});
+	}
+
+	return (
+		<PlaygroundGroup title="Toast">
+			<PlaygroundRow label="Variants">
+				<Button variant="outline" onClick={showDefaultToast}>
+					Default
+				</Button>
+				<Button variant="outline" onClick={showSuccessToast}>
+					Success
+				</Button>
+				<Button variant="outline" onClick={showWarningToast}>
+					Warning
+				</Button>
+				<Button variant="outline" onClick={showDestructiveToast}>
+					Destructive
+				</Button>
+			</PlaygroundRow>
+			<PlaygroundRow label="Behavior">
+				<Button variant="soft" onClick={showActionToast}>
+					With action
+				</Button>
+				<Button variant="soft" onClick={() => void showPromiseToast()}>
+					Promise flow
+				</Button>
 			</PlaygroundRow>
 		</PlaygroundGroup>
 	);

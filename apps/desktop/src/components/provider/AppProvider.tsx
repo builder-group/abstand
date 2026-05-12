@@ -1,5 +1,5 @@
 import React from 'react';
-import { ThemeProvider, TypographyProvider } from '@/components';
+import { ThemeProvider, ToastsCxProvider, TypographyProvider } from '@/components';
 import { CommandPaletteCxProvider, CommandPaletteModal } from '@/modules/command-palette';
 import { SettingsCxProvider } from '@/modules/settings';
 import { ShortcutsCxProvider } from '@/modules/shortcuts';
@@ -12,9 +12,13 @@ export const AppProvider: React.FC<TAppProviderProps> = (props) => {
 			<ShortcutsCxProvider>
 				<CommandPaletteCxProvider>
 					<TypographyProvider>
-						<ThemeProvider>{children}</ThemeProvider>
+						<ThemeProvider>
+							<ToastsCxProvider>
+								{children}
+								<CommandPaletteModal />
+							</ToastsCxProvider>
+						</ThemeProvider>
 					</TypographyProvider>
-					<CommandPaletteModal />
 				</CommandPaletteCxProvider>
 			</ShortcutsCxProvider>
 		</SettingsCxProvider>
