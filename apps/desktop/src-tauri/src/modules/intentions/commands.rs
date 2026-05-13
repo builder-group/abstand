@@ -1,7 +1,8 @@
 use super::{
     intention::{
-        Intention, IntentionBlockScope, IntentionConditionDateTimeRule, IntentionConditionPhase,
-        IntentionConditionRule, IntentionConditionScheduleRule, IntentionEnforcementMode,
+        Intention, IntentionBlockScope, IntentionConditionAfterTransitionRule,
+        IntentionConditionDateTimeRule, IntentionConditionRule, IntentionConditionScheduleRule,
+        IntentionConditionTransition, IntentionEnforcementMode,
     },
     repository::{
         CreateIntentionBehaviorInput, CreateIntentionBlockInput, CreateIntentionConditionInput,
@@ -115,13 +116,16 @@ pub async fn create_intention(
                                 trigger_at,
                             })
                         }
+                        CreateIntentionConditionRuleParams::AfterTransition(rule) => {
+                            IntentionConditionRule::AfterTransition(rule)
+                        }
                         CreateIntentionConditionRuleParams::Manual => {
                             IntentionConditionRule::Manual
                         }
                     };
 
                     return Ok(CreateIntentionConditionInput {
-                        phase: condition.phase,
+                        transition: condition.transition,
                         rule,
                     });
                 })
@@ -149,14 +153,14 @@ pub async fn create_intention(
     if !input
         .conditions
         .iter()
-        .any(|condition| condition.phase == IntentionConditionPhase::Start)
+        .any(|condition| condition.transition == IntentionConditionTransition::Start)
     {
         return Err("Please add a start condition".to_string());
     }
     if !input
         .conditions
         .iter()
-        .any(|condition| condition.phase == IntentionConditionPhase::End)
+        .any(|condition| condition.transition == IntentionConditionTransition::End)
     {
         return Err("Please add an end condition".to_string());
     }
@@ -225,7 +229,7 @@ pub struct CreateIntentionBlockWebsiteTargetParams {
 #[derive(Debug, Clone, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateIntentionConditionParams {
-    pub phase: IntentionConditionPhase,
+    pub transition: IntentionConditionTransition,
     pub rule: CreateIntentionConditionRuleParams,
 }
 
@@ -234,6 +238,7 @@ pub struct CreateIntentionConditionParams {
 pub enum CreateIntentionConditionRuleParams {
     Schedule(IntentionConditionScheduleRule),
     DateTime(CreateIntentionConditionDateTimeRuleParams),
+    AfterTransition(IntentionConditionAfterTransitionRule),
     Manual,
 }
 

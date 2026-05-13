@@ -11,14 +11,14 @@ export const RepeatsRows: React.FC<TConditionRowsProps> = (props) => {
 
 	const handleRepeatModeChange = React.useCallback(
 		(event: React.ChangeEvent<HTMLSelectElement>) => {
-			cx.updateCondition(condition.phase, {
+			cx.updateCondition(condition.transition, {
 				weekdaysMask:
 					event.target.value === 'selectedDays'
 						? newBlockIntentionConfig.defaultSelectedWeekdaysMask
 						: null
 			});
 		},
-		[condition.phase, cx]
+		[condition.transition, cx]
 	);
 
 	return (
@@ -60,9 +60,11 @@ const WeekdayToggleGroup: React.FC<TConditionRowsProps> = (props) => {
 				return;
 			}
 
-			cx.updateCondition(condition.phase, { weekdaysMask: weekdayMaskFromWeekdays(weekdays) });
+			cx.updateCondition(condition.transition, {
+				weekdaysMask: weekdayMaskFromWeekdays(weekdays)
+			});
 		},
-		[condition.phase, cx]
+		[condition.transition, cx]
 	);
 
 	return (

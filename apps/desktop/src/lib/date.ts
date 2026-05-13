@@ -110,6 +110,10 @@ export function addTimeOfDayMs(timeOfDayMs: specta.TimeOnly, deltaMs: number): s
 	return normalizeTimeOfDayMs(timeOfDayMs + deltaMs);
 }
 
+export function minutesToMs(minutes: number): number {
+	return minutes * msPerMinute;
+}
+
 function timePartsToTimeOfDayMs(
 	hours: number,
 	minutes: number,

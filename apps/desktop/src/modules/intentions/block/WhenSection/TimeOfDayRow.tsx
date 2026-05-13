@@ -10,9 +10,9 @@ export const TimeOfDayRow: React.FC<TTimeOfDayRowProps> = (props) => {
 
 	const handleTimeChange = React.useCallback(
 		(timeOfDayMs: specta.TimeOnly) => {
-			cx.updateCondition(condition.phase, { timeOfDayMs });
+			cx.updateCondition(condition.transition, { timeOfDayMs });
 		},
-		[condition.phase, cx]
+		[condition.transition, cx]
 	);
 
 	return (

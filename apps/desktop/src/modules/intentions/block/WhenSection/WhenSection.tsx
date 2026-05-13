@@ -16,31 +16,31 @@ export const WhenSection: React.FC = () => {
 	return (
 		<div className="space-y-2.5">
 			<SettingsGroup title="When">
-				<ConditionRowSet phase="start" label="Starts" cx={cx} />
+				<ConditionRowSet transition="start" label="Starts" cx={cx} />
 			</SettingsGroup>
 
 			<SettingsGroup>
-				<ConditionRowSet phase="end" label="Ends" cx={cx} />
+				<ConditionRowSet transition="end" label="Ends" cx={cx} />
 			</SettingsGroup>
 		</div>
 	);
 };
 
 const ConditionRowSet: React.FC<TConditionRowSetProps> = (props) => {
-	const { phase, label, description, cx } = props;
+	const { transition, label, description, cx } = props;
 	const condition = useCompute(
 		cx.$form.fields.conditions,
-		({ value }) => value?.find((c) => c.phase === phase) ?? null
+		({ value }) => value?.find((c) => c.transition === transition) ?? null
 	);
-	const modeOptions = modeOptionsByPhase[phase];
+	const modeOptions = modeOptionsByTransition[transition];
 
 	// MARK: - Actions
 
 	const handleModeChange = React.useCallback(
 		(event: React.ChangeEvent<HTMLSelectElement>) => {
-			cx.setConditionMode(phase, event.target.value as TNewIntentionConditionMode);
+			cx.setConditionMode(transition, event.target.value as TNewIntentionConditionMode);
 		},
-		[cx, phase]
+		[cx, transition]
 	);
 
 	// MARK: - UI
@@ -67,27 +67,27 @@ const ConditionRowSet: React.FC<TConditionRowSetProps> = (props) => {
 };
 
 interface TConditionRowSetProps {
-	phase: specta.IntentionConditionPhase;
+	transition: specta.IntentionConditionTransition;
 	label: string;
 	description?: string;
 	cx: NewBlockIntentionCx;
 }
 
-const modeOptionsByPhase = {
+const modeOptionsByTransition = {
 	start: [
 		{ value: 'now', label: 'Now' },
 		{ value: 'atTime', label: 'At time' },
-		{ value: 'afterOffset', label: 'After delay' },
+		{ value: 'afterDelay', label: 'After delay' },
 		{ value: 'repeats', label: 'Repeats' },
 		{ value: 'manual', label: 'Manually' }
 	],
 	end: [
-		{ value: 'afterOffset', label: 'After duration' },
+		{ value: 'afterDuration', label: 'After duration' },
 		{ value: 'atTime', label: 'At time' },
 		{ value: 'repeats', label: 'Repeats' },
 		{ value: 'manual', label: 'Manually' }
 	]
-} as const satisfies Record<specta.IntentionConditionPhase, TConditionModeOption[]>;
+} as const satisfies Record<specta.IntentionConditionTransition, TConditionModeOption[]>;
 
 interface TConditionModeOption {
 	value: TNewIntentionConditionMode;

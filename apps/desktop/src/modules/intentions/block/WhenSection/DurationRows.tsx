@@ -6,28 +6,29 @@ import {
 	InputGroupStepper,
 	Select
 } from '@/components';
-import { clampNumber } from '@/lib';
+import { clampNumber, minutesToMs } from '@/lib';
 import { SettingsRow } from '@/modules/settings';
 import { type TConditionRowsProps } from './types';
 
-export const AfterOffsetRows: React.FC<TConditionRowsProps> = (props) => {
+export const DurationRows: React.FC<TConditionRowsProps> = (props) => {
 	const { condition, cx } = props;
 	const [isCustomDurationSelected, setIsCustomDurationSelected] = React.useState(false);
 
 	const selectedDurationValue = isCustomDurationSelected
 		? customDurationValue
-		: (durationOptions.find((o) => o.minutes === condition.offsetMinutes)?.minutes.toString() ??
-			customDurationValue);
+		: (durationOptions
+				.find((o) => minutesToMs(o.minutes) === condition.offsetMs)
+				?.minutes.toString() ?? customDurationValue);
 
 	// MARK: - Actions
 
 	const handleOffsetMinutesChange = React.useCallback(
 		(offsetMinutes: number) => {
-			cx.updateCondition(condition.phase, {
-				offsetMinutes: clampOffsetMinutes(offsetMinutes)
+			cx.updateCondition(condition.transition, {
+				offsetMs: minutesToMs(clampOffsetMinutes(offsetMinutes))
 			});
 		},
-		[condition.phase, cx]
+		[condition.transition, cx]
 	);
 
 	const handleDurationChange = React.useCallback(
@@ -66,7 +67,7 @@ export const AfterOffsetRows: React.FC<TConditionRowsProps> = (props) => {
 			</Select>
 			{selectedDurationValue === customDurationValue && (
 				<CustomDurationInputs
-					offsetMinutes={condition.offsetMinutes}
+					offsetMs={condition.offsetMs}
 					onOffsetMinutesChange={handleOffsetMinutesChange}
 				/>
 			)}
@@ -83,7 +84,8 @@ const durationOptions = [
 const customDurationValue = 'custom';
 
 const CustomDurationInputs: React.FC<TCustomDurationInputsProps> = (props) => {
-	const { offsetMinutes, onOffsetMinutesChange } = props;
+	const { offsetMs, onOffsetMinutesChange } = props;
+	const offsetMinutes = Math.floor(offsetMs / 60_000);
 	const hours = Math.floor(offsetMinutes / 60);
 	const minutes = offsetMinutes % 60;
 
@@ -144,7 +146,7 @@ const CustomDurationInputs: React.FC<TCustomDurationInputsProps> = (props) => {
 };
 
 interface TCustomDurationInputsProps {
-	offsetMinutes: number;
+	offsetMs: number;
 	onOffsetMinutesChange: (offsetMinutes: number) => void;
 }
 

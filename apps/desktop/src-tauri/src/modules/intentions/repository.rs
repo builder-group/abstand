@@ -1,8 +1,9 @@
 use super::{
     intention::{
         Intention, IntentionBehavior, IntentionBlock, IntentionBlockScope, IntentionCondition,
-        IntentionConditionDateTimeRule, IntentionConditionPhase, IntentionConditionRule,
-        IntentionConditionScheduleRule, IntentionEnforcementMode,
+        IntentionConditionAfterTransitionRule, IntentionConditionDateTimeRule,
+        IntentionConditionRule, IntentionConditionScheduleRule, IntentionConditionTransition,
+        IntentionEnforcementMode,
     },
     types::IntentionBehaviorType,
 };
@@ -139,10 +140,10 @@ impl IntentionRepository {
     ) -> Result<(), IntentionRepositoryError> {
         for condition in conditions {
             let condition_id = sqlx::query_scalar::<_, i64>(
-                "INSERT INTO intention_condition (intention_id, phase, rule_type) VALUES (?, ?, ?) RETURNING id",
+                "INSERT INTO intention_condition (intention_id, transition, rule_type) VALUES (?, ?, ?) RETURNING id",
             )
             .bind(intention_id)
-            .bind(condition.phase.as_str())
+            .bind(condition.transition.as_str())
             .bind(condition.rule.as_str())
             .fetch_one(&mut **transaction)
             .await?;
@@ -169,6 +170,16 @@ impl IntentionRepository {
                     .execute(&mut **transaction)
                     .await?;
                 }
+                IntentionConditionRule::AfterTransition(after_transition_rule) => {
+                    sqlx::query(
+                        "INSERT INTO intention_condition_after_transition (condition_id, anchor_transition, offset_ms) VALUES (?, ?, ?)",
+                    )
+                    .bind(condition_id)
+                    .bind(after_transition_rule.anchor_transition.as_str())
+                    .bind(after_transition_rule.offset_ms)
+                    .execute(&mut **transaction)
+                    .await?;
+                }
                 IntentionConditionRule::Manual => {}
             }
         }
@@ -191,6 +202,8 @@ impl IntentionRepository {
             Self::load_condition_schedule_rows(pool, &condition_ids).await?;
         let condition_date_time_rows =
             Self::load_condition_date_time_rows(pool, &condition_ids).await?;
+        let condition_after_transition_rows =
+            Self::load_condition_after_transition_rows(pool, &condition_ids).await?;
         let block_rows = Self::load_block_rows(pool, &intention_ids).await?;
         let block_app_rows = Self::load_block_app_rows(pool, &intention_ids).await?;
         let block_website_rows = Self::load_block_website_rows(pool, &intention_ids).await?;
@@ -233,6 +246,10 @@ impl IntentionRepository {
             .map(|row| (row.condition_id, row))
             .collect::<HashMap<_, _>>();
         let mut condition_date_time_rows_by_condition_id = condition_date_time_rows
+            .into_iter()
+            .map(|row| (row.condition_id, row))
+            .collect::<HashMap<_, _>>();
+        let mut condition_after_transition_rows_by_condition_id = condition_after_transition_rows
             .into_iter()
             .map(|row| (row.condition_id, row))
             .collect::<HashMap<_, _>>();
@@ -301,7 +318,14 @@ impl IntentionRepository {
                 .map(|row| {
                     let schedule_row = condition_schedule_rows_by_condition_id.remove(&row.id);
                     let date_time_row = condition_date_time_rows_by_condition_id.remove(&row.id);
-                    return Self::build_condition(row, schedule_row, date_time_row);
+                    let after_transition_row =
+                        condition_after_transition_rows_by_condition_id.remove(&row.id);
+                    return Self::build_condition(
+                        row,
+                        schedule_row,
+                        date_time_row,
+                        after_transition_row,
+                    );
                 })
                 .collect::<Result<Vec<_>, _>>()?;
 
@@ -327,7 +351,7 @@ impl IntentionRepository {
         }
 
         let mut query_builder = QueryBuilder::<Sqlite>::new(
-            "SELECT id, intention_id, phase, rule_type, updated_at, created_at FROM intention_condition WHERE intention_id IN (",
+            "SELECT id, intention_id, transition, rule_type, updated_at, created_at FROM intention_condition WHERE intention_id IN (",
         );
         let mut separated = query_builder.separated(", ");
         for intention_id in intention_ids {
@@ -385,6 +409,30 @@ impl IntentionRepository {
 
         return query_builder
             .build_query_as::<IntentionConditionDateTimeRow>()
+            .fetch_all(pool)
+            .await
+            .map_err(IntentionRepositoryError::from);
+    }
+
+    async fn load_condition_after_transition_rows(
+        pool: &Pool<Sqlite>,
+        condition_ids: &[i64],
+    ) -> Result<Vec<IntentionConditionAfterTransitionRow>, IntentionRepositoryError> {
+        if condition_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        let mut query_builder = QueryBuilder::<Sqlite>::new(
+            "SELECT condition_id, anchor_transition, offset_ms FROM intention_condition_after_transition WHERE condition_id IN (",
+        );
+        let mut separated = query_builder.separated(", ");
+        for condition_id in condition_ids {
+            separated.push_bind(condition_id);
+        }
+        separated.push_unseparated(")");
+
+        return query_builder
+            .build_query_as::<IntentionConditionAfterTransitionRow>()
             .fetch_all(pool)
             .await
             .map_err(IntentionRepositoryError::from);
@@ -481,14 +529,15 @@ impl IntentionRepository {
         row: IntentionConditionRow,
         schedule_row: Option<IntentionConditionScheduleRow>,
         date_time_row: Option<IntentionConditionDateTimeRow>,
+        after_transition_row: Option<IntentionConditionAfterTransitionRow>,
     ) -> Result<IntentionCondition, IntentionRepositoryError> {
-        let phase = IntentionConditionPhase::from_str(&row.phase)
+        let transition = IntentionConditionTransition::from_str(&row.transition)
             .map_err(IntentionRepositoryError::InvalidData)?;
         let rule = match row.rule_type.as_str() {
             "schedule" => {
-                if date_time_row.is_some() {
+                if date_time_row.is_some() || after_transition_row.is_some() {
                     return Err(IntentionRepositoryError::InvalidData(
-                        "Schedule condition has date-time payload".to_string(),
+                        "Schedule condition has another rule payload".to_string(),
                     ));
                 }
 
@@ -511,9 +560,9 @@ impl IntentionRepository {
                 })
             }
             "date_time" => {
-                if schedule_row.is_some() {
+                if schedule_row.is_some() || after_transition_row.is_some() {
                     return Err(IntentionRepositoryError::InvalidData(
-                        "Date-time condition has schedule payload".to_string(),
+                        "Date-time condition has another rule payload".to_string(),
                     ));
                 }
 
@@ -533,8 +582,32 @@ impl IntentionRepository {
                     trigger_at: date_time_row.trigger_at,
                 })
             }
-            "manual" => {
+            "after_transition" => {
                 if schedule_row.is_some() || date_time_row.is_some() {
+                    return Err(IntentionRepositoryError::InvalidData(
+                        "After-transition condition has another rule payload".to_string(),
+                    ));
+                }
+
+                let after_transition_row = after_transition_row.ok_or_else(|| {
+                    IntentionRepositoryError::InvalidData(
+                        "Missing after-transition payload for after-transition condition"
+                            .to_string(),
+                    )
+                })?;
+                let anchor_transition =
+                    IntentionConditionTransition::from_str(&after_transition_row.anchor_transition)
+                        .map_err(IntentionRepositoryError::InvalidData)?;
+                IntentionConditionRule::AfterTransition(IntentionConditionAfterTransitionRule {
+                    anchor_transition,
+                    offset_ms: after_transition_row.offset_ms,
+                })
+            }
+            "manual" => {
+                if schedule_row.is_some()
+                    || date_time_row.is_some()
+                    || after_transition_row.is_some()
+                {
                     return Err(IntentionRepositoryError::InvalidData(
                         "Manual condition has rule payload".to_string(),
                     ));
@@ -552,7 +625,7 @@ impl IntentionRepository {
 
         return Ok(IntentionCondition {
             id: row.id,
-            phase,
+            transition,
             rule,
             updated_at: row.updated_at,
             created_at: row.created_at,
@@ -623,7 +696,7 @@ struct IntentionBlockWebsiteRow {
 struct IntentionConditionRow {
     id: i64,
     intention_id: i64,
-    phase: String,
+    transition: String,
     rule_type: String,
     updated_at: i64,
     created_at: i64,
@@ -642,6 +715,13 @@ struct IntentionConditionDateTimeRow {
     date_epoch_days: i32,
     time_of_day_ms: i32,
     trigger_at: i64,
+}
+
+#[derive(Debug, Clone, FromRow)]
+struct IntentionConditionAfterTransitionRow {
+    condition_id: i64,
+    anchor_transition: String,
+    offset_ms: i64,
 }
 
 // MARK: - Input
@@ -672,6 +752,6 @@ pub struct CreateIntentionBlockInput {
 }
 
 pub struct CreateIntentionConditionInput {
-    pub phase: IntentionConditionPhase,
+    pub transition: IntentionConditionTransition,
     pub rule: IntentionConditionRule,
 }

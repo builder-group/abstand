@@ -110,7 +110,7 @@ impl IntentionBlockScope {
 #[serde(rename_all = "camelCase")]
 pub struct IntentionCondition {
     pub id: i64,
-    pub phase: IntentionConditionPhase,
+    pub transition: IntentionConditionTransition,
     pub rule: IntentionConditionRule,
     pub updated_at: i64,
     pub created_at: i64,
@@ -118,12 +118,12 @@ pub struct IntentionCondition {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
-pub enum IntentionConditionPhase {
+pub enum IntentionConditionTransition {
     Start,
     End,
 }
 
-impl IntentionConditionPhase {
+impl IntentionConditionTransition {
     pub fn as_str(&self) -> &'static str {
         return match self {
             Self::Start => "start",
@@ -135,7 +135,7 @@ impl IntentionConditionPhase {
         return match value {
             "start" => Ok(Self::Start),
             "end" => Ok(Self::End),
-            _ => Err(format!("Unknown intention condition phase: {}", value)),
+            _ => Err(format!("Unknown intention condition transition: {}", value)),
         };
     }
 }
@@ -145,6 +145,7 @@ impl IntentionConditionPhase {
 pub enum IntentionConditionRule {
     Schedule(IntentionConditionScheduleRule),
     DateTime(IntentionConditionDateTimeRule),
+    AfterTransition(IntentionConditionAfterTransitionRule),
     Manual,
 }
 
@@ -153,6 +154,7 @@ impl IntentionConditionRule {
         return match self {
             Self::Schedule(_) => "schedule",
             Self::DateTime(_) => "date_time",
+            Self::AfterTransition(_) => "after_transition",
             Self::Manual => "manual",
         };
     }
@@ -171,4 +173,11 @@ pub struct IntentionConditionDateTimeRule {
     pub date_epoch_days: DateOnly,
     pub time_of_day_ms: TimeOnly,
     pub trigger_at: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct IntentionConditionAfterTransitionRule {
+    pub anchor_transition: IntentionConditionTransition,
+    pub offset_ms: i64,
 }

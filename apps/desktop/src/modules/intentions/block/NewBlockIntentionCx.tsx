@@ -60,19 +60,19 @@ export class NewBlockIntentionCx {
 			conditions: {
 				defaultValue: [
 					{
-						phase: 'start',
+						transition: 'start',
 						mode: 'now',
 						dateEpochDays: getCurrentDateEpochDays(),
 						timeOfDayMs: timeOnlyFromMs(9 * 60 * 60 * 1_000),
-						offsetMinutes: 30,
+						offsetMs: 30 * 60_000,
 						weekdaysMask: null
 					},
 					{
-						phase: 'end',
+						transition: 'end',
 						mode: 'manual',
 						dateEpochDays: getCurrentDateEpochDays(),
 						timeOfDayMs: timeOnlyFromMs(17 * 60 * 60 * 1_000),
-						offsetMinutes: 30,
+						offsetMs: 30 * 60_000,
 						weekdaysMask: null
 					}
 				],
@@ -80,8 +80,8 @@ export class NewBlockIntentionCx {
 					z
 						.array(
 							z.object({
-								phase: z.enum(['start', 'end']),
-								mode: z.enum(['now', 'atTime', 'afterOffset', 'repeats', 'manual']),
+								transition: z.enum(['start', 'end']),
+								mode: z.enum(['now', 'atTime', 'afterDelay', 'afterDuration', 'repeats', 'manual']),
 								dateEpochDays: z.custom<specta.DateOnly>(
 									(value) => typeof value === 'number' && isDateEpochDays(value),
 									'Enter a valid date'
@@ -90,7 +90,7 @@ export class NewBlockIntentionCx {
 									(value) => typeof value === 'number' && isTimeOfDayMs(value),
 									'Enter a valid time'
 								),
-								offsetMinutes: z.coerce.number().int().min(1).max(1440),
+								offsetMs: z.coerce.number().int().min(60_000).max(86_400_000),
 								weekdaysMask: z
 									.custom<specta.WeekdayMask>(
 										(value) => typeof value === 'number' && isWeekdayMask(value),
@@ -100,11 +100,34 @@ export class NewBlockIntentionCx {
 							})
 						)
 						.superRefine((conditions, ctx) => {
-							if (!conditions.some((condition) => condition.phase === 'start')) {
+							if (!conditions.some((condition) => condition.transition === 'start')) {
 								ctx.addIssue({ code: 'custom', message: 'Please add a start condition' });
 							}
-							if (!conditions.some((condition) => condition.phase === 'end')) {
+							if (!conditions.some((condition) => condition.transition === 'end')) {
 								ctx.addIssue({ code: 'custom', message: 'Please add an end condition' });
+							}
+							for (const condition of conditions) {
+								if (condition.transition === 'start' && condition.mode === 'afterDuration') {
+									ctx.addIssue({
+										code: 'custom',
+										message: 'After duration can only be used for end conditions'
+									});
+								}
+								if (condition.transition === 'end' && condition.mode === 'afterDelay') {
+									ctx.addIssue({
+										code: 'custom',
+										message: 'After delay can only be used for start conditions'
+									});
+								}
+								if (
+									(condition.mode === 'afterDelay' || condition.mode === 'afterDuration') &&
+									condition.offsetMs % 60_000 !== 0
+								) {
+									ctx.addIssue({
+										code: 'custom',
+										message: 'Duration must use whole minutes'
+									});
+								}
 							}
 						})
 				)
@@ -120,19 +143,21 @@ export class NewBlockIntentionCx {
 	}
 
 	public getCondition(
-		phase: specta.IntentionConditionPhase
+		transition: specta.IntentionConditionTransition
 	): TNewIntentionConditionFormData | null {
 		return (
-			this.$form.fields.conditions.get()?.find((condition) => condition.phase === phase) ?? null
+			this.$form.fields.conditions
+				.get()
+				?.find((condition) => condition.transition === transition) ?? null
 		);
 	}
 
 	public upsertCondition(nextCondition: TNewIntentionConditionFormData): void {
 		const conditions = this.$form.fields.conditions.get() ?? [];
 		const nextConditions = conditions.filter(
-			(condition) => condition.phase !== nextCondition.phase
+			(condition) => condition.transition !== nextCondition.transition
 		);
-		if (nextCondition.phase === 'start') {
+		if (nextCondition.transition === 'start') {
 			this.$form.fields.conditions.set([nextCondition, ...nextConditions]);
 			return;
 		}
@@ -141,20 +166,20 @@ export class NewBlockIntentionCx {
 	}
 
 	public updateCondition(
-		phase: specta.IntentionConditionPhase,
-		update: Partial<Omit<TNewIntentionConditionFormData, 'phase'>>
+		transition: specta.IntentionConditionTransition,
+		update: Partial<Omit<TNewIntentionConditionFormData, 'transition'>>
 	): void {
 		this.upsertCondition({
-			...(this.getCondition(phase) ?? this.createDefaultCondition(phase)),
+			...(this.getCondition(transition) ?? this.createDefaultCondition(transition)),
 			...update
 		});
 	}
 
 	public setConditionMode(
-		phase: specta.IntentionConditionPhase,
+		transition: specta.IntentionConditionTransition,
 		mode: TNewIntentionConditionMode
 	): void {
-		this.updateCondition(phase, { mode });
+		this.updateCondition(transition, { mode });
 	}
 
 	public async submit(): Promise<TResult<specta.Intention, TNewBlockIntentionSubmitError>> {
@@ -200,13 +225,13 @@ export class NewBlockIntentionCx {
 				switch (condition.mode) {
 					case 'manual':
 						return {
-							phase: condition.phase,
+							transition: condition.transition,
 							rule: { type: 'manual' }
 						};
 					case 'now': {
 						const now = new Date();
 						return {
-							phase: condition.phase,
+							transition: condition.transition,
 							rule: {
 								type: 'dateTime',
 								dateEpochDays: getLocalDateEpochDays(now),
@@ -214,10 +239,10 @@ export class NewBlockIntentionCx {
 							}
 						};
 					}
-					case 'afterOffset': {
-						const date = new Date(Date.now() + condition.offsetMinutes * 60_000);
+					case 'afterDelay': {
+						const date = new Date(Date.now() + condition.offsetMs);
 						return {
-							phase: condition.phase,
+							transition: condition.transition,
 							rule: {
 								type: 'dateTime',
 								dateEpochDays: getLocalDateEpochDays(date),
@@ -225,9 +250,18 @@ export class NewBlockIntentionCx {
 							}
 						};
 					}
+					case 'afterDuration':
+						return {
+							transition: condition.transition,
+							rule: {
+								type: 'afterTransition',
+								anchorTransition: 'start',
+								offsetMs: condition.offsetMs
+							}
+						};
 					case 'atTime':
 						return {
-							phase: condition.phase,
+							transition: condition.transition,
 							rule: {
 								type: 'dateTime',
 								dateEpochDays: condition.dateEpochDays,
@@ -236,7 +270,7 @@ export class NewBlockIntentionCx {
 						};
 					case 'repeats':
 						return {
-							phase: condition.phase,
+							transition: condition.transition,
 							rule: {
 								type: 'schedule',
 								timeOfDayMs: condition.timeOfDayMs,
@@ -254,17 +288,17 @@ export class NewBlockIntentionCx {
 	}
 
 	private createDefaultCondition(
-		phase: specta.IntentionConditionPhase
+		transition: specta.IntentionConditionTransition
 	): TNewIntentionConditionFormData {
 		return {
-			phase,
-			mode: phase === 'start' ? 'now' : 'manual',
+			transition,
+			mode: transition === 'start' ? 'now' : 'manual',
 			dateEpochDays: getCurrentDateEpochDays(),
 			timeOfDayMs:
-				phase === 'start'
+				transition === 'start'
 					? timeOnlyFromMs(9 * 60 * 60 * 1_000)
 					: timeOnlyFromMs(17 * 60 * 60 * 1_000),
-			offsetMinutes: 30,
+			offsetMs: 30 * 60_000,
 			weekdaysMask: null
 		};
 	}
@@ -298,15 +332,21 @@ export interface TNewBlockIntentionFormData {
 }
 
 export interface TNewIntentionConditionFormData {
-	phase: specta.IntentionConditionPhase;
+	transition: specta.IntentionConditionTransition;
 	mode: TNewIntentionConditionMode;
 	dateEpochDays: specta.DateOnly;
 	timeOfDayMs: specta.TimeOnly;
-	offsetMinutes: number;
+	offsetMs: number;
 	weekdaysMask: specta.WeekdayMask | null;
 }
 
-export type TNewIntentionConditionMode = 'now' | 'atTime' | 'afterOffset' | 'repeats' | 'manual';
+export type TNewIntentionConditionMode =
+	| 'now'
+	| 'atTime'
+	| 'afterDelay'
+	| 'afterDuration'
+	| 'repeats'
+	| 'manual';
 
 export type TNewBlockIntentionSubmitError =
 	| { code: 'invalidForm' }

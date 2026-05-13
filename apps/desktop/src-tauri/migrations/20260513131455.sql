@@ -166,13 +166,13 @@ END;
 CREATE TABLE `intention_condition` (
   `id` integer NULL PRIMARY KEY AUTOINCREMENT,
   `intention_id` integer NOT NULL,
-  `phase` text NOT NULL,
+  `transition` text NOT NULL,
   `rule_type` text NOT NULL,
   `updated_at` integer NOT NULL DEFAULT (CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)),
   `created_at` integer NOT NULL DEFAULT (CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)),
   CONSTRAINT `0` FOREIGN KEY (`intention_id`) REFERENCES `intention` (`id`) ON UPDATE NO ACTION ON DELETE CASCADE,
-  CHECK (phase IN ('start', 'end')),
-  CHECK (rule_type IN ('schedule', 'date_time', 'manual'))
+  CHECK (transition IN ('start', 'end')),
+  CHECK (rule_type IN ('schedule', 'date_time', 'after_transition', 'manual'))
 );
 -- Create index "idx_intention_condition_intention_id" to table: "intention_condition"
 CREATE INDEX `idx_intention_condition_intention_id` ON `intention_condition` (`intention_id`);
@@ -289,6 +289,45 @@ CREATE TRIGGER `intention_condition_date_time_touch_condition_after_update` AFTE
 END;
 -- Create trigger "intention_condition_date_time_touch_condition_after_delete"
 CREATE TRIGGER `intention_condition_date_time_touch_condition_after_delete` AFTER DELETE ON `intention_condition_date_time` FOR EACH ROW BEGIN
+    UPDATE intention_condition
+    SET updated_at = CASE
+        WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= updated_at THEN updated_at + 1
+        ELSE CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)
+    END
+    WHERE id = OLD.condition_id;
+END;
+-- Create "intention_condition_after_transition" table
+CREATE TABLE `intention_condition_after_transition` (
+  `condition_id` integer NULL,
+  `rule_type` text NOT NULL DEFAULT 'after_transition',
+  `anchor_transition` text NOT NULL,
+  `offset_ms` integer NOT NULL,
+  PRIMARY KEY (`condition_id`),
+  CONSTRAINT `0` FOREIGN KEY (`condition_id`, `rule_type`) REFERENCES `intention_condition` (`id`, `rule_type`) ON UPDATE NO ACTION ON DELETE CASCADE,
+  CHECK (rule_type = 'after_transition'),
+  CHECK (anchor_transition IN ('start', 'end')),
+  CHECK (offset_ms > 0)
+);
+-- Create trigger "intention_condition_after_transition_touch_condition_after_insert"
+CREATE TRIGGER `intention_condition_after_transition_touch_condition_after_insert` AFTER INSERT ON `intention_condition_after_transition` FOR EACH ROW BEGIN
+    UPDATE intention_condition
+    SET updated_at = CASE
+        WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= updated_at THEN updated_at + 1
+        ELSE CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)
+    END
+    WHERE id = NEW.condition_id;
+END;
+-- Create trigger "intention_condition_after_transition_touch_condition_after_update"
+CREATE TRIGGER `intention_condition_after_transition_touch_condition_after_update` AFTER UPDATE ON `intention_condition_after_transition` FOR EACH ROW BEGIN
+    UPDATE intention_condition
+    SET updated_at = CASE
+        WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= updated_at THEN updated_at + 1
+        ELSE CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)
+    END
+    WHERE id = NEW.condition_id;
+END;
+-- Create trigger "intention_condition_after_transition_touch_condition_after_delete"
+CREATE TRIGGER `intention_condition_after_transition_touch_condition_after_delete` AFTER DELETE ON `intention_condition_after_transition` FOR EACH ROW BEGIN
     UPDATE intention_condition
     SET updated_at = CASE
         WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= updated_at THEN updated_at + 1

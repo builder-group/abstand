@@ -19,9 +19,9 @@ export const AtTimeRows: React.FC<TConditionRowsProps> = (props) => {
 				return;
 			}
 
-			cx.updateCondition(condition.phase, { dateEpochDays });
+			cx.updateCondition(condition.transition, { dateEpochDays });
 		},
-		[condition.phase, cx]
+		[condition.transition, cx]
 	);
 
 	// MARK: - UI

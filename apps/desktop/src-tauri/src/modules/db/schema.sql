@@ -89,15 +89,15 @@ CREATE INDEX idx_intention_block_website_target_website_id ON intention_block_we
 -- MARK: - Intention Conditions
 
 -- Start or end trigger attached to an intention
--- Note: Conditions are evaluated as OR within each phase
+-- Note: Conditions are evaluated as OR within each transition
 -- Note: Each intention should have at least one start condition; cardinality is enforced by the app
 -- Note: Rule-specific payload lives in extension tables
 CREATE TABLE intention_condition (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     intention_id INTEGER NOT NULL REFERENCES intention (id) ON DELETE CASCADE,
-    phase TEXT NOT NULL CHECK (phase IN ('start', 'end')),
+    transition TEXT NOT NULL CHECK (transition IN ('start', 'end')),
     -- Discriminator for rule payload tables
-    rule_type TEXT NOT NULL CHECK (rule_type IN ('schedule', 'date_time', 'manual')),
+    rule_type TEXT NOT NULL CHECK (rule_type IN ('schedule', 'date_time', 'after_transition', 'manual')),
     updated_at INTEGER NOT NULL DEFAULT (CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)),
     created_at INTEGER NOT NULL DEFAULT (CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER))
 );
@@ -135,6 +135,18 @@ CREATE TABLE intention_condition_date_time (
     FOREIGN KEY (condition_id, rule_type) REFERENCES intention_condition (id, rule_type) ON DELETE CASCADE,
     CHECK (date_epoch_days BETWEEN -719162 AND 2932896),
     CHECK (time_of_day_ms >= 0 AND time_of_day_ms < 86400000)
+);
+
+-- Relative transition rule payload for conditions anchored to another owning-intention transition
+-- Note: Timestamps live on the owning intention_condition row
+CREATE TABLE intention_condition_after_transition (
+    condition_id INTEGER PRIMARY KEY,
+    -- Discriminator for the composite FK to intention_condition
+    rule_type TEXT NOT NULL DEFAULT 'after_transition' CHECK (rule_type = 'after_transition'),
+    anchor_transition TEXT NOT NULL CHECK (anchor_transition IN ('start', 'end')),
+    offset_ms INTEGER NOT NULL,
+    FOREIGN KEY (condition_id, rule_type) REFERENCES intention_condition (id, rule_type) ON DELETE CASCADE,
+    CHECK (offset_ms > 0)
 );
 
 -- MARK: - Updated At Triggers
@@ -374,6 +386,42 @@ END;
 
 CREATE TRIGGER intention_condition_date_time_touch_condition_after_delete
 AFTER DELETE ON intention_condition_date_time
+FOR EACH ROW
+BEGIN
+    UPDATE intention_condition
+    SET updated_at = CASE
+        WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= updated_at THEN updated_at + 1
+        ELSE CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)
+    END
+    WHERE id = OLD.condition_id;
+END;
+
+CREATE TRIGGER intention_condition_after_transition_touch_condition_after_insert
+AFTER INSERT ON intention_condition_after_transition
+FOR EACH ROW
+BEGIN
+    UPDATE intention_condition
+    SET updated_at = CASE
+        WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= updated_at THEN updated_at + 1
+        ELSE CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)
+    END
+    WHERE id = NEW.condition_id;
+END;
+
+CREATE TRIGGER intention_condition_after_transition_touch_condition_after_update
+AFTER UPDATE ON intention_condition_after_transition
+FOR EACH ROW
+BEGIN
+    UPDATE intention_condition
+    SET updated_at = CASE
+        WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= updated_at THEN updated_at + 1
+        ELSE CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)
+    END
+    WHERE id = NEW.condition_id;
+END;
+
+CREATE TRIGGER intention_condition_after_transition_touch_condition_after_delete
+AFTER DELETE ON intention_condition_after_transition
 FOR EACH ROW
 BEGIN
     UPDATE intention_condition
