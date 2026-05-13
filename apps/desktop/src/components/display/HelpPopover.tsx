@@ -1,6 +1,6 @@
-import { cn } from '@/lib';
 import { cva, type VariantProps } from 'class-variance-authority';
 import React from 'react';
+import { cn } from '@/lib';
 import { Button } from '../input/Button';
 import { ChevronLeftIcon, ChevronRightIcon, CircleQuestionMarkIcon } from './icons';
 import { Popover, PopoverContent, PopoverTrigger, type TPopoverContentProps } from './Popover';
@@ -43,7 +43,7 @@ export const HelpPopover: React.FC<THelpPopoverProps> = (props) => {
 				sideOffset={sideOffset}
 				align={align}
 				alignOffset={alignOffset}
-				// Keep hover help passive, but let keyboard users reach interactive content like pagination
+				// Keep hover help passive, but focus content for keyboard-opened popovers
 				initialFocus={(openType) => openType === 'keyboard'}
 				className={cn(
 					'bg-base-950/90 supports-backdrop-filter:bg-base-950/80 border-base-50/10 text-base-50 w-max max-w-[min(18rem,var(--available-width))] gap-1.5 rounded-lg px-2.5 py-2 shadow-md supports-backdrop-filter:backdrop-blur-md',
@@ -91,18 +91,48 @@ export const HelpCarousel: React.FC<THelpCarouselProps> = (props) => {
 	const { items, action, className } = props;
 	const [page, setPage] = React.useState(0);
 
-	const handleKeyDown = React.useCallback(
-		(event: React.KeyboardEvent) => {
-			if (event.key === 'ArrowLeft') {
-				event.preventDefault();
-				setPage((p) => getNormalizedCarouselPage(p - 1, items.length));
-			} else if (event.key === 'ArrowRight') {
-				event.preventDefault();
-				setPage((p) => getNormalizedCarouselPage(p + 1, items.length));
-			}
+	// MARK: - Actions
+
+	const paginate = React.useCallback(
+		(direction: -1 | 1) => {
+			setPage((p) => getNormalizedCarouselPage(p + direction, items.length));
 		},
 		[items.length]
 	);
+
+	// MARK: - Effects
+
+	React.useEffect(() => {
+		if (items.length <= 1) {
+			return;
+		}
+
+		const handleWindowKeyDown = (event: KeyboardEvent) => {
+			if (
+				event.defaultPrevented ||
+				isModifiedKeyboardEvent(event) ||
+				isEditableKeyTarget(event.target)
+			) {
+				return;
+			}
+
+			if (event.key === 'ArrowLeft') {
+				event.preventDefault();
+				paginate(-1);
+			} else if (event.key === 'ArrowRight') {
+				event.preventDefault();
+				paginate(1);
+			}
+		};
+
+		window.addEventListener('keydown', handleWindowKeyDown);
+
+		return () => {
+			window.removeEventListener('keydown', handleWindowKeyDown);
+		};
+	}, [items.length, paginate]);
+
+	// MARK: - UI
 
 	if (items.length === 0) {
 		return null;
@@ -114,14 +144,13 @@ export const HelpCarousel: React.FC<THelpCarouselProps> = (props) => {
 	return (
 		<div
 			data-slot="help-carousel"
-			onKeyDown={handleKeyDown}
 			className={cn(
 				// Note: Keep the carousel at a fixed width so layout does not jump as pages with different content lengths are shown
-				'flex w-64 flex-col gap-1',
+				'flex w-64 max-w-full flex-col gap-1',
 				className
 			)}
 		>
-			<div className="flex flex-col gap-0.5">
+			<div className="flex flex-col gap-0.5" aria-live="polite" aria-atomic="true">
 				<div className="flex items-center gap-1.5">
 					{current.titlePrefix != null && (
 						<span className="text-base-400 text-xs">{current.titlePrefix} &rsaquo;</span>
@@ -139,19 +168,19 @@ export const HelpCarousel: React.FC<THelpCarouselProps> = (props) => {
 							size="icon-xs"
 							variant="ghost"
 							aria-label="Previous"
-							onClick={() => setPage(getNormalizedCarouselPage(currentPage - 1, items.length))}
+							onClick={() => paginate(-1)}
 							className="text-base-300 hover:text-base-50 hover:bg-base-50/10"
 						>
 							<ChevronLeftIcon />
 						</Button>
-						<span className="text-base-400 w-6 text-center text-xs tabular-nums">
+						<span className="text-base-400 text-center text-xs whitespace-nowrap tabular-nums">
 							{currentPage + 1} / {items.length}
 						</span>
 						<Button
 							size="icon-xs"
 							variant="ghost"
 							aria-label="Next"
-							onClick={() => setPage(getNormalizedCarouselPage(currentPage + 1, items.length))}
+							onClick={() => paginate(1)}
 							className="text-base-300 hover:text-base-50 hover:bg-base-50/10"
 						>
 							<ChevronRightIcon />
@@ -178,6 +207,23 @@ export interface THelpCarouselItem {
 
 function getNormalizedCarouselPage(page: number, total: number): number {
 	return ((page % total) + total) % total;
+}
+
+function isModifiedKeyboardEvent(event: KeyboardEvent): boolean {
+	return event.altKey || event.ctrlKey || event.metaKey || event.shiftKey;
+}
+
+function isEditableKeyTarget(target: EventTarget | null): boolean {
+	if (!(target instanceof HTMLElement)) {
+		return false;
+	}
+
+	const isTextField =
+		target instanceof HTMLInputElement ||
+		target instanceof HTMLTextAreaElement ||
+		target instanceof HTMLSelectElement;
+
+	return isTextField || target.isContentEditable;
 }
 
 export const HelpPopoverLink: React.FC<React.ComponentProps<'a'>> = (props) => {
