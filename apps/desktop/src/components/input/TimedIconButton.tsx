@@ -1,4 +1,5 @@
 import React from 'react';
+import { useStableCallback } from '@/hooks';
 import { cn } from '@/lib';
 import { Button, type TButtonProps } from './Button';
 
@@ -7,6 +8,7 @@ export const TimedIconButton: React.FC<TTimedIconButtonProps> = (props) => {
 		children,
 		className,
 		duration,
+		onProgressComplete,
 		paused = false,
 		showProgress = true,
 		size = 'icon-sm',
@@ -17,6 +19,9 @@ export const TimedIconButton: React.FC<TTimedIconButtonProps> = (props) => {
 
 	const circleRef = React.useRef<SVGCircleElement>(null);
 	const animRef = React.useRef<Animation | null>(null);
+	const handleComplete = useStableCallback(() => {
+		onProgressComplete?.();
+	});
 
 	// Note: Keep animation creation separate from playback so pause/resume preserves progress
 	React.useEffect(() => {
@@ -27,14 +32,16 @@ export const TimedIconButton: React.FC<TTimedIconButtonProps> = (props) => {
 			fill: 'forwards',
 			easing: 'linear'
 		});
+		anim.onfinish = handleComplete;
 		anim.pause();
 		animRef.current = anim;
 
 		return () => {
+			anim.onfinish = null;
 			anim.cancel();
 			animRef.current = null;
 		};
-	}, [duration, hasProgress]);
+	}, [duration, handleComplete, hasProgress]);
 
 	React.useEffect(() => {
 		const anim = animRef.current;
@@ -42,11 +49,7 @@ export const TimedIconButton: React.FC<TTimedIconButtonProps> = (props) => {
 
 		if (paused) {
 			anim.pause();
-		} else if (anim.playState === 'finished') {
-			// Reset the fill state before replaying a completed countdown
-			anim.cancel();
-			anim.play();
-		} else {
+		} else if (anim.playState !== 'finished') {
 			anim.play();
 		}
 	}, [paused, duration, hasProgress]);
@@ -60,6 +63,7 @@ export const TimedIconButton: React.FC<TTimedIconButtonProps> = (props) => {
 			{...rest}
 		>
 			{hasProgress && (
+				// Note: Reduced motion hides the visual ring only so timed actions still complete
 				<svg
 					aria-hidden
 					className="pointer-events-none absolute inset-0 size-full -rotate-90 motion-reduce:hidden"
@@ -97,6 +101,8 @@ export const TimedIconButton: React.FC<TTimedIconButtonProps> = (props) => {
 export type TTimedIconButtonProps = Omit<TButtonProps, 'size'> & {
 	/** How long the countdown runs in milliseconds. */
 	duration?: number;
+	/** Called when the countdown progress animation reaches the end. */
+	onProgressComplete?: () => void;
 	/** Pauses the countdown without resetting it. */
 	paused?: boolean;
 	size?: TTimedIconButtonSize;

@@ -7,7 +7,7 @@ import { CircleQuestionMarkIcon, XCircleIcon, XIcon } from '../icons';
 import type { TToastData, TToastObject, TToastType } from './types';
 
 export const ToastViewport: React.FC<TToastViewportProps> = (props) => {
-	const { timeout } = props;
+	const { dismissAfterMs } = props;
 
 	return (
 		<ToastPrimitive.Portal>
@@ -15,19 +15,19 @@ export const ToastViewport: React.FC<TToastViewportProps> = (props) => {
 				data-slot="toast-viewport"
 				className="pointer-events-none fixed inset-0 z-60 outline-none"
 			>
-				<ToastStack timeout={timeout} />
+				<ToastStack dismissAfterMs={dismissAfterMs} />
 			</ToastPrimitive.Viewport>
 		</ToastPrimitive.Portal>
 	);
 };
 
 interface TToastViewportProps {
-	timeout: number;
+	dismissAfterMs: number;
 }
 
 const ToastStack: React.FC<TToastStackProps> = (props) => {
-	const { timeout } = props;
-	const { toasts } = ToastPrimitive.useToastManager<TToastData>();
+	const { dismissAfterMs } = props;
+	const { close, toasts } = ToastPrimitive.useToastManager<TToastData>();
 
 	if (!toasts.length) {
 		return null;
@@ -36,22 +36,22 @@ const ToastStack: React.FC<TToastStackProps> = (props) => {
 	return (
 		<div className="pointer-events-none absolute right-3 bottom-3 h-(--toast-frontmost-height) w-[min(22rem,calc(100vw-1.5rem))]">
 			{toasts.map((toast) => (
-				<ToastItem key={toast.id} toast={toast} timeout={timeout} />
+				<ToastItem key={toast.id} toast={toast} dismissAfterMs={dismissAfterMs} onClose={close} />
 			))}
 		</div>
 	);
 };
 
 interface TToastStackProps {
-	timeout: number;
+	dismissAfterMs: number;
 }
 
 const ToastItem: React.FC<TToastItemProps> = (props) => {
-	const { toast, timeout: defaultTimeout } = props;
+	const { dismissAfterMs, onClose, toast } = props;
 
-	const closeProgressDuration = toast.timeout ?? defaultTimeout;
+	const resolvedDismissAfterMs = toast._dismissAfterMs ?? dismissAfterMs;
 	const showCloseProgress =
-		toast.type !== 'loading' && closeProgressDuration > 0 && toast.transitionStatus !== 'ending';
+		toast.type !== 'loading' && resolvedDismissAfterMs > 0 && toast.transitionStatus !== 'ending';
 
 	return (
 		<ToastPrimitive.Root
@@ -113,7 +113,8 @@ const ToastItem: React.FC<TToastItemProps> = (props) => {
 							<ToastCloseButton
 								key={toast.updateKey}
 								expanded={contentState.expanded}
-								duration={closeProgressDuration}
+								duration={resolvedDismissAfterMs}
+								onProgressComplete={() => onClose(toast.id)}
 								showProgress={showCloseProgress}
 							/>
 						</div>
@@ -126,7 +127,8 @@ const ToastItem: React.FC<TToastItemProps> = (props) => {
 
 interface TToastItemProps {
 	toast: TToastObject;
-	timeout: number;
+	dismissAfterMs: number;
+	onClose: (toastId: string) => void;
 }
 
 function getToastTransform(state: ToastPrimitive.Root.State): string {
@@ -160,7 +162,7 @@ function getToastTransform(state: ToastPrimitive.Root.State): string {
 }
 
 const ToastCloseButton: React.FC<TToastCloseButtonProps> = (props) => {
-	const { duration, expanded, showProgress } = props;
+	const { duration, expanded, onProgressComplete, showProgress } = props;
 
 	const windowFocused = useWindowFocused();
 	const paused = expanded || !windowFocused;
@@ -172,6 +174,7 @@ const ToastCloseButton: React.FC<TToastCloseButtonProps> = (props) => {
 					data-slot="toast-close"
 					aria-label="Dismiss notification"
 					duration={duration}
+					onProgressComplete={onProgressComplete}
 					paused={paused}
 					showProgress={showProgress}
 					className="text-base-400 hover:text-base-950 -mt-1 -mr-1"
@@ -186,6 +189,7 @@ const ToastCloseButton: React.FC<TToastCloseButtonProps> = (props) => {
 interface TToastCloseButtonProps {
 	duration: number;
 	expanded: boolean;
+	onProgressComplete: () => void;
 	showProgress: boolean;
 }
 

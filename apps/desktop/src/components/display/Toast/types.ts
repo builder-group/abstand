@@ -20,7 +20,13 @@ export type TToastType =
 	| 'info'
 	| 'loading';
 
-export type TToastObject = ToastObject<TToastData>;
+export type TToastObject = ToastObject<TToastData> & {
+	/**
+	 * Internal auto-dismiss duration used by the rendered countdown.
+	 * Note: Base UI stores custom top-level option fields by spreading add/update options into the live toast object.
+	 */
+	_dismissAfterMs?: number;
+};
 
 export type TToastOptions = Omit<
 	ToastManagerAddOptions<TToastData>,
