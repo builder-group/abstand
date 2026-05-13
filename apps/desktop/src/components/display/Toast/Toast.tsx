@@ -1,23 +1,32 @@
 import { Toast as ToastPrimitive } from '@base-ui/react/toast';
 import React from 'react';
+import { useWindowFocused } from '@/hooks';
 import { cn } from '@/lib';
+import { TimedIconButton } from '../../input/TimedIconButton';
 import { CircleQuestionMarkIcon, XCircleIcon, XIcon } from '../icons';
 import type { TToastData, TToastObject, TToastType } from './types';
 
-export const ToastViewport: React.FC = () => {
+export const ToastViewport: React.FC<TToastViewportProps> = (props) => {
+	const { timeout } = props;
+
 	return (
 		<ToastPrimitive.Portal>
 			<ToastPrimitive.Viewport
 				data-slot="toast-viewport"
 				className="pointer-events-none fixed inset-0 z-60 outline-none"
 			>
-				<ToastStack />
+				<ToastStack timeout={timeout} />
 			</ToastPrimitive.Viewport>
 		</ToastPrimitive.Portal>
 	);
 };
 
-const ToastStack: React.FC = () => {
+interface TToastViewportProps {
+	timeout: number;
+}
+
+const ToastStack: React.FC<TToastStackProps> = (props) => {
+	const { timeout } = props;
 	const { toasts } = ToastPrimitive.useToastManager<TToastData>();
 
 	if (!toasts.length) {
@@ -27,14 +36,22 @@ const ToastStack: React.FC = () => {
 	return (
 		<div className="pointer-events-none absolute right-3 bottom-3 h-(--toast-frontmost-height) w-[min(22rem,calc(100vw-1.5rem))]">
 			{toasts.map((toast) => (
-				<ToastItem key={toast.id} toast={toast} />
+				<ToastItem key={toast.id} toast={toast} timeout={timeout} />
 			))}
 		</div>
 	);
 };
 
+interface TToastStackProps {
+	timeout: number;
+}
+
 const ToastItem: React.FC<TToastItemProps> = (props) => {
-	const { toast } = props;
+	const { toast, timeout: defaultTimeout } = props;
+
+	const closeProgressDuration = toast.timeout ?? defaultTimeout;
+	const showCloseProgress =
+		toast.type !== 'loading' && closeProgressDuration > 0 && toast.transitionStatus !== 'ending';
 
 	return (
 		<ToastPrimitive.Root
@@ -69,45 +86,47 @@ const ToastItem: React.FC<TToastItemProps> = (props) => {
 		>
 			<ToastPrimitive.Content
 				data-slot="toast-content"
-				className="overflow-hidden rounded-[inherit] transition-opacity duration-200 ease-out data-behind:opacity-0 data-expanded:opacity-100"
-			>
-				<div className="flex items-start gap-2.5 px-3 py-2.5">
-					<ToastLeading toast={toast} />
-					<div className="min-w-0 flex-1">
-						{toast.title != null && (
-							<ToastPrimitive.Title
-								data-slot="toast-title"
-								className="text-sm font-medium tracking-normal"
+				className="overflow-hidden rounded-[inherit] transition-opacity duration-200 ease-out data-behind:pointer-events-none data-behind:opacity-0 data-expanded:pointer-events-auto data-expanded:opacity-100"
+				render={(contentProps, contentState) => (
+					<div {...contentProps}>
+						<div className="flex items-start gap-2.5 px-3 py-2.5">
+							<ToastLeading toast={toast} />
+							<div className="min-w-0 flex-1">
+								{toast.title != null && (
+									<ToastPrimitive.Title
+										data-slot="toast-title"
+										className="text-sm font-medium tracking-normal"
+									/>
+								)}
+								{toast.description != null && (
+									<ToastPrimitive.Description
+										data-slot="toast-description"
+										className="text-base-500 text-sm leading-5"
+									/>
+								)}
+								{toast.data?.action != null && (
+									<div data-slot="toast-action" data-base-ui-swipe-ignore="" className="mt-1.5">
+										{toast.data.action}
+									</div>
+								)}
+							</div>
+							<ToastCloseButton
+								key={toast.updateKey}
+								expanded={contentState.expanded}
+								duration={closeProgressDuration}
+								showProgress={showCloseProgress}
 							/>
-						)}
-						{toast.description != null && (
-							<ToastPrimitive.Description
-								data-slot="toast-description"
-								className="text-base-500 text-sm leading-5"
-							/>
-						)}
-						{toast.actionProps != null && (
-							<ToastPrimitive.Action
-								data-slot="toast-action"
-								className="focus-ring text-primary hover:text-primary mt-1.5 inline-flex h-auto w-fit shrink-0 items-center justify-center rounded-md border border-transparent px-1 py-0.5 text-sm font-medium whitespace-nowrap underline-offset-4 transition select-none hover:underline disabled:pointer-events-none disabled:opacity-50"
-							/>
-						)}
+						</div>
 					</div>
-					<ToastPrimitive.Close
-						data-slot="toast-close"
-						aria-label="Dismiss notification"
-						className="focus-ring text-base-400 hover:bg-base-950/6 hover:text-base-950 -mt-0.5 -mr-1 inline-flex size-6 shrink-0 items-center justify-center rounded-full border border-transparent transition select-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-3.5 [&_svg]:shrink-0"
-					>
-						<XIcon />
-					</ToastPrimitive.Close>
-				</div>
-			</ToastPrimitive.Content>
+				)}
+			/>
 		</ToastPrimitive.Root>
 	);
 };
 
 interface TToastItemProps {
 	toast: TToastObject;
+	timeout: number;
 }
 
 function getToastTransform(state: ToastPrimitive.Root.State): string {
@@ -138,6 +157,36 @@ function getToastTransform(state: ToastPrimitive.Root.State): string {
 	}
 
 	return `translateX(var(--toast-swipe-movement-x)) translateY(${offsetY}) scale(var(--toast-stack-scale))`;
+}
+
+const ToastCloseButton: React.FC<TToastCloseButtonProps> = (props) => {
+	const { duration, expanded, showProgress } = props;
+
+	const windowFocused = useWindowFocused();
+	const paused = expanded || !windowFocused;
+
+	return (
+		<ToastPrimitive.Close
+			render={
+				<TimedIconButton
+					data-slot="toast-close"
+					aria-label="Dismiss notification"
+					duration={duration}
+					paused={paused}
+					showProgress={showProgress}
+					className="text-base-400 hover:text-base-950 -mt-1 -mr-1"
+				>
+					<XIcon className="size-3.5" />
+				</TimedIconButton>
+			}
+		/>
+	);
+};
+
+interface TToastCloseButtonProps {
+	duration: number;
+	expanded: boolean;
+	showProgress: boolean;
 }
 
 const ToastLeading: React.FC<TToastLeadingProps> = (props) => {

@@ -7,6 +7,7 @@ import type React from 'react';
 
 export interface TToastData {
 	icon?: React.ReactNode;
+	action?: React.ReactNode;
 }
 
 export type TToastId = string;
@@ -21,13 +22,16 @@ export type TToastType =
 
 export type TToastObject = ToastObject<TToastData>;
 
-export type TToastOptions = Omit<ToastManagerAddOptions<TToastData>, 'positionerProps' | 'type'> & {
+export type TToastOptions = Omit<
+	ToastManagerAddOptions<TToastData>,
+	'actionProps' | 'positionerProps' | 'type'
+> & {
 	type?: TToastType;
 };
 
 export type TToastUpdateOptions = Omit<
 	ToastManagerUpdateOptions<TToastData>,
-	'positionerProps' | 'type'
+	'actionProps' | 'positionerProps' | 'type'
 > & {
 	type?: TToastType;
 };

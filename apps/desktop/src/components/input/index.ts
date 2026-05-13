@@ -6,5 +6,6 @@ export * from './Select';
 export * from './Slider';
 export * from './Switch';
 export * from './Textarea';
+export * from './TimedIconButton';
 export * from './Toggle';
 export * from './ToggleGroup';

@@ -49,7 +49,7 @@ export const ToastsCxProvider: React.FC<TToastsCxProviderProps> = (props) => {
 	return (
 		<ToastPrimitive.Provider toastManager={manager} limit={limit} timeout={timeout} {...rest}>
 			<ReactToastsCx.Provider value={cx}>{children}</ReactToastsCx.Provider>
-			<ToastViewport />
+			<ToastViewport timeout={timeout} />
 		</ToastPrimitive.Provider>
 	);
 };

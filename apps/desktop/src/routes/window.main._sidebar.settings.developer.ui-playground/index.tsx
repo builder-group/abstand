@@ -946,15 +946,22 @@ const ToastSection: React.FC = () => {
 			title: 'Block archived',
 			description: 'The block was removed from Today.',
 			timeout: 0,
-			actionProps: {
-				children: 'Undo',
-				onClick: () => {
-					toastsCx.add({
-						type: 'success',
-						title: 'Block restored',
-						description: 'The archived block is back in Today.'
-					});
-				}
+			data: {
+				action: (
+					<Button
+						variant="soft"
+						size="sm"
+						onClick={() => {
+							toastsCx.add({
+								type: 'success',
+								title: 'Block restored',
+								description: 'The archived block is back in Today.'
+							});
+						}}
+					>
+						Undo
+					</Button>
+				)
 			}
 		});
 	}
