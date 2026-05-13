@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useFeatureState } from 'feature-react/state';
 import React from 'react';
-import { CommandIcon, SettingsPage } from '@/components';
+import { CommandIcon, SettingsPage, useToastsCx } from '@/components';
 import { specta } from '@/environment';
 import { SettingsGroup, SettingsRow } from '@/modules/settings';
 import { ShortcutRecorder, useShortcutsCx } from '@/modules/shortcuts';
@@ -12,13 +12,21 @@ export const Route = createFileRoute('/window/main/_sidebar/settings/shortcuts/'
 
 function RouteComponent() {
 	const shortcutsCx = useShortcutsCx();
+	const toastsCx = useToastsCx();
 	const configs = useFeatureState(shortcutsCx.$configs);
 
 	const handleChange = React.useCallback(
 		async (action: specta.ShortcutAction, shortcut: specta.KeyboardShortcut | null) => {
-			await shortcutsCx.updateShortcut(action, shortcut);
+			const [isUpdateOk, updateErr] = await shortcutsCx.updateShortcut(action, shortcut);
+			if (!isUpdateOk) {
+				toastsCx.add({
+					type: 'error',
+					title: 'Could not save shortcut',
+					description: updateErr
+				});
+			}
 		},
-		[shortcutsCx]
+		[shortcutsCx, toastsCx]
 	);
 
 	// MARK: - UI

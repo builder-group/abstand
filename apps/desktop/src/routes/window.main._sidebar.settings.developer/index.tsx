@@ -1,7 +1,14 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import React from 'react';
-import { ChevronRightIcon, CodeXmlIcon, FolderOpenIcon, SettingsPage } from '@/components';
+import {
+	ChevronRightIcon,
+	CodeXmlIcon,
+	FolderOpenIcon,
+	SettingsPage,
+	useToastsCx
+} from '@/components';
 import { specta } from '@/environment';
+import { toTuple } from '@/lib';
 import { SettingsGroup, SettingsRow } from '@/modules/settings';
 
 export const Route = createFileRoute('/window/main/_sidebar/settings/developer/')({
@@ -9,9 +16,18 @@ export const Route = createFileRoute('/window/main/_sidebar/settings/developer/'
 });
 
 function RouteComponent() {
+	const toastsCx = useToastsCx();
+
 	const handleOpenDataDirectory = React.useCallback(async () => {
-		await specta.commands.openDataDirectory();
-	}, []);
+		const [isOpenOk, openErr] = toTuple(await specta.commands.openDataDirectory());
+		if (!isOpenOk) {
+			toastsCx.add({
+				type: 'error',
+				title: 'Could not open data directory',
+				description: openErr
+			});
+		}
+	}, [toastsCx]);
 
 	// MARK: - UI
 

@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useForm } from 'feature-react/form';
 import { useFeatureState } from 'feature-react/state';
 import React from 'react';
-import { Button, ContentPage, Input } from '@/components';
+import { Button, ContentPage, Input, useToastsCx } from '@/components';
 import { BlockSection, useNewBlockIntentionCx, WhenSection } from '@/modules/intentions';
 import { SettingsGroup, SettingsRow } from '@/modules/settings';
 
@@ -13,6 +13,7 @@ export const Route = createFileRoute('/window/main/_sidebar/intentions/new/block
 function RouteComponent() {
 	const navigate = useNavigate();
 	const cx = useNewBlockIntentionCx();
+	const toastsCx = useToastsCx();
 
 	const { handleSubmit, register, status } = useForm(cx.$form);
 	const isSubmitting = useFeatureState(cx.$form.isSubmitting);
@@ -22,14 +23,27 @@ function RouteComponent() {
 	// MARK: - Actions
 
 	const handleValidSubmit = React.useCallback(async () => {
-		const [isIntentionOk, , intention] = await cx.submit();
-		if (isIntentionOk) {
-			void navigate({
-				to: '/window/main/intentions/$intentionId',
-				params: { intentionId: `${intention.id}` }
-			});
+		const [isIntentionOk, intentionErr, intention] = await cx.submit();
+		if (!isIntentionOk) {
+			switch (intentionErr.code) {
+				case 'createFailed':
+					toastsCx.add({
+						type: 'error',
+						title: 'Could not create intention',
+						description: intentionErr.message
+					});
+					break;
+				default:
+				// do nothing
+			}
+			return;
 		}
-	}, [cx, navigate]);
+
+		void navigate({
+			to: '/window/main/intentions/$intentionId',
+			params: { intentionId: `${intention.id}` }
+		});
+	}, [cx, navigate, toastsCx]);
 
 	// MARK: - UI
 

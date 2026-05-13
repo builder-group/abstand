@@ -5,7 +5,7 @@ import {
 	FormFieldValidateMode
 } from 'feature-form';
 import React from 'react';
-import { Err, type TResult } from 'tuple-result';
+import { Err, Ok, type TResult } from 'tuple-result';
 import { zValidator } from 'validation-adapters/zod';
 import * as z from 'zod';
 import { specta } from '@/environment';
@@ -157,10 +157,10 @@ export class NewBlockIntentionCx {
 		this.updateCondition(phase, { mode });
 	}
 
-	public async submit(): Promise<TResult<specta.Intention, string>> {
+	public async submit(): Promise<TResult<specta.Intention, TNewBlockIntentionSubmitError>> {
 		const formData = this.$form.getValidData();
 		if (formData == null) {
-			return Err('Form is invalid');
+			return Err({ code: 'invalidForm' });
 		}
 
 		const targets = formData.selectedTargets.map(
@@ -188,7 +188,7 @@ export class NewBlockIntentionCx {
 			}
 		);
 
-		return this.intentionsCx.create({
+		const [isIntentionOk, intentionErr, intention] = await this.intentionsCx.create({
 			name: formData.name.trim(),
 			behavior: {
 				type: 'block',
@@ -246,6 +246,11 @@ export class NewBlockIntentionCx {
 				}
 			})
 		});
+		if (!isIntentionOk) {
+			return Err({ code: 'createFailed', message: intentionErr });
+		}
+
+		return Ok(intention);
 	}
 
 	private createDefaultCondition(
@@ -302,6 +307,10 @@ export interface TNewIntentionConditionFormData {
 }
 
 export type TNewIntentionConditionMode = 'now' | 'atTime' | 'afterOffset' | 'repeats' | 'manual';
+
+export type TNewBlockIntentionSubmitError =
+	| { code: 'invalidForm' }
+	| { code: 'createFailed'; message: string };
 
 const ReactNewBlockIntentionCx = React.createContext<NewBlockIntentionCx | null>(null);
 

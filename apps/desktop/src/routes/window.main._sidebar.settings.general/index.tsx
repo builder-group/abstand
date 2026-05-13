@@ -16,7 +16,8 @@ import {
 	Slider,
 	Spinner,
 	SunIcon,
-	Switch
+	Switch,
+	useToastsCx
 } from '@/components';
 import type { specta } from '@/environment';
 import { useAppInfo } from '@/hooks';
@@ -43,6 +44,7 @@ function RouteComponent() {
 
 const AppearanceSection: React.FC = () => {
 	const settingsCx = useSettingsCx();
+	const toastsCx = useToastsCx();
 	const theme = useCompute(settingsCx.$appSettings, ({ value }) => value.appearance.theme);
 	const fontScale = useCompute(settingsCx.$appSettings, ({ value }) => value.appearance.fontScale);
 
@@ -50,11 +52,18 @@ const AppearanceSection: React.FC = () => {
 
 	const handleThemeChange = React.useCallback(
 		async (themeValue: string) => {
-			await settingsCx.update({
+			const [isUpdateOk, updateErr] = await settingsCx.update({
 				appearance: { theme: themeValue as specta.Theme }
 			});
+			if (!isUpdateOk) {
+				toastsCx.add({
+					type: 'error',
+					title: 'Could not save setting',
+					description: updateErr
+				});
+			}
 		},
-		[settingsCx]
+		[settingsCx, toastsCx]
 	);
 
 	const handleFontScaleChange = React.useCallback(
@@ -73,11 +82,18 @@ const AppearanceSection: React.FC = () => {
 	const handleFontScaleCommit = React.useCallback(
 		async (values: number | readonly number[]) => {
 			const nextFontScale: number = Array.isArray(values) ? values[0] : values;
-			await settingsCx.update({
+			const [isUpdateOk, updateErr] = await settingsCx.update({
 				appearance: { fontScale: nextFontScale }
 			});
+			if (!isUpdateOk) {
+				toastsCx.add({
+					type: 'error',
+					title: 'Could not save setting',
+					description: updateErr
+				});
+			}
 		},
-		[settingsCx]
+		[settingsCx, toastsCx]
 	);
 
 	// MARK: - UI
@@ -136,6 +152,7 @@ function formatFontScale(value: number) {
 
 const FeaturesSection: React.FC = () => {
 	const settingsCx = useSettingsCx();
+	const toastsCx = useToastsCx();
 	const developerEnabled = useCompute(
 		settingsCx.$appSettings,
 		({ value }) => value.developer.enabled
@@ -145,9 +162,16 @@ const FeaturesSection: React.FC = () => {
 
 	const handleDeveloperToggle = React.useCallback(
 		async (pressed: boolean) => {
-			await settingsCx.update({ developer: { enabled: pressed } });
+			const [isUpdateOk, updateErr] = await settingsCx.update({ developer: { enabled: pressed } });
+			if (!isUpdateOk) {
+				toastsCx.add({
+					type: 'error',
+					title: 'Could not save setting',
+					description: updateErr
+				});
+			}
 		},
-		[settingsCx]
+		[settingsCx, toastsCx]
 	);
 
 	// MARK: - UI

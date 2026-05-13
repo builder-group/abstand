@@ -18,6 +18,7 @@ export const TimedIconButton: React.FC<TTimedIconButtonProps> = (props) => {
 	const circleRef = React.useRef<SVGCircleElement>(null);
 	const animRef = React.useRef<Animation | null>(null);
 
+	// Note: Keep animation creation separate from playback so pause/resume preserves progress
 	React.useEffect(() => {
 		if (!hasProgress || !circleRef.current) return;
 
@@ -26,7 +27,7 @@ export const TimedIconButton: React.FC<TTimedIconButtonProps> = (props) => {
 			fill: 'forwards',
 			easing: 'linear'
 		});
-		anim.pause(); // paused effect below drives play/pause
+		anim.pause();
 		animRef.current = anim;
 
 		return () => {
@@ -36,13 +37,13 @@ export const TimedIconButton: React.FC<TTimedIconButtonProps> = (props) => {
 	}, [duration, hasProgress]);
 
 	React.useEffect(() => {
-		const anim = animRef.current; // populated by creation effect above
+		const anim = animRef.current;
 		if (!anim) return;
 
 		if (paused) {
 			anim.pause();
 		} else if (anim.playState === 'finished') {
-			// Base UI reset its timer (remaining was 0); restart animation to match
+			// Reset the fill state before replaying a completed countdown
 			anim.cancel();
 			anim.play();
 		} else {
@@ -93,11 +94,13 @@ export const TimedIconButton: React.FC<TTimedIconButtonProps> = (props) => {
 	);
 };
 
-export type TTimedIconButtonProps = TButtonProps & {
+export type TTimedIconButtonProps = Omit<TButtonProps, 'size'> & {
 	/** How long the countdown runs in milliseconds. */
 	duration?: number;
 	/** Pauses the countdown without resetting it. */
 	paused?: boolean;
-	/** Whether to show the circular progress ring. */
+	size?: TTimedIconButtonSize;
 	showProgress?: boolean;
 };
+
+type TTimedIconButtonSize = Extract<TButtonProps['size'], 'icon-xs' | 'icon-sm' | 'icon-md'>;
