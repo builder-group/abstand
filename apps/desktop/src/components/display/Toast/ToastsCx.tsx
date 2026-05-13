@@ -49,9 +49,9 @@ export const ToastsCxProvider: React.FC<TToastsCxProviderProps> = (props) => {
 
 	return (
 		/*
-		 * Base UI still owns toast state, stacking, focus, swipe, and transitions. We disable its
-		 * auto-dismiss timer because our visible countdown needs to be the same clock that closes
-		 * the toast; otherwise the ring and dismissal timing can drift on pause/resume edges.
+		 * Note: Base UI still owns toast state, stacking, focus, swipe, and transitions. We disable its
+		 * auto-dismiss timer so the rendered countdown is the single source of truth for dismissal
+		 * timing. Otherwise the visible ring and close timing can drift on pause/resume edges.
 		 */
 		<ToastPrimitive.Provider toastManager={manager} limit={limit} timeout={0} {...rest}>
 			<ReactToastsCx.Provider value={cx}>{children}</ReactToastsCx.Provider>

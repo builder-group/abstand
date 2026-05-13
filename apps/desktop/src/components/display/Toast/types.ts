@@ -23,7 +23,9 @@ export type TToastType =
 export type TToastObject = ToastObject<TToastData> & {
 	/**
 	 * Internal auto-dismiss duration used by the rendered countdown.
-	 * Note: Base UI stores custom top-level option fields by spreading add/update options into the live toast object.
+	 *
+	 * Note: Base UI preserves custom top-level option fields on the live toast object,
+	 * so we keep this outside caller-owned data.
 	 */
 	_dismissAfterMs?: number;
 };
