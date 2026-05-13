@@ -222,7 +222,6 @@ function isEditableKeyTarget(target: EventTarget | null): boolean {
 		target instanceof HTMLInputElement ||
 		target instanceof HTMLTextAreaElement ||
 		target instanceof HTMLSelectElement;
-
 	return isTextField || target.isContentEditable;
 }
 
