@@ -163,7 +163,7 @@ impl IntentionRuntime {
             return Ok(());
         }
 
-        let session = IntentionSessionRepository::create_session(
+        let Some(session) = IntentionSessionRepository::create_session_if_inactive(
             &database.pool,
             CreateIntentionSessionInput {
                 intention_id,
@@ -171,7 +171,10 @@ impl IntentionRuntime {
                 start_condition_id: Some(condition_id),
             },
         )
-        .await?;
+        .await?
+        else {
+            return Ok(());
+        };
 
         let _ = IntentionSessionStartedEvent {
             intention_id,

@@ -141,15 +141,13 @@ impl IntentionRepository {
 
         transaction.commit().await?;
 
-        let intention = Self::get_by_id(pool, intention_id).await?;
-        return intention
-            .ok_or_else(|| {
-                IntentionRepositoryError::InvalidData(format!(
-                    "Updated intention {} could not be reloaded",
-                    intention_id
-                ))
-            })
-            .map(Some);
+        let intention = Self::get_by_id(pool, intention_id).await?.ok_or_else(|| {
+            IntentionRepositoryError::InvalidData(format!(
+                "Updated intention {} could not be reloaded",
+                intention_id
+            ))
+        })?;
+        return Ok(Some(intention));
     }
 
     pub async fn delete(
@@ -856,10 +854,10 @@ impl IntentionSessionRepository {
         return row.map(Self::build_session).transpose();
     }
 
-    pub async fn create_session(
+    pub async fn create_session_if_inactive(
         pool: &Pool<Sqlite>,
         input: CreateIntentionSessionInput,
-    ) -> Result<IntentionSession, IntentionSessionRepositoryError> {
+    ) -> Result<Option<IntentionSession>, IntentionSessionRepositoryError> {
         let mut transaction = pool.begin().await?;
 
         Self::validate_session_condition(
@@ -871,23 +869,35 @@ impl IntentionSessionRepository {
         .await?;
 
         let session_id = sqlx::query_scalar::<_, i64>(
-            "INSERT INTO intention_session (intention_id, status, started_at, start_condition_id) VALUES (?, 'active', ?, ?) RETURNING id",
+            "INSERT INTO intention_session (intention_id, status, started_at, start_condition_id)
+            SELECT ?, 'active', ?, ?
+            WHERE NOT EXISTS (
+                SELECT 1 FROM intention_session WHERE intention_id = ? AND status = 'active'
+            )
+            RETURNING id",
         )
         .bind(input.intention_id)
         .bind(input.started_at)
         .bind(input.start_condition_id)
-        .fetch_one(&mut *transaction)
+        .bind(input.intention_id)
+        .fetch_optional(&mut *transaction)
         .await?;
 
         transaction.commit().await?;
 
-        let session = Self::get_session_by_id(pool, session_id).await?;
-        return session.ok_or_else(|| {
-            IntentionSessionRepositoryError::InvalidData(format!(
-                "Created intention session {} could not be reloaded",
-                session_id
-            ))
-        });
+        let Some(session_id) = session_id else {
+            return Ok(None);
+        };
+
+        let session = Self::get_session_by_id(pool, session_id)
+            .await?
+            .ok_or_else(|| {
+                IntentionSessionRepositoryError::InvalidData(format!(
+                    "Created intention session {} could not be reloaded",
+                    session_id
+                ))
+            })?;
+        return Ok(Some(session));
     }
 
     pub async fn complete_session(
