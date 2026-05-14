@@ -1,34 +1,39 @@
-use super::repository::{
-    IntentionRepository, IntentionRepositoryError, IntentionSessionRepository,
-    IntentionSessionRepositoryError,
+use super::{
+    intention::{Intention, IntentionConditionRule, IntentionConditionTransition},
+    repository::{
+        CreateIntentionSessionInput, IntentionRepository, IntentionRepositoryError,
+        IntentionSessionRepository, IntentionSessionRepositoryError,
+    },
+    types::{IntentionRuntimeState, IntentionSessionStartedEvent},
 };
-use crate::modules::{
-    db::types::DatabaseState,
-    scheduler::{scheduler::ScheduledJobId, types::SchedulerState},
+use crate::{
+    common::time::unix_ms_now,
+    modules::{
+        db::types::DatabaseState,
+        scheduler::{scheduler::ScheduledJobId, types::SchedulerState},
+    },
 };
 use std::{collections::HashMap, fmt, sync::Mutex};
-use tauri::{App, AppHandle, Manager};
+use tauri::{AppHandle, Manager};
+use tauri_specta::Event;
 
 pub struct IntentionRuntime {
     scheduled_jobs: Mutex<HashMap<IntentionRuntimeJobKey, ScheduledJobId>>,
 }
 
 impl IntentionRuntime {
-    pub fn new(app: &App) -> Result<Self, IntentionRuntimeError> {
-        let runtime = Self {
+    pub fn new() -> Self {
+        return Self {
             scheduled_jobs: Mutex::new(HashMap::new()),
         };
-
-        // Note: blocks intentionally so the runtime is fully synced before the app accepts commands
-        tauri::async_runtime::block_on(runtime.resync_all(app.handle()))?;
-        return Ok(runtime);
     }
 
     pub async fn resync_all(&self, app: &AppHandle) -> Result<(), IntentionRuntimeError> {
         let database = app.state::<DatabaseState>();
-        let _intentions = IntentionRepository::get_all(&database.pool).await?;
-        let _active_sessions =
-            IntentionSessionRepository::get_active_sessions(&database.pool).await?;
+        let intentions = IntentionRepository::get_all(&database.pool).await?;
+        for intention in intentions {
+            self.resync_intention(app, intention.id).await?;
+        }
 
         return Ok(());
     }
@@ -41,16 +46,19 @@ impl IntentionRuntime {
         self.clear_intention_jobs(app, intention_id);
 
         let database = app.state::<DatabaseState>();
-        let Some(_intention) = IntentionRepository::get_by_id(&database.pool, intention_id).await?
+        let Some(intention) = IntentionRepository::get_by_id(&database.pool, intention_id).await?
         else {
             return Ok(());
         };
 
-        let _active_session = IntentionSessionRepository::get_active_session_by_intention_id(
+        let active_session = IntentionSessionRepository::get_active_session_by_intention_id(
             &database.pool,
             intention_id,
         )
         .await?;
+        if active_session.is_none() {
+            self.schedule_start_conditions(app, &intention);
+        }
 
         return Ok(());
     }
@@ -74,6 +82,105 @@ impl IntentionRuntime {
         for scheduled_job_id in scheduled_job_ids {
             scheduler.0.cancel(scheduled_job_id);
         }
+    }
+
+    fn schedule_start_conditions(&self, app: &AppHandle, intention: &Intention) {
+        let now = unix_ms_now();
+        for condition in intention
+            .conditions
+            .iter()
+            .filter(|condition| condition.transition == IntentionConditionTransition::Start)
+        {
+            match &condition.rule {
+                IntentionConditionRule::DateTime(rule) => {
+                    if rule.trigger_at <= now {
+                        continue;
+                    }
+
+                    self.schedule_start_condition(app, intention.id, condition.id, rule.trigger_at);
+                }
+                IntentionConditionRule::Manual => {}
+                IntentionConditionRule::Schedule(_) => {}
+                IntentionConditionRule::AfterTransition(_) => {}
+            }
+        }
+    }
+
+    fn schedule_start_condition(
+        &self,
+        app: &AppHandle,
+        intention_id: i64,
+        condition_id: i64,
+        trigger_at: i64,
+    ) {
+        let scheduler = app.state::<SchedulerState>();
+        let scheduled_job_id = scheduler.0.schedule_at_unix_ms(
+            format!("intention:{} start:{}", intention_id, condition_id),
+            trigger_at,
+            move |app| {
+                tauri::async_runtime::spawn(async move {
+                    let runtime = app.state::<IntentionRuntimeState>();
+                    if let Err(error) = runtime
+                        .start_intention_session(&app, intention_id, condition_id, trigger_at)
+                        .await
+                    {
+                        eprintln!("Failed to start intention session: {}", error);
+                    }
+                });
+            },
+        );
+
+        self.scheduled_jobs.lock().unwrap().insert(
+            IntentionRuntimeJobKey::StartCondition {
+                intention_id,
+                condition_id,
+            },
+            scheduled_job_id,
+        );
+    }
+
+    async fn start_intention_session(
+        &self,
+        app: &AppHandle,
+        intention_id: i64,
+        condition_id: i64,
+        started_at: i64,
+    ) -> Result<(), IntentionRuntimeError> {
+        let database = app.state::<DatabaseState>();
+        if IntentionRepository::get_by_id(&database.pool, intention_id)
+            .await?
+            .is_none()
+        {
+            return Ok(());
+        }
+
+        let active_session = IntentionSessionRepository::get_active_session_by_intention_id(
+            &database.pool,
+            intention_id,
+        )
+        .await?;
+        if active_session.is_some() {
+            return Ok(());
+        }
+
+        let session = IntentionSessionRepository::create_session(
+            &database.pool,
+            CreateIntentionSessionInput {
+                intention_id,
+                started_at,
+                start_condition_id: Some(condition_id),
+            },
+        )
+        .await?;
+
+        let _ = IntentionSessionStartedEvent {
+            intention_id,
+            session_id: session.id,
+        }
+        .emit(app);
+
+        self.resync_intention(app, intention_id).await?;
+        return Ok(());
     }
 }
 

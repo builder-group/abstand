@@ -1,7 +1,6 @@
 use super::runtime::IntentionRuntime;
 use serde::{Deserialize, Serialize};
 use std::ops::Deref;
-use tauri::App;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
@@ -32,8 +31,8 @@ impl IntentionBehaviorType {
 pub struct IntentionRuntimeState(IntentionRuntime);
 
 impl IntentionRuntimeState {
-    pub fn init(app: &App) -> Result<Self, Box<dyn std::error::Error>> {
-        return Ok(Self(IntentionRuntime::new(app)?));
+    pub fn init() -> Self {
+        return Self(IntentionRuntime::new());
     }
 }
 

@@ -1,10 +1,11 @@
+use crate::common::time::unix_ms_now;
 use std::{
     collections::HashMap,
     sync::{
         atomic::{AtomicU64, Ordering},
         Arc, Mutex,
     },
-    time::{Duration, SystemTime, UNIX_EPOCH},
+    time::Duration,
 };
 use tauri::AppHandle;
 use tokio::{sync::watch, time::Instant};
@@ -48,7 +49,7 @@ impl Scheduler {
         return self
             .insert_job(
                 label.into(),
-                Self::unix_ms_now() + delay.as_millis() as i64,
+                unix_ms_now() + delay.as_millis() as i64,
                 Box::new(action),
             )
             .id;
@@ -188,16 +189,8 @@ impl Scheduler {
     fn now() -> SchedulerNow {
         return SchedulerNow {
             instant: Instant::now(),
-            unix_ms: Self::unix_ms_now(),
+            unix_ms: unix_ms_now(),
         };
-    }
-
-    fn unix_ms_now() -> i64 {
-        let duration = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or(Duration::ZERO);
-
-        return duration.as_millis() as i64;
     }
 
     // Tokio's monotonic clock pauses during system sleep, so without periodic wall-clock re-checks
@@ -279,7 +272,7 @@ mod tests {
     #[test]
     fn schedule_after_targets_wall_clock_time() {
         let scheduler = Scheduler::new();
-        let before = Scheduler::unix_ms_now();
+        let before = unix_ms_now();
 
         scheduler.schedule_after("wall-clock", Duration::from_secs(5), |_app| {});
         let jobs = scheduler.list_jobs();
@@ -291,7 +284,7 @@ mod tests {
     #[test]
     fn schedule_at_unix_ms_adds_absolute_job_to_public_list() {
         let scheduler = Scheduler::new();
-        let unix_ms = Scheduler::unix_ms_now() + 10_000;
+        let unix_ms = unix_ms_now() + 10_000;
 
         let job_id = scheduler.schedule_at_unix_ms("absolute", unix_ms, |_app| {});
         let jobs = scheduler.list_jobs();
@@ -314,7 +307,7 @@ mod tests {
     #[test]
     fn list_jobs_returns_jobs_ordered_by_scheduled_time() {
         let scheduler = Scheduler::new();
-        let now_unix_ms = Scheduler::unix_ms_now();
+        let now_unix_ms = unix_ms_now();
 
         scheduler.schedule_at_unix_ms("later", now_unix_ms + 20_000, |_app| {});
         scheduler.schedule_after("earlier", Duration::from_secs(1), |_app| {});

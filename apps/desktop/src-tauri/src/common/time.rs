@@ -4,6 +4,7 @@
 
 use chrono::{DateTime, Local, LocalResult, NaiveDate, NaiveTime, TimeZone, Weekday};
 use serde::{de, Deserialize, Deserializer, Serialize};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, specta::Type)]
 #[serde(transparent)]
@@ -129,6 +130,14 @@ pub fn to_local_datetime(date: &DateOnly, time: &TimeOnly) -> Result<DateTime<Lo
             naive_time.format("%H:%M:%S%.3f")
         )),
     };
+}
+
+pub fn unix_ms_now() -> i64 {
+    let duration = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or(Duration::ZERO);
+
+    return duration.as_millis() as i64;
 }
 
 const MILLIS_PER_SECOND: i32 = 1_000;
