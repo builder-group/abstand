@@ -5,8 +5,8 @@ use super::{
         IntentionConditionTransition, IntentionEnforcementMode, IntentionSession,
     },
     repository::{
-        IntentionRepository, WriteIntentionBehaviorInput, WriteIntentionBlockInput,
-        WriteIntentionConditionInput, WriteIntentionInput,
+        IntentionRepository, IntentionSessionRepository, WriteIntentionBehaviorInput,
+        WriteIntentionBlockInput, WriteIntentionConditionInput, WriteIntentionInput,
     },
     types::{
         IntentionCreatedEvent, IntentionDeletedEvent, IntentionRuntimeState, IntentionUpdatedEvent,
@@ -39,6 +39,16 @@ pub async fn get_intention(
     intention_id: i64,
 ) -> Result<Option<Intention>, String> {
     return IntentionRepository::get_by_id(&state.pool, intention_id)
+        .await
+        .map_err(|error| error.to_string());
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn get_active_intention_sessions(
+    state: State<'_, DatabaseState>,
+) -> Result<Vec<IntentionSession>, String> {
+    return IntentionSessionRepository::get_active_sessions(&state.pool)
         .await
         .map_err(|error| error.to_string());
 }

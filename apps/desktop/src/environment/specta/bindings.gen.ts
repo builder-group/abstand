@@ -54,6 +54,14 @@ async getIntention(intentionId: number) : Promise<Result<Intention | null, strin
     else return { status: "error", error: e  as any };
 }
 },
+async getActiveIntentionSessions() : Promise<Result<IntentionSession[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_active_intention_sessions") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async createIntention(params: CreateIntentionParams) : Promise<Result<Intention, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("create_intention", { params }) };
