@@ -62,6 +62,30 @@ async createIntention(params: CreateIntentionParams) : Promise<Result<Intention,
     else return { status: "error", error: e  as any };
 }
 },
+async updateIntention(params: UpdateIntentionParams) : Promise<Result<Intention, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("update_intention", { params }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async deleteIntention(intentionId: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("delete_intention", { intentionId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async startIntention(intentionId: number) : Promise<Result<IntentionSession, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("start_intention", { intentionId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getShortcutConfigs() : Promise<ShortcutActionConfigDto[]> {
     return await TAURI_INVOKE("get_shortcut_configs");
 },
@@ -85,6 +109,7 @@ export const events = __makeEvents__<{
 appSettingsChangedEvent: AppSettingsChangedEvent,
 catalogAssetLoadedEvent: CatalogAssetLoadedEvent,
 intentionCreatedEvent: IntentionCreatedEvent,
+intentionDeletedEvent: IntentionDeletedEvent,
 intentionSessionCompletedEvent: IntentionSessionCompletedEvent,
 intentionSessionStartedEvent: IntentionSessionStartedEvent,
 intentionSessionStoppedEvent: IntentionSessionStoppedEvent,
@@ -94,6 +119,7 @@ shortcutTriggeredEvent: ShortcutTriggeredEvent
 appSettingsChangedEvent: "app-settings-changed-event",
 catalogAssetLoadedEvent: "catalog-asset-loaded-event",
 intentionCreatedEvent: "intention-created-event",
+intentionDeletedEvent: "intention-deleted-event",
 intentionSessionCompletedEvent: "intention-session-completed-event",
 intentionSessionStartedEvent: "intention-session-started-event",
 intentionSessionStoppedEvent: "intention-session-stopped-event",
@@ -139,15 +165,7 @@ export type CatalogIconMode = { type: "skip" } | { type: "eager"; includeColor: 
 export type CatalogItemId = { type: "app"; stableId: string; bundleId: string | null } | { type: "website"; hostname: string }
 export type CatalogSearchResultDto = { type: "app"; app: CatalogAppSearchResultDto; score: number } | { type: "website"; website: CatalogWebsiteSearchResultDto; score: number }
 export type CatalogWebsiteSearchResultDto = { hostname: string; name: string | null; icon: string | null; color: string | null }
-export type CreateIntentionBehaviorParams = ({ type: "block" } & CreateIntentionBlockParams) | { type: "break" }
-export type CreateIntentionBlockAppTargetParams = { stableId: string; name: string | null; bundleId: string | null; processPath: string | null; icon: string | null; color: string | null }
-export type CreateIntentionBlockParams = { enforcementMode: IntentionEnforcementMode; scope: IntentionBlockScope; targets: CreateIntentionBlockTargetParams[] }
-export type CreateIntentionBlockTargetParams = ({ type: "app" } & CreateIntentionBlockAppTargetParams) | ({ type: "website" } & CreateIntentionBlockWebsiteTargetParams)
-export type CreateIntentionBlockWebsiteTargetParams = { hostname: string; name: string | null; icon: string | null; color: string | null }
-export type CreateIntentionConditionDateTimeRuleParams = { dateEpochDays: DateOnly; timeOfDayMs: TimeOnly }
-export type CreateIntentionConditionParams = { transition: IntentionConditionTransition; rule: CreateIntentionConditionRuleParams }
-export type CreateIntentionConditionRuleParams = ({ type: "schedule" } & IntentionConditionScheduleRule) | ({ type: "dateTime" } & CreateIntentionConditionDateTimeRuleParams) | ({ type: "afterTransition" } & IntentionConditionAfterTransitionRule) | { type: "manual" }
-export type CreateIntentionParams = { name: string; behavior: CreateIntentionBehaviorParams; conditions: CreateIntentionConditionParams[] }
+export type CreateIntentionParams = { name: string; behavior: WriteIntentionBehaviorParams; conditions: WriteIntentionConditionParams[] }
 export type DateOnly = number
 export type DeveloperSettings = { enabled: boolean }
 export type Intention = { id: number; name: string; behavior: IntentionBehavior; conditions: IntentionCondition[]; updatedAt: number; createdAt: number }
@@ -161,9 +179,12 @@ export type IntentionConditionRule = ({ type: "schedule" } & IntentionConditionS
 export type IntentionConditionScheduleRule = { timeOfDayMs: TimeOnly; weekdaysMask: WeekdayMask | null }
 export type IntentionConditionTransition = "start" | "end"
 export type IntentionCreatedEvent = { intentionId: number }
+export type IntentionDeletedEvent = { intentionId: number }
 export type IntentionEnforcementMode = "casual" | "balanced" | "strict"
+export type IntentionSession = { id: number; intentionId: number; status: IntentionSessionStatus; startedAt: number; startConditionId: number | null; endedAt: number | null; endConditionId: number | null; updatedAt: number; createdAt: number }
 export type IntentionSessionCompletedEvent = { intentionId: number; sessionId: number }
 export type IntentionSessionStartedEvent = { intentionId: number; sessionId: number }
+export type IntentionSessionStatus = "active" | "completed" | "stopped"
 export type IntentionSessionStoppedEvent = { intentionId: number; sessionId: number }
 export type IntentionUpdatedEvent = { intentionId: number }
 export type KeyboardShortcut = { modifiers: ShortcutModifier[]; 
@@ -181,6 +202,7 @@ export type Stage = "dev" | "prod"
 export type SystemTypographyDto = { baseFontSize: number; smallFontSize: number }
 export type Theme = "light" | "dark" | "auto"
 export type TimeOnly = number
+export type UpdateIntentionParams = { intentionId: number; name: string; behavior: WriteIntentionBehaviorParams; conditions: WriteIntentionConditionParams[] }
 export type Website = { 
 /**
  * Database row identifier for persisted website records.
@@ -191,6 +213,14 @@ id: number;
  */
 hostname: string; name: string | null; icon: string | null; color: string | null }
 export type WeekdayMask = number
+export type WriteIntentionBehaviorParams = ({ type: "block" } & WriteIntentionBlockParams) | { type: "break" }
+export type WriteIntentionBlockAppTargetParams = { stableId: string; name: string | null; bundleId: string | null; processPath: string | null; icon: string | null; color: string | null }
+export type WriteIntentionBlockParams = { enforcementMode: IntentionEnforcementMode; scope: IntentionBlockScope; targets: WriteIntentionBlockTargetParams[] }
+export type WriteIntentionBlockTargetParams = ({ type: "app" } & WriteIntentionBlockAppTargetParams) | ({ type: "website" } & WriteIntentionBlockWebsiteTargetParams)
+export type WriteIntentionBlockWebsiteTargetParams = { hostname: string; name: string | null; icon: string | null; color: string | null }
+export type WriteIntentionConditionDateTimeRuleParams = { dateEpochDays: DateOnly; timeOfDayMs: TimeOnly }
+export type WriteIntentionConditionParams = { transition: IntentionConditionTransition; rule: WriteIntentionConditionRuleParams }
+export type WriteIntentionConditionRuleParams = ({ type: "schedule" } & IntentionConditionScheduleRule) | ({ type: "dateTime" } & WriteIntentionConditionDateTimeRuleParams) | ({ type: "afterTransition" } & IntentionConditionAfterTransitionRule) | { type: "manual" }
 
 /** tauri-specta globals **/
 

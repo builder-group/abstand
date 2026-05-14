@@ -2,7 +2,7 @@ use super::{
     intention::{
         Intention, IntentionBlockScope, IntentionConditionAfterTransitionRule,
         IntentionConditionDateTimeRule, IntentionConditionRule, IntentionConditionScheduleRule,
-        IntentionConditionTransition, IntentionEnforcementMode,
+        IntentionConditionTransition, IntentionEnforcementMode, IntentionSession,
     },
     repository::{
         IntentionRepository, WriteIntentionBehaviorInput, WriteIntentionBlockInput,
@@ -76,24 +76,23 @@ pub async fn update_intention(
     state: State<'_, DatabaseState>,
     runtime: State<'_, IntentionRuntimeState>,
     params: UpdateIntentionParams,
-) -> Result<Option<Intention>, String> {
+) -> Result<Intention, String> {
     let input = build_write_intention_input(params.name, params.behavior, params.conditions)?;
 
     let intention = IntentionRepository::update(&state.pool, params.intention_id, input)
         .await
+        .map_err(|error| error.to_string())?
+        .ok_or_else(|| format!("Intention {} does not exist", params.intention_id))?;
+
+    runtime
+        .resync_intention(&app, intention.id)
+        .await
         .map_err(|error| error.to_string())?;
 
-    if let Some(intention) = &intention {
-        runtime
-            .resync_intention(&app, intention.id)
-            .await
-            .map_err(|error| error.to_string())?;
-
-        let _ = IntentionUpdatedEvent {
-            intention_id: intention.id,
-        }
-        .emit(&app);
+    let _ = IntentionUpdatedEvent {
+        intention_id: intention.id,
     }
+    .emit(&app);
 
     return Ok(intention);
 }
@@ -110,12 +109,27 @@ pub async fn delete_intention(
         .await
         .map_err(|error| error.to_string())?;
 
-    if did_delete {
-        runtime.clear_intention_jobs(&app, intention_id);
-        let _ = IntentionDeletedEvent { intention_id }.emit(&app);
+    if !did_delete {
+        return Err(format!("Intention {} does not exist", intention_id));
     }
 
+    runtime.clear_intention_jobs(&app, intention_id);
+    let _ = IntentionDeletedEvent { intention_id }.emit(&app);
+
     return Ok(());
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn start_intention(
+    app: AppHandle,
+    runtime: State<'_, IntentionRuntimeState>,
+    intention_id: i64,
+) -> Result<IntentionSession, String> {
+    return runtime
+        .start_intention(&app, intention_id)
+        .await
+        .map_err(|error| error.to_string());
 }
 
 fn build_write_intention_input(

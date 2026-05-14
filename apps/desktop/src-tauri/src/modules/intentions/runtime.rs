@@ -1,5 +1,7 @@
 use super::{
-    intention::{Intention, IntentionConditionRule, IntentionConditionTransition},
+    intention::{
+        Intention, IntentionConditionRule, IntentionConditionTransition, IntentionSession,
+    },
     repository::{
         CreateIntentionSessionInput, IntentionRepository, IntentionRepositoryError,
         IntentionSessionRepository, IntentionSessionRepositoryError,
@@ -84,6 +86,16 @@ impl IntentionRuntime {
         }
     }
 
+    pub async fn start_intention(
+        &self,
+        app: &AppHandle,
+        intention_id: i64,
+    ) -> Result<IntentionSession, IntentionRuntimeError> {
+        return self
+            .start_intention_session(app, intention_id, None, unix_ms_now())
+            .await;
+    }
+
     fn schedule_start_conditions(&self, app: &AppHandle, intention: &Intention) {
         let now = unix_ms_now();
         for condition in intention
@@ -120,11 +132,15 @@ impl IntentionRuntime {
             move |app| {
                 tauri::async_runtime::spawn(async move {
                     let runtime = app.state::<IntentionRuntimeState>();
-                    if let Err(error) = runtime
-                        .start_intention_session(&app, intention_id, condition_id, trigger_at)
+                    match runtime
+                        .start_intention_session(&app, intention_id, Some(condition_id), trigger_at)
                         .await
                     {
-                        eprintln!("Failed to start intention session: {}", error);
+                        Ok(_) => {}
+                        Err(IntentionRuntimeError::IntentionNotFound(_)) => {}
+                        Err(error) => {
+                            eprintln!("Failed to start intention session: {}", error);
+                        }
                     }
                 });
             },
@@ -143,15 +159,15 @@ impl IntentionRuntime {
         &self,
         app: &AppHandle,
         intention_id: i64,
-        condition_id: i64,
+        start_condition_id: Option<i64>,
         started_at: i64,
-    ) -> Result<(), IntentionRuntimeError> {
+    ) -> Result<IntentionSession, IntentionRuntimeError> {
         let database = app.state::<DatabaseState>();
         if IntentionRepository::get_by_id(&database.pool, intention_id)
             .await?
             .is_none()
         {
-            return Ok(());
+            return Err(IntentionRuntimeError::IntentionNotFound(intention_id));
         }
 
         let active_session = IntentionSessionRepository::get_active_session_by_intention_id(
@@ -159,8 +175,8 @@ impl IntentionRuntime {
             intention_id,
         )
         .await?;
-        if active_session.is_some() {
-            return Ok(());
+        if let Some(active_session) = active_session {
+            return Ok(active_session);
         }
 
         let Some(session) = IntentionSessionRepository::create_session_if_inactive(
@@ -168,12 +184,24 @@ impl IntentionRuntime {
             CreateIntentionSessionInput {
                 intention_id,
                 started_at,
-                start_condition_id: Some(condition_id),
+                start_condition_id,
             },
         )
         .await?
         else {
-            return Ok(());
+            let session = IntentionSessionRepository::get_active_session_by_intention_id(
+                &database.pool,
+                intention_id,
+            )
+            .await
+            .map_err(IntentionRuntimeError::from)?;
+
+            let session = session.ok_or(IntentionRuntimeError::InvalidRuntimeState(format!(
+                "Active intention session for intention {} could not be reloaded",
+                intention_id
+            )))?;
+
+            return Ok(session);
         };
 
         let _ = IntentionSessionStartedEvent {
@@ -183,7 +211,7 @@ impl IntentionRuntime {
         .emit(app);
 
         self.resync_intention(app, intention_id).await?;
-        return Ok(());
+        return Ok(session);
     }
 }
 
@@ -212,6 +240,8 @@ impl IntentionRuntimeJobKey {
 
 #[derive(Debug)]
 pub enum IntentionRuntimeError {
+    IntentionNotFound(i64),
+    InvalidRuntimeState(String),
     IntentionRepository(IntentionRepositoryError),
     SessionRepository(IntentionSessionRepositoryError),
 }
@@ -219,6 +249,10 @@ pub enum IntentionRuntimeError {
 impl fmt::Display for IntentionRuntimeError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         return match self {
+            Self::IntentionNotFound(intention_id) => {
+                write!(f, "Intention {} does not exist", intention_id)
+            }
+            Self::InvalidRuntimeState(message) => write!(f, "{}", message),
             Self::IntentionRepository(error) => write!(f, "{}", error),
             Self::SessionRepository(error) => write!(f, "{}", error),
         };

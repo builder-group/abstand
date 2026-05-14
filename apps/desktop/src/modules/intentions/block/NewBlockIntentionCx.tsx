@@ -188,30 +188,28 @@ export class NewBlockIntentionCx {
 			return Err({ code: 'invalidForm' });
 		}
 
-		const targets = formData.selectedTargets.map(
-			(item): specta.CreateIntentionBlockTargetParams => {
-				switch (item.type) {
-					case 'app':
-						return {
-							type: 'app',
-							stableId: item.app.stableId,
-							name: item.app.name,
-							bundleId: item.app.bundleId,
-							processPath: item.app.processPath,
-							icon: item.app.icon,
-							color: item.app.color
-						};
-					case 'website':
-						return {
-							type: 'website',
-							hostname: item.website.hostname,
-							name: item.website.name,
-							icon: item.website.icon,
-							color: item.website.color
-						};
-				}
+		const targets = formData.selectedTargets.map((item): specta.WriteIntentionBlockTargetParams => {
+			switch (item.type) {
+				case 'app':
+					return {
+						type: 'app',
+						stableId: item.app.stableId,
+						name: item.app.name,
+						bundleId: item.app.bundleId,
+						processPath: item.app.processPath,
+						icon: item.app.icon,
+						color: item.app.color
+					};
+				case 'website':
+					return {
+						type: 'website',
+						hostname: item.website.hostname,
+						name: item.website.name,
+						icon: item.website.icon,
+						color: item.website.color
+					};
 			}
-		);
+		});
 
 		const [isIntentionOk, intentionErr, intention] = await this.intentionsCx.create({
 			name: formData.name.trim(),
