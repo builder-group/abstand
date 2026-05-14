@@ -868,13 +868,13 @@ impl IntentionSessionRepository {
         )
         .await?;
 
-        let session_id = sqlx::query_scalar::<_, i64>(
+        let row = sqlx::query_as::<_, IntentionSessionRow>(
             "INSERT INTO intention_session (intention_id, status, started_at, start_condition_id)
             SELECT ?, 'active', ?, ?
             WHERE NOT EXISTS (
                 SELECT 1 FROM intention_session WHERE intention_id = ? AND status = 'active'
             )
-            RETURNING id",
+            RETURNING id, intention_id, status, started_at, start_condition_id, ended_at, end_condition_id, updated_at, created_at",
         )
         .bind(input.intention_id)
         .bind(input.started_at)
@@ -885,19 +885,7 @@ impl IntentionSessionRepository {
 
         transaction.commit().await?;
 
-        let Some(session_id) = session_id else {
-            return Ok(None);
-        };
-
-        let session = Self::get_session_by_id(pool, session_id)
-            .await?
-            .ok_or_else(|| {
-                IntentionSessionRepositoryError::InvalidData(format!(
-                    "Created intention session {} could not be reloaded",
-                    session_id
-                ))
-            })?;
-        return Ok(Some(session));
+        return row.map(Self::build_session).transpose();
     }
 
     pub async fn complete_session(
@@ -922,8 +910,8 @@ impl IntentionSessionRepository {
         )
         .await?;
 
-        let session_id = sqlx::query_scalar::<_, i64>(
-            "UPDATE intention_session SET status = 'completed', ended_at = ?, end_condition_id = ? WHERE id = ? AND status = 'active' RETURNING id",
+        let row = sqlx::query_as::<_, IntentionSessionRow>(
+            "UPDATE intention_session SET status = 'completed', ended_at = ?, end_condition_id = ? WHERE id = ? AND status = 'active' RETURNING id, intention_id, status, started_at, start_condition_id, ended_at, end_condition_id, updated_at, created_at",
         )
         .bind(input.ended_at)
         .bind(input.end_condition_id)
@@ -933,11 +921,7 @@ impl IntentionSessionRepository {
 
         transaction.commit().await?;
 
-        let Some(session_id) = session_id else {
-            return Ok(None);
-        };
-
-        return Self::get_session_by_id(pool, session_id).await;
+        return row.map(Self::build_session).transpose();
     }
 
     pub async fn stop_session(
@@ -946,8 +930,8 @@ impl IntentionSessionRepository {
     ) -> Result<Option<IntentionSession>, IntentionSessionRepositoryError> {
         let mut transaction = pool.begin().await?;
 
-        let session_id = sqlx::query_scalar::<_, i64>(
-            "UPDATE intention_session SET status = 'stopped', ended_at = ?, end_condition_id = NULL WHERE id = ? AND status = 'active' RETURNING id",
+        let row = sqlx::query_as::<_, IntentionSessionRow>(
+            "UPDATE intention_session SET status = 'stopped', ended_at = ?, end_condition_id = NULL WHERE id = ? AND status = 'active' RETURNING id, intention_id, status, started_at, start_condition_id, ended_at, end_condition_id, updated_at, created_at",
         )
         .bind(input.ended_at)
         .bind(input.session_id)
@@ -956,11 +940,7 @@ impl IntentionSessionRepository {
 
         transaction.commit().await?;
 
-        let Some(session_id) = session_id else {
-            return Ok(None);
-        };
-
-        return Self::get_session_by_id(pool, session_id).await;
+        return row.map(Self::build_session).transpose();
     }
 
     async fn get_session_by_id<'e, E>(
