@@ -603,12 +603,6 @@ impl IntentionRepository {
             .map_err(IntentionRepositoryError::InvalidData)?;
         let rule = match row.rule_type.as_str() {
             "schedule" => {
-                if date_time_row.is_some() || after_transition_row.is_some() {
-                    return Err(IntentionRepositoryError::InvalidData(
-                        "Schedule condition has another rule payload".to_string(),
-                    ));
-                }
-
                 let schedule_row = schedule_row.ok_or_else(|| {
                     IntentionRepositoryError::InvalidData(
                         "Missing schedule payload for schedule condition".to_string(),
@@ -628,12 +622,6 @@ impl IntentionRepository {
                 })
             }
             "date_time" => {
-                if schedule_row.is_some() || after_transition_row.is_some() {
-                    return Err(IntentionRepositoryError::InvalidData(
-                        "Date-time condition has another rule payload".to_string(),
-                    ));
-                }
-
                 let date_time_row = date_time_row.ok_or_else(|| {
                     IntentionRepositoryError::InvalidData(
                         "Missing date-time payload for date-time condition".to_string(),
@@ -651,12 +639,6 @@ impl IntentionRepository {
                 })
             }
             "after_transition" => {
-                if schedule_row.is_some() || date_time_row.is_some() {
-                    return Err(IntentionRepositoryError::InvalidData(
-                        "After-transition condition has another rule payload".to_string(),
-                    ));
-                }
-
                 let after_transition_row = after_transition_row.ok_or_else(|| {
                     IntentionRepositoryError::InvalidData(
                         "Missing after-transition payload for after-transition condition"
@@ -671,18 +653,7 @@ impl IntentionRepository {
                     offset_ms: after_transition_row.offset_ms,
                 })
             }
-            "manual" => {
-                if schedule_row.is_some()
-                    || date_time_row.is_some()
-                    || after_transition_row.is_some()
-                {
-                    return Err(IntentionRepositoryError::InvalidData(
-                        "Manual condition has rule payload".to_string(),
-                    ));
-                }
-
-                IntentionConditionRule::Manual
-            }
+            "manual" => IntentionConditionRule::Manual,
             _ => {
                 return Err(IntentionRepositoryError::InvalidData(format!(
                     "Unknown intention condition type: {}",
@@ -869,17 +840,13 @@ impl IntentionSessionRepository {
         .await?;
 
         let row = sqlx::query_as::<_, IntentionSessionRow>(
-            "INSERT INTO intention_session (intention_id, status, started_at, start_condition_id)
-            SELECT ?, 'active', ?, ?
-            WHERE NOT EXISTS (
-                SELECT 1 FROM intention_session WHERE intention_id = ? AND status = 'active'
-            )
+            "INSERT INTO intention_session (intention_id, status, started_at, start_condition_id) VALUES (?, 'active', ?, ?)
+            ON CONFLICT DO NOTHING
             RETURNING id, intention_id, status, started_at, start_condition_id, ended_at, end_condition_id, updated_at, created_at",
         )
         .bind(input.intention_id)
         .bind(input.started_at)
         .bind(input.start_condition_id)
-        .bind(input.intention_id)
         .fetch_optional(&mut *transaction)
         .await?;
 
@@ -910,8 +877,8 @@ impl IntentionSessionRepository {
         )
         .await?;
 
-        let row = sqlx::query_as::<_, IntentionSessionRow>(
-            "UPDATE intention_session SET status = 'completed', ended_at = ?, end_condition_id = ? WHERE id = ? AND status = 'active' RETURNING id, intention_id, status, started_at, start_condition_id, ended_at, end_condition_id, updated_at, created_at",
+        let session_id = sqlx::query_scalar::<_, i64>(
+            "UPDATE intention_session SET status = 'completed', ended_at = ?, end_condition_id = ? WHERE id = ? AND status = 'active' RETURNING id",
         )
         .bind(input.ended_at)
         .bind(input.end_condition_id)
@@ -921,7 +888,20 @@ impl IntentionSessionRepository {
 
         transaction.commit().await?;
 
-        return row.map(Self::build_session).transpose();
+        let Some(session_id) = session_id else {
+            return Ok(None);
+        };
+
+        // Note: reload after commit so AFTER UPDATE triggers are reflected in updated_at
+        let session = Self::get_session_by_id(pool, session_id)
+            .await?
+            .ok_or_else(|| {
+                IntentionSessionRepositoryError::InvalidData(format!(
+                    "Updated intention session {} could not be reloaded",
+                    session_id
+                ))
+            })?;
+        return Ok(Some(session));
     }
 
     pub async fn stop_session(
@@ -930,8 +910,8 @@ impl IntentionSessionRepository {
     ) -> Result<Option<IntentionSession>, IntentionSessionRepositoryError> {
         let mut transaction = pool.begin().await?;
 
-        let row = sqlx::query_as::<_, IntentionSessionRow>(
-            "UPDATE intention_session SET status = 'stopped', ended_at = ?, end_condition_id = NULL WHERE id = ? AND status = 'active' RETURNING id, intention_id, status, started_at, start_condition_id, ended_at, end_condition_id, updated_at, created_at",
+        let session_id = sqlx::query_scalar::<_, i64>(
+            "UPDATE intention_session SET status = 'stopped', ended_at = ?, end_condition_id = NULL WHERE id = ? AND status = 'active' RETURNING id",
         )
         .bind(input.ended_at)
         .bind(input.session_id)
@@ -940,7 +920,20 @@ impl IntentionSessionRepository {
 
         transaction.commit().await?;
 
-        return row.map(Self::build_session).transpose();
+        let Some(session_id) = session_id else {
+            return Ok(None);
+        };
+
+        // Note: reload after commit so AFTER UPDATE triggers are reflected in updated_at
+        let session = Self::get_session_by_id(pool, session_id)
+            .await?
+            .ok_or_else(|| {
+                IntentionSessionRepositoryError::InvalidData(format!(
+                    "Updated intention session {} could not be reloaded",
+                    session_id
+                ))
+            })?;
+        return Ok(Some(session));
     }
 
     async fn get_session_by_id<'e, E>(
