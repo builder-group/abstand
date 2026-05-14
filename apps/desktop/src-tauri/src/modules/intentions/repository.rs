@@ -3,7 +3,7 @@ use super::{
         Intention, IntentionBehavior, IntentionBlock, IntentionBlockScope, IntentionCondition,
         IntentionConditionAfterTransitionRule, IntentionConditionDateTimeRule,
         IntentionConditionRule, IntentionConditionScheduleRule, IntentionConditionTransition,
-        IntentionEnforcementMode,
+        IntentionEnforcementMode, IntentionSession, IntentionSessionStatus,
     },
     types::IntentionBehaviorType,
 };
@@ -21,6 +21,8 @@ use std::{
     collections::{HashMap, HashSet},
     fmt,
 };
+
+// MARK: - Intention Repository
 
 pub struct IntentionRepository;
 
@@ -633,37 +635,6 @@ impl IntentionRepository {
     }
 }
 
-#[derive(Debug)]
-pub enum IntentionRepositoryError {
-    Database(sqlx::Error),
-    Catalog(CatalogRepositoryError),
-    InvalidData(String),
-}
-
-impl fmt::Display for IntentionRepositoryError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        return match self {
-            Self::Database(error) => write!(f, "{}", error),
-            Self::Catalog(error) => write!(f, "{}", error),
-            Self::InvalidData(message) => write!(f, "{}", message),
-        };
-    }
-}
-
-impl From<sqlx::Error> for IntentionRepositoryError {
-    fn from(value: sqlx::Error) -> Self {
-        return Self::Database(value);
-    }
-}
-
-impl From<CatalogRepositoryError> for IntentionRepositoryError {
-    fn from(value: CatalogRepositoryError) -> Self {
-        return Self::Catalog(value);
-    }
-}
-
-// MARK: - Row
-
 #[derive(Debug, Clone, FromRow)]
 struct IntentionRow {
     id: i64,
@@ -724,8 +695,6 @@ struct IntentionConditionAfterTransitionRow {
     offset_ms: i64,
 }
 
-// MARK: - Input
-
 pub struct CreateIntentionInput {
     pub name: String,
     pub behavior: CreateIntentionBehaviorInput,
@@ -754,4 +723,284 @@ pub struct CreateIntentionBlockInput {
 pub struct CreateIntentionConditionInput {
     pub transition: IntentionConditionTransition,
     pub rule: IntentionConditionRule,
+}
+
+#[derive(Debug)]
+pub enum IntentionRepositoryError {
+    Database(sqlx::Error),
+    Catalog(CatalogRepositoryError),
+    InvalidData(String),
+}
+
+impl fmt::Display for IntentionRepositoryError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        return match self {
+            Self::Database(error) => write!(f, "{}", error),
+            Self::Catalog(error) => write!(f, "{}", error),
+            Self::InvalidData(message) => write!(f, "{}", message),
+        };
+    }
+}
+
+impl From<sqlx::Error> for IntentionRepositoryError {
+    fn from(value: sqlx::Error) -> Self {
+        return Self::Database(value);
+    }
+}
+
+impl From<CatalogRepositoryError> for IntentionRepositoryError {
+    fn from(value: CatalogRepositoryError) -> Self {
+        return Self::Catalog(value);
+    }
+}
+
+// MARK: - Intention Session Repository
+
+pub struct IntentionSessionRepository;
+
+impl IntentionSessionRepository {
+    pub async fn get_active_sessions(
+        pool: &Pool<Sqlite>,
+    ) -> Result<Vec<IntentionSession>, IntentionSessionRepositoryError> {
+        let rows = sqlx::query_as::<_, IntentionSessionRow>(
+            "SELECT id, intention_id, status, started_at, start_condition_id, ended_at, end_condition_id, updated_at, created_at FROM intention_session WHERE status = 'active' ORDER BY started_at ASC, id ASC",
+        )
+        .fetch_all(pool)
+        .await?;
+
+        return rows
+            .into_iter()
+            .map(Self::build_session)
+            .collect::<Result<Vec<_>, _>>();
+    }
+
+    pub async fn create_session(
+        pool: &Pool<Sqlite>,
+        input: CreateIntentionSessionInput,
+    ) -> Result<IntentionSession, IntentionSessionRepositoryError> {
+        let mut transaction = pool.begin().await?;
+
+        Self::validate_session_condition(
+            &mut transaction,
+            input.intention_id,
+            input.start_condition_id,
+            IntentionConditionTransition::Start,
+        )
+        .await?;
+
+        let session_id = sqlx::query_scalar::<_, i64>(
+            "INSERT INTO intention_session (intention_id, status, started_at, start_condition_id) VALUES (?, 'active', ?, ?) RETURNING id",
+        )
+        .bind(input.intention_id)
+        .bind(input.started_at)
+        .bind(input.start_condition_id)
+        .fetch_one(&mut *transaction)
+        .await?;
+
+        transaction.commit().await?;
+
+        let session = Self::get_session_by_id(pool, session_id).await?;
+        return session.ok_or_else(|| {
+            IntentionSessionRepositoryError::InvalidData(format!(
+                "Created intention session {} could not be reloaded",
+                session_id
+            ))
+        });
+    }
+
+    pub async fn complete_session(
+        pool: &Pool<Sqlite>,
+        input: CompleteIntentionSessionInput,
+    ) -> Result<Option<IntentionSession>, IntentionSessionRepositoryError> {
+        let mut transaction = pool.begin().await?;
+        let session = Self::get_session_by_id(&mut *transaction, input.session_id)
+            .await?
+            .ok_or_else(|| {
+                IntentionSessionRepositoryError::InvalidData(format!(
+                    "Intention session {} does not exist",
+                    input.session_id
+                ))
+            })?;
+
+        Self::validate_session_condition(
+            &mut transaction,
+            session.intention_id,
+            input.end_condition_id,
+            IntentionConditionTransition::End,
+        )
+        .await?;
+
+        let session_id = sqlx::query_scalar::<_, i64>(
+            "UPDATE intention_session SET status = 'completed', ended_at = ?, end_condition_id = ? WHERE id = ? AND status = 'active' RETURNING id",
+        )
+        .bind(input.ended_at)
+        .bind(input.end_condition_id)
+        .bind(input.session_id)
+        .fetch_optional(&mut *transaction)
+        .await?;
+
+        transaction.commit().await?;
+
+        let Some(session_id) = session_id else {
+            return Ok(None);
+        };
+
+        return Self::get_session_by_id(pool, session_id).await;
+    }
+
+    pub async fn stop_session(
+        pool: &Pool<Sqlite>,
+        input: StopIntentionSessionInput,
+    ) -> Result<Option<IntentionSession>, IntentionSessionRepositoryError> {
+        let mut transaction = pool.begin().await?;
+
+        let session_id = sqlx::query_scalar::<_, i64>(
+            "UPDATE intention_session SET status = 'stopped', ended_at = ?, end_condition_id = NULL WHERE id = ? AND status = 'active' RETURNING id",
+        )
+        .bind(input.ended_at)
+        .bind(input.session_id)
+        .fetch_optional(&mut *transaction)
+        .await?;
+
+        transaction.commit().await?;
+
+        let Some(session_id) = session_id else {
+            return Ok(None);
+        };
+
+        return Self::get_session_by_id(pool, session_id).await;
+    }
+
+    async fn get_session_by_id<'e, E>(
+        executor: E,
+        session_id: i64,
+    ) -> Result<Option<IntentionSession>, IntentionSessionRepositoryError>
+    where
+        E: sqlx::Executor<'e, Database = Sqlite>,
+    {
+        let row = sqlx::query_as::<_, IntentionSessionRow>(
+            "SELECT id, intention_id, status, started_at, start_condition_id, ended_at, end_condition_id, updated_at, created_at FROM intention_session WHERE id = ?",
+        )
+        .bind(session_id)
+        .fetch_optional(executor)
+        .await?;
+
+        return row.map(Self::build_session).transpose();
+    }
+
+    async fn validate_session_condition(
+        transaction: &mut sqlx::Transaction<'_, Sqlite>,
+        intention_id: i64,
+        condition_id: Option<i64>,
+        transition: IntentionConditionTransition,
+    ) -> Result<(), IntentionSessionRepositoryError> {
+        let Some(condition_id) = condition_id else {
+            return Ok(());
+        };
+
+        let condition = sqlx::query_as::<_, IntentionSessionConditionRow>(
+            "SELECT intention_id, transition FROM intention_condition WHERE id = ?",
+        )
+        .bind(condition_id)
+        .fetch_optional(&mut **transaction)
+        .await?;
+
+        let Some(condition) = condition else {
+            return Err(IntentionSessionRepositoryError::InvalidData(format!(
+                "Intention condition {} does not exist",
+                condition_id
+            )));
+        };
+
+        if condition.intention_id != intention_id {
+            return Err(IntentionSessionRepositoryError::InvalidData(format!(
+                "Intention condition {} does not belong to intention {}",
+                condition_id, intention_id
+            )));
+        }
+
+        if condition.transition != transition.as_str() {
+            return Err(IntentionSessionRepositoryError::InvalidData(format!(
+                "Intention condition {} is not a {} condition",
+                condition_id,
+                transition.as_str()
+            )));
+        }
+
+        return Ok(());
+    }
+
+    fn build_session(
+        row: IntentionSessionRow,
+    ) -> Result<IntentionSession, IntentionSessionRepositoryError> {
+        return Ok(IntentionSession {
+            id: row.id,
+            intention_id: row.intention_id,
+            status: IntentionSessionStatus::from_str(&row.status)
+                .map_err(IntentionSessionRepositoryError::InvalidData)?,
+            started_at: row.started_at,
+            start_condition_id: row.start_condition_id,
+            ended_at: row.ended_at,
+            end_condition_id: row.end_condition_id,
+            updated_at: row.updated_at,
+            created_at: row.created_at,
+        });
+    }
+}
+
+#[derive(Debug, Clone, FromRow)]
+struct IntentionSessionRow {
+    id: i64,
+    intention_id: i64,
+    status: String,
+    started_at: i64,
+    start_condition_id: Option<i64>,
+    ended_at: Option<i64>,
+    end_condition_id: Option<i64>,
+    updated_at: i64,
+    created_at: i64,
+}
+
+#[derive(Debug, Clone, FromRow)]
+struct IntentionSessionConditionRow {
+    intention_id: i64,
+    transition: String,
+}
+
+pub struct CreateIntentionSessionInput {
+    pub intention_id: i64,
+    pub started_at: i64,
+    pub start_condition_id: Option<i64>,
+}
+
+pub struct CompleteIntentionSessionInput {
+    pub session_id: i64,
+    pub ended_at: i64,
+    pub end_condition_id: Option<i64>,
+}
+
+pub struct StopIntentionSessionInput {
+    pub session_id: i64,
+    pub ended_at: i64,
+}
+
+#[derive(Debug)]
+pub enum IntentionSessionRepositoryError {
+    Database(sqlx::Error),
+    InvalidData(String),
+}
+
+impl fmt::Display for IntentionSessionRepositoryError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        return match self {
+            Self::Database(error) => write!(f, "{}", error),
+            Self::InvalidData(message) => write!(f, "{}", message),
+        };
+    }
+}
+
+impl From<sqlx::Error> for IntentionSessionRepositoryError {
+    fn from(value: sqlx::Error) -> Self {
+        return Self::Database(value);
+    }
 }

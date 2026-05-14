@@ -149,6 +149,45 @@ CREATE TABLE intention_condition_after_transition (
     CHECK (offset_ms > 0)
 );
 
+-- MARK: - Intention Sessions
+
+-- Runtime occurrence of an intention becoming active
+CREATE TABLE intention_session (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    intention_id INTEGER NOT NULL REFERENCES intention (id) ON DELETE CASCADE,
+    status TEXT NOT NULL CHECK (status IN ('active', 'completed', 'stopped')),
+    started_at INTEGER NOT NULL,
+    start_condition_id INTEGER REFERENCES intention_condition (id) ON DELETE SET NULL,
+    ended_at INTEGER,
+    end_condition_id INTEGER REFERENCES intention_condition (id) ON DELETE SET NULL,
+    updated_at INTEGER NOT NULL DEFAULT (CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)),
+    created_at INTEGER NOT NULL DEFAULT (CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)),
+    -- Note: Condition IDs are best-effort provenance because intention conditions are editable config
+    CHECK (
+        (
+            status = 'active'
+            AND ended_at IS NULL
+            AND end_condition_id IS NULL
+        )
+        OR (
+            status = 'completed'
+            AND ended_at IS NOT NULL
+        )
+        OR (
+            status = 'stopped'
+            AND ended_at IS NOT NULL
+            AND end_condition_id IS NULL
+        )
+    ),
+    CHECK (ended_at IS NULL OR ended_at >= started_at)
+);
+
+CREATE INDEX idx_intention_session_intention_id ON intention_session (intention_id);
+
+CREATE UNIQUE INDEX intention_session_one_active_per_intention
+ON intention_session (intention_id)
+WHERE status = 'active';
+
 -- MARK: - Updated At Triggers
 
 CREATE TRIGGER app_set_updated_at
@@ -430,4 +469,17 @@ BEGIN
         ELSE CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)
     END
     WHERE id = OLD.condition_id;
+END;
+
+CREATE TRIGGER intention_session_set_updated_at
+AFTER UPDATE ON intention_session
+FOR EACH ROW
+WHEN NEW.updated_at = OLD.updated_at
+BEGIN
+    UPDATE intention_session
+    SET updated_at = CASE
+        WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= OLD.updated_at THEN OLD.updated_at + 1
+        ELSE CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)
+    END
+    WHERE id = NEW.id;
 END;

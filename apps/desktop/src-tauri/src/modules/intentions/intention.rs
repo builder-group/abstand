@@ -181,3 +181,46 @@ pub struct IntentionConditionAfterTransitionRule {
     pub anchor_transition: IntentionConditionTransition,
     pub offset_ms: i64,
 }
+
+// MARK: - Intention Session
+
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct IntentionSession {
+    pub id: i64,
+    pub intention_id: i64,
+    pub status: IntentionSessionStatus,
+    pub started_at: i64,
+    pub start_condition_id: Option<i64>,
+    pub ended_at: Option<i64>,
+    pub end_condition_id: Option<i64>,
+    pub updated_at: i64,
+    pub created_at: i64,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub enum IntentionSessionStatus {
+    Active,
+    Completed,
+    Stopped,
+}
+
+impl IntentionSessionStatus {
+    pub fn as_str(&self) -> &'static str {
+        return match self {
+            Self::Active => "active",
+            Self::Completed => "completed",
+            Self::Stopped => "stopped",
+        };
+    }
+
+    pub fn from_str(value: &str) -> Result<Self, String> {
+        return match value {
+            "active" => Ok(Self::Active),
+            "completed" => Ok(Self::Completed),
+            "stopped" => Ok(Self::Stopped),
+            _ => Err(format!("Unknown intention session status: {}", value)),
+        };
+    }
+}
