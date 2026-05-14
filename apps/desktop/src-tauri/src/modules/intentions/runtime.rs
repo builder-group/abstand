@@ -2,7 +2,10 @@ use super::repository::{
     IntentionRepository, IntentionRepositoryError, IntentionSessionRepository,
     IntentionSessionRepositoryError,
 };
-use crate::modules::{db::types::DatabaseState, scheduler::scheduler::ScheduledJobId};
+use crate::modules::{
+    db::types::DatabaseState,
+    scheduler::{scheduler::ScheduledJobId, types::SchedulerState},
+};
 use std::{collections::HashMap, fmt, sync::Mutex};
 use tauri::{App, AppHandle, Manager};
 
@@ -45,13 +48,50 @@ impl IntentionRuntime {
 
         return Ok(());
     }
+
+    pub fn clear_intention_jobs(&self, app: &AppHandle, intention_id: i64) {
+        let scheduled_job_ids = {
+            let mut scheduled_jobs = self.scheduled_jobs.lock().unwrap();
+            let job_keys = scheduled_jobs
+                .keys()
+                .copied()
+                .filter(|job_key| job_key.intention_id() == intention_id)
+                .collect::<Vec<_>>();
+
+            job_keys
+                .into_iter()
+                .filter_map(|job_key| scheduled_jobs.remove(&job_key))
+                .collect::<Vec<_>>()
+        };
+
+        let scheduler = app.state::<SchedulerState>();
+        for scheduled_job_id in scheduled_job_ids {
+            scheduler.0.cancel(scheduled_job_id);
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[allow(dead_code)]
 enum IntentionRuntimeJobKey {
-    StartCondition { condition_id: i64 },
-    EndCondition { session_id: i64, condition_id: i64 },
+    StartCondition {
+        intention_id: i64,
+        condition_id: i64,
+    },
+    EndCondition {
+        intention_id: i64,
+        session_id: i64,
+        condition_id: i64,
+    },
+}
+
+impl IntentionRuntimeJobKey {
+    fn intention_id(&self) -> i64 {
+        return match self {
+            Self::StartCondition { intention_id, .. } => *intention_id,
+            Self::EndCondition { intention_id, .. } => *intention_id,
+        };
+    }
 }
 
 #[derive(Debug)]

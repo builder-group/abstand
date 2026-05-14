@@ -8,7 +8,7 @@ use super::{
         CreateIntentionBehaviorInput, CreateIntentionBlockInput, CreateIntentionConditionInput,
         CreateIntentionInput, IntentionRepository,
     },
-    types::{IntentionCreatedEvent, IntentionRuntimeState},
+    types::{IntentionCreatedEvent, IntentionDeletedEvent, IntentionRuntimeState},
 };
 use crate::{
     common::time::{to_local_datetime, DateOnly, TimeOnly},
@@ -180,6 +180,26 @@ pub async fn create_intention(
     }
     .emit(&app);
     return Ok(intention);
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn delete_intention(
+    app: AppHandle,
+    state: State<'_, DatabaseState>,
+    runtime: State<'_, IntentionRuntimeState>,
+    intention_id: i64,
+) -> Result<(), String> {
+    let did_delete = IntentionRepository::delete(&state.pool, intention_id)
+        .await
+        .map_err(|error| error.to_string())?;
+
+    if did_delete {
+        runtime.clear_intention_jobs(&app, intention_id);
+        let _ = IntentionDeletedEvent { intention_id }.emit(&app);
+    }
+
+    return Ok(());
 }
 
 #[derive(Debug, Clone, Deserialize, specta::Type)]

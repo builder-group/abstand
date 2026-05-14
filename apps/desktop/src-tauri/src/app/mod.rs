@@ -20,6 +20,7 @@ pub fn run() {
             intentions::commands::get_intentions,
             intentions::commands::get_intention,
             intentions::commands::create_intention,
+            intentions::commands::delete_intention,
             // Shortcuts commands
             shortcuts::commands::get_shortcut_configs,
             // Catalog commands
@@ -33,6 +34,7 @@ pub fn run() {
             // Intentions events
             intentions::types::IntentionCreatedEvent,
             intentions::types::IntentionUpdatedEvent,
+            intentions::types::IntentionDeletedEvent,
             intentions::types::IntentionSessionStartedEvent,
             intentions::types::IntentionSessionCompletedEvent,
             intentions::types::IntentionSessionStoppedEvent,

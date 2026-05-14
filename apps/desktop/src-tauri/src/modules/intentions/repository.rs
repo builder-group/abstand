@@ -96,6 +96,18 @@ impl IntentionRepository {
         });
     }
 
+    pub async fn delete(
+        pool: &Pool<Sqlite>,
+        intention_id: i64,
+    ) -> Result<bool, IntentionRepositoryError> {
+        let result = sqlx::query("DELETE FROM intention WHERE id = ?")
+            .bind(intention_id)
+            .execute(pool)
+            .await?;
+
+        return Ok(result.rows_affected() > 0);
+    }
+
     async fn create_block(
         transaction: &mut sqlx::Transaction<'_, Sqlite>,
         intention_id: i64,
