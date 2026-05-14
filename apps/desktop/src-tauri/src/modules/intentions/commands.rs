@@ -8,7 +8,7 @@ use super::{
         CreateIntentionBehaviorInput, CreateIntentionBlockInput, CreateIntentionConditionInput,
         CreateIntentionInput, IntentionRepository,
     },
-    types::IntentionCreatedEvent,
+    types::{IntentionCreatedEvent, IntentionRuntimeState},
 };
 use crate::{
     common::time::{to_local_datetime, DateOnly, TimeOnly},
@@ -46,6 +46,7 @@ pub async fn get_intention(
 pub async fn create_intention(
     app: AppHandle,
     state: State<'_, DatabaseState>,
+    runtime: State<'_, IntentionRuntimeState>,
     params: CreateIntentionParams,
 ) -> Result<Intention, String> {
     let input = match params.behavior {
@@ -166,6 +167,11 @@ pub async fn create_intention(
     }
 
     let intention = IntentionRepository::create(&state.pool, input)
+        .await
+        .map_err(|error| error.to_string())?;
+
+    runtime
+        .resync_intention(&app, intention.id)
         .await
         .map_err(|error| error.to_string())?;
 

@@ -1,4 +1,7 @@
+use super::runtime::IntentionRuntime;
 use serde::{Deserialize, Serialize};
+use std::ops::Deref;
+use tauri::App;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
@@ -21,6 +24,24 @@ impl IntentionBehaviorType {
             "break" => Ok(Self::Break),
             _ => Err(format!("Unknown intention behavior type: {}", value)),
         };
+    }
+}
+
+// MARK: - State
+
+pub struct IntentionRuntimeState(IntentionRuntime);
+
+impl IntentionRuntimeState {
+    pub fn init(app: &App) -> Result<Self, Box<dyn std::error::Error>> {
+        return Ok(Self(IntentionRuntime::new(app)?));
+    }
+}
+
+impl Deref for IntentionRuntimeState {
+    type Target = IntentionRuntime;
+
+    fn deref(&self) -> &Self::Target {
+        return &self.0;
     }
 }
 

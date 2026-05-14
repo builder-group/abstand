@@ -774,6 +774,20 @@ impl IntentionSessionRepository {
             .collect::<Result<Vec<_>, _>>();
     }
 
+    pub async fn get_active_session_by_intention_id(
+        pool: &Pool<Sqlite>,
+        intention_id: i64,
+    ) -> Result<Option<IntentionSession>, IntentionSessionRepositoryError> {
+        let row = sqlx::query_as::<_, IntentionSessionRow>(
+            "SELECT id, intention_id, status, started_at, start_condition_id, ended_at, end_condition_id, updated_at, created_at FROM intention_session WHERE intention_id = ? AND status = 'active'",
+        )
+        .bind(intention_id)
+        .fetch_optional(pool)
+        .await?;
+
+        return row.map(Self::build_session).transpose();
+    }
+
     pub async fn create_session(
         pool: &Pool<Sqlite>,
         input: CreateIntentionSessionInput,

@@ -59,9 +59,10 @@ pub fn run() {
 
             // Setup modules
             db::setup(app)?;
-            catalog::setup(app);
-            settings::setup(app);
             scheduler::setup(app);
+            catalog::setup(app);
+            intentions::setup(app)?;
+            settings::setup(app);
 
             // Show main window on startup
             let _ = window::AppWindow::Main.show(app.handle());
