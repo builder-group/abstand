@@ -5,10 +5,12 @@ use super::{
         IntentionConditionTransition, IntentionEnforcementMode,
     },
     repository::{
-        CreateIntentionBehaviorInput, CreateIntentionBlockInput, CreateIntentionConditionInput,
-        CreateIntentionInput, IntentionRepository,
+        IntentionRepository, WriteIntentionBehaviorInput, WriteIntentionBlockInput,
+        WriteIntentionConditionInput, WriteIntentionInput,
     },
-    types::{IntentionCreatedEvent, IntentionDeletedEvent, IntentionRuntimeState},
+    types::{
+        IntentionCreatedEvent, IntentionDeletedEvent, IntentionRuntimeState, IntentionUpdatedEvent,
+    },
 };
 use crate::{
     common::time::{to_local_datetime, DateOnly, TimeOnly},
@@ -49,122 +51,7 @@ pub async fn create_intention(
     runtime: State<'_, IntentionRuntimeState>,
     params: CreateIntentionParams,
 ) -> Result<Intention, String> {
-    let input = match params.behavior {
-        CreateIntentionBehaviorParams::Block(block_params) => {
-            let (apps, websites) = match block_params.scope {
-                IntentionBlockScope::WholeDevice => (Vec::new(), Vec::new()),
-                IntentionBlockScope::BlockTargets | IntentionBlockScope::AllowTargets => {
-                    if block_params.targets.is_empty() {
-                        return Err("Choose at least one app or website".to_string());
-                    }
-
-                    let mut apps = Vec::new();
-                    let mut websites = Vec::new();
-
-                    for target in block_params.targets {
-                        match target {
-                            CreateIntentionBlockTargetParams::App(app) => {
-                                let stable_id = app.stable_id.trim().to_string();
-                                if stable_id.is_empty() {
-                                    return Err("App target is missing a stable ID".to_string());
-                                }
-
-                                apps.push(UpsertAppInput {
-                                    stable_id,
-                                    name: app.name,
-                                    bundle_id: app.bundle_id,
-                                    process_path: app.process_path,
-                                    icon: app.icon,
-                                    color: app.color,
-                                });
-                            }
-                            CreateIntentionBlockTargetParams::Website(website) => {
-                                let hostname =
-                                    extract_hostname(&website.hostname).ok_or_else(|| {
-                                        format!("Invalid website hostname: {}", website.hostname)
-                                    })?;
-
-                                websites.push(UpsertWebsiteInput {
-                                    hostname,
-                                    name: website.name,
-                                    icon: website.icon,
-                                    color: website.color,
-                                });
-                            }
-                        }
-                    }
-
-                    (apps, websites)
-                }
-            };
-
-            let conditions = params
-                .conditions
-                .into_iter()
-                .map(|condition| {
-                    let rule = match condition.rule {
-                        CreateIntentionConditionRuleParams::Schedule(rule) => {
-                            IntentionConditionRule::Schedule(rule)
-                        }
-                        CreateIntentionConditionRuleParams::DateTime(rule) => {
-                            let trigger_at =
-                                to_local_datetime(&rule.date_epoch_days, &rule.time_of_day_ms)?
-                                    .timestamp_millis();
-
-                            IntentionConditionRule::DateTime(IntentionConditionDateTimeRule {
-                                date_epoch_days: rule.date_epoch_days,
-                                time_of_day_ms: rule.time_of_day_ms,
-                                trigger_at,
-                            })
-                        }
-                        CreateIntentionConditionRuleParams::AfterTransition(rule) => {
-                            IntentionConditionRule::AfterTransition(rule)
-                        }
-                        CreateIntentionConditionRuleParams::Manual => {
-                            IntentionConditionRule::Manual
-                        }
-                    };
-
-                    return Ok(CreateIntentionConditionInput {
-                        transition: condition.transition,
-                        rule,
-                    });
-                })
-                .collect::<Result<Vec<_>, String>>()?;
-
-            CreateIntentionInput {
-                name: params.name.trim().to_string(),
-                behavior: CreateIntentionBehaviorInput::Block(CreateIntentionBlockInput {
-                    enforcement_mode: block_params.enforcement_mode,
-                    scope: block_params.scope,
-                    apps,
-                    websites,
-                }),
-                conditions,
-            }
-        }
-        CreateIntentionBehaviorParams::Break => {
-            return Err("Break intentions are not supported yet".to_string());
-        }
-    };
-
-    if input.name.is_empty() {
-        return Err("Please enter a name".to_string());
-    }
-    if !input
-        .conditions
-        .iter()
-        .any(|condition| condition.transition == IntentionConditionTransition::Start)
-    {
-        return Err("Please add a start condition".to_string());
-    }
-    if !input
-        .conditions
-        .iter()
-        .any(|condition| condition.transition == IntentionConditionTransition::End)
-    {
-        return Err("Please add an end condition".to_string());
-    }
+    let input = build_write_intention_input(params.name, params.behavior, params.conditions)?;
 
     let intention = IntentionRepository::create(&state.pool, input)
         .await
@@ -179,6 +66,35 @@ pub async fn create_intention(
         intention_id: intention.id,
     }
     .emit(&app);
+    return Ok(intention);
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn update_intention(
+    app: AppHandle,
+    state: State<'_, DatabaseState>,
+    runtime: State<'_, IntentionRuntimeState>,
+    params: UpdateIntentionParams,
+) -> Result<Option<Intention>, String> {
+    let input = build_write_intention_input(params.name, params.behavior, params.conditions)?;
+
+    let intention = IntentionRepository::update(&state.pool, params.intention_id, input)
+        .await
+        .map_err(|error| error.to_string())?;
+
+    if let Some(intention) = &intention {
+        runtime
+            .resync_intention(&app, intention.id)
+            .await
+            .map_err(|error| error.to_string())?;
+
+        let _ = IntentionUpdatedEvent {
+            intention_id: intention.id,
+        }
+        .emit(&app);
+    }
+
     return Ok(intention);
 }
 
@@ -202,39 +118,185 @@ pub async fn delete_intention(
     return Ok(());
 }
 
+fn build_write_intention_input(
+    name: String,
+    behavior: WriteIntentionBehaviorParams,
+    conditions: Vec<WriteIntentionConditionParams>,
+) -> Result<WriteIntentionInput, String> {
+    let behavior = match behavior {
+        WriteIntentionBehaviorParams::Block(block_params) => {
+            let (apps, websites) = build_block_targets(block_params.scope, block_params.targets)?;
+
+            WriteIntentionBehaviorInput::Block(WriteIntentionBlockInput {
+                enforcement_mode: block_params.enforcement_mode,
+                scope: block_params.scope,
+                apps,
+                websites,
+            })
+        }
+        WriteIntentionBehaviorParams::Break => {
+            return Err("Break intentions are not supported yet".to_string());
+        }
+    };
+
+    let input = WriteIntentionInput {
+        name: name.trim().to_string(),
+        behavior,
+        conditions: build_conditions(conditions)?,
+    };
+
+    validate_write_intention_input(&input)?;
+    return Ok(input);
+}
+
+fn build_block_targets(
+    scope: IntentionBlockScope,
+    targets: Vec<WriteIntentionBlockTargetParams>,
+) -> Result<(Vec<UpsertAppInput>, Vec<UpsertWebsiteInput>), String> {
+    if scope == IntentionBlockScope::WholeDevice {
+        return Ok((Vec::new(), Vec::new()));
+    }
+
+    if targets.is_empty() {
+        return Err("Choose at least one app or website".to_string());
+    }
+
+    let mut apps = Vec::new();
+    let mut websites = Vec::new();
+
+    for target in targets {
+        match target {
+            WriteIntentionBlockTargetParams::App(app) => {
+                let stable_id = app.stable_id.trim().to_string();
+                if stable_id.is_empty() {
+                    return Err("App target is missing a stable ID".to_string());
+                }
+
+                apps.push(UpsertAppInput {
+                    stable_id,
+                    name: app.name,
+                    bundle_id: app.bundle_id,
+                    process_path: app.process_path,
+                    icon: app.icon,
+                    color: app.color,
+                });
+            }
+            WriteIntentionBlockTargetParams::Website(website) => {
+                let hostname = extract_hostname(&website.hostname)
+                    .ok_or_else(|| format!("Invalid website hostname: {}", website.hostname))?;
+
+                websites.push(UpsertWebsiteInput {
+                    hostname,
+                    name: website.name,
+                    icon: website.icon,
+                    color: website.color,
+                });
+            }
+        }
+    }
+
+    return Ok((apps, websites));
+}
+
+fn build_conditions(
+    conditions: Vec<WriteIntentionConditionParams>,
+) -> Result<Vec<WriteIntentionConditionInput>, String> {
+    return conditions
+        .into_iter()
+        .map(|condition| {
+            let rule = match condition.rule {
+                WriteIntentionConditionRuleParams::Schedule(rule) => {
+                    IntentionConditionRule::Schedule(rule)
+                }
+                WriteIntentionConditionRuleParams::DateTime(rule) => {
+                    let trigger_at =
+                        to_local_datetime(&rule.date_epoch_days, &rule.time_of_day_ms)?
+                            .timestamp_millis();
+
+                    IntentionConditionRule::DateTime(IntentionConditionDateTimeRule {
+                        date_epoch_days: rule.date_epoch_days,
+                        time_of_day_ms: rule.time_of_day_ms,
+                        trigger_at,
+                    })
+                }
+                WriteIntentionConditionRuleParams::AfterTransition(rule) => {
+                    IntentionConditionRule::AfterTransition(rule)
+                }
+                WriteIntentionConditionRuleParams::Manual => IntentionConditionRule::Manual,
+            };
+
+            return Ok(WriteIntentionConditionInput {
+                transition: condition.transition,
+                rule,
+            });
+        })
+        .collect::<Result<Vec<_>, String>>();
+}
+
+fn validate_write_intention_input(input: &WriteIntentionInput) -> Result<(), String> {
+    if input.name.is_empty() {
+        return Err("Please enter a name".to_string());
+    }
+    if !input
+        .conditions
+        .iter()
+        .any(|condition| condition.transition == IntentionConditionTransition::Start)
+    {
+        return Err("Please add a start condition".to_string());
+    }
+    if !input
+        .conditions
+        .iter()
+        .any(|condition| condition.transition == IntentionConditionTransition::End)
+    {
+        return Err("Please add an end condition".to_string());
+    }
+
+    return Ok(());
+}
+
 #[derive(Debug, Clone, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateIntentionParams {
     pub name: String,
-    pub behavior: CreateIntentionBehaviorParams,
-    pub conditions: Vec<CreateIntentionConditionParams>,
+    pub behavior: WriteIntentionBehaviorParams,
+    pub conditions: Vec<WriteIntentionConditionParams>,
+}
+
+#[derive(Debug, Clone, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateIntentionParams {
+    pub intention_id: i64,
+    pub name: String,
+    pub behavior: WriteIntentionBehaviorParams,
+    pub conditions: Vec<WriteIntentionConditionParams>,
 }
 
 #[derive(Debug, Clone, Deserialize, specta::Type)]
 #[serde(tag = "type", rename_all = "camelCase")]
-pub enum CreateIntentionBehaviorParams {
-    Block(CreateIntentionBlockParams),
+pub enum WriteIntentionBehaviorParams {
+    Block(WriteIntentionBlockParams),
     Break,
 }
 
 #[derive(Debug, Clone, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
-pub struct CreateIntentionBlockParams {
+pub struct WriteIntentionBlockParams {
     pub enforcement_mode: IntentionEnforcementMode,
     pub scope: IntentionBlockScope,
-    pub targets: Vec<CreateIntentionBlockTargetParams>,
+    pub targets: Vec<WriteIntentionBlockTargetParams>,
 }
 
 #[derive(Debug, Clone, Deserialize, specta::Type)]
 #[serde(tag = "type", rename_all = "camelCase")]
-pub enum CreateIntentionBlockTargetParams {
-    App(CreateIntentionBlockAppTargetParams),
-    Website(CreateIntentionBlockWebsiteTargetParams),
+pub enum WriteIntentionBlockTargetParams {
+    App(WriteIntentionBlockAppTargetParams),
+    Website(WriteIntentionBlockWebsiteTargetParams),
 }
 
 #[derive(Debug, Clone, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
-pub struct CreateIntentionBlockAppTargetParams {
+pub struct WriteIntentionBlockAppTargetParams {
     pub stable_id: String,
     pub name: Option<String>,
     pub bundle_id: Option<String>,
@@ -245,7 +307,7 @@ pub struct CreateIntentionBlockAppTargetParams {
 
 #[derive(Debug, Clone, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
-pub struct CreateIntentionBlockWebsiteTargetParams {
+pub struct WriteIntentionBlockWebsiteTargetParams {
     pub hostname: String,
     pub name: Option<String>,
     pub icon: Option<String>,
@@ -254,23 +316,23 @@ pub struct CreateIntentionBlockWebsiteTargetParams {
 
 #[derive(Debug, Clone, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
-pub struct CreateIntentionConditionParams {
+pub struct WriteIntentionConditionParams {
     pub transition: IntentionConditionTransition,
-    pub rule: CreateIntentionConditionRuleParams,
+    pub rule: WriteIntentionConditionRuleParams,
 }
 
 #[derive(Debug, Clone, Deserialize, specta::Type)]
 #[serde(tag = "type", rename_all = "camelCase")]
-pub enum CreateIntentionConditionRuleParams {
+pub enum WriteIntentionConditionRuleParams {
     Schedule(IntentionConditionScheduleRule),
-    DateTime(CreateIntentionConditionDateTimeRuleParams),
+    DateTime(WriteIntentionConditionDateTimeRuleParams),
     AfterTransition(IntentionConditionAfterTransitionRule),
     Manual,
 }
 
 #[derive(Debug, Clone, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
-pub struct CreateIntentionConditionDateTimeRuleParams {
+pub struct WriteIntentionConditionDateTimeRuleParams {
     pub date_epoch_days: DateOnly,
     pub time_of_day_ms: TimeOnly,
 }

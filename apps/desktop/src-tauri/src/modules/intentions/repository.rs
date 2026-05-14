@@ -58,11 +58,11 @@ impl IntentionRepository {
 
     pub async fn create(
         pool: &Pool<Sqlite>,
-        input: CreateIntentionInput,
+        input: WriteIntentionInput,
     ) -> Result<Intention, IntentionRepositoryError> {
         let mut transaction = pool.begin().await?;
 
-        let CreateIntentionInput {
+        let WriteIntentionInput {
             name,
             behavior,
             conditions,
@@ -78,7 +78,7 @@ impl IntentionRepository {
         .await?;
 
         match behavior {
-            CreateIntentionBehaviorInput::Block(block_input) => {
+            WriteIntentionBehaviorInput::Block(block_input) => {
                 Self::create_block(&mut transaction, intention_id, block_input).await?;
             }
         }
@@ -96,6 +96,62 @@ impl IntentionRepository {
         });
     }
 
+    pub async fn update(
+        pool: &Pool<Sqlite>,
+        intention_id: i64,
+        input: WriteIntentionInput,
+    ) -> Result<Option<Intention>, IntentionRepositoryError> {
+        let mut transaction = pool.begin().await?;
+
+        let WriteIntentionInput {
+            name,
+            behavior,
+            conditions,
+        } = input;
+
+        let behavior_type = IntentionBehaviorType::from(&behavior);
+        let result = sqlx::query("UPDATE intention SET name = ?, behavior_type = ? WHERE id = ?")
+            .bind(&name)
+            .bind(behavior_type.as_str())
+            .bind(intention_id)
+            .execute(&mut *transaction)
+            .await?;
+
+        if result.rows_affected() == 0 {
+            transaction.rollback().await?;
+            return Ok(None);
+        }
+
+        sqlx::query("DELETE FROM intention_condition WHERE intention_id = ?")
+            .bind(intention_id)
+            .execute(&mut *transaction)
+            .await?;
+        sqlx::query("DELETE FROM intention_block WHERE intention_id = ?")
+            .bind(intention_id)
+            .execute(&mut *transaction)
+            .await?;
+
+        match behavior {
+            WriteIntentionBehaviorInput::Block(block_input) => {
+                Self::create_block(&mut transaction, intention_id, block_input).await?;
+            }
+        }
+
+        Self::create_conditions(&mut transaction, intention_id, conditions).await?;
+
+        transaction.commit().await?;
+
+        let intention = Self::get_by_id(pool, intention_id).await?;
+        return intention
+            .ok_or_else(|| {
+                IntentionRepositoryError::InvalidData(format!(
+                    "Updated intention {} could not be reloaded",
+                    intention_id
+                ))
+            })
+            .map(Some);
+    }
+
     pub async fn delete(
         pool: &Pool<Sqlite>,
         intention_id: i64,
@@ -111,7 +167,7 @@ impl IntentionRepository {
     async fn create_block(
         transaction: &mut sqlx::Transaction<'_, Sqlite>,
         intention_id: i64,
-        block_input: CreateIntentionBlockInput,
+        block_input: WriteIntentionBlockInput,
     ) -> Result<(), IntentionRepositoryError> {
         sqlx::query(
             "INSERT INTO intention_block (intention_id, enforcement_mode, scope) VALUES (?, ?, ?)",
@@ -150,7 +206,7 @@ impl IntentionRepository {
     async fn create_conditions(
         transaction: &mut sqlx::Transaction<'_, Sqlite>,
         intention_id: i64,
-        conditions: Vec<CreateIntentionConditionInput>,
+        conditions: Vec<WriteIntentionConditionInput>,
     ) -> Result<(), IntentionRepositoryError> {
         for condition in conditions {
             let condition_id = sqlx::query_scalar::<_, i64>(
@@ -707,32 +763,32 @@ struct IntentionConditionAfterTransitionRow {
     offset_ms: i64,
 }
 
-pub struct CreateIntentionInput {
+pub struct WriteIntentionInput {
     pub name: String,
-    pub behavior: CreateIntentionBehaviorInput,
-    pub conditions: Vec<CreateIntentionConditionInput>,
+    pub behavior: WriteIntentionBehaviorInput,
+    pub conditions: Vec<WriteIntentionConditionInput>,
 }
 
-pub enum CreateIntentionBehaviorInput {
-    Block(CreateIntentionBlockInput),
+pub enum WriteIntentionBehaviorInput {
+    Block(WriteIntentionBlockInput),
 }
 
-impl From<&CreateIntentionBehaviorInput> for IntentionBehaviorType {
-    fn from(value: &CreateIntentionBehaviorInput) -> Self {
+impl From<&WriteIntentionBehaviorInput> for IntentionBehaviorType {
+    fn from(value: &WriteIntentionBehaviorInput) -> Self {
         return match value {
-            CreateIntentionBehaviorInput::Block(_) => IntentionBehaviorType::Block,
+            WriteIntentionBehaviorInput::Block(_) => IntentionBehaviorType::Block,
         };
     }
 }
 
-pub struct CreateIntentionBlockInput {
+pub struct WriteIntentionBlockInput {
     pub enforcement_mode: IntentionEnforcementMode,
     pub scope: IntentionBlockScope,
     pub apps: Vec<UpsertAppInput>,
     pub websites: Vec<UpsertWebsiteInput>,
 }
 
-pub struct CreateIntentionConditionInput {
+pub struct WriteIntentionConditionInput {
     pub transition: IntentionConditionTransition,
     pub rule: IntentionConditionRule,
 }
