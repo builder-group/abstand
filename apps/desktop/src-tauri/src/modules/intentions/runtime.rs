@@ -38,8 +38,14 @@ impl IntentionRuntime {
         app: &AppHandle,
         intention_id: i64,
     ) -> Result<(), IntentionRuntimeError> {
+        self.clear_intention_jobs(app, intention_id);
+
         let database = app.state::<DatabaseState>();
-        let _intention = IntentionRepository::get_by_id(&database.pool, intention_id).await?;
+        let Some(_intention) = IntentionRepository::get_by_id(&database.pool, intention_id).await?
+        else {
+            return Ok(());
+        };
+
         let _active_session = IntentionSessionRepository::get_active_session_by_intention_id(
             &database.pool,
             intention_id,
