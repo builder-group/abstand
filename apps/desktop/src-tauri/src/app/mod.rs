@@ -33,6 +33,9 @@ pub fn run() {
             // Intentions events
             intentions::types::IntentionCreatedEvent,
             intentions::types::IntentionUpdatedEvent,
+            intentions::types::IntentionSessionStartedEvent,
+            intentions::types::IntentionSessionCompletedEvent,
+            intentions::types::IntentionSessionStoppedEvent,
             // Shortcuts events
             shortcuts::types::ShortcutTriggeredEvent,
         ]);

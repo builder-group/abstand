@@ -37,3 +37,24 @@ pub struct IntentionCreatedEvent {
 pub struct IntentionUpdatedEvent {
     pub intention_id: i64,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type, tauri_specta::Event)]
+#[serde(rename_all = "camelCase")]
+pub struct IntentionSessionStartedEvent {
+    pub intention_id: i64,
+    pub session_id: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type, tauri_specta::Event)]
+#[serde(rename_all = "camelCase")]
+pub struct IntentionSessionCompletedEvent {
+    pub intention_id: i64,
+    pub session_id: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type, tauri_specta::Event)]
+#[serde(rename_all = "camelCase")]
+pub struct IntentionSessionStoppedEvent {
+    pub intention_id: i64,
+    pub session_id: i64,
+}

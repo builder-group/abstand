@@ -85,12 +85,18 @@ export const events = __makeEvents__<{
 appSettingsChangedEvent: AppSettingsChangedEvent,
 catalogAssetLoadedEvent: CatalogAssetLoadedEvent,
 intentionCreatedEvent: IntentionCreatedEvent,
+intentionSessionCompletedEvent: IntentionSessionCompletedEvent,
+intentionSessionStartedEvent: IntentionSessionStartedEvent,
+intentionSessionStoppedEvent: IntentionSessionStoppedEvent,
 intentionUpdatedEvent: IntentionUpdatedEvent,
 shortcutTriggeredEvent: ShortcutTriggeredEvent
 }>({
 appSettingsChangedEvent: "app-settings-changed-event",
 catalogAssetLoadedEvent: "catalog-asset-loaded-event",
 intentionCreatedEvent: "intention-created-event",
+intentionSessionCompletedEvent: "intention-session-completed-event",
+intentionSessionStartedEvent: "intention-session-started-event",
+intentionSessionStoppedEvent: "intention-session-stopped-event",
 intentionUpdatedEvent: "intention-updated-event",
 shortcutTriggeredEvent: "shortcut-triggered-event"
 })
@@ -156,6 +162,9 @@ export type IntentionConditionScheduleRule = { timeOfDayMs: TimeOnly; weekdaysMa
 export type IntentionConditionTransition = "start" | "end"
 export type IntentionCreatedEvent = { intentionId: number }
 export type IntentionEnforcementMode = "casual" | "balanced" | "strict"
+export type IntentionSessionCompletedEvent = { intentionId: number; sessionId: number }
+export type IntentionSessionStartedEvent = { intentionId: number; sessionId: number }
+export type IntentionSessionStoppedEvent = { intentionId: number; sessionId: number }
 export type IntentionUpdatedEvent = { intentionId: number }
 export type KeyboardShortcut = { modifiers: ShortcutModifier[]; 
 /**
