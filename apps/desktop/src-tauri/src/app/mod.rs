@@ -20,6 +20,7 @@ pub fn run() {
             intentions::commands::get_intentions,
             intentions::commands::get_intention,
             intentions::commands::get_active_intention_sessions,
+            intentions::commands::get_active_intention_session,
             intentions::commands::create_intention,
             intentions::commands::update_intention,
             intentions::commands::delete_intention,

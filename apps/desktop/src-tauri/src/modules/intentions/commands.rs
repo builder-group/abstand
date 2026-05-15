@@ -55,6 +55,20 @@ pub async fn get_active_intention_sessions(
 
 #[tauri::command]
 #[specta::specta]
+pub async fn get_active_intention_session(
+    state: State<'_, DatabaseState>,
+    intention_id: i64,
+) -> Result<Option<IntentionSession>, String> {
+    return IntentionSessionRepository::get_active_session_by_intention_id(
+        &state.pool,
+        intention_id,
+    )
+    .await
+    .map_err(|error| error.to_string());
+}
+
+#[tauri::command]
+#[specta::specta]
 pub async fn create_intention(
     app: AppHandle,
     state: State<'_, DatabaseState>,
