@@ -4,7 +4,7 @@ pub mod commands;
 pub mod intention;
 pub mod repository;
 pub mod runtime;
-pub mod scheduled_runtime;
+pub mod schedule_engine;
 pub mod types;
 
 use tauri::{App, Manager};

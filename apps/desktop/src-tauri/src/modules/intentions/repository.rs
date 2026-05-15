@@ -5,7 +5,7 @@ use super::{
         IntentionConditionRule, IntentionConditionScheduleRule, IntentionConditionTransition,
         IntentionEnforcementMode, IntentionSession, IntentionSessionStatus,
     },
-    scheduled_runtime::{ScheduledCondition, ScheduledConditionRule},
+    schedule_engine::{ScheduledCondition, ScheduledConditionRule, ScheduledConditionTransition},
     types::IntentionBehaviorType,
 };
 use crate::{
@@ -66,13 +66,16 @@ impl IntentionRepository {
                 c.id AS condition_id,
                 c.transition,
                 c.rule_type,
-                NULL AS session_id,
+                s.id AS session_id,
                 dt.trigger_at,
                 schedule.time_of_day_ms,
                 schedule.weekdays_mask,
                 after_transition.anchor_transition,
                 after_transition.offset_ms
             FROM intention_condition c
+            LEFT JOIN intention_session s
+                ON s.intention_id = c.intention_id
+                    AND s.status = 'active'
             LEFT JOIN intention_condition_date_time dt
                 ON dt.condition_id = c.id
                     AND c.rule_type = 'date_time'
@@ -82,13 +85,10 @@ impl IntentionRepository {
             LEFT JOIN intention_condition_after_transition after_transition
                 ON after_transition.condition_id = c.id
                     AND c.rule_type = 'after_transition'
-            WHERE c.transition = 'start'
-                AND c.rule_type IN ('date_time', 'schedule', 'after_transition')
-                AND NOT EXISTS (
-                    SELECT 1
-                    FROM intention_session s
-                    WHERE s.intention_id = c.intention_id
-                        AND s.status = 'active'
+            WHERE c.rule_type IN ('date_time', 'schedule', 'after_transition')
+                AND (
+                    (c.transition = 'start' AND s.id IS NULL)
+                    OR (c.transition = 'end' AND s.id IS NOT NULL)
                 )
             ORDER BY COALESCE(dt.trigger_at, 9223372036854775807) ASC, c.intention_id ASC, c.id ASC",
         )
@@ -772,12 +772,28 @@ impl IntentionRepository {
             }
         };
 
+        let transition = match row.transition.as_str() {
+            "start" => ScheduledConditionTransition::Start,
+            "end" => {
+                let session_id = row.session_id.ok_or_else(|| {
+                    IntentionRepositoryError::InvalidData(
+                        "Scheduled end condition is missing an active session".to_string(),
+                    )
+                })?;
+                ScheduledConditionTransition::End { session_id }
+            }
+            _ => {
+                return Err(IntentionRepositoryError::InvalidData(format!(
+                    "Unknown scheduled condition transition: {}",
+                    row.transition
+                )));
+            }
+        };
+
         return Ok(ScheduledCondition {
             intention_id: row.intention_id,
-            transition: IntentionConditionTransition::from_str(&row.transition)
-                .map_err(IntentionRepositoryError::InvalidData)?,
             condition_id: row.condition_id,
-            session_id: row.session_id,
+            transition,
             rule,
         });
     }
