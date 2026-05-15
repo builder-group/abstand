@@ -143,7 +143,9 @@ impl ScheduledCondition {
                     return Ok(None);
                 }
 
-                let anchor_at = self.resolve_anchor_at(pool, *anchor_transition, active_session).await?;
+                let anchor_at = self
+                    .resolve_anchor_at(pool, *anchor_transition, active_session)
+                    .await?;
                 Ok(anchor_at.map(|at| at + offset_ms))
             }
         };
