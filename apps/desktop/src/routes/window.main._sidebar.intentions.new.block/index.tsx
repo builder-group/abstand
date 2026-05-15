@@ -33,6 +33,17 @@ function RouteComponent() {
 						description: intentionErr.message
 					});
 					break;
+				case 'startFailed':
+					toastsCx.add({
+						type: 'error',
+						title: 'Created intention, but could not start it',
+						description: intentionErr.message
+					});
+					void navigate({
+						to: '/window/main/intentions/$intentionId',
+						params: { intentionId: `${intentionErr.intention.id}` }
+					});
+					break;
 				default:
 				// do nothing
 			}

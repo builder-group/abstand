@@ -75,16 +75,16 @@ interface TConditionRowSetProps {
 
 const modeOptionsByTransition = {
 	start: [
-		{ value: 'now', label: 'Now' },
+		{ value: 'now', label: 'Start now' },
 		{ value: 'atTime', label: 'At time' },
 		{ value: 'afterDelay', label: 'After delay' },
-		{ value: 'repeats', label: 'Repeats' },
+		// { value: 'repeats', label: 'Repeats' },
 		{ value: 'manual', label: 'Manually' }
 	],
 	end: [
-		{ value: 'afterDuration', label: 'After duration' },
-		{ value: 'atTime', label: 'At time' },
-		{ value: 'repeats', label: 'Repeats' },
+		// { value: 'afterDuration', label: 'After duration' },
+		// { value: 'atTime', label: 'At time' },
+		// { value: 'repeats', label: 'Repeats' },
 		{ value: 'manual', label: 'Manually' }
 	]
 } as const satisfies Record<specta.IntentionConditionTransition, TConditionModeOption[]>;

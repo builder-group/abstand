@@ -226,17 +226,12 @@ export class NewBlockIntentionCx {
 							transition: condition.transition,
 							rule: { type: 'manual' }
 						};
-					case 'now': {
-						const now = new Date();
+					case 'now':
+						// Note: "Start now" is an immediate action; manual is the reusable persisted trigger
 						return {
 							transition: condition.transition,
-							rule: {
-								type: 'dateTime',
-								dateEpochDays: getLocalDateEpochDays(now),
-								timeOfDayMs: getLocalTimeOfDayMs(now)
-							}
+							rule: { type: 'manual' }
 						};
-					}
 					case 'afterDelay': {
 						const date = new Date(Date.now() + condition.offsetMs);
 						return {
@@ -280,6 +275,16 @@ export class NewBlockIntentionCx {
 		});
 		if (!isIntentionOk) {
 			return Err({ code: 'createFailed', message: intentionErr });
+		}
+
+		const shouldStartNow = formData.conditions.some(
+			(condition) => condition.transition === 'start' && condition.mode === 'now'
+		);
+		if (shouldStartNow) {
+			const [isStartOk, startErr] = await this.intentionsCx.start(intention.id);
+			if (!isStartOk) {
+				return Err({ code: 'startFailed', message: startErr, intention });
+			}
 		}
 
 		return Ok(intention);
@@ -348,7 +353,8 @@ export type TNewIntentionConditionMode =
 
 export type TNewBlockIntentionSubmitError =
 	| { code: 'invalidForm' }
-	| { code: 'createFailed'; message: string };
+	| { code: 'createFailed'; message: string }
+	| { code: 'startFailed'; message: string; intention: specta.Intention };
 
 const ReactNewBlockIntentionCx = React.createContext<NewBlockIntentionCx | null>(null);
 
