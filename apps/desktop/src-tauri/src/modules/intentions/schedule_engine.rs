@@ -1,6 +1,9 @@
 use super::{
     intention::IntentionConditionTransition,
-    repository::{IntentionRepository, IntentionRepositoryError},
+    repository::{
+        ActiveSessionInfo, IntentionRepository, IntentionRepositoryError,
+        IntentionSessionRepository, IntentionSessionRepositoryError,
+    },
 };
 use crate::{
     common::time::{unix_ms_now, TimeOnly, WeekdayMask},
@@ -9,6 +12,7 @@ use crate::{
         scheduler::{scheduler::ScheduledJobId, types::SchedulerState},
     },
 };
+use sqlx::{Pool, Sqlite};
 use std::{fmt, sync::Mutex};
 use tauri::{AppHandle, Manager};
 
@@ -26,8 +30,6 @@ impl ScheduleEngine {
     }
 
     pub async fn resync(&self, app: &AppHandle) -> Result<(), ScheduleEngineError> {
-        self.cancel_pending_wakeup(app);
-
         let now = unix_ms_now();
         let database = app.state::<DatabaseState>();
         let conditions = IntentionRepository::get_scheduled_conditions(&database.pool)
@@ -37,36 +39,29 @@ impl ScheduleEngine {
         let mut next_wake_at: Option<i64> = None;
 
         for condition in conditions {
-            match condition.evaluate(now) {
-                ScheduledConditionEvaluation::DueStart {
-                    intention_id,
-                    condition_id,
-                    started_at,
-                } => {
-                    // TODO: apply start — create session, emit event
-                    let _ = (intention_id, condition_id, started_at);
-                }
-                ScheduledConditionEvaluation::DueEnd {
-                    intention_id,
-                    session_id,
-                    condition_id,
-                    ended_at,
-                } => {
-                    // TODO: apply end — complete session, emit event
-                    let _ = (intention_id, session_id, condition_id, ended_at);
-                }
-                ScheduledConditionEvaluation::Future { wake_at } => {
-                    next_wake_at = Some(match next_wake_at {
-                        Some(current) => current.min(wake_at),
-                        None => wake_at,
-                    });
-                }
-                ScheduledConditionEvaluation::InvalidState(message) => {
-                    eprintln!("Schedule engine invalid state: {}", message);
+            let Some(trigger_at) = condition.resolve_trigger_at(&database.pool, now).await? else {
+                continue;
+            };
+
+            if trigger_at > now {
+                next_wake_at = Some(next_wake_at.map_or(trigger_at, |w| w.min(trigger_at)));
+            } else {
+                match condition.transition {
+                    ScheduledConditionTransition::Start => {
+                        // TODO: apply start — create session, emit event
+                        let _ = (condition.intention_id, condition.condition_id, trigger_at);
+                    }
+                    ScheduledConditionTransition::End => {
+                        // TODO: apply end — complete session, emit event
+                        let _ = (condition.intention_id, condition.condition_id, trigger_at);
+                    }
                 }
             }
         }
 
+        // Cancel only after a successful reconciliation so a query failure never
+        // leaves the engine with no wakeup scheduled.
+        self.cancel_pending_wakeup(app);
         if let Some(wake_at) = next_wake_at {
             self.schedule_wakeup(app, wake_at);
         }
@@ -109,48 +104,104 @@ pub struct ScheduledCondition {
 }
 
 impl ScheduledCondition {
-    pub fn evaluate(&self, now: i64) -> ScheduledConditionEvaluation {
+    pub async fn resolve_trigger_at(
+        &self,
+        pool: &Pool<Sqlite>,
+        now: i64,
+    ) -> Result<Option<i64>, ScheduleEngineError> {
+        let active_session = IntentionSessionRepository::get_active_session_info_by_intention_id(
+            pool,
+            self.intention_id,
+        )
+        .await
+        .map_err(ScheduleEngineError::from)?;
+
+        match self.transition {
+            ScheduledConditionTransition::Start if active_session.is_some() => return Ok(None),
+            ScheduledConditionTransition::End if active_session.is_none() => return Ok(None),
+            _ => {}
+        }
+
         return match &self.rule {
             ScheduledConditionRule::DateTime { trigger_at } => {
-                let trigger_at = *trigger_at;
-                if trigger_at > now {
-                    return ScheduledConditionEvaluation::Future {
-                        wake_at: trigger_at,
-                    };
+                if self.is_consumed_one_shot_start(pool).await? {
+                    return Ok(None);
                 }
 
-                match &self.transition {
-                    ScheduledConditionTransition::Start => ScheduledConditionEvaluation::DueStart {
-                        intention_id: self.intention_id,
-                        condition_id: self.condition_id,
-                        started_at: trigger_at,
-                    },
-                    ScheduledConditionTransition::End { session_id } => {
-                        ScheduledConditionEvaluation::DueEnd {
-                            intention_id: self.intention_id,
-                            session_id: *session_id,
-                            condition_id: self.condition_id,
-                            ended_at: trigger_at,
-                        }
-                    }
-                }
+                Ok(Some(*trigger_at))
             }
-            ScheduledConditionRule::Schedule { .. } => ScheduledConditionEvaluation::InvalidState(
-                "Recurring schedule conditions are not yet supported".to_string(),
-            ),
-            ScheduledConditionRule::AfterTransition { .. } => {
-                ScheduledConditionEvaluation::InvalidState(
-                    "After-transition conditions are not yet supported".to_string(),
-                )
+            ScheduledConditionRule::Schedule { .. } => {
+                let _ = now;
+                // TODO: compute next occurrence from time_of_day_ms + weekdays_mask
+                Ok(None)
+            }
+            ScheduledConditionRule::AfterTransition {
+                anchor_transition,
+                offset_ms,
+            } => {
+                if self.is_consumed_one_shot_start(pool).await? {
+                    return Ok(None);
+                }
+
+                let anchor_at = self.resolve_anchor_at(pool, *anchor_transition, active_session).await?;
+                Ok(anchor_at.map(|at| at + offset_ms))
             }
         };
     }
+
+    async fn is_consumed_one_shot_start(
+        &self,
+        pool: &Pool<Sqlite>,
+    ) -> Result<bool, ScheduleEngineError> {
+        if self.transition != ScheduledConditionTransition::Start {
+            return Ok(false);
+        }
+        if matches!(self.rule, ScheduledConditionRule::Schedule { .. }) {
+            return Ok(false);
+        }
+
+        return IntentionSessionRepository::has_session_with_start_condition_id(
+            pool,
+            self.condition_id,
+        )
+        .await
+        .map_err(ScheduleEngineError::from);
+    }
+
+    async fn resolve_anchor_at(
+        &self,
+        pool: &Pool<Sqlite>,
+        anchor_transition: IntentionConditionTransition,
+        active_session: Option<ActiveSessionInfo>,
+    ) -> Result<Option<i64>, ScheduleEngineError> {
+        return match (self.transition, anchor_transition) {
+            (ScheduledConditionTransition::End, IntentionConditionTransition::Start) => {
+                Ok(active_session.map(|s| s.started_at))
+            }
+            (ScheduledConditionTransition::Start, IntentionConditionTransition::End) => {
+                self.resolve_latest_ended_at(pool).await
+            }
+            _ => Ok(None),
+        };
+    }
+
+    async fn resolve_latest_ended_at(
+        &self,
+        pool: &Pool<Sqlite>,
+    ) -> Result<Option<i64>, ScheduleEngineError> {
+        return IntentionSessionRepository::get_latest_ended_at_by_intention_id(
+            pool,
+            self.intention_id,
+        )
+        .await
+        .map_err(ScheduleEngineError::from);
+    }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ScheduledConditionTransition {
     Start,
-    End { session_id: i64 },
+    End,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -168,46 +219,55 @@ pub enum ScheduledConditionRule {
     },
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum ScheduledConditionEvaluation {
-    DueStart {
-        intention_id: i64,
-        condition_id: i64,
-        started_at: i64,
-    },
-    DueEnd {
-        intention_id: i64,
-        session_id: i64,
-        condition_id: i64,
-        ended_at: i64,
-    },
-    Future {
-        wake_at: i64,
-    },
-    InvalidState(String),
-}
-
 // MARK: - Error
 
 #[derive(Debug)]
 pub enum ScheduleEngineError {
     Repository(IntentionRepositoryError),
+    SessionRepository(IntentionSessionRepositoryError),
 }
 
 impl fmt::Display for ScheduleEngineError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         return match self {
             Self::Repository(error) => write!(f, "{}", error),
+            Self::SessionRepository(error) => write!(f, "{}", error),
         };
     }
 }
 
 impl std::error::Error for ScheduleEngineError {}
 
+impl From<IntentionSessionRepositoryError> for ScheduleEngineError {
+    fn from(value: IntentionSessionRepositoryError) -> Self {
+        return Self::SessionRepository(value);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::common::time::TimeOnly;
+    use sqlx::SqlitePool;
+
+    async fn test_pool() -> SqlitePool {
+        let pool = SqlitePool::connect("sqlite::memory:").await.unwrap();
+        sqlx::query(
+            "CREATE TABLE intention_session (
+                id INTEGER PRIMARY KEY,
+                intention_id INTEGER NOT NULL,
+                status TEXT NOT NULL,
+                started_at INTEGER NOT NULL,
+                start_condition_id INTEGER,
+                ended_at INTEGER
+            )",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        return pool;
+    }
 
     fn start_condition(trigger_at: i64) -> ScheduledCondition {
         ScheduledCondition {
@@ -218,50 +278,89 @@ mod tests {
         }
     }
 
-    fn end_condition(trigger_at: i64, session_id: i64) -> ScheduledCondition {
+    fn end_condition(trigger_at: i64) -> ScheduledCondition {
         ScheduledCondition {
             intention_id: 10,
             condition_id: 20,
-            transition: ScheduledConditionTransition::End { session_id },
+            transition: ScheduledConditionTransition::End,
             rule: ScheduledConditionRule::DateTime { trigger_at },
         }
     }
 
-    #[test]
-    fn date_time_start_is_future_before_trigger_time() {
-        let evaluation = start_condition(1_000).evaluate(999);
-        assert_eq!(evaluation, ScheduledConditionEvaluation::Future { wake_at: 1_000 });
+    #[tokio::test]
+    async fn date_time_start_resolves_to_trigger_at() {
+        let pool = test_pool().await;
+        let result = start_condition(1_000)
+            .resolve_trigger_at(&pool, 0)
+            .await
+            .unwrap();
+        assert_eq!(result, Some(1_000));
     }
 
-    #[test]
-    fn date_time_start_is_due_at_trigger_time() {
-        let evaluation = start_condition(1_000).evaluate(1_000);
-        assert_eq!(
-            evaluation,
-            ScheduledConditionEvaluation::DueStart { intention_id: 10, condition_id: 20, started_at: 1_000 }
-        );
+    #[tokio::test]
+    async fn date_time_end_without_active_session_does_not_resolve() {
+        let pool = test_pool().await;
+        let result = end_condition(1_000)
+            .resolve_trigger_at(&pool, 0)
+            .await
+            .unwrap();
+        assert_eq!(result, None);
     }
 
-    #[test]
-    fn date_time_start_is_due_after_trigger_time() {
-        let evaluation = start_condition(1_000).evaluate(1_500);
-        assert_eq!(
-            evaluation,
-            ScheduledConditionEvaluation::DueStart { intention_id: 10, condition_id: 20, started_at: 1_000 }
-        );
+    #[tokio::test]
+    async fn date_time_start_with_active_session_does_not_resolve() {
+        let pool = test_pool().await;
+        sqlx::query(
+            "INSERT INTO intention_session (id, intention_id, status, started_at) VALUES (1, 10, 'active', 500)",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        let result = start_condition(1_000)
+            .resolve_trigger_at(&pool, 0)
+            .await
+            .unwrap();
+        assert_eq!(result, None);
     }
 
-    #[test]
-    fn date_time_end_is_due_with_active_session() {
-        let evaluation = end_condition(1_000, 30).evaluate(1_500);
-        assert_eq!(
-            evaluation,
-            ScheduledConditionEvaluation::DueEnd { intention_id: 10, session_id: 30, condition_id: 20, ended_at: 1_000 }
-        );
+    #[tokio::test]
+    async fn consumed_date_time_start_does_not_resolve() {
+        let pool = test_pool().await;
+        sqlx::query(
+            "INSERT INTO intention_session (id, intention_id, status, started_at, start_condition_id, ended_at) VALUES (1, 10, 'completed', 1_000, 20, 2_000)",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        let result = start_condition(1_000)
+            .resolve_trigger_at(&pool, 0)
+            .await
+            .unwrap();
+        assert_eq!(result, None);
     }
 
-    #[test]
-    fn schedule_rule_is_explicitly_unsupported_for_now() {
+    #[tokio::test]
+    async fn date_time_end_with_active_session_resolves_to_trigger_at() {
+        let pool = test_pool().await;
+        sqlx::query(
+            "INSERT INTO intention_session (id, intention_id, status, started_at) VALUES (1, 10, 'active', 500)",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        let result = end_condition(1_000)
+            .resolve_trigger_at(&pool, 0)
+            .await
+            .unwrap();
+        assert_eq!(result, Some(1_000));
+    }
+
+    #[tokio::test]
+    async fn schedule_rule_is_not_yet_supported() {
+        let pool = test_pool().await;
         let condition = ScheduledCondition {
             intention_id: 10,
             condition_id: 20,
@@ -272,29 +371,51 @@ mod tests {
             },
         };
         assert_eq!(
-            condition.evaluate(1_000),
-            ScheduledConditionEvaluation::InvalidState(
-                "Recurring schedule conditions are not yet supported".to_string()
-            )
+            condition.resolve_trigger_at(&pool, 1_000).await.unwrap(),
+            None
         );
     }
 
-    #[test]
-    fn after_transition_rule_is_explicitly_unsupported_for_now() {
+    #[tokio::test]
+    async fn after_transition_rule_is_not_yet_supported() {
+        let pool = test_pool().await;
         let condition = ScheduledCondition {
             intention_id: 10,
             condition_id: 20,
-            transition: ScheduledConditionTransition::End { session_id: 30 },
+            transition: ScheduledConditionTransition::End,
             rule: ScheduledConditionRule::AfterTransition {
                 anchor_transition: IntentionConditionTransition::Start,
                 offset_ms: 30 * 60_000,
             },
         };
         assert_eq!(
-            condition.evaluate(1_000),
-            ScheduledConditionEvaluation::InvalidState(
-                "After-transition conditions are not yet supported".to_string()
-            )
+            condition.resolve_trigger_at(&pool, 1_000).await.unwrap(),
+            None
+        );
+    }
+
+    #[tokio::test]
+    async fn end_after_start_resolves_from_active_session_start() {
+        let pool = test_pool().await;
+        sqlx::query(
+            "INSERT INTO intention_session (id, intention_id, status, started_at) VALUES (1, 10, 'active', 1_000)",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+        let condition = ScheduledCondition {
+            intention_id: 10,
+            condition_id: 20,
+            transition: ScheduledConditionTransition::End,
+            rule: ScheduledConditionRule::AfterTransition {
+                anchor_transition: IntentionConditionTransition::Start,
+                offset_ms: 30 * 60_000,
+            },
+        };
+
+        assert_eq!(
+            condition.resolve_trigger_at(&pool, 1_000).await.unwrap(),
+            Some(1_000 + 30 * 60_000)
         );
     }
 }

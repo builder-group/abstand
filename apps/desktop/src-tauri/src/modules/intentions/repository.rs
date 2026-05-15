@@ -66,16 +66,12 @@ impl IntentionRepository {
                 c.id AS condition_id,
                 c.transition,
                 c.rule_type,
-                s.id AS session_id,
                 dt.trigger_at,
                 schedule.time_of_day_ms,
                 schedule.weekdays_mask,
                 after_transition.anchor_transition,
                 after_transition.offset_ms
             FROM intention_condition c
-            LEFT JOIN intention_session s
-                ON s.intention_id = c.intention_id
-                    AND s.status = 'active'
             LEFT JOIN intention_condition_date_time dt
                 ON dt.condition_id = c.id
                     AND c.rule_type = 'date_time'
@@ -86,10 +82,6 @@ impl IntentionRepository {
                 ON after_transition.condition_id = c.id
                     AND c.rule_type = 'after_transition'
             WHERE c.rule_type IN ('date_time', 'schedule', 'after_transition')
-                AND (
-                    (c.transition = 'start' AND s.id IS NULL)
-                    OR (c.transition = 'end' AND s.id IS NOT NULL)
-                )
             ORDER BY COALESCE(dt.trigger_at, 9223372036854775807) ASC, c.intention_id ASC, c.id ASC",
         )
         .fetch_all(pool)
@@ -774,14 +766,7 @@ impl IntentionRepository {
 
         let transition = match row.transition.as_str() {
             "start" => ScheduledConditionTransition::Start,
-            "end" => {
-                let session_id = row.session_id.ok_or_else(|| {
-                    IntentionRepositoryError::InvalidData(
-                        "Scheduled end condition is missing an active session".to_string(),
-                    )
-                })?;
-                ScheduledConditionTransition::End { session_id }
-            }
+            "end" => ScheduledConditionTransition::End,
             _ => {
                 return Err(IntentionRepositoryError::InvalidData(format!(
                     "Unknown scheduled condition transition: {}",
@@ -865,7 +850,6 @@ struct ScheduledConditionRow {
     condition_id: i64,
     transition: String,
     rule_type: String,
-    session_id: Option<i64>,
     trigger_at: Option<i64>,
     time_of_day_ms: Option<i32>,
     weekdays_mask: Option<i32>,
@@ -964,6 +948,57 @@ impl IntentionSessionRepository {
         .await?;
 
         return row.map(Self::build_session).transpose();
+    }
+
+    pub async fn get_active_session_info_by_intention_id(
+        pool: &Pool<Sqlite>,
+        intention_id: i64,
+    ) -> Result<Option<ActiveSessionInfo>, IntentionSessionRepositoryError> {
+        return sqlx::query_as::<_, ActiveSessionInfo>(
+            "SELECT id, started_at
+            FROM intention_session
+            WHERE intention_id = ?
+                AND status = 'active'",
+        )
+        .bind(intention_id)
+        .fetch_optional(pool)
+        .await
+        .map_err(IntentionSessionRepositoryError::from);
+    }
+
+    pub async fn has_session_with_start_condition_id(
+        pool: &Pool<Sqlite>,
+        condition_id: i64,
+    ) -> Result<bool, IntentionSessionRepositoryError> {
+        let row = sqlx::query_scalar::<_, i64>(
+            "SELECT 1
+            FROM intention_session
+            WHERE start_condition_id = ?
+            LIMIT 1",
+        )
+        .bind(condition_id)
+        .fetch_optional(pool)
+        .await?;
+
+        return Ok(row.is_some());
+    }
+
+    pub async fn get_latest_ended_at_by_intention_id(
+        pool: &Pool<Sqlite>,
+        intention_id: i64,
+    ) -> Result<Option<i64>, IntentionSessionRepositoryError> {
+        return sqlx::query_scalar::<_, i64>(
+            "SELECT ended_at
+            FROM intention_session
+            WHERE intention_id = ?
+                AND ended_at IS NOT NULL
+            ORDER BY ended_at DESC, id DESC
+            LIMIT 1",
+        )
+        .bind(intention_id)
+        .fetch_optional(pool)
+        .await
+        .map_err(IntentionSessionRepositoryError::from);
     }
 
     pub async fn create_session_if_inactive(
@@ -1152,6 +1187,12 @@ impl IntentionSessionRepository {
             created_at: row.created_at,
         });
     }
+}
+
+#[derive(Debug, Clone, FromRow)]
+pub struct ActiveSessionInfo {
+    pub id: i64,
+    pub started_at: i64,
 }
 
 #[derive(Debug, Clone, FromRow)]
