@@ -5,6 +5,7 @@ use super::{
         IntentionConditionRule, IntentionConditionScheduleRule, IntentionConditionTransition,
         IntentionEnforcementMode, IntentionSession, IntentionSessionStatus,
     },
+    scheduled_runtime::{ScheduledCondition, ScheduledConditionRule},
     types::IntentionBehaviorType,
 };
 use crate::{
@@ -54,6 +55,50 @@ impl IntentionRepository {
 
         let mut intentions = Self::hydrate_intentions(pool, vec![base]).await?;
         return Ok(intentions.pop());
+    }
+
+    pub async fn get_scheduled_conditions(
+        pool: &Pool<Sqlite>,
+    ) -> Result<Vec<ScheduledCondition>, IntentionRepositoryError> {
+        let rows = sqlx::query_as::<_, ScheduledConditionRow>(
+            "SELECT
+                c.intention_id,
+                c.id AS condition_id,
+                c.transition,
+                c.rule_type,
+                NULL AS session_id,
+                dt.trigger_at,
+                schedule.time_of_day_ms,
+                schedule.weekdays_mask,
+                after_transition.anchor_transition,
+                after_transition.offset_ms
+            FROM intention_condition c
+            LEFT JOIN intention_condition_date_time dt
+                ON dt.condition_id = c.id
+                    AND c.rule_type = 'date_time'
+            LEFT JOIN intention_condition_schedule schedule
+                ON schedule.condition_id = c.id
+                    AND c.rule_type = 'schedule'
+            LEFT JOIN intention_condition_after_transition after_transition
+                ON after_transition.condition_id = c.id
+                    AND c.rule_type = 'after_transition'
+            WHERE c.transition = 'start'
+                AND c.rule_type IN ('date_time', 'schedule', 'after_transition')
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM intention_session s
+                    WHERE s.intention_id = c.intention_id
+                        AND s.status = 'active'
+                )
+            ORDER BY COALESCE(dt.trigger_at, 9223372036854775807) ASC, c.intention_id ASC, c.id ASC",
+        )
+        .fetch_all(pool)
+        .await?;
+
+        return rows
+            .into_iter()
+            .map(Self::build_scheduled_condition)
+            .collect::<Result<Vec<_>, _>>();
     }
 
     pub async fn create(
@@ -670,6 +715,72 @@ impl IntentionRepository {
             created_at: row.created_at,
         });
     }
+
+    fn build_scheduled_condition(
+        row: ScheduledConditionRow,
+    ) -> Result<ScheduledCondition, IntentionRepositoryError> {
+        let rule = match row.rule_type.as_str() {
+            "date_time" => {
+                let trigger_at = row.trigger_at.ok_or_else(|| {
+                    IntentionRepositoryError::InvalidData(
+                        "Missing date-time payload for scheduled date-time condition".to_string(),
+                    )
+                })?;
+
+                ScheduledConditionRule::DateTime { trigger_at }
+            }
+            "schedule" => {
+                let time_of_day_ms = row.time_of_day_ms.ok_or_else(|| {
+                    IntentionRepositoryError::InvalidData(
+                        "Missing schedule payload for scheduled condition".to_string(),
+                    )
+                })?;
+
+                ScheduledConditionRule::Schedule {
+                    time_of_day_ms: TimeOnly::from_millis_since_midnight(time_of_day_ms)
+                        .map_err(IntentionRepositoryError::InvalidData)?,
+                    weekdays_mask: row
+                        .weekdays_mask
+                        .map(WeekdayMask::from_bits)
+                        .transpose()
+                        .map_err(IntentionRepositoryError::InvalidData)?,
+                }
+            }
+            "after_transition" => {
+                let anchor_transition = row.anchor_transition.ok_or_else(|| {
+                    IntentionRepositoryError::InvalidData(
+                        "Missing after-transition payload for scheduled condition".to_string(),
+                    )
+                })?;
+                let offset_ms = row.offset_ms.ok_or_else(|| {
+                    IntentionRepositoryError::InvalidData(
+                        "Missing after-transition payload for scheduled condition".to_string(),
+                    )
+                })?;
+
+                ScheduledConditionRule::AfterTransition {
+                    anchor_transition: IntentionConditionTransition::from_str(&anchor_transition)
+                        .map_err(IntentionRepositoryError::InvalidData)?,
+                    offset_ms,
+                }
+            }
+            _ => {
+                return Err(IntentionRepositoryError::InvalidData(format!(
+                    "Unknown scheduled condition rule type: {}",
+                    row.rule_type
+                )));
+            }
+        };
+
+        return Ok(ScheduledCondition {
+            intention_id: row.intention_id,
+            transition: IntentionConditionTransition::from_str(&row.transition)
+                .map_err(IntentionRepositoryError::InvalidData)?,
+            condition_id: row.condition_id,
+            session_id: row.session_id,
+            rule,
+        });
+    }
 }
 
 #[derive(Debug, Clone, FromRow)]
@@ -730,6 +841,20 @@ struct IntentionConditionAfterTransitionRow {
     condition_id: i64,
     anchor_transition: String,
     offset_ms: i64,
+}
+
+#[derive(Debug, Clone, FromRow)]
+struct ScheduledConditionRow {
+    intention_id: i64,
+    condition_id: i64,
+    transition: String,
+    rule_type: String,
+    session_id: Option<i64>,
+    trigger_at: Option<i64>,
+    time_of_day_ms: Option<i32>,
+    weekdays_mask: Option<i32>,
+    anchor_transition: Option<String>,
+    offset_ms: Option<i64>,
 }
 
 pub struct WriteIntentionInput {
