@@ -24,6 +24,10 @@ Scheduled jobs are process-local and can become stale after edits, deletes, app 
 
 The evaluator returns all currently due conditions and the closest future trigger. Scheduling only that closest trigger keeps scheduler state small. When the wakeup fires, the runtime reevaluates all timed conditions and schedules the next closest trigger.
 
+### What owns runtime availability?
+
+Abstand is a tray app, so the tray process owns timed activation while it is running. Closing a window should not stop this runtime. If the process exits, crashes, updates, or the machine restarts, the in-memory wakeup is lost, but setup reevaluates from the database on startup and catches up on conditions that are due at startup.
+
 ### Why can reevaluation run multiple passes?
 
 Applying one due condition can make another condition evaluable. For example, a DateTime start can create an active session, which makes an end-after-start condition resolvable. The timed runtime repeats evaluation while due conditions are making real state changes, with a fixed pass limit to avoid infinite immediate cycles.
