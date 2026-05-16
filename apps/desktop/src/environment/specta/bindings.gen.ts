@@ -102,6 +102,22 @@ async startIntention(intentionId: number) : Promise<Result<IntentionSession, str
     else return { status: "error", error: e  as any };
 }
 },
+async completeIntention(intentionId: number, endConditionId: number | null) : Promise<Result<IntentionSession, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("complete_intention", { intentionId, endConditionId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async stopIntention(intentionId: number) : Promise<Result<IntentionSession, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("stop_intention", { intentionId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getShortcutConfigs() : Promise<ShortcutActionConfigDto[]> {
     return await TAURI_INVOKE("get_shortcut_configs");
 },

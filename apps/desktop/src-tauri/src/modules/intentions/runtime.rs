@@ -1,89 +1,29 @@
 use super::{
-    intention::{
-        Intention, IntentionConditionRule, IntentionConditionTransition, IntentionSession,
-    },
-    repository::{
-        CreateIntentionSessionInput, IntentionRepository, IntentionRepositoryError,
-        IntentionSessionRepository, IntentionSessionRepositoryError,
-    },
-    types::{IntentionRuntimeState, IntentionSessionStartedEvent},
+    intention::IntentionSession,
+    session::{complete_session, start_session, stop_session, SessionTransitionError},
+    timed_runtime::{TimedRuntime, TimedRuntimeError},
 };
-use crate::{
-    common::time::unix_ms_now,
-    modules::{
-        db::types::DatabaseState,
-        scheduler::{scheduler::ScheduledJobId, types::SchedulerState},
-    },
-};
-use std::{collections::HashMap, fmt, sync::Mutex};
-use tauri::{AppHandle, Manager};
-use tauri_specta::Event;
+use crate::common::time::unix_ms_now;
+use std::fmt;
+use tauri::AppHandle;
 
 pub struct IntentionRuntime {
-    scheduled_jobs: Mutex<HashMap<IntentionRuntimeJobKey, ScheduledJobId>>,
+    timed: TimedRuntime,
 }
 
 impl IntentionRuntime {
     pub fn new() -> Self {
         return Self {
-            scheduled_jobs: Mutex::new(HashMap::new()),
+            timed: TimedRuntime::new(),
         };
     }
 
-    pub async fn resync_all(&self, app: &AppHandle) -> Result<(), IntentionRuntimeError> {
-        let database = app.state::<DatabaseState>();
-        let intentions = IntentionRepository::get_all(&database.pool).await?;
-        for intention in intentions {
-            self.resync_intention(app, intention.id).await?;
-        }
-
-        return Ok(());
-    }
-
-    pub async fn resync_intention(
-        &self,
-        app: &AppHandle,
-        intention_id: i64,
-    ) -> Result<(), IntentionRuntimeError> {
-        self.clear_intention_jobs(app, intention_id);
-
-        let database = app.state::<DatabaseState>();
-        let Some(intention) = IntentionRepository::get_by_id(&database.pool, intention_id).await?
-        else {
-            return Ok(());
-        };
-
-        let active_session = IntentionSessionRepository::get_active_session_by_intention_id(
-            &database.pool,
-            intention_id,
-        )
-        .await?;
-        if active_session.is_none() {
-            self.schedule_start_conditions(app, &intention);
-        }
-
-        return Ok(());
-    }
-
-    pub fn clear_intention_jobs(&self, app: &AppHandle, intention_id: i64) {
-        let scheduled_job_ids = {
-            let mut scheduled_jobs = self.scheduled_jobs.lock().unwrap();
-            let job_keys = scheduled_jobs
-                .keys()
-                .copied()
-                .filter(|job_key| job_key.intention_id() == intention_id)
-                .collect::<Vec<_>>();
-
-            job_keys
-                .into_iter()
-                .filter_map(|job_key| scheduled_jobs.remove(&job_key))
-                .collect::<Vec<_>>()
-        };
-
-        let scheduler = app.state::<SchedulerState>();
-        for scheduled_job_id in scheduled_job_ids {
-            scheduler.0.cancel(scheduled_job_id);
-        }
+    pub async fn reevaluate(&self, app: &AppHandle) -> Result<(), IntentionRuntimeError> {
+        return self
+            .timed
+            .reevaluate(app)
+            .await
+            .map_err(IntentionRuntimeError::TimedRuntime);
     }
 
     pub async fn start_intention(
@@ -91,184 +31,64 @@ impl IntentionRuntime {
         app: &AppHandle,
         intention_id: i64,
     ) -> Result<IntentionSession, IntentionRuntimeError> {
-        return self
-            .start_intention_session(app, intention_id, None, unix_ms_now())
-            .await;
-    }
-
-    fn schedule_start_conditions(&self, app: &AppHandle, intention: &Intention) {
-        let now = unix_ms_now();
-        for condition in intention
-            .conditions
-            .iter()
-            .filter(|condition| condition.transition == IntentionConditionTransition::Start)
-        {
-            match &condition.rule {
-                IntentionConditionRule::DateTime(rule) => {
-                    if rule.trigger_at <= now {
-                        continue;
-                    }
-
-                    self.schedule_start_condition(app, intention.id, condition.id, rule.trigger_at);
-                }
-                IntentionConditionRule::Manual => {}
-                IntentionConditionRule::Schedule(_) => {}
-                IntentionConditionRule::AfterTransition(_) => {}
-            }
+        let session = start_session(app, intention_id, None, unix_ms_now()).await?;
+        if let Err(error) = self.reevaluate(app).await {
+            eprintln!(
+                "Intention reevaluation after manual start failed: {}",
+                error
+            );
         }
-    }
-
-    fn schedule_start_condition(
-        &self,
-        app: &AppHandle,
-        intention_id: i64,
-        condition_id: i64,
-        trigger_at: i64,
-    ) {
-        let scheduler = app.state::<SchedulerState>();
-        let scheduled_job_id = scheduler.0.schedule_at_unix_ms(
-            format!("intention:{} start:{}", intention_id, condition_id),
-            trigger_at,
-            move |app| {
-                tauri::async_runtime::spawn(async move {
-                    let runtime = app.state::<IntentionRuntimeState>();
-                    match runtime
-                        .start_intention_session(&app, intention_id, Some(condition_id), trigger_at)
-                        .await
-                    {
-                        Ok(_) => {}
-                        Err(IntentionRuntimeError::IntentionNotFound(_)) => {}
-                        Err(error) => {
-                            eprintln!("Failed to start intention session: {}", error);
-                        }
-                    }
-                });
-            },
-        );
-
-        self.scheduled_jobs.lock().unwrap().insert(
-            IntentionRuntimeJobKey::StartCondition {
-                intention_id,
-                condition_id,
-            },
-            scheduled_job_id,
-        );
-    }
-
-    async fn start_intention_session(
-        &self,
-        app: &AppHandle,
-        intention_id: i64,
-        start_condition_id: Option<i64>,
-        started_at: i64,
-    ) -> Result<IntentionSession, IntentionRuntimeError> {
-        let database = app.state::<DatabaseState>();
-        if IntentionRepository::get_by_id(&database.pool, intention_id)
-            .await?
-            .is_none()
-        {
-            return Err(IntentionRuntimeError::IntentionNotFound(intention_id));
-        }
-
-        let active_session = IntentionSessionRepository::get_active_session_by_intention_id(
-            &database.pool,
-            intention_id,
-        )
-        .await?;
-        if let Some(active_session) = active_session {
-            return Ok(active_session);
-        }
-
-        let Some(session) = IntentionSessionRepository::create_session_if_inactive(
-            &database.pool,
-            CreateIntentionSessionInput {
-                intention_id,
-                started_at,
-                start_condition_id,
-            },
-        )
-        .await?
-        else {
-            let session = IntentionSessionRepository::get_active_session_by_intention_id(
-                &database.pool,
-                intention_id,
-            )
-            .await
-            .map_err(IntentionRuntimeError::from)?;
-
-            let session = session.ok_or(IntentionRuntimeError::InvalidRuntimeState(format!(
-                "Active intention session for intention {} could not be reloaded",
-                intention_id
-            )))?;
-
-            return Ok(session);
-        };
-
-        let _ = IntentionSessionStartedEvent {
-            intention_id,
-            session_id: session.id,
-        }
-        .emit(app);
-
-        self.resync_intention(app, intention_id).await?;
         return Ok(session);
     }
-}
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[allow(dead_code)]
-enum IntentionRuntimeJobKey {
-    StartCondition {
+    pub async fn complete_intention(
+        &self,
+        app: &AppHandle,
         intention_id: i64,
-        condition_id: i64,
-    },
-    EndCondition {
-        intention_id: i64,
-        session_id: i64,
-        condition_id: i64,
-    },
-}
+        end_condition_id: Option<i64>,
+    ) -> Result<IntentionSession, IntentionRuntimeError> {
+        let session = complete_session(app, intention_id, end_condition_id, unix_ms_now()).await?;
+        if let Err(error) = self.reevaluate(app).await {
+            eprintln!(
+                "Intention reevaluation after manual complete failed: {}",
+                error
+            );
+        }
+        return Ok(session);
+    }
 
-impl IntentionRuntimeJobKey {
-    fn intention_id(&self) -> i64 {
-        return match self {
-            Self::StartCondition { intention_id, .. } => *intention_id,
-            Self::EndCondition { intention_id, .. } => *intention_id,
-        };
+    pub async fn stop_intention(
+        &self,
+        app: &AppHandle,
+        intention_id: i64,
+    ) -> Result<IntentionSession, IntentionRuntimeError> {
+        let session = stop_session(app, intention_id, unix_ms_now()).await?;
+        if let Err(error) = self.reevaluate(app).await {
+            eprintln!("Intention reevaluation after manual stop failed: {}", error);
+        }
+        return Ok(session);
     }
 }
 
 #[derive(Debug)]
 pub enum IntentionRuntimeError {
-    IntentionNotFound(i64),
-    InvalidRuntimeState(String),
-    IntentionRepository(IntentionRepositoryError),
-    SessionRepository(IntentionSessionRepositoryError),
+    TimedRuntime(TimedRuntimeError),
+    SessionTransition(SessionTransitionError),
 }
 
 impl fmt::Display for IntentionRuntimeError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         return match self {
-            Self::IntentionNotFound(intention_id) => {
-                write!(f, "Intention {} does not exist", intention_id)
-            }
-            Self::InvalidRuntimeState(message) => write!(f, "{}", message),
-            Self::IntentionRepository(error) => write!(f, "{}", error),
-            Self::SessionRepository(error) => write!(f, "{}", error),
+            Self::TimedRuntime(error) => write!(f, "{}", error),
+            Self::SessionTransition(error) => write!(f, "{}", error),
         };
     }
 }
 
 impl std::error::Error for IntentionRuntimeError {}
 
-impl From<IntentionRepositoryError> for IntentionRuntimeError {
-    fn from(value: IntentionRepositoryError) -> Self {
-        return Self::IntentionRepository(value);
-    }
-}
-
-impl From<IntentionSessionRepositoryError> for IntentionRuntimeError {
-    fn from(value: IntentionSessionRepositoryError) -> Self {
-        return Self::SessionRepository(value);
+impl From<SessionTransitionError> for IntentionRuntimeError {
+    fn from(value: SessionTransitionError) -> Self {
+        return Self::SessionTransition(value);
     }
 }

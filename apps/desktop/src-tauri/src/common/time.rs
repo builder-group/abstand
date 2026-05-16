@@ -58,7 +58,7 @@ impl TimeOnly {
         return self.0;
     }
 
-    fn to_naive_time(&self) -> NaiveTime {
+    pub fn to_naive_time(&self) -> NaiveTime {
         let seconds = self.0 / MILLIS_PER_SECOND;
         let nanos = (self.0 % MILLIS_PER_SECOND) as u32 * NANOS_PER_MILLI;
 
@@ -129,6 +129,14 @@ pub fn to_local_datetime(date: &DateOnly, time: &TimeOnly) -> Result<DateTime<Lo
             naive_date.format("%Y-%m-%d"),
             naive_time.format("%H:%M:%S%.3f")
         )),
+    };
+}
+
+pub fn local_datetime_from_unix_ms(unix_ms: i64) -> Option<DateTime<Local>> {
+    return match Local.timestamp_millis_opt(unix_ms) {
+        LocalResult::Single(datetime) => Some(datetime),
+        LocalResult::Ambiguous(datetime, _) => Some(datetime),
+        LocalResult::None => None,
     };
 }
 

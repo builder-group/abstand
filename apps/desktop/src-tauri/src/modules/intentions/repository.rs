@@ -5,6 +5,10 @@ use super::{
         IntentionConditionRule, IntentionConditionScheduleRule, IntentionConditionTransition,
         IntentionEnforcementMode, IntentionSession, IntentionSessionStatus,
     },
+    timed_evaluator::{
+        TimedAfterTransitionRule, TimedCondition, TimedConditionRule, TimedConditionTransition,
+        TimedDateTimeRule, TimedScheduleRule,
+    },
     types::IntentionBehaviorType,
 };
 use crate::{
@@ -21,8 +25,6 @@ use std::{
     collections::{HashMap, HashSet},
     fmt,
 };
-
-// MARK: - Intention Repository
 
 pub struct IntentionRepository;
 
@@ -54,6 +56,43 @@ impl IntentionRepository {
 
         let mut intentions = Self::hydrate_intentions(pool, vec![base]).await?;
         return Ok(intentions.pop());
+    }
+
+    pub async fn get_timed_conditions(
+        pool: &Pool<Sqlite>,
+    ) -> Result<Vec<TimedCondition>, IntentionRepositoryError> {
+        let rows = sqlx::query_as::<_, TimedConditionRow>(
+            "SELECT
+                c.intention_id,
+                c.id AS condition_id,
+                c.transition,
+                c.rule_type,
+                c.created_at,
+                date_time.trigger_at,
+                schedule.time_of_day_ms,
+                schedule.weekdays_mask,
+                after_transition.anchor_transition,
+                after_transition.offset_ms
+            FROM intention_condition c
+            LEFT JOIN intention_condition_date_time date_time
+                ON date_time.condition_id = c.id
+                    AND c.rule_type = 'date_time'
+            LEFT JOIN intention_condition_schedule schedule
+                ON schedule.condition_id = c.id
+                    AND c.rule_type = 'schedule'
+            LEFT JOIN intention_condition_after_transition after_transition
+                ON after_transition.condition_id = c.id
+                    AND c.rule_type = 'after_transition'
+            WHERE c.rule_type IN ('date_time', 'schedule', 'after_transition')
+            ORDER BY c.intention_id ASC, c.id ASC",
+        )
+        .fetch_all(pool)
+        .await?;
+
+        return rows
+            .into_iter()
+            .map(Self::build_timed_condition)
+            .collect::<Result<Vec<_>, _>>();
     }
 
     pub async fn create(
@@ -670,6 +709,82 @@ impl IntentionRepository {
             created_at: row.created_at,
         });
     }
+
+    fn build_timed_condition(
+        row: TimedConditionRow,
+    ) -> Result<TimedCondition, IntentionRepositoryError> {
+        let rule = match row.rule_type.as_str() {
+            "date_time" => {
+                let trigger_at = row.trigger_at.ok_or_else(|| {
+                    IntentionRepositoryError::InvalidData(
+                        "Missing date-time payload for timed date-time condition".to_string(),
+                    )
+                })?;
+
+                TimedConditionRule::DateTime(TimedDateTimeRule { trigger_at })
+            }
+            "schedule" => {
+                let time_of_day_ms = row.time_of_day_ms.ok_or_else(|| {
+                    IntentionRepositoryError::InvalidData(
+                        "Missing schedule payload for timed condition".to_string(),
+                    )
+                })?;
+
+                TimedConditionRule::Schedule(TimedScheduleRule {
+                    time_of_day_ms: TimeOnly::from_millis_since_midnight(time_of_day_ms)
+                        .map_err(IntentionRepositoryError::InvalidData)?,
+                    weekdays_mask: row
+                        .weekdays_mask
+                        .map(WeekdayMask::from_bits)
+                        .transpose()
+                        .map_err(IntentionRepositoryError::InvalidData)?,
+                })
+            }
+            "after_transition" => {
+                let anchor_transition = row.anchor_transition.ok_or_else(|| {
+                    IntentionRepositoryError::InvalidData(
+                        "Missing after-transition payload for timed condition".to_string(),
+                    )
+                })?;
+                let offset_ms = row.offset_ms.ok_or_else(|| {
+                    IntentionRepositoryError::InvalidData(
+                        "Missing after-transition payload for timed condition".to_string(),
+                    )
+                })?;
+
+                TimedConditionRule::AfterTransition(TimedAfterTransitionRule {
+                    anchor_transition: IntentionConditionTransition::from_str(&anchor_transition)
+                        .map_err(IntentionRepositoryError::InvalidData)?,
+                    offset_ms,
+                })
+            }
+            _ => {
+                return Err(IntentionRepositoryError::InvalidData(format!(
+                    "Unknown timed condition rule type: {}",
+                    row.rule_type
+                )));
+            }
+        };
+
+        let transition = match row.transition.as_str() {
+            "start" => TimedConditionTransition::Start,
+            "end" => TimedConditionTransition::End,
+            _ => {
+                return Err(IntentionRepositoryError::InvalidData(format!(
+                    "Unknown timed condition transition: {}",
+                    row.transition
+                )));
+            }
+        };
+
+        return Ok(TimedCondition {
+            intention_id: row.intention_id,
+            condition_id: row.condition_id,
+            transition,
+            rule,
+            created_at: row.created_at,
+        });
+    }
 }
 
 #[derive(Debug, Clone, FromRow)]
@@ -730,6 +845,20 @@ struct IntentionConditionAfterTransitionRow {
     condition_id: i64,
     anchor_transition: String,
     offset_ms: i64,
+}
+
+#[derive(Debug, Clone, FromRow)]
+struct TimedConditionRow {
+    intention_id: i64,
+    condition_id: i64,
+    transition: String,
+    rule_type: String,
+    created_at: i64,
+    trigger_at: Option<i64>,
+    time_of_day_ms: Option<i32>,
+    weekdays_mask: Option<i32>,
+    anchor_transition: Option<String>,
+    offset_ms: Option<i64>,
 }
 
 pub struct WriteIntentionInput {
@@ -825,6 +954,78 @@ impl IntentionSessionRepository {
         return row.map(Self::build_session).transpose();
     }
 
+    pub async fn get_active_session_started_at_by_intention_id(
+        pool: &Pool<Sqlite>,
+        intention_id: i64,
+    ) -> Result<Option<i64>, IntentionSessionRepositoryError> {
+        return sqlx::query_scalar::<_, i64>(
+            "SELECT started_at
+            FROM intention_session
+            WHERE intention_id = ?
+                AND status = 'active'",
+        )
+        .bind(intention_id)
+        .fetch_optional(pool)
+        .await
+        .map_err(IntentionSessionRepositoryError::from);
+    }
+
+    pub async fn has_session_with_start_condition_id(
+        pool: &Pool<Sqlite>,
+        condition_id: i64,
+    ) -> Result<bool, IntentionSessionRepositoryError> {
+        let row = sqlx::query_scalar::<_, i64>(
+            "SELECT 1
+            FROM intention_session
+            WHERE start_condition_id = ?
+            LIMIT 1",
+        )
+        .bind(condition_id)
+        .fetch_optional(pool)
+        .await?;
+
+        return Ok(row.is_some());
+    }
+
+    pub async fn get_latest_started_at_by_start_condition_id(
+        pool: &Pool<Sqlite>,
+        condition_id: i64,
+    ) -> Result<Option<i64>, IntentionSessionRepositoryError> {
+        return sqlx::query_scalar::<_, i64>(
+            "SELECT started_at
+            FROM intention_session
+            WHERE start_condition_id = ?
+            ORDER BY started_at DESC, id DESC
+            LIMIT 1",
+        )
+        .bind(condition_id)
+        .fetch_optional(pool)
+        .await
+        .map_err(IntentionSessionRepositoryError::from);
+    }
+
+    pub async fn get_latest_completed_at_by_intention_id(
+        pool: &Pool<Sqlite>,
+        intention_id: i64,
+    ) -> Result<Option<i64>, IntentionSessionRepositoryError> {
+        return sqlx::query_scalar::<_, i64>(
+            "SELECT ended_at
+            FROM intention_session
+            WHERE intention_id = ?
+                AND status = 'completed'
+                AND ended_at IS NOT NULL
+            ORDER BY ended_at DESC, id DESC
+            LIMIT 1",
+        )
+        .bind(intention_id)
+        .fetch_optional(pool)
+        .await
+        .map_err(IntentionSessionRepositoryError::from);
+    }
+
+    /// Creates a session if the intention exists and has no active session.
+    ///
+    /// Returns `None` when the insert is skipped, such as for an already-active or missing intention.
     pub async fn create_session_if_inactive(
         pool: &Pool<Sqlite>,
         input: CreateIntentionSessionInput,
@@ -840,13 +1041,16 @@ impl IntentionSessionRepository {
         .await?;
 
         let row = sqlx::query_as::<_, IntentionSessionRow>(
-            "INSERT INTO intention_session (intention_id, status, started_at, start_condition_id) VALUES (?, 'active', ?, ?)
+            "INSERT INTO intention_session (intention_id, status, started_at, start_condition_id)
+            SELECT id, 'active', ?, ?
+            FROM intention
+            WHERE id = ?
             ON CONFLICT DO NOTHING
             RETURNING id, intention_id, status, started_at, start_condition_id, ended_at, end_condition_id, updated_at, created_at",
         )
-        .bind(input.intention_id)
         .bind(input.started_at)
         .bind(input.start_condition_id)
+        .bind(input.intention_id)
         .fetch_optional(&mut *transaction)
         .await?;
 

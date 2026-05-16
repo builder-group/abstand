@@ -81,15 +81,14 @@ pub async fn create_intention(
         .await
         .map_err(|error| error.to_string())?;
 
-    runtime
-        .resync_intention(&app, intention.id)
-        .await
-        .map_err(|error| error.to_string())?;
-
     let _ = IntentionCreatedEvent {
         intention_id: intention.id,
     }
     .emit(&app);
+    if let Err(error) = runtime.reevaluate(&app).await {
+        eprintln!("Intention reevaluation after create failed: {}", error);
+    }
+
     return Ok(intention);
 }
 
@@ -108,15 +107,13 @@ pub async fn update_intention(
         .map_err(|error| error.to_string())?
         .ok_or_else(|| format!("Intention {} does not exist", params.intention_id))?;
 
-    runtime
-        .resync_intention(&app, intention.id)
-        .await
-        .map_err(|error| error.to_string())?;
-
     let _ = IntentionUpdatedEvent {
         intention_id: intention.id,
     }
     .emit(&app);
+    if let Err(error) = runtime.reevaluate(&app).await {
+        eprintln!("Intention reevaluation after update failed: {}", error);
+    }
 
     return Ok(intention);
 }
@@ -137,8 +134,10 @@ pub async fn delete_intention(
         return Err(format!("Intention {} does not exist", intention_id));
     }
 
-    runtime.clear_intention_jobs(&app, intention_id);
     let _ = IntentionDeletedEvent { intention_id }.emit(&app);
+    if let Err(error) = runtime.reevaluate(&app).await {
+        eprintln!("Intention reevaluation after delete failed: {}", error);
+    }
 
     return Ok(());
 }
@@ -152,6 +151,33 @@ pub async fn start_intention(
 ) -> Result<IntentionSession, String> {
     return runtime
         .start_intention(&app, intention_id)
+        .await
+        .map_err(|error| error.to_string());
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn complete_intention(
+    app: AppHandle,
+    runtime: State<'_, IntentionRuntimeState>,
+    intention_id: i64,
+    end_condition_id: Option<i64>,
+) -> Result<IntentionSession, String> {
+    return runtime
+        .complete_intention(&app, intention_id, end_condition_id)
+        .await
+        .map_err(|error| error.to_string());
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn stop_intention(
+    app: AppHandle,
+    runtime: State<'_, IntentionRuntimeState>,
+    intention_id: i64,
+) -> Result<IntentionSession, String> {
+    return runtime
+        .stop_intention(&app, intention_id)
         .await
         .map_err(|error| error.to_string());
 }
