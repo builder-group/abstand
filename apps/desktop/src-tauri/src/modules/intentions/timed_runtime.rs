@@ -70,7 +70,9 @@ impl TimedRuntime {
             if !did_apply_due_condition {
                 if did_fail_due_condition {
                     // Retry in 5s because failed due conditions are not represented by the next future wakeup
-                    self.schedule_wakeup(app, Some(unix_ms_now() + 5_000));
+                    let retry_at = unix_ms_now() + 5_000;
+                    let wake_at = next_wake_at.map_or(retry_at, |wake_at| wake_at.min(retry_at));
+                    self.schedule_wakeup(app, Some(wake_at));
                     return Ok(());
                 }
 
