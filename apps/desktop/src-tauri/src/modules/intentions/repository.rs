@@ -63,12 +63,14 @@ impl IntentionRepository {
     pub async fn get_timed_conditions(
         pool: &Pool<Sqlite>,
     ) -> Result<Vec<TimedCondition>, IntentionRepositoryError> {
-        let rows = sqlx::query_as::<_, TimedConditionRow>(
+        let null_trigger_sort_key = i64::MAX;
+        let query = format!(
             "SELECT
                 c.intention_id,
                 c.id AS condition_id,
                 c.transition,
                 c.rule_type,
+                c.created_at,
                 date_time.trigger_at,
                 schedule.time_of_day_ms,
                 schedule.weekdays_mask,
@@ -85,10 +87,11 @@ impl IntentionRepository {
                 ON after_transition.condition_id = c.id
                     AND c.rule_type = 'after_transition'
             WHERE c.rule_type IN ('date_time', 'schedule', 'after_transition')
-            ORDER BY COALESCE(date_time.trigger_at, 9223372036854775807) ASC, c.intention_id ASC, c.id ASC",
-        )
-        .fetch_all(pool)
-        .await?;
+            ORDER BY COALESCE(date_time.trigger_at, {null_trigger_sort_key}) ASC, c.intention_id ASC, c.id ASC"
+        );
+        let rows = sqlx::query_as::<_, TimedConditionRow>(&query)
+            .fetch_all(pool)
+            .await?;
 
         return rows
             .into_iter()
@@ -783,6 +786,7 @@ impl IntentionRepository {
             condition_id: row.condition_id,
             transition,
             rule,
+            created_at: row.created_at,
         });
     }
 }
@@ -853,6 +857,7 @@ struct TimedConditionRow {
     condition_id: i64,
     transition: String,
     rule_type: String,
+    created_at: i64,
     trigger_at: Option<i64>,
     time_of_day_ms: Option<i32>,
     weekdays_mask: Option<i32>,
@@ -984,6 +989,23 @@ impl IntentionSessionRepository {
         .await?;
 
         return Ok(row.is_some());
+    }
+
+    pub async fn get_latest_started_at_by_start_condition_id(
+        pool: &Pool<Sqlite>,
+        condition_id: i64,
+    ) -> Result<Option<i64>, IntentionSessionRepositoryError> {
+        return sqlx::query_scalar::<_, i64>(
+            "SELECT started_at
+            FROM intention_session
+            WHERE start_condition_id = ?
+            ORDER BY started_at DESC, id DESC
+            LIMIT 1",
+        )
+        .bind(condition_id)
+        .fetch_optional(pool)
+        .await
+        .map_err(IntentionSessionRepositoryError::from);
     }
 
     pub async fn get_latest_ended_at_by_intention_id(

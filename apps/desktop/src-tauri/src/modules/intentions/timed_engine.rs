@@ -5,14 +5,15 @@ use super::{
         IntentionSessionRepository, IntentionSessionRepositoryError,
     },
 };
-use crate::common::time::{TimeOnly, WeekdayMask};
+use crate::common::time::{local_datetime_from_unix_ms, TimeOnly, WeekdayMask};
+use chrono::{Datelike, Duration, Local, LocalResult, NaiveDate, TimeZone};
 use sqlx::{Pool, Sqlite};
 use std::fmt;
 
 pub struct TimedEngine;
 
 impl TimedEngine {
-    pub async fn evaluate(
+    pub async fn evaluate_conditions(
         pool: &Pool<Sqlite>,
         now: i64,
     ) -> Result<TimedEngineEvaluation, TimedEngineError> {
@@ -33,8 +34,7 @@ impl TimedEngine {
                 TimedConditionActivation::Future { trigger_at } => {
                     next_wake_at = Some(next_wake_at.map_or(trigger_at, |w| w.min(trigger_at)));
                 }
-                TimedConditionActivation::Inactive
-                | TimedConditionActivation::Unsupported { .. } => {}
+                TimedConditionActivation::Inactive => {}
             }
         }
 
@@ -65,6 +65,7 @@ pub struct TimedCondition {
     pub condition_id: i64,
     pub transition: TimedConditionTransition,
     pub rule: TimedConditionRule,
+    pub created_at: i64,
 }
 
 impl TimedCondition {
@@ -90,10 +91,17 @@ impl TimedCondition {
             _ => {}
         }
 
-        return self
-            .rule
-            .evaluate(self, pool, now, active_session.as_ref())
-            .await;
+        return match &self.rule {
+            TimedConditionRule::DateTime(rule) => rule.evaluate(self, pool, now).await,
+            TimedConditionRule::Schedule(rule) => {
+                rule.evaluate(self, pool, now, active_session.as_ref())
+                    .await
+            }
+            TimedConditionRule::AfterTransition(rule) => {
+                rule.evaluate(self, pool, now, active_session.as_ref())
+                    .await
+            }
+        };
     }
 }
 
@@ -108,24 +116,6 @@ pub enum TimedConditionRule {
     DateTime(TimedDateTimeRule),
     Schedule(TimedScheduleRule),
     AfterTransition(TimedAfterTransitionRule),
-}
-
-impl TimedConditionRule {
-    async fn evaluate(
-        &self,
-        condition: &TimedCondition,
-        pool: &Pool<Sqlite>,
-        now: i64,
-        active_session: Option<&ActiveSessionInfo>,
-    ) -> Result<TimedConditionActivation, TimedEngineError> {
-        return match self {
-            Self::DateTime(rule) => rule.evaluate(condition, pool, now).await,
-            Self::Schedule(rule) => rule.evaluate(),
-            Self::AfterTransition(rule) => {
-                rule.evaluate(condition, pool, now, active_session).await
-            }
-        };
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -153,15 +143,10 @@ impl TimedDateTimeRule {
             }
         }
 
-        if self.trigger_at <= now {
-            return Ok(TimedConditionActivation::Due {
-                trigger_at: self.trigger_at,
-            });
-        }
-
-        return Ok(TimedConditionActivation::Future {
-            trigger_at: self.trigger_at,
-        });
+        return Ok(TimedConditionActivation::from_trigger_at(
+            now,
+            self.trigger_at,
+        ));
     }
 }
 
@@ -172,10 +157,85 @@ pub struct TimedScheduleRule {
 }
 
 impl TimedScheduleRule {
-    fn evaluate(&self) -> Result<TimedConditionActivation, TimedEngineError> {
-        return Ok(TimedConditionActivation::Unsupported {
-            reason: "schedule rules are not implemented yet",
-        });
+    const LOOKAHEAD_DAYS: i64 = 14;
+
+    async fn evaluate(
+        &self,
+        condition: &TimedCondition,
+        pool: &Pool<Sqlite>,
+        now: i64,
+        active_session: Option<&ActiveSessionInfo>,
+    ) -> Result<TimedConditionActivation, TimedEngineError> {
+        let latest_started_at = if condition.transition == TimedConditionTransition::Start {
+            IntentionSessionRepository::get_latest_started_at_by_start_condition_id(
+                pool,
+                condition.condition_id,
+            )
+            .await
+            .map_err(TimedEngineError::from)?
+        } else {
+            None
+        };
+
+        let not_before = match condition.transition {
+            TimedConditionTransition::Start => Some(condition.created_at),
+            TimedConditionTransition::End => active_session.map(|session| session.started_at),
+        };
+        let Some(trigger_at) = self.next_trigger_at(now, latest_started_at, not_before) else {
+            return Ok(TimedConditionActivation::Inactive);
+        };
+
+        return Ok(TimedConditionActivation::from_trigger_at(now, trigger_at));
+    }
+
+    fn next_trigger_at(
+        &self,
+        now: i64,
+        latest_started_at: Option<i64>,
+        not_before: Option<i64>,
+    ) -> Option<i64> {
+        let now_datetime = local_datetime_from_unix_ms(now)?;
+        let today = now_datetime.date_naive();
+
+        for day_offset in 0..Self::LOOKAHEAD_DAYS {
+            let date = today + Duration::days(day_offset);
+            if !self.includes_date(date) {
+                continue;
+            }
+
+            let Some(trigger_at) = Self::local_trigger_at(date, &self.time_of_day_ms) else {
+                continue;
+            };
+            if latest_started_at.is_some_and(|started_at| started_at >= trigger_at) {
+                continue;
+            }
+            if not_before.is_some_and(|not_before| trigger_at < not_before) {
+                continue;
+            }
+
+            return Some(trigger_at);
+        }
+
+        return None;
+    }
+
+    fn includes_date(&self, date: NaiveDate) -> bool {
+        let Some(weekdays_mask) = &self.weekdays_mask else {
+            return true;
+        };
+
+        return weekdays_mask.contains_weekday(date.weekday());
+    }
+
+    fn local_trigger_at(date: NaiveDate, time: &TimeOnly) -> Option<i64> {
+        let time = time.to_naive_time();
+        let naive_datetime = date.and_time(time);
+
+        return match Local.from_local_datetime(&naive_datetime) {
+            LocalResult::Single(datetime) => Some(datetime.timestamp_millis()),
+            LocalResult::Ambiguous(earliest, _) => Some(earliest.timestamp_millis()),
+            LocalResult::None => None,
+        };
     }
 }
 
@@ -193,19 +253,6 @@ impl TimedAfterTransitionRule {
         now: i64,
         active_session: Option<&ActiveSessionInfo>,
     ) -> Result<TimedConditionActivation, TimedEngineError> {
-        if condition.transition == TimedConditionTransition::Start {
-            let was_consumed = IntentionSessionRepository::has_session_with_start_condition_id(
-                pool,
-                condition.condition_id,
-            )
-            .await
-            .map_err(TimedEngineError::from)?;
-
-            if was_consumed {
-                return Ok(TimedConditionActivation::Inactive);
-            }
-        }
-
         let anchor_at = self
             .resolve_anchor_at(condition, pool, active_session)
             .await?;
@@ -214,11 +261,7 @@ impl TimedAfterTransitionRule {
         };
 
         let trigger_at = anchor_at + self.offset_ms;
-        if trigger_at <= now {
-            return Ok(TimedConditionActivation::Due { trigger_at });
-        }
-
-        return Ok(TimedConditionActivation::Future { trigger_at });
+        return Ok(TimedConditionActivation::from_trigger_at(now, trigger_at));
     }
 
     async fn resolve_anchor_at(
@@ -249,7 +292,16 @@ pub enum TimedConditionActivation {
     Due { trigger_at: i64 },
     Future { trigger_at: i64 },
     Inactive,
-    Unsupported { reason: &'static str },
+}
+
+impl TimedConditionActivation {
+    fn from_trigger_at(now: i64, trigger_at: i64) -> Self {
+        if trigger_at <= now {
+            return Self::Due { trigger_at };
+        }
+
+        return Self::Future { trigger_at };
+    }
 }
 
 // MARK: - Error
