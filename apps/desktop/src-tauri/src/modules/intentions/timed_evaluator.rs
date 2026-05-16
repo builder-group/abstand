@@ -1,8 +1,8 @@
 use super::{
     intention::IntentionConditionTransition,
     repository::{
-        ActiveSessionInfo, IntentionRepository, IntentionRepositoryError,
-        IntentionSessionRepository, IntentionSessionRepositoryError,
+        IntentionRepository, IntentionRepositoryError, IntentionSessionRepository,
+        IntentionSessionRepositoryError,
     },
 };
 use crate::common::time::{local_datetime_from_unix_ms, TimeOnly, WeekdayMask};
@@ -10,43 +10,39 @@ use chrono::{Datelike, Duration, Local, LocalResult, NaiveDate, TimeZone};
 use sqlx::{Pool, Sqlite};
 use std::fmt;
 
-pub struct TimedEngine;
+pub async fn evaluate_timed_conditions(
+    pool: &Pool<Sqlite>,
+    now: i64,
+) -> Result<TimedEvaluation, TimedEvaluationError> {
+    let conditions = IntentionRepository::get_timed_conditions(pool)
+        .await
+        .map_err(TimedEvaluationError::Repository)?;
+    let mut due_conditions = Vec::new();
+    let mut next_wake_at: Option<i64> = None;
 
-impl TimedEngine {
-    pub async fn evaluate_conditions(
-        pool: &Pool<Sqlite>,
-        now: i64,
-    ) -> Result<TimedEngineEvaluation, TimedEngineError> {
-        let conditions = IntentionRepository::get_timed_conditions(pool)
-            .await
-            .map_err(TimedEngineError::Repository)?;
-        let mut due_conditions = Vec::new();
-        let mut next_wake_at: Option<i64> = None;
-
-        for condition in conditions {
-            match condition.evaluate_activation(pool, now).await? {
-                TimedConditionActivation::Due { trigger_at } => {
-                    due_conditions.push(TimedDueCondition {
-                        condition,
-                        trigger_at,
-                    });
-                }
-                TimedConditionActivation::Future { trigger_at } => {
-                    next_wake_at = Some(next_wake_at.map_or(trigger_at, |w| w.min(trigger_at)));
-                }
-                TimedConditionActivation::Inactive => {}
+    for condition in conditions {
+        match condition.evaluate_activation(pool, now).await? {
+            TimedConditionActivation::Due { trigger_at } => {
+                due_conditions.push(TimedDueCondition {
+                    condition,
+                    trigger_at,
+                });
             }
+            TimedConditionActivation::Future { trigger_at } => {
+                next_wake_at = Some(next_wake_at.map_or(trigger_at, |w| w.min(trigger_at)));
+            }
+            TimedConditionActivation::Inactive => {}
         }
-
-        return Ok(TimedEngineEvaluation {
-            due_conditions,
-            next_wake_at,
-        });
     }
+
+    return Ok(TimedEvaluation {
+        due_conditions,
+        next_wake_at,
+    });
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct TimedEngineEvaluation {
+pub struct TimedEvaluation {
     pub due_conditions: Vec<TimedDueCondition>,
     pub next_wake_at: Option<i64>,
 }
@@ -73,32 +69,36 @@ impl TimedCondition {
         &self,
         pool: &Pool<Sqlite>,
         now: i64,
-    ) -> Result<TimedConditionActivation, TimedEngineError> {
-        let active_session = IntentionSessionRepository::get_active_session_info_by_intention_id(
-            pool,
-            self.intention_id,
-        )
-        .await
-        .map_err(TimedEngineError::from)?;
+    ) -> Result<TimedConditionActivation, TimedEvaluationError> {
+        let active_session_started_at =
+            IntentionSessionRepository::get_active_session_started_at_by_intention_id(
+                pool,
+                self.intention_id,
+            )
+            .await
+            .map_err(TimedEvaluationError::from)?;
 
         match self.transition {
-            TimedConditionTransition::Start if active_session.is_some() => {
+            TimedConditionTransition::Start if active_session_started_at.is_some() => {
                 return Ok(TimedConditionActivation::Inactive);
             }
-            TimedConditionTransition::End if active_session.is_none() => {
+            TimedConditionTransition::End if active_session_started_at.is_none() => {
                 return Ok(TimedConditionActivation::Inactive);
             }
             _ => {}
         }
 
         return match &self.rule {
-            TimedConditionRule::DateTime(rule) => rule.evaluate(self, pool, now).await,
+            TimedConditionRule::DateTime(rule) => {
+                rule.evaluate(self, pool, now, active_session_started_at)
+                    .await
+            }
             TimedConditionRule::Schedule(rule) => {
-                rule.evaluate(self, pool, now, active_session.as_ref())
+                rule.evaluate(self, pool, now, active_session_started_at)
                     .await
             }
             TimedConditionRule::AfterTransition(rule) => {
-                rule.evaluate(self, pool, now, active_session.as_ref())
+                rule.evaluate(self, pool, now, active_session_started_at)
                     .await
             }
         };
@@ -129,14 +129,27 @@ impl TimedDateTimeRule {
         condition: &TimedCondition,
         pool: &Pool<Sqlite>,
         now: i64,
-    ) -> Result<TimedConditionActivation, TimedEngineError> {
+        active_session_started_at: Option<i64>,
+    ) -> Result<TimedConditionActivation, TimedEvaluationError> {
+        // Ignore DateTime rules that were already stale when the condition was created
+        if self.trigger_at < condition.created_at {
+            return Ok(TimedConditionActivation::Inactive);
+        }
+
+        // Ignore end timestamps that belong to a previous session window
+        if condition.transition == TimedConditionTransition::End
+            && active_session_started_at.is_some_and(|started_at| started_at > self.trigger_at)
+        {
+            return Ok(TimedConditionActivation::Inactive);
+        }
+
         if condition.transition == TimedConditionTransition::Start {
             let was_consumed = IntentionSessionRepository::has_session_with_start_condition_id(
                 pool,
                 condition.condition_id,
             )
             .await
-            .map_err(TimedEngineError::from)?;
+            .map_err(TimedEvaluationError::from)?;
 
             if was_consumed {
                 return Ok(TimedConditionActivation::Inactive);
@@ -164,23 +177,25 @@ impl TimedScheduleRule {
         condition: &TimedCondition,
         pool: &Pool<Sqlite>,
         now: i64,
-        active_session: Option<&ActiveSessionInfo>,
-    ) -> Result<TimedConditionActivation, TimedEngineError> {
+        active_session_started_at: Option<i64>,
+    ) -> Result<TimedConditionActivation, TimedEvaluationError> {
         let latest_started_at = if condition.transition == TimedConditionTransition::Start {
             IntentionSessionRepository::get_latest_started_at_by_start_condition_id(
                 pool,
                 condition.condition_id,
             )
             .await
-            .map_err(TimedEngineError::from)?
+            .map_err(TimedEvaluationError::from)?
         } else {
             None
         };
 
+        // Skip start slots before condition creation and end slots before active session start
         let not_before = match condition.transition {
             TimedConditionTransition::Start => Some(condition.created_at),
-            TimedConditionTransition::End => active_session.map(|session| session.started_at),
+            TimedConditionTransition::End => active_session_started_at,
         };
+
         let Some(trigger_at) = self.next_trigger_at(now, latest_started_at, not_before) else {
             return Ok(TimedConditionActivation::Inactive);
         };
@@ -251,16 +266,37 @@ impl TimedAfterTransitionRule {
         condition: &TimedCondition,
         pool: &Pool<Sqlite>,
         now: i64,
-        active_session: Option<&ActiveSessionInfo>,
-    ) -> Result<TimedConditionActivation, TimedEngineError> {
+        active_session_started_at: Option<i64>,
+    ) -> Result<TimedConditionActivation, TimedEvaluationError> {
         let anchor_at = self
-            .resolve_anchor_at(condition, pool, active_session)
+            .resolve_anchor_at(condition, pool, active_session_started_at)
             .await?;
         let Some(anchor_at) = anchor_at else {
             return Ok(TimedConditionActivation::Inactive);
         };
 
+        // Ignore anchors that fired before the condition existed
+        if anchor_at < condition.created_at {
+            return Ok(TimedConditionActivation::Inactive);
+        }
+
         let trigger_at = anchor_at + self.offset_ms;
+
+        // Skip already-consumed start triggers while still allowing later anchors to fire
+        if condition.transition == TimedConditionTransition::Start {
+            let latest_started_at =
+                IntentionSessionRepository::get_latest_started_at_by_start_condition_id(
+                    pool,
+                    condition.condition_id,
+                )
+                .await
+                .map_err(TimedEvaluationError::from)?;
+
+            if latest_started_at.is_some_and(|started_at| started_at >= trigger_at) {
+                return Ok(TimedConditionActivation::Inactive);
+            }
+        }
+
         return Ok(TimedConditionActivation::from_trigger_at(now, trigger_at));
     }
 
@@ -268,20 +304,21 @@ impl TimedAfterTransitionRule {
         &self,
         condition: &TimedCondition,
         pool: &Pool<Sqlite>,
-        active_session: Option<&ActiveSessionInfo>,
-    ) -> Result<Option<i64>, TimedEngineError> {
+        active_session_started_at: Option<i64>,
+    ) -> Result<Option<i64>, TimedEvaluationError> {
         return match (condition.transition, self.anchor_transition) {
             (TimedConditionTransition::End, IntentionConditionTransition::Start) => {
-                Ok(active_session.map(|session| session.started_at))
+                Ok(active_session_started_at)
             }
             (TimedConditionTransition::Start, IntentionConditionTransition::End) => {
-                IntentionSessionRepository::get_latest_ended_at_by_intention_id(
+                IntentionSessionRepository::get_latest_completed_at_by_intention_id(
                     pool,
                     condition.intention_id,
                 )
                 .await
-                .map_err(TimedEngineError::from)
+                .map_err(TimedEvaluationError::from)
             }
+            // Treat unsupported transition-anchor pairs as valid config that cannot trigger here
             _ => Ok(None),
         };
     }
@@ -307,12 +344,12 @@ impl TimedConditionActivation {
 // MARK: - Error
 
 #[derive(Debug)]
-pub enum TimedEngineError {
+pub enum TimedEvaluationError {
     Repository(IntentionRepositoryError),
     SessionRepository(IntentionSessionRepositoryError),
 }
 
-impl fmt::Display for TimedEngineError {
+impl fmt::Display for TimedEvaluationError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         return match self {
             Self::Repository(error) => write!(f, "{}", error),
@@ -321,9 +358,9 @@ impl fmt::Display for TimedEngineError {
     }
 }
 
-impl std::error::Error for TimedEngineError {}
+impl std::error::Error for TimedEvaluationError {}
 
-impl From<IntentionSessionRepositoryError> for TimedEngineError {
+impl From<IntentionSessionRepositoryError> for TimedEvaluationError {
     fn from(value: IntentionSessionRepositoryError) -> Self {
         return Self::SessionRepository(value);
     }

@@ -5,7 +5,7 @@ use super::{
         IntentionConditionRule, IntentionConditionScheduleRule, IntentionConditionTransition,
         IntentionEnforcementMode, IntentionSession, IntentionSessionStatus,
     },
-    timed_engine::{
+    timed_evaluator::{
         TimedAfterTransitionRule, TimedCondition, TimedConditionRule, TimedConditionTransition,
         TimedDateTimeRule, TimedScheduleRule,
     },
@@ -25,8 +25,6 @@ use std::{
     collections::{HashMap, HashSet},
     fmt,
 };
-
-// MARK: - Intention Repository
 
 pub struct IntentionRepository;
 
@@ -63,8 +61,7 @@ impl IntentionRepository {
     pub async fn get_timed_conditions(
         pool: &Pool<Sqlite>,
     ) -> Result<Vec<TimedCondition>, IntentionRepositoryError> {
-        let null_trigger_sort_key = i64::MAX;
-        let query = format!(
+        let rows = sqlx::query_as::<_, TimedConditionRow>(
             "SELECT
                 c.intention_id,
                 c.id AS condition_id,
@@ -87,11 +84,10 @@ impl IntentionRepository {
                 ON after_transition.condition_id = c.id
                     AND c.rule_type = 'after_transition'
             WHERE c.rule_type IN ('date_time', 'schedule', 'after_transition')
-            ORDER BY COALESCE(date_time.trigger_at, {null_trigger_sort_key}) ASC, c.intention_id ASC, c.id ASC"
-        );
-        let rows = sqlx::query_as::<_, TimedConditionRow>(&query)
-            .fetch_all(pool)
-            .await?;
+            ORDER BY c.intention_id ASC, c.id ASC",
+        )
+        .fetch_all(pool)
+        .await?;
 
         return rows
             .into_iter()
@@ -958,12 +954,12 @@ impl IntentionSessionRepository {
         return row.map(Self::build_session).transpose();
     }
 
-    pub async fn get_active_session_info_by_intention_id(
+    pub async fn get_active_session_started_at_by_intention_id(
         pool: &Pool<Sqlite>,
         intention_id: i64,
-    ) -> Result<Option<ActiveSessionInfo>, IntentionSessionRepositoryError> {
-        return sqlx::query_as::<_, ActiveSessionInfo>(
-            "SELECT id, started_at
+    ) -> Result<Option<i64>, IntentionSessionRepositoryError> {
+        return sqlx::query_scalar::<_, i64>(
+            "SELECT started_at
             FROM intention_session
             WHERE intention_id = ?
                 AND status = 'active'",
@@ -1008,7 +1004,7 @@ impl IntentionSessionRepository {
         .map_err(IntentionSessionRepositoryError::from);
     }
 
-    pub async fn get_latest_ended_at_by_intention_id(
+    pub async fn get_latest_completed_at_by_intention_id(
         pool: &Pool<Sqlite>,
         intention_id: i64,
     ) -> Result<Option<i64>, IntentionSessionRepositoryError> {
@@ -1016,6 +1012,7 @@ impl IntentionSessionRepository {
             "SELECT ended_at
             FROM intention_session
             WHERE intention_id = ?
+                AND status = 'completed'
                 AND ended_at IS NOT NULL
             ORDER BY ended_at DESC, id DESC
             LIMIT 1",
@@ -1026,6 +1023,9 @@ impl IntentionSessionRepository {
         .map_err(IntentionSessionRepositoryError::from);
     }
 
+    /// Creates a session if the intention exists and has no active session.
+    ///
+    /// Returns `None` when the insert is skipped, such as for an already-active or missing intention.
     pub async fn create_session_if_inactive(
         pool: &Pool<Sqlite>,
         input: CreateIntentionSessionInput,
@@ -1041,13 +1041,16 @@ impl IntentionSessionRepository {
         .await?;
 
         let row = sqlx::query_as::<_, IntentionSessionRow>(
-            "INSERT INTO intention_session (intention_id, status, started_at, start_condition_id) VALUES (?, 'active', ?, ?)
+            "INSERT INTO intention_session (intention_id, status, started_at, start_condition_id)
+            SELECT id, 'active', ?, ?
+            FROM intention
+            WHERE id = ?
             ON CONFLICT DO NOTHING
             RETURNING id, intention_id, status, started_at, start_condition_id, ended_at, end_condition_id, updated_at, created_at",
         )
-        .bind(input.intention_id)
         .bind(input.started_at)
         .bind(input.start_condition_id)
+        .bind(input.intention_id)
         .fetch_optional(&mut *transaction)
         .await?;
 
@@ -1212,12 +1215,6 @@ impl IntentionSessionRepository {
             created_at: row.created_at,
         });
     }
-}
-
-#[derive(Debug, Clone, FromRow)]
-pub struct ActiveSessionInfo {
-    pub id: i64,
-    pub started_at: i64,
 }
 
 #[derive(Debug, Clone, FromRow)]

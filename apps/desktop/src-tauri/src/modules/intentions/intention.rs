@@ -207,14 +207,6 @@ pub enum IntentionSessionStatus {
 }
 
 impl IntentionSessionStatus {
-    pub fn as_str(&self) -> &'static str {
-        return match self {
-            Self::Active => "active",
-            Self::Completed => "completed",
-            Self::Stopped => "stopped",
-        };
-    }
-
     pub fn from_str(value: &str) -> Result<Self, String> {
         return match value {
             "active" => Ok(Self::Active),

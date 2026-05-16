@@ -25,6 +25,8 @@ pub fn run() {
             intentions::commands::update_intention,
             intentions::commands::delete_intention,
             intentions::commands::start_intention,
+            intentions::commands::complete_intention,
+            intentions::commands::stop_intention,
             // Shortcuts commands
             shortcuts::commands::get_shortcut_configs,
             // Catalog commands
