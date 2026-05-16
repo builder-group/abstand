@@ -1,10 +1,10 @@
+import { useCompute, useFeatureState } from 'feature-react/state';
+import React from 'react';
 import { Badge, ChevronRightIcon, HelpCarousel, HelpPopover, Select } from '@/components';
 import { type specta } from '@/environment';
 import { cn } from '@/lib';
 import { CatalogIconPeek, useCatalogPicker, type TCatalogItem } from '@/modules/catalog';
 import { SettingsGroup, SettingsRow } from '@/modules/settings';
-import { useCompute, useFeatureState } from 'feature-react/state';
-import React from 'react';
 import { useNewBlockIntentionCx } from './NewBlockIntentionCx';
 
 export const BlockSection: React.FC = () => {
@@ -217,7 +217,9 @@ export const BlockSection: React.FC = () => {
 							<CatalogIconPeek items={selectedTargets} cx={catalogPickerCx} />
 							{targetsLabel}
 						</span>
-						<ChevronRightIcon className={cn(targetsError != null ? 'text-red-500' : 'text-base-400')} />
+						<ChevronRightIcon
+							className={cn(targetsError != null ? 'text-red-500' : 'text-base-400')}
+						/>
 					</SettingsRow>
 				) : (
 					<SettingsRow
