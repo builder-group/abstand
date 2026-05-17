@@ -1,7 +1,8 @@
-import { useCompute } from 'feature-react/state';
+import { useCombinedCompute } from 'feature-react/state';
 import React from 'react';
 import { Select } from '@/components';
 import { type specta } from '@/environment';
+import { getFirstFormFieldStatusError } from '@/lib';
 import { SettingsGroup, SettingsRow } from '@/modules/settings';
 import {
 	useNewBlockIntentionCx,
@@ -28,9 +29,31 @@ export const WhenSection: React.FC = () => {
 
 const ConditionRowSet: React.FC<TConditionRowSetProps> = (props) => {
 	const { transition, label, description, cx } = props;
-	const condition = useCompute(
-		cx.$form.fields.conditions,
-		({ value }) => value?.find((condition) => condition.transition === transition) ?? null
+	const conditionRow = useCombinedCompute(
+		[cx.$form.fields.conditions, cx.$form.fields.conditions.status] as const,
+		([{ value: conditions }, { value: conditionsStatus }]) => {
+			const index = conditions?.findIndex((condition) => condition.transition === transition) ?? -1;
+			const condition = conditions?.[index] ?? null;
+			if (condition == null) {
+				return null;
+			}
+
+			const error = getFirstFormFieldStatusError(conditionsStatus, `${index}`, {
+				includeNested: true
+			})?.message;
+
+			return { condition, error };
+		},
+		[transition],
+		{
+			isEqual: (a, b) => {
+				if (a == null || b == null) {
+					return a === b;
+				}
+
+				return a.condition === b.condition && a.error === b.error;
+			}
+		}
 	);
 	const modeOptions = modeOptionsByTransition[transition];
 
@@ -45,14 +68,26 @@ const ConditionRowSet: React.FC<TConditionRowSetProps> = (props) => {
 
 	// MARK: - UI
 
-	if (condition == null) {
+	if (conditionRow == null) {
 		return null;
 	}
 
+	const { condition, error: conditionError } = conditionRow;
+
 	return (
 		<>
-			<SettingsRow label={label} description={description} variant="compact">
-				<Select variant="ghost" value={condition.mode} onChange={handleModeChange}>
+			<SettingsRow
+				label={label}
+				description={conditionError ?? description}
+				descriptionVariant={conditionError != null ? 'error' : 'default'}
+				variant="compact"
+			>
+				<Select
+					variant="ghost"
+					value={condition.mode}
+					onChange={handleModeChange}
+					aria-invalid={conditionError != null}
+				>
 					{modeOptions.map((option) => (
 						<option key={option.value} value={option.value}>
 							{option.label}

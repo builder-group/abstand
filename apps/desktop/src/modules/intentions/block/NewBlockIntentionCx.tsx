@@ -102,10 +102,14 @@ export class NewBlockIntentionCx {
 						)
 						.superRefine((conditions, ctx) => {
 							const now = Date.now();
-							const startCondition =
-								conditions.find((condition) => condition.transition === 'start') ?? null;
-							const endCondition =
-								conditions.find((condition) => condition.transition === 'end') ?? null;
+							const startConditionIndex = conditions.findIndex(
+								(condition) => condition.transition === 'start'
+							);
+							const endConditionIndex = conditions.findIndex(
+								(condition) => condition.transition === 'end'
+							);
+							const startCondition = conditions[startConditionIndex] ?? null;
+							const endCondition = conditions[endConditionIndex] ?? null;
 
 							if (startCondition == null) {
 								ctx.addIssue({ code: 'custom', message: 'Please add a start condition' });
@@ -125,13 +129,25 @@ export class NewBlockIntentionCx {
 										).getTime()
 									: null;
 							if (startAt != null && startAt <= now) {
-								ctx.addIssue({ code: 'custom', message: 'Choose a future time' });
+								ctx.addIssue({
+									code: 'custom',
+									path: [startConditionIndex, 'timeOfDayMs'],
+									message: 'Choose a future time'
+								});
 							}
 							if (startCondition.mode === 'afterDelay' && startCondition.offsetMs % 60_000 !== 0) {
-								ctx.addIssue({ code: 'custom', message: 'Duration must use whole minutes' });
+								ctx.addIssue({
+									code: 'custom',
+									path: [startConditionIndex, 'offsetMs'],
+									message: 'Duration must use whole minutes'
+								});
 							}
 							if (endCondition.mode === 'afterDuration' && endCondition.offsetMs % 60_000 !== 0) {
-								ctx.addIssue({ code: 'custom', message: 'Duration must use whole minutes' });
+								ctx.addIssue({
+									code: 'custom',
+									path: [endConditionIndex, 'offsetMs'],
+									message: 'Duration must use whole minutes'
+								});
 							}
 
 							if (endCondition.mode !== 'atTime') {
@@ -140,7 +156,11 @@ export class NewBlockIntentionCx {
 
 							if (startCondition.mode === 'repeats') {
 								if (endCondition.timeOfDayMs <= startCondition.timeOfDayMs) {
-									ctx.addIssue({ code: 'custom', message: 'End time must be after start time' });
+									ctx.addIssue({
+										code: 'custom',
+										path: [endConditionIndex, 'timeOfDayMs'],
+										message: 'End time must be after start time'
+									});
 								}
 								return;
 							}
@@ -150,13 +170,25 @@ export class NewBlockIntentionCx {
 								endCondition.timeOfDayMs
 							).getTime();
 							if (endAt <= now) {
-								ctx.addIssue({ code: 'custom', message: 'Choose a future time' });
+								ctx.addIssue({
+									code: 'custom',
+									path: [endConditionIndex, 'timeOfDayMs'],
+									message: 'Choose a future time'
+								});
 							}
 							if (startCondition.mode === 'afterDelay' && endAt <= now + startCondition.offsetMs) {
-								ctx.addIssue({ code: 'custom', message: 'End time must be after start time' });
+								ctx.addIssue({
+									code: 'custom',
+									path: [endConditionIndex, 'timeOfDayMs'],
+									message: 'End time must be after start time'
+								});
 							}
 							if (startAt != null && endAt <= startAt) {
-								ctx.addIssue({ code: 'custom', message: 'End time must be after start time' });
+								ctx.addIssue({
+									code: 'custom',
+									path: [endConditionIndex, 'timeOfDayMs'],
+									message: 'End time must be after start time'
+								});
 							}
 						})
 				)

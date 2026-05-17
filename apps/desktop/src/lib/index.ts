@@ -3,5 +3,6 @@ export * from './cn';
 export * from './create-computed-state';
 export * from './create-mount-lifecycle';
 export * from './date';
+export * from './form';
 export * from './open-external-url';
 export * from './specta';
