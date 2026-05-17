@@ -10,6 +10,27 @@ export function getCurrentDateEpochDays(): specta.DateOnly {
 	return getLocalDateEpochDays(new Date());
 }
 
+export function getLocalDateTime(
+	dateEpochDays: specta.DateOnly,
+	timeOfDayMs: specta.TimeOnly
+): Date {
+	const date = new Date(dateEpochDays * msPerDay);
+	const hours = Math.floor(timeOfDayMs / msPerHour);
+	const minutes = Math.floor((timeOfDayMs % msPerHour) / msPerMinute);
+	const seconds = Math.floor((timeOfDayMs % msPerMinute) / msPerSecond);
+	const milliseconds = timeOfDayMs % msPerSecond;
+
+	return new Date(
+		date.getUTCFullYear(),
+		date.getUTCMonth(),
+		date.getUTCDate(),
+		hours,
+		minutes,
+		seconds,
+		milliseconds
+	);
+}
+
 export function isDateEpochDays(value: number): boolean {
 	return Number.isInteger(value) && value >= minDateEpochDays && value <= maxDateEpochDays;
 }

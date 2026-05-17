@@ -12,6 +12,7 @@ import { specta } from '@/environment';
 import {
 	getCurrentDateEpochDays,
 	getLocalDateEpochDays,
+	getLocalDateTime,
 	getLocalTimeOfDayMs,
 	isDateEpochDays,
 	isTimeOfDayMs,
@@ -100,34 +101,62 @@ export class NewBlockIntentionCx {
 							})
 						)
 						.superRefine((conditions, ctx) => {
-							if (!conditions.some((condition) => condition.transition === 'start')) {
+							const now = Date.now();
+							const startCondition =
+								conditions.find((condition) => condition.transition === 'start') ?? null;
+							const endCondition =
+								conditions.find((condition) => condition.transition === 'end') ?? null;
+
+							if (startCondition == null) {
 								ctx.addIssue({ code: 'custom', message: 'Please add a start condition' });
 							}
-							if (!conditions.some((condition) => condition.transition === 'end')) {
+							if (endCondition == null) {
 								ctx.addIssue({ code: 'custom', message: 'Please add an end condition' });
 							}
-							for (const condition of conditions) {
-								if (condition.transition === 'start' && condition.mode === 'afterDuration') {
-									ctx.addIssue({
-										code: 'custom',
-										message: 'After duration can only be used for end conditions'
-									});
+							if (startCondition == null || endCondition == null) {
+								return;
+							}
+
+							const startAt =
+								startCondition.mode === 'atTime'
+									? getLocalDateTime(
+											startCondition.dateEpochDays,
+											startCondition.timeOfDayMs
+										).getTime()
+									: null;
+							if (startAt != null && startAt <= now) {
+								ctx.addIssue({ code: 'custom', message: 'Choose a future time' });
+							}
+							if (startCondition.mode === 'afterDelay' && startCondition.offsetMs % 60_000 !== 0) {
+								ctx.addIssue({ code: 'custom', message: 'Duration must use whole minutes' });
+							}
+							if (endCondition.mode === 'afterDuration' && endCondition.offsetMs % 60_000 !== 0) {
+								ctx.addIssue({ code: 'custom', message: 'Duration must use whole minutes' });
+							}
+
+							if (endCondition.mode !== 'atTime') {
+								return;
+							}
+
+							if (startCondition.mode === 'repeats') {
+								if (endCondition.timeOfDayMs <= startCondition.timeOfDayMs) {
+									ctx.addIssue({ code: 'custom', message: 'End time must be after start time' });
 								}
-								if (condition.transition === 'end' && condition.mode === 'afterDelay') {
-									ctx.addIssue({
-										code: 'custom',
-										message: 'After delay can only be used for start conditions'
-									});
-								}
-								if (
-									(condition.mode === 'afterDelay' || condition.mode === 'afterDuration') &&
-									condition.offsetMs % 60_000 !== 0
-								) {
-									ctx.addIssue({
-										code: 'custom',
-										message: 'Duration must use whole minutes'
-									});
-								}
+								return;
+							}
+
+							const endAt = getLocalDateTime(
+								endCondition.dateEpochDays,
+								endCondition.timeOfDayMs
+							).getTime();
+							if (endAt <= now) {
+								ctx.addIssue({ code: 'custom', message: 'Choose a future time' });
+							}
+							if (startCondition.mode === 'afterDelay' && endAt <= now + startCondition.offsetMs) {
+								ctx.addIssue({ code: 'custom', message: 'End time must be after start time' });
+							}
+							if (startAt != null && endAt <= startAt) {
+								ctx.addIssue({ code: 'custom', message: 'End time must be after start time' });
 							}
 						})
 				)
@@ -187,6 +216,9 @@ export class NewBlockIntentionCx {
 		if (formData == null) {
 			return Err({ code: 'invalidForm' });
 		}
+
+		const startCondition =
+			formData.conditions.find((condition) => condition.transition === 'start') ?? null;
 
 		const targets = formData.selectedTargets.map((item): specta.WriteIntentionBlockTargetParams => {
 			switch (item.type) {
@@ -253,6 +285,17 @@ export class NewBlockIntentionCx {
 							}
 						};
 					case 'atTime':
+						if (condition.transition === 'end' && startCondition?.mode === 'repeats') {
+							return {
+								transition: condition.transition,
+								rule: {
+									type: 'schedule',
+									timeOfDayMs: condition.timeOfDayMs,
+									weekdaysMask: startCondition.weekdaysMask
+								}
+							};
+						}
+
 						return {
 							transition: condition.transition,
 							rule: {

@@ -30,7 +30,7 @@ const ConditionRowSet: React.FC<TConditionRowSetProps> = (props) => {
 	const { transition, label, description, cx } = props;
 	const condition = useCompute(
 		cx.$form.fields.conditions,
-		({ value }) => value?.find((c) => c.transition === transition) ?? null
+		({ value }) => value?.find((condition) => condition.transition === transition) ?? null
 	);
 	const modeOptions = modeOptionsByTransition[transition];
 
@@ -78,13 +78,12 @@ const modeOptionsByTransition = {
 		{ value: 'now', label: 'Start now' },
 		{ value: 'atTime', label: 'At time' },
 		{ value: 'afterDelay', label: 'After delay' },
-		// { value: 'repeats', label: 'Repeats' },
+		{ value: 'repeats', label: 'Repeats' },
 		{ value: 'manual', label: 'Manually' }
 	],
 	end: [
-		// { value: 'afterDuration', label: 'After duration' },
-		// { value: 'atTime', label: 'At time' },
-		// { value: 'repeats', label: 'Repeats' },
+		{ value: 'afterDuration', label: 'After duration' },
+		{ value: 'atTime', label: 'At time' },
 		{ value: 'manual', label: 'Manually' }
 	]
 } as const satisfies Record<specta.IntentionConditionTransition, TConditionModeOption[]>;
