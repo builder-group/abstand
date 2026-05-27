@@ -1,3 +1,6 @@
 packages:
   - "apps/*"
   - "packages/*"
+
+# Avoid auto-installing before clean scripts that remove node_modules
+verifyDepsBeforeRun: false

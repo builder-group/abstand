@@ -17,7 +17,7 @@
 		"build": "turbo run build",
 		"clean": "turbo run clean --force && shx rm -rf .turbo && shx rm -rf node_modules",
 		"format": "prettier --write \"**/*.{ts,tsx,js,jsx,cjs,mjs,md,mdx,json,css,html}\"",
-		"install:clean": "pnpm clean && pnpm install && pnpm build",
+		"install:clean": "pnpm run clean && pnpm install && pnpm build",
 		"lint": "turbo run lint",
 		"lint:fix": "turbo run lint --force -- --fix",
 		"test": "turbo run test",
@@ -35,7 +35,7 @@
 		"vite": "^8.0.12",
 		"vitest": "^4.1.6"
 	},
-	"packageManager": "pnpm@10.33.2",
+	"packageManager": "pnpm@11.3.0",
 	"engines": {
 		"node": ">=24"
 	}
