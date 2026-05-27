@@ -16,9 +16,10 @@
 	"scripts": {
 		"build": "turbo run build",
 		"clean": "turbo run clean --force && shx rm -rf .turbo && shx rm -rf node_modules",
-		"format": "prettier --write \"**/*.{ts,tsx,md,json,js,jsx,css}\"",
+		"format": "prettier --write \"**/*.{ts,tsx,js,jsx,cjs,mjs,md,mdx,json,css,html}\"",
 		"install:clean": "pnpm clean && pnpm install && pnpm build",
 		"lint": "turbo run lint",
+		"lint:fix": "turbo run lint --force -- --fix",
 		"test": "turbo run test",
 		"update:latest": "turbo run update:latest --force && pnpm update --latest '!eslint' '!@eslint/js' && pnpm build"
 	},
