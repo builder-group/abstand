@@ -34,15 +34,11 @@ export const ThemeProvider: React.FC<TThemeProviderProps> = (props) => {
 
 	// MARK: - Effects
 
-	useSubscriber(
-		settingsCx.$appSettings,
-		({ value, prevValue }) => {
-			if (value.appearance.theme !== prevValue?.appearance.theme) {
-				void applyTheme(value.appearance.theme);
-			}
-		},
-		[applyTheme]
-	);
+	useSubscriber(settingsCx.$appSettings, ({ value, prevValue }) => {
+		if (value.appearance.theme !== prevValue?.appearance.theme) {
+			void applyTheme(value.appearance.theme);
+		}
+	});
 
 	// Listen for system theme changes (only matters if set to 'auto')
 	React.useEffect(() => {

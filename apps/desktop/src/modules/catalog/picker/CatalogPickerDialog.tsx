@@ -1,4 +1,4 @@
-import { useCompute, useFeatureState } from 'feature-react/state';
+import { useCompute, useEventCallback, useFeatureState } from 'feature-react/state';
 import React from 'react';
 import {
 	Button,
@@ -81,7 +81,7 @@ interface TCatalogPickerDialogProps {
 const SelectedItemRow: React.FC<TSelectedItemRowProps> = (props) => {
 	const { item, cx } = props;
 	const key = getCatalogItemKey(item);
-	const icon = useCompute(cx.$iconAssets, ({ value }) => value[key]);
+	const icon = useCompute(cx.$iconAssets, (value) => value[key]);
 
 	return (
 		<SettingsRowFrame className="group/selected-item relative gap-1.5" variant="compact">
@@ -116,18 +116,18 @@ interface TSelectedItemRowProps {
 export function useCatalogPicker(options: TUseCatalogPickerOptions): TCatalogPickerHandle {
 	const { onConfirm, title = 'Select Apps & Websites' } = options;
 
-	const cx = React.useMemo(() => new CatalogPickerCx(onConfirm), [onConfirm]);
+	const handleConfirm = useEventCallback(onConfirm);
+	const cx = React.useMemo(() => new CatalogPickerCx(handleConfirm), [handleConfirm]);
 
 	React.useEffect(() => {
 		return cx.mount();
 	}, [cx]);
 
-	const Dialog = React.useCallback(
-		() => <CatalogPickerDialog cx={cx} title={title} />,
-		[cx, title]
-	);
-
-	return { open: (items) => cx.open(items), Dialog, cx };
+	return {
+		open: React.useCallback((items: TCatalogItem[]) => cx.open(items), [cx]),
+		dialog: <CatalogPickerDialog cx={cx} title={title} />,
+		cx
+	};
 }
 
 export interface TUseCatalogPickerOptions {
@@ -137,6 +137,6 @@ export interface TUseCatalogPickerOptions {
 
 export interface TCatalogPickerHandle {
 	open: (items: TCatalogItem[]) => void;
-	Dialog: React.FC;
+	dialog: React.ReactElement;
 	cx: CatalogPickerCx;
 }

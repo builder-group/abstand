@@ -1,12 +1,6 @@
-import {
-	bitwiseFlag,
-	createForm,
-	FormFieldReValidateMode,
-	FormFieldValidateMode
-} from 'feature-form';
+import { createForm, type TFormValidator } from 'feature-form';
 import React from 'react';
 import { Err, Ok, type TResult } from 'tuple-result';
-import { zValidator } from 'validation-adapters/zod';
 import * as z from 'zod';
 import { specta } from '@/environment';
 import {
@@ -31,172 +25,176 @@ export class NewBlockIntentionCx {
 		fields: {
 			name: {
 				defaultValue: '',
-				validator: zValidator(
-					z
-						.string()
-						.trim()
-						.min(1, 'Please enter a name')
-						.max(80, 'Name must be 80 characters or less')
-				)
+				validator: z
+					.string()
+					.trim()
+					.min(1, 'Please enter a name')
+					.max(80, 'Name must be 80 characters or less')
 			},
 			scope: {
-				defaultValue: 'blockTargets'
+				defaultValue: 'blockTargets',
+				validator: z.enum(['blockTargets', 'allowTargets', 'wholeDevice'])
 			},
 			selectedTargets: {
 				defaultValue: [],
-				validator: zValidator(
-					z.array(z.custom<TCatalogItem>()).superRefine((targets, ctx) => {
-						if (this.$form.fields.scope.get() !== 'wholeDevice' && targets.length === 0) {
-							ctx.addIssue({
-								code: 'custom',
-								message: 'Choose at least one app or website'
-							});
-						}
-					})
-				)
+				validator: z.array(z.custom<TCatalogItem>())
 			},
 			enforcementMode: {
-				defaultValue: 'balanced'
+				defaultValue: 'balanced',
+				validator: z.enum(['casual', 'balanced', 'strict'])
 			},
 			conditions: {
 				defaultValue: [
-					{
-						transition: 'start',
-						mode: 'now',
-						dateEpochDays: getCurrentDateEpochDays(),
-						timeOfDayMs: timeOnlyFromMs(9 * 60 * 60 * 1_000),
-						offsetMs: 30 * 60_000,
-						weekdaysMask: null
-					},
-					{
-						transition: 'end',
-						mode: 'manual',
-						dateEpochDays: getCurrentDateEpochDays(),
-						timeOfDayMs: timeOnlyFromMs(17 * 60 * 60 * 1_000),
-						offsetMs: 30 * 60_000,
-						weekdaysMask: null
-					}
+					createDefaultNewIntentionCondition('start'),
+					createDefaultNewIntentionCondition('end')
 				],
-				validator: zValidator(
-					z
-						.array(
-							z.object({
-								transition: z.enum(['start', 'end']),
-								mode: z.enum(['now', 'atTime', 'afterDelay', 'afterDuration', 'repeats', 'manual']),
-								dateEpochDays: z.custom<specta.DateOnly>(
-									(value) => typeof value === 'number' && isDateEpochDays(value),
-									'Enter a valid date'
-								),
-								timeOfDayMs: z.custom<specta.TimeOnly>(
-									(value) => typeof value === 'number' && isTimeOfDayMs(value),
-									'Enter a valid time'
-								),
-								offsetMs: z.coerce.number().int().min(60_000).max(86_400_000),
-								weekdaysMask: z
-									.custom<specta.WeekdayMask>(
-										(value) => typeof value === 'number' && isWeekdayMask(value),
-										'Please choose at least one day'
-									)
-									.nullable()
-							})
-						)
-						.superRefine((conditions, ctx) => {
-							const now = Date.now();
-							const startConditionIndex = conditions.findIndex(
-								(condition) => condition.transition === 'start'
-							);
-							const endConditionIndex = conditions.findIndex(
-								(condition) => condition.transition === 'end'
-							);
-							const startCondition = conditions[startConditionIndex] ?? null;
-							const endCondition = conditions[endConditionIndex] ?? null;
-
-							if (startCondition == null) {
-								ctx.addIssue({ code: 'custom', message: 'Please add a start condition' });
-							}
-							if (endCondition == null) {
-								ctx.addIssue({ code: 'custom', message: 'Please add an end condition' });
-							}
-							if (startCondition == null || endCondition == null) {
-								return;
-							}
-
-							const startAt =
-								startCondition.mode === 'atTime'
-									? getLocalDateTime(
-											startCondition.dateEpochDays,
-											startCondition.timeOfDayMs
-										).getTime()
-									: null;
-							if (startAt != null && startAt <= now) {
-								ctx.addIssue({
-									code: 'custom',
-									path: [startConditionIndex, 'timeOfDayMs'],
-									message: 'Choose a future time'
-								});
-							}
-							if (startCondition.mode === 'afterDelay' && startCondition.offsetMs % 60_000 !== 0) {
-								ctx.addIssue({
-									code: 'custom',
-									path: [startConditionIndex, 'offsetMs'],
-									message: 'Duration must use whole minutes'
-								});
-							}
-							if (endCondition.mode === 'afterDuration' && endCondition.offsetMs % 60_000 !== 0) {
-								ctx.addIssue({
-									code: 'custom',
-									path: [endConditionIndex, 'offsetMs'],
-									message: 'Duration must use whole minutes'
-								});
-							}
-
-							if (endCondition.mode !== 'atTime') {
-								return;
-							}
-
-							if (startCondition.mode === 'repeats') {
-								if (endCondition.timeOfDayMs <= startCondition.timeOfDayMs) {
-									ctx.addIssue({
-										code: 'custom',
-										path: [endConditionIndex, 'timeOfDayMs'],
-										message: 'End time must be after start time'
-									});
-								}
-								return;
-							}
-
-							const endAt = getLocalDateTime(
-								endCondition.dateEpochDays,
-								endCondition.timeOfDayMs
-							).getTime();
-							if (endAt <= now) {
-								ctx.addIssue({
-									code: 'custom',
-									path: [endConditionIndex, 'timeOfDayMs'],
-									message: 'Choose a future time'
-								});
-							}
-							if (startCondition.mode === 'afterDelay' && endAt <= now + startCondition.offsetMs) {
-								ctx.addIssue({
-									code: 'custom',
-									path: [endConditionIndex, 'timeOfDayMs'],
-									message: 'End time must be after start time'
-								});
-							}
-							if (startAt != null && endAt <= startAt) {
-								ctx.addIssue({
-									code: 'custom',
-									path: [endConditionIndex, 'timeOfDayMs'],
-									message: 'End time must be after start time'
-								});
-							}
+				validator: z
+					.array(
+						z.object({
+							transition: z.enum(['start', 'end']),
+							mode: z.enum(['now', 'atTime', 'afterDelay', 'afterDuration', 'repeats', 'manual']),
+							dateEpochDays: z.custom<specta.DateOnly>(
+								(value) => typeof value === 'number' && isDateEpochDays(value),
+								'Enter a valid date'
+							),
+							timeOfDayMs: z.custom<specta.TimeOnly>(
+								(value) => typeof value === 'number' && isTimeOfDayMs(value),
+								'Enter a valid time'
+							),
+							offsetMs: z.number().int().min(60_000).max(86_400_000),
+							weekdaysMask: z
+								.custom<specta.WeekdayMask>(
+									(value) => typeof value === 'number' && isWeekdayMask(value),
+									'Please choose at least one day'
+								)
+								.nullable()
 						})
-				)
+					)
+					.superRefine((conditions, ctx) => {
+						const now = Date.now();
+						const startConditionIndex = conditions.findIndex(
+							(condition) => condition.transition === 'start'
+						);
+						const endConditionIndex = conditions.findIndex(
+							(condition) => condition.transition === 'end'
+						);
+						const startCondition = conditions[startConditionIndex] ?? null;
+						const endCondition = conditions[endConditionIndex] ?? null;
+
+						if (startCondition == null) {
+							ctx.addIssue({ code: 'custom', message: 'Please add a start condition' });
+						}
+						if (endCondition == null) {
+							ctx.addIssue({ code: 'custom', message: 'Please add an end condition' });
+						}
+						if (startCondition == null || endCondition == null) {
+							return;
+						}
+
+						const startAt =
+							startCondition.mode === 'atTime'
+								? getLocalDateTime(
+										startCondition.dateEpochDays,
+										startCondition.timeOfDayMs
+									).getTime()
+								: null;
+						const isRepeatingScheduleEnd =
+							startCondition.mode === 'repeats' && endCondition.mode === 'atTime';
+						const endAt =
+							endCondition.mode === 'atTime' && !isRepeatingScheduleEnd
+								? getLocalDateTime(endCondition.dateEpochDays, endCondition.timeOfDayMs).getTime()
+								: null;
+
+						if (startAt != null && startAt <= now) {
+							ctx.addIssue({
+								code: 'custom',
+								path: [startConditionIndex, 'timeOfDayMs'],
+								message: 'Choose a future time'
+							});
+						}
+						if (startCondition.mode === 'afterDelay' && startCondition.offsetMs % 60_000 !== 0) {
+							ctx.addIssue({
+								code: 'custom',
+								path: [startConditionIndex, 'offsetMs'],
+								message: 'Duration must use whole minutes'
+							});
+						}
+
+						if (endCondition.mode === 'afterDuration' && endCondition.offsetMs % 60_000 !== 0) {
+							ctx.addIssue({
+								code: 'custom',
+								path: [endConditionIndex, 'offsetMs'],
+								message: 'Duration must use whole minutes'
+							});
+						}
+
+						if (endCondition.mode !== 'atTime') {
+							return;
+						}
+
+						if (isRepeatingScheduleEnd) {
+							// Note: Schedule ends inherit the start weekdays and only compare time-of-day
+							if (endCondition.timeOfDayMs <= startCondition.timeOfDayMs) {
+								ctx.addIssue({
+									code: 'custom',
+									path: [endConditionIndex, 'timeOfDayMs'],
+									message: 'End time must be after start time'
+								});
+							}
+							return;
+						}
+
+						if (endAt == null) {
+							return;
+						}
+
+						if (endAt <= now) {
+							ctx.addIssue({
+								code: 'custom',
+								path: [endConditionIndex, 'timeOfDayMs'],
+								message: 'Choose a future time'
+							});
+						}
+						if (startCondition.mode === 'afterDelay' && endAt <= now + startCondition.offsetMs) {
+							ctx.addIssue({
+								code: 'custom',
+								path: [endConditionIndex, 'timeOfDayMs'],
+								message: 'End time must be after start time'
+							});
+						}
+						if (startAt != null && endAt <= startAt) {
+							ctx.addIssue({
+								code: 'custom',
+								path: [endConditionIndex, 'timeOfDayMs'],
+								message: 'End time must be after start time'
+							});
+						}
+					})
 			}
 		},
-		notifyOnStatusChange: false,
-		validateMode: bitwiseFlag(FormFieldValidateMode.OnSubmit),
-		reValidateMode: bitwiseFlag(FormFieldReValidateMode.OnBlur, FormFieldReValidateMode.OnChange)
+		validator: {
+			'~standard': {
+				version: 1,
+				vendor: 'abstand',
+				validate(value) {
+					const formData = value as TNewBlockIntentionFormData;
+					if (formData.scope === 'wholeDevice' || formData.selectedTargets.length > 0) {
+						return { value: formData };
+					}
+
+					return {
+						issues: [
+							{
+								path: ['selectedTargets'],
+								message: 'Choose at least one app or website'
+							}
+						]
+					};
+				}
+			}
+		} satisfies TFormValidator<TNewBlockIntentionFormData>,
+		validateOn: ['submit'],
+		revalidateOn: ['submit', 'blur', 'change']
 	});
 
 	constructor(intentionsCx: IntentionsCx) {
@@ -231,7 +229,7 @@ export class NewBlockIntentionCx {
 		update: Partial<Omit<TNewIntentionConditionFormData, 'transition'>>
 	): void {
 		this.upsertCondition({
-			...(this.getCondition(transition) ?? this.createDefaultCondition(transition)),
+			...(this.getCondition(transition) ?? createDefaultNewIntentionCondition(transition)),
 			...update
 		});
 	}
@@ -364,22 +362,6 @@ export class NewBlockIntentionCx {
 
 		return Ok(intention);
 	}
-
-	private createDefaultCondition(
-		transition: specta.IntentionConditionTransition
-	): TNewIntentionConditionFormData {
-		return {
-			transition,
-			mode: transition === 'start' ? 'now' : 'manual',
-			dateEpochDays: getCurrentDateEpochDays(),
-			timeOfDayMs:
-				transition === 'start'
-					? timeOnlyFromMs(9 * 60 * 60 * 1_000)
-					: timeOnlyFromMs(17 * 60 * 60 * 1_000),
-			offsetMs: 30 * 60_000,
-			weekdaysMask: null
-		};
-	}
 }
 
 export const newBlockIntentionConfig = {
@@ -430,6 +412,22 @@ export type TNewBlockIntentionSubmitError =
 	| { code: 'invalidForm' }
 	| { code: 'createFailed'; message: string }
 	| { code: 'startFailed'; message: string; intention: specta.Intention };
+
+export function createDefaultNewIntentionCondition(
+	transition: specta.IntentionConditionTransition
+): TNewIntentionConditionFormData {
+	return {
+		transition,
+		mode: transition === 'start' ? 'now' : 'manual',
+		dateEpochDays: getCurrentDateEpochDays(),
+		timeOfDayMs:
+			transition === 'start'
+				? timeOnlyFromMs(9 * 60 * 60 * 1_000)
+				: timeOnlyFromMs(17 * 60 * 60 * 1_000),
+		offsetMs: 30 * 60_000,
+		weekdaysMask: null
+	};
+}
 
 const ReactNewBlockIntentionCx = React.createContext<NewBlockIntentionCx | null>(null);
 

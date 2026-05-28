@@ -2,9 +2,5 @@ packages:
   - 'apps/*'
   - 'packages/*'
 
-# Note: Temporary internal package bypass for pnpm's 24h release-age window; remove after 2026-05-29
-minimumReleaseAgeExclude:
-  - '@blgc/config@0.1.0'
-
 # Avoid auto-installing before clean scripts that remove node_modules
 verifyDepsBeforeRun: false

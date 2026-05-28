@@ -11,24 +11,29 @@ import { SettingsRow } from '@/modules/settings';
 import { type TConditionRowsProps } from './types';
 
 export const DurationRows: React.FC<TConditionRowsProps> = (props) => {
-	const { condition, cx } = props;
+	const {
+		conditionRow: {
+			condition: { offsetMs, transition },
+			errors: { offsetMs: offsetError }
+		},
+		cx
+	} = props;
 	const [isCustomDurationSelected, setIsCustomDurationSelected] = React.useState(false);
 
 	const selectedDurationValue = isCustomDurationSelected
 		? customDurationValue
-		: (durationOptions
-				.find((o) => minutesToMs(o.minutes) === condition.offsetMs)
-				?.minutes.toString() ?? customDurationValue);
+		: (durationOptions.find((o) => minutesToMs(o.minutes) === offsetMs)?.minutes.toString() ??
+			customDurationValue);
 
 	// MARK: - Actions
 
 	const handleOffsetMinutesChange = React.useCallback(
 		(offsetMinutes: number) => {
-			cx.updateCondition(condition.transition, {
+			cx.updateCondition(transition, {
 				offsetMs: minutesToMs(clampOffsetMinutes(offsetMinutes))
 			});
 		},
-		[condition.transition, cx]
+		[transition, cx]
 	);
 
 	const handleDurationChange = React.useCallback(
@@ -54,10 +59,17 @@ export const DurationRows: React.FC<TConditionRowsProps> = (props) => {
 	return (
 		<SettingsRow
 			label="After"
+			description={offsetError}
+			descriptionVariant={offsetError != null ? 'error' : 'default'}
 			variant="compact"
 			contentClassName="min-w-0 shrink flex-wrap justify-end"
 		>
-			<Select variant="ghost" value={selectedDurationValue} onChange={handleDurationChange}>
+			<Select
+				variant="ghost"
+				value={selectedDurationValue}
+				onChange={handleDurationChange}
+				aria-invalid={offsetError != null}
+			>
 				{durationOptions.map((option) => (
 					<option key={option.minutes} value={option.minutes}>
 						{option.label}
@@ -67,8 +79,9 @@ export const DurationRows: React.FC<TConditionRowsProps> = (props) => {
 			</Select>
 			{selectedDurationValue === customDurationValue && (
 				<CustomDurationInputs
-					offsetMs={condition.offsetMs}
+					offsetMs={offsetMs}
 					onOffsetMinutesChange={handleOffsetMinutesChange}
+					isInvalid={offsetError != null}
 				/>
 			)}
 		</SettingsRow>
@@ -84,7 +97,7 @@ const durationOptions = [
 const customDurationValue = 'custom';
 
 const CustomDurationInputs: React.FC<TCustomDurationInputsProps> = (props) => {
-	const { offsetMs, onOffsetMinutesChange } = props;
+	const { offsetMs, onOffsetMinutesChange, isInvalid = false } = props;
 	const offsetMinutes = Math.floor(offsetMs / 60_000);
 	const hours = Math.floor(offsetMinutes / 60);
 	const minutes = offsetMinutes % 60;
@@ -131,6 +144,7 @@ const CustomDurationInputs: React.FC<TCustomDurationInputsProps> = (props) => {
 				onValueChange={handleHoursChange}
 				onStep={handleHoursStep}
 				ariaLabel="Custom duration hours"
+				isInvalid={isInvalid}
 			/>
 			<DurationNumberInput
 				unit="minutes"
@@ -140,6 +154,7 @@ const CustomDurationInputs: React.FC<TCustomDurationInputsProps> = (props) => {
 				onValueChange={handleMinutesChange}
 				onStep={handleMinutesStep}
 				ariaLabel="Custom duration minutes"
+				isInvalid={isInvalid}
 			/>
 		</>
 	);
@@ -148,10 +163,11 @@ const CustomDurationInputs: React.FC<TCustomDurationInputsProps> = (props) => {
 interface TCustomDurationInputsProps {
 	offsetMs: number;
 	onOffsetMinutesChange: (offsetMinutes: number) => void;
+	isInvalid?: boolean;
 }
 
 const DurationNumberInput: React.FC<TDurationNumberInputProps> = (props) => {
-	const { unit, min, max, value, onValueChange, onStep, ariaLabel } = props;
+	const { unit, min, max, value, onValueChange, onStep, ariaLabel, isInvalid = false } = props;
 
 	const handleChange = React.useCallback(
 		(event: React.ChangeEvent<HTMLInputElement>) => {
@@ -174,6 +190,7 @@ const DurationNumberInput: React.FC<TDurationNumberInputProps> = (props) => {
 				value={value}
 				onChange={handleChange}
 				aria-label={ariaLabel}
+				aria-invalid={isInvalid}
 			/>
 			<InputGroupAddon align="inline-end" className="pr-2 text-xs">
 				{unit === 'hours' ? 'H' : 'M'}
@@ -198,6 +215,7 @@ interface TDurationNumberInputProps {
 	onValueChange: (value: number) => void;
 	onStep: (delta: number) => void;
 	ariaLabel: string;
+	isInvalid?: boolean;
 }
 
 type TDurationInputUnit = 'hours' | 'minutes';

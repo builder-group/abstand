@@ -1,4 +1,3 @@
-import { useCompute } from 'feature-react/state';
 import React from 'react';
 import { AtTimeRows } from './AtTimeRows';
 import { DurationRows } from './DurationRows';
@@ -7,24 +6,25 @@ import { TimeOfDayRow } from './TimeOfDayRow';
 import { type TConditionRowsProps } from './types';
 
 export const ConditionDetailRows: React.FC<TConditionRowsProps> = (props) => {
-	const { condition, cx } = props;
-	const isEndOnRepeatingStart = useCompute(cx.$form.fields.conditions, ({ value }) => {
-		const startCondition = value?.find((condition) => condition.transition === 'start') ?? null;
-		return condition.transition === 'end' && startCondition?.mode === 'repeats';
-	});
+	const {
+		conditionRow: {
+			condition: { mode },
+			isEndOnRepeatingStart
+		}
+	} = props;
 
-	switch (condition.mode) {
+	switch (mode) {
 		case 'atTime':
 			if (isEndOnRepeatingStart) {
-				return <TimeOfDayRow condition={condition} cx={cx} ariaLabel="Condition time" />;
+				return <TimeOfDayRow {...props} ariaLabel="Condition time" />;
 			}
 
-			return <AtTimeRows condition={condition} cx={cx} />;
+			return <AtTimeRows {...props} />;
 		case 'afterDelay':
 		case 'afterDuration':
-			return <DurationRows condition={condition} cx={cx} />;
+			return <DurationRows {...props} />;
 		case 'repeats':
-			return <RepeatsRows condition={condition} cx={cx} />;
+			return <RepeatsRows {...props} />;
 		case 'manual':
 		case 'now':
 			return null;

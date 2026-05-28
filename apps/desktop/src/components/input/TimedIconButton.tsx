@@ -1,5 +1,5 @@
+import { useEventCallback } from 'feature-react/state';
 import React from 'react';
-import { useStableCallback } from '@/hooks';
 import { cn } from '@/lib';
 import { Button, type TButtonProps } from './Button';
 
@@ -19,7 +19,7 @@ export const TimedIconButton: React.FC<TTimedIconButtonProps> = (props) => {
 
 	const circleRef = React.useRef<SVGCircleElement>(null);
 	const animRef = React.useRef<Animation | null>(null);
-	const handleComplete = useStableCallback(() => {
+	const handleComplete = useEventCallback(() => {
 		onProgressComplete?.();
 	});
 

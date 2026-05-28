@@ -84,13 +84,9 @@ export const CommandPaletteModal: React.FC = () => {
 	// MARK: - Effects
 
 	// Reset on open so a stale index from a previous session is never carried over
-	useListener(
-		cx.$isOpen,
-		({ value }) => {
-			if (value) setActiveIndex(0);
-		},
-		[]
-	);
+	useListener(cx.$isOpen, ({ value }) => {
+		if (value) setActiveIndex(0);
+	});
 
 	// Keep the active item in view during keyboard navigation
 	React.useEffect(() => {

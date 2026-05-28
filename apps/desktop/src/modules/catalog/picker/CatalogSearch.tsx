@@ -143,7 +143,7 @@ interface TCatalogSearchProps {
 const CatalogSearchItem: React.FC<TCatalogSearchItemProps> = (props) => {
 	const { item, cx, isSelected } = props;
 	const key = getCatalogItemKey(item);
-	const icon = useCompute(cx.$iconAssets, ({ value }) => value[key]);
+	const icon = useCompute(cx.$iconAssets, (value) => value[key]);
 
 	return (
 		<ComboboxItem key={key} value={item} onClick={() => cx.toggle(item)}>

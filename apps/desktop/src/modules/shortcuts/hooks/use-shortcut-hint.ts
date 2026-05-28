@@ -5,7 +5,7 @@ import { useShortcutsCx } from '../ShortcutsCx';
 
 export function useShortcutHint(action: specta.ShortcutAction): string | undefined {
 	const shortcutsCx = useShortcutsCx();
-	return useCompute(shortcutsCx.$configs, ({ value }) => {
+	return useCompute(shortcutsCx.$configs, (value) => {
 		const config = value[action];
 		if (config?.shortcut == null) return undefined;
 		return formatShortcut(config.shortcut);

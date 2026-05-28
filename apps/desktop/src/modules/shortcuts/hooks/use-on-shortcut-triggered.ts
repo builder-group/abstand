@@ -1,10 +1,10 @@
+import { useEventCallback } from 'feature-react/state';
 import React from 'react';
 import { specta } from '@/environment';
-import { useStableCallback } from '@/hooks';
 import { createMountLifecycle } from '@/lib';
 
 export function useOnShortcutTriggered(callback: (action: specta.ShortcutAction) => void): void {
-	const handleShortcut = useStableCallback(callback);
+	const handleShortcut = useEventCallback(callback);
 
 	React.useEffect(() => {
 		const lifecycle = createMountLifecycle();

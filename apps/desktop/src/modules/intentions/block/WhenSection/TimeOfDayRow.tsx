@@ -6,21 +6,34 @@ import { SettingsRow } from '@/modules/settings';
 import { type TConditionRowsProps } from './types';
 
 export const TimeOfDayRow: React.FC<TTimeOfDayRowProps> = (props) => {
-	const { condition, cx, ariaLabel } = props;
+	const {
+		conditionRow: {
+			condition: { timeOfDayMs, transition },
+			errors: { timeOfDayMs: timeError }
+		},
+		cx,
+		ariaLabel
+	} = props;
 
 	const handleTimeChange = React.useCallback(
 		(timeOfDayMs: specta.TimeOnly) => {
-			cx.updateCondition(condition.transition, { timeOfDayMs });
+			cx.updateCondition(transition, { timeOfDayMs });
 		},
-		[condition.transition, cx]
+		[transition, cx]
 	);
 
 	return (
-		<SettingsRow label="Time" variant="compact">
+		<SettingsRow
+			label="Time"
+			description={timeError}
+			descriptionVariant={timeError != null ? 'error' : 'default'}
+			variant="compact"
+		>
 			<TimeInput
-				value={condition.timeOfDayMs}
+				value={timeOfDayMs}
 				onValueChange={handleTimeChange}
 				ariaLabel={ariaLabel}
+				isInvalid={timeError != null}
 			/>
 		</SettingsRow>
 	);
@@ -31,7 +44,7 @@ interface TTimeOfDayRowProps extends TConditionRowsProps {
 }
 
 const TimeInput: React.FC<TTimeInputProps> = (props) => {
-	const { value, onValueChange, ariaLabel } = props;
+	const { value, onValueChange, ariaLabel, isInvalid = false } = props;
 
 	const handleChange = React.useCallback(
 		(event: React.ChangeEvent<HTMLInputElement>) => {
@@ -61,6 +74,7 @@ const TimeInput: React.FC<TTimeInputProps> = (props) => {
 				value={formatTimeInput(value)}
 				onChange={handleChange}
 				aria-label={ariaLabel}
+				aria-invalid={isInvalid}
 			/>
 			<InputGroupStepper
 				onIncrement={handleIncrement}
@@ -76,6 +90,7 @@ interface TTimeInputProps {
 	value: specta.TimeOnly;
 	onValueChange: (value: specta.TimeOnly) => void;
 	ariaLabel: string;
+	isInvalid?: boolean;
 }
 
 const stepMs = 5 * 60 * 1_000;

@@ -1054,12 +1054,7 @@ const HelpPopoverSection: React.FC = () => {
 							items={[
 								{
 									title: 'Processing mode',
-									description: (
-										<>
-											Choose how tasks are handled.{' '}
-											<span className="text-base-400">Use arrows to compare options.</span>
-										</>
-									)
+									description: 'Choose how tasks are handled.'
 								},
 								{
 									title: 'Automatic',

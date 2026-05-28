@@ -16,10 +16,7 @@ import { SidebarItem } from './SidebarItem';
 export const SettingsSidebarContent: React.FC<TSettingsSidebarContentProps> = (props) => {
 	const { className } = props;
 	const settingsCx = useSettingsCx();
-	const developerEnabled = useCompute(
-		settingsCx.$appSettings,
-		({ value }) => value.developer.enabled
-	);
+	const developerEnabled = useCompute(settingsCx.$appSettings, (value) => value.developer.enabled);
 
 	return (
 		<div className={cn('flex h-full flex-col', className)}>

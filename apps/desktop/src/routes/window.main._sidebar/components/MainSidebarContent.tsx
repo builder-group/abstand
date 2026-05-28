@@ -24,7 +24,7 @@ export const MainSidebarContent: React.FC<TMainSidebarContentProps> = (props) =>
 	const searchHint = useShortcutHint('search');
 	const intentionsCx = useIntentionsCx();
 	const intentionIds = useFeatureState(intentionsCx.$intentionIds);
-	const areIntentionsLoading = useCompute(intentionsCx.$hasLoaded, ({ value }) => !value);
+	const areIntentionsLoading = useCompute(intentionsCx.$hasLoaded, (value) => !value);
 
 	return (
 		<div className={cn('flex h-full flex-col', className)}>

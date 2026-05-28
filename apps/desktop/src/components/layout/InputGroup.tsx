@@ -1,6 +1,6 @@
 import { cva, type VariantProps } from 'class-variance-authority';
+import { useEventCallback } from 'feature-react/state';
 import React from 'react';
-import { useStableCallback } from '@/hooks';
 import { cn } from '@/lib';
 import { ChevronDownIcon, ChevronUpIcon } from '../display';
 import { Button, Input, Textarea } from '../input';
@@ -155,7 +155,7 @@ export const InputGroupStepper: React.FC<TInputGroupStepperProps> = (props) => {
 		activeDirectionRef.current = null;
 	}, []);
 
-	const runStep = useStableCallback((direction: TInputGroupStepperDirection) => {
+	const runStep = useEventCallback((direction: TInputGroupStepperDirection) => {
 		if (direction === 'increment') {
 			if (incrementDisabled) {
 				stopRepeating();

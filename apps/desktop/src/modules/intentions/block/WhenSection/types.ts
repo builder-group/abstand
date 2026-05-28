@@ -4,6 +4,15 @@ import {
 } from '../NewBlockIntentionCx';
 
 export interface TConditionRowsProps {
-	condition: TNewIntentionConditionFormData;
 	cx: NewBlockIntentionCx;
+	conditionRow: TConditionRow;
 }
+
+export interface TConditionRow {
+	condition: TNewIntentionConditionFormData;
+	errors: TConditionErrors;
+	isEndOnRepeatingStart: boolean;
+}
+
+export type TConditionErrors = Partial<Record<keyof TNewIntentionConditionFormData, string>> &
+	Record<string, string | undefined>;

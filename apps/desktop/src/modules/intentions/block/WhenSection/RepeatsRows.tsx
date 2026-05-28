@@ -7,51 +7,65 @@ import { TimeOfDayRow } from './TimeOfDayRow';
 import { type TConditionRowsProps } from './types';
 
 export const RepeatsRows: React.FC<TConditionRowsProps> = (props) => {
-	const { condition, cx } = props;
+	const {
+		conditionRow: {
+			condition: { transition, weekdaysMask },
+			errors: { weekdaysMask: weekdaysError }
+		},
+		cx
+	} = props;
 
 	const handleRepeatModeChange = React.useCallback(
 		(event: React.ChangeEvent<HTMLSelectElement>) => {
-			cx.updateCondition(condition.transition, {
+			cx.updateCondition(transition, {
 				weekdaysMask:
 					event.target.value === 'selectedDays'
 						? newBlockIntentionConfig.defaultSelectedWeekdaysMask
 						: null
 			});
 		},
-		[condition.transition, cx]
+		[transition, cx]
 	);
 
 	return (
 		<>
-			<TimeOfDayRow condition={condition} cx={cx} ariaLabel="Repeat time" />
+			<TimeOfDayRow {...props} ariaLabel="Repeat time" />
 			<SettingsRow
 				label="Days"
+				description={weekdaysError}
+				descriptionVariant={weekdaysError != null ? 'error' : 'default'}
 				variant="compact"
 				contentClassName="min-w-0 shrink flex-wrap justify-end"
 			>
 				<Select
 					variant="ghost"
-					value={condition.weekdaysMask == null ? 'everyDay' : 'selectedDays'}
+					value={weekdaysMask == null ? 'everyDay' : 'selectedDays'}
 					onChange={handleRepeatModeChange}
+					aria-invalid={weekdaysError != null}
 				>
 					<option value="everyDay">Every day</option>
 					<option value="selectedDays">Selected days</option>
 				</Select>
-				{condition.weekdaysMask != null && <WeekdayToggleGroup condition={condition} cx={cx} />}
+				{weekdaysMask != null && <WeekdayToggleGroup {...props} />}
 			</SettingsRow>
 		</>
 	);
 };
 
 const WeekdayToggleGroup: React.FC<TConditionRowsProps> = (props) => {
-	const { condition, cx } = props;
+	const {
+		conditionRow: {
+			condition: { transition, weekdaysMask }
+		},
+		cx
+	} = props;
 	const selectedWeekdays = React.useMemo(() => {
-		if (condition.weekdaysMask == null) {
+		if (weekdaysMask == null) {
 			return [];
 		}
 
-		return weekdaysFromWeekdayMask(condition.weekdaysMask);
-	}, [condition.weekdaysMask]);
+		return weekdaysFromWeekdayMask(weekdaysMask);
+	}, [weekdaysMask]);
 
 	const handleWeekdaysChange = React.useCallback(
 		(values: string[]) => {
@@ -60,11 +74,11 @@ const WeekdayToggleGroup: React.FC<TConditionRowsProps> = (props) => {
 				return;
 			}
 
-			cx.updateCondition(condition.transition, {
+			cx.updateCondition(transition, {
 				weekdaysMask: weekdayMaskFromWeekdays(weekdays)
 			});
 		},
-		[condition.transition, cx]
+		[transition, cx]
 	);
 
 	return (

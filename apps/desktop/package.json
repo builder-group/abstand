@@ -39,15 +39,14 @@
 		"@tauri-apps/plugin-os": "^2.3.2",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
-		"feature-form": "^0.0.60",
-		"feature-react": "^0.0.68",
-		"feature-state": "^0.0.66",
+		"feature-form": "^0.1.0",
+		"feature-react": "^0.1.0",
+		"feature-state": "^0.1.0",
 		"lucide-react": "^1.14.0",
 		"react": "^19.2.6",
 		"react-dom": "^19.2.6",
 		"tailwind-merge": "^3.6.0",
 		"tuple-result": "^0.0.12",
-		"validation-adapters": "^0.0.38",
 		"zod": "^4.4.3"
 	},
 	"devDependencies": {

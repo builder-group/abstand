@@ -7,7 +7,13 @@ import { TimeOfDayRow } from './TimeOfDayRow';
 import { type TConditionRowsProps } from './types';
 
 export const AtTimeRows: React.FC<TConditionRowsProps> = (props) => {
-	const { condition, cx } = props;
+	const {
+		conditionRow: {
+			condition: { dateEpochDays, transition },
+			errors: { dateEpochDays: dateError }
+		},
+		cx
+	} = props;
 	const dateOptions = Array.from({ length: 7 }, (_, offset) => getDateOption(offset));
 
 	// MARK: - Actions
@@ -19,20 +25,26 @@ export const AtTimeRows: React.FC<TConditionRowsProps> = (props) => {
 				return;
 			}
 
-			cx.updateCondition(condition.transition, { dateEpochDays });
+			cx.updateCondition(transition, { dateEpochDays });
 		},
-		[condition.transition, cx]
+		[transition, cx]
 	);
 
 	// MARK: - UI
 
 	return (
 		<>
-			<SettingsRow label="Day" variant="compact">
+			<SettingsRow
+				label="Day"
+				description={dateError}
+				descriptionVariant={dateError != null ? 'error' : 'default'}
+				variant="compact"
+			>
 				<Select
 					variant="ghost"
-					value={formatDateInput(condition.dateEpochDays)}
+					value={formatDateInput(dateEpochDays)}
 					onChange={handleDateChange}
+					aria-invalid={dateError != null}
 				>
 					{dateOptions.map((option) => (
 						<option key={option.value} value={formatDateInput(option.value)}>
@@ -41,7 +53,7 @@ export const AtTimeRows: React.FC<TConditionRowsProps> = (props) => {
 					))}
 				</Select>
 			</SettingsRow>
-			<TimeOfDayRow condition={condition} cx={cx} ariaLabel="Condition time" />
+			<TimeOfDayRow {...props} ariaLabel="Condition time" />
 		</>
 	);
 };

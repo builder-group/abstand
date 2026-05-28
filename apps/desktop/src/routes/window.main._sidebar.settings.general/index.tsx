@@ -45,8 +45,8 @@ function RouteComponent() {
 const AppearanceSection: React.FC = () => {
 	const settingsCx = useSettingsCx();
 	const toastsCx = useToastsCx();
-	const theme = useCompute(settingsCx.$appSettings, ({ value }) => value.appearance.theme);
-	const fontScale = useCompute(settingsCx.$appSettings, ({ value }) => value.appearance.fontScale);
+	const theme = useCompute(settingsCx.$appSettings, (value) => value.appearance.theme);
+	const fontScale = useCompute(settingsCx.$appSettings, (value) => value.appearance.fontScale);
 
 	// MARK: - Actions
 
@@ -74,7 +74,7 @@ const AppearanceSection: React.FC = () => {
 			// the new font scale live while dragging; persistence happens on commit
 			// eslint-disable-next-line react-hooks/immutability
 			settingsCx.$appSettings._v.appearance.fontScale = nextFontScale;
-			settingsCx.$appSettings._notify();
+			settingsCx.$appSettings.notify();
 		},
 		[settingsCx]
 	);
@@ -153,10 +153,7 @@ function formatFontScale(value: number) {
 const FeaturesSection: React.FC = () => {
 	const settingsCx = useSettingsCx();
 	const toastsCx = useToastsCx();
-	const developerEnabled = useCompute(
-		settingsCx.$appSettings,
-		({ value }) => value.developer.enabled
-	);
+	const developerEnabled = useCompute(settingsCx.$appSettings, (value) => value.developer.enabled);
 
 	// MARK: - Actions
 

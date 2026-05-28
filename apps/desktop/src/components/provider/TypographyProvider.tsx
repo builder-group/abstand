@@ -12,26 +12,22 @@ export const TypographyProvider: React.FC<TTypographyProviderProps> = (props) =>
 	// Note: on macOS, systemFontSize and smallSystemFontSize are fixed constants (13pt/11pt)
 	// and match the CSS fallbacks, so this has no visible effect today. The hook exists
 	// for platforms where the OS exposes a user-adjustable font size (e.g. Windows).
-	useSubscriber(
-		settingsCx.$appSettings,
-		async ({ value, prevValue }) => {
-			if (value.appearance.fontScale === prevValue?.appearance.fontScale) {
-				return;
-			}
+	useSubscriber(settingsCx.$appSettings, async ({ value, prevValue }) => {
+		if (value.appearance.fontScale === prevValue?.appearance.fontScale) {
+			return;
+		}
 
-			const systemTypography = await specta.commands.getSystemTypography();
+		const systemTypography = await specta.commands.getSystemTypography();
 
-			setFontSizeVariable(
-				'--app-font-size-base',
-				systemTypography.baseFontSize * value.appearance.fontScale
-			);
-			setFontSizeVariable(
-				'--app-font-size-small',
-				systemTypography.smallFontSize * value.appearance.fontScale
-			);
-		},
-		[]
-	);
+		setFontSizeVariable(
+			'--app-font-size-base',
+			systemTypography.baseFontSize * value.appearance.fontScale
+		);
+		setFontSizeVariable(
+			'--app-font-size-small',
+			systemTypography.smallFontSize * value.appearance.fontScale
+		);
+	});
 
 	// MARK: - UI
 

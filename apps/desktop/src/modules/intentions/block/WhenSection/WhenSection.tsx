@@ -1,8 +1,6 @@
-import { useCombinedCompute } from 'feature-react/state';
 import React from 'react';
 import { Select } from '@/components';
 import { type specta } from '@/environment';
-import { getFirstFormFieldStatusError } from '@/lib';
 import { SettingsGroup, SettingsRow } from '@/modules/settings';
 import {
 	useNewBlockIntentionCx,
@@ -10,6 +8,8 @@ import {
 	type TNewIntentionConditionMode
 } from '../NewBlockIntentionCx';
 import { ConditionDetailRows } from './ConditionDetailRows';
+import { type TConditionRow } from './types';
+import { useConditionRow } from './use-condition-row';
 
 export const WhenSection: React.FC = () => {
 	const cx = useNewBlockIntentionCx();
@@ -29,35 +29,37 @@ export const WhenSection: React.FC = () => {
 
 const ConditionRowSet: React.FC<TConditionRowSetProps> = (props) => {
 	const { transition, label, description, cx } = props;
-	const conditionRow = useCombinedCompute(
-		[cx.$form.fields.conditions, cx.$form.fields.conditions.status] as const,
-		([{ value: conditions }, { value: conditionsStatus }]) => {
-			const index = conditions?.findIndex((condition) => condition.transition === transition) ?? -1;
-			const condition = conditions?.[index] ?? null;
-			if (condition == null) {
-				return null;
-			}
+	const conditionRow = useConditionRow(cx, transition);
 
-			const error = getFirstFormFieldStatusError(conditionsStatus, `${index}`, {
-				includeNested: true
-			})?.message;
-
-			return { condition, error };
-		},
-		[transition],
-		{
-			isEqual: (a, b) => {
-				if (a == null || b == null) {
-					return a === b;
-				}
-
-				return a.condition === b.condition && a.error === b.error;
-			}
-		}
+	return (
+		<>
+			<ConditionModeRow
+				conditionRow={conditionRow}
+				cx={cx}
+				label={label}
+				description={description}
+			/>
+			<ConditionDetailRows cx={cx} conditionRow={conditionRow} />
+		</>
 	);
-	const modeOptions = modeOptionsByTransition[transition];
+};
 
-	// MARK: - Actions
+interface TConditionRowSetProps {
+	transition: specta.IntentionConditionTransition;
+	label: string;
+	description?: string;
+	cx: NewBlockIntentionCx;
+}
+
+const ConditionModeRow: React.FC<TConditionModeRowProps> = (props) => {
+	const {
+		conditionRow: {
+			condition: { mode, transition }
+		},
+		cx,
+		label,
+		description
+	} = props;
 
 	const handleModeChange = React.useCallback(
 		(event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -68,44 +70,24 @@ const ConditionRowSet: React.FC<TConditionRowSetProps> = (props) => {
 
 	// MARK: - UI
 
-	if (conditionRow == null) {
-		return null;
-	}
-
-	const { condition, error: conditionError } = conditionRow;
-
 	return (
-		<>
-			<SettingsRow
-				label={label}
-				description={conditionError ?? description}
-				descriptionVariant={conditionError != null ? 'error' : 'default'}
-				variant="compact"
-			>
-				<Select
-					variant="ghost"
-					value={condition.mode}
-					onChange={handleModeChange}
-					aria-invalid={conditionError != null}
-				>
-					{modeOptions.map((option) => (
-						<option key={option.value} value={option.value}>
-							{option.label}
-						</option>
-					))}
-				</Select>
-			</SettingsRow>
-
-			<ConditionDetailRows condition={condition} cx={cx} />
-		</>
+		<SettingsRow label={label} description={description} variant="compact">
+			<Select variant="ghost" value={mode} onChange={handleModeChange}>
+				{modeOptionsByTransition[transition].map((option) => (
+					<option key={option.value} value={option.value}>
+						{option.label}
+					</option>
+				))}
+			</Select>
+		</SettingsRow>
 	);
 };
 
-interface TConditionRowSetProps {
-	transition: specta.IntentionConditionTransition;
+interface TConditionModeRowProps {
+	conditionRow: TConditionRow;
+	cx: NewBlockIntentionCx;
 	label: string;
 	description?: string;
-	cx: NewBlockIntentionCx;
 }
 
 const modeOptionsByTransition = {

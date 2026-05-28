@@ -1,6 +1,6 @@
-import { createState } from 'feature-state';
+import { createComputed, createState } from 'feature-state';
 import { specta } from '@/environment';
-import { createComputedState, createMountLifecycle } from '@/lib';
+import { createMountLifecycle } from '@/lib';
 
 export class CatalogPickerCx {
 	public readonly $isOpen = createState(false);
@@ -16,7 +16,7 @@ export class CatalogPickerCx {
 		this._hooks.onConfirm = onConfirm;
 	}
 
-	public readonly $isDirty = createComputedState(
+	public readonly $isDirty = createComputed(
 		[this.$selectedItems, this.$confirmedItems] as const,
 		([selectedItems, committedItems]) => {
 			if (selectedItems.length !== committedItems.length) {

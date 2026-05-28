@@ -1,9 +1,14 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useForm } from 'feature-react/form';
+import { useFormField } from 'feature-react/form';
 import { useFeatureState } from 'feature-react/state';
 import React from 'react';
 import { Button, ContentPage, Input, useToastsCx } from '@/components';
-import { BlockSection, useNewBlockIntentionCx, WhenSection } from '@/modules/intentions';
+import {
+	BlockSection,
+	useNewBlockIntentionCx,
+	WhenSection,
+	type NewBlockIntentionCx
+} from '@/modules/intentions';
 import { SettingsGroup, SettingsRow } from '@/modules/settings';
 
 export const Route = createFileRoute('/window/main/_sidebar/intentions/new/block/')({
@@ -15,10 +20,7 @@ function RouteComponent() {
 	const cx = useNewBlockIntentionCx();
 	const toastsCx = useToastsCx();
 
-	const { handleSubmit, register, status } = useForm(cx.$form);
 	const isSubmitting = useFeatureState(cx.$form.isSubmitting);
-	const nameStatus = useFeatureState(status('name'));
-	const nameError = nameStatus.type === 'INVALID' ? nameStatus.errors[0]?.message : undefined;
 
 	// MARK: - Actions
 
@@ -56,6 +58,17 @@ function RouteComponent() {
 		});
 	}, [cx, navigate, toastsCx]);
 
+	const handleSubmit = React.useCallback(
+		(event: React.FormEvent<HTMLFormElement>) => {
+			event.preventDefault();
+			void cx.$form.submit({
+				onValidSubmit: handleValidSubmit,
+				context: { event }
+			});
+		},
+		[cx, handleValidSubmit]
+	);
+
 	// MARK: - UI
 
 	return (
@@ -64,23 +77,8 @@ function RouteComponent() {
 			subtitle="Set what's blocked, when it starts and ends, and how strict it is."
 			backTo="/window/main/intentions/new"
 		>
-			<form onSubmit={handleSubmit({ onValidSubmit: handleValidSubmit })} className="space-y-5">
-				<SettingsGroup>
-					<SettingsRow
-						label="Name"
-						description={nameError}
-						descriptionVariant={nameError != null ? 'error' : 'default'}
-						variant={nameError != null ? 'default' : 'compact'}
-					>
-						<Input
-							{...register('name')}
-							autoFocus
-							placeholder="Deep work"
-							aria-invalid={nameStatus.type === 'INVALID'}
-						/>
-					</SettingsRow>
-				</SettingsGroup>
-
+			<form onSubmit={handleSubmit} className="space-y-5">
+				<NameSection cx={cx} />
 				<BlockSection />
 				<WhenSection />
 
@@ -92,4 +90,33 @@ function RouteComponent() {
 			</form>
 		</ContentPage>
 	);
+}
+
+const NameSection: React.FC<TNameSectionProps> = (props) => {
+	const { cx } = props;
+	const nameField = useFormField(cx.$form, 'name');
+	const nameError =
+		nameField.status.type === 'invalid' ? nameField.status.errors[0]?.message : undefined;
+
+	return (
+		<SettingsGroup>
+			<SettingsRow
+				label="Name"
+				description={nameError}
+				descriptionVariant={nameError != null ? 'error' : 'default'}
+				variant={nameError != null ? 'default' : 'compact'}
+			>
+				<Input
+					{...nameField.input()}
+					autoFocus
+					placeholder="Deep work"
+					aria-invalid={nameField.status.type === 'invalid'}
+				/>
+			</SettingsRow>
+		</SettingsGroup>
+	);
+};
+
+interface TNameSectionProps {
+	cx: NewBlockIntentionCx;
 }
