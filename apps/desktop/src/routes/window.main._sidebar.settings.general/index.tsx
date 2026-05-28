@@ -1,4 +1,3 @@
-import { sleep } from '@blgc/utils';
 import { createFileRoute } from '@tanstack/react-router';
 import { useCompute } from 'feature-react/state';
 import React from 'react';
@@ -21,6 +20,7 @@ import {
 } from '@/components';
 import type { specta } from '@/environment';
 import { useAppInfo } from '@/hooks';
+import { sleep } from '@/lib';
 import { SettingsGroup, SettingsRow, SettingsRowFrame, useSettingsCx } from '@/modules/settings';
 
 export const Route = createFileRoute('/window/main/_sidebar/settings/general/')({
