@@ -51,7 +51,7 @@
 		"zod": "^4.4.3"
 	},
 	"devDependencies": {
-		"@blgc/config": "^0.0.42",
+		"@blgc/config": "^0.1.0",
 		"@tailwindcss/vite": "^4.3.0",
 		"@tanstack/router-plugin": "^1.167.35",
 		"@tauri-apps/cli": "^2.11.1",

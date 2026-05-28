@@ -21,19 +21,17 @@
 		"lint": "turbo run lint",
 		"lint:fix": "turbo run lint --force -- --fix",
 		"test": "turbo run test",
-		"update:latest": "turbo run update:latest --force && pnpm update --latest '!eslint' '!@eslint/js' && pnpm build"
+		"update:latest": "turbo run update:latest --force && pnpm update --latest && pnpm build"
 	},
 	"devDependencies": {
-		"@blgc/config": "^0.0.42",
-		"@eslint/js": "^9.39.2",
-		"@ianvs/prettier-plugin-sort-imports": "^4.7.1",
-		"eslint": "^9.39.2",
+		"@blgc/config": "^0.1.0",
+		"eslint": "^10.4.0",
 		"prettier": "^3.8.3",
 		"shx": "^0.4.0",
 		"turbo": "^2.9.12",
 		"typescript": "^6.0.3",
 		"vite": "^8.0.12",
-		"vitest": "^4.1.6"
+		"vitest": "^4.1.7"
 	},
 	"packageManager": "pnpm@11.3.0",
 	"engines": {
