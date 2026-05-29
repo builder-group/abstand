@@ -1,8 +1,40 @@
-# Db
+# DB
 
-SQLite database module. `schema.sql` is the source of truth. Edit it, then run `pnpm db:migrate <name>` to generate a migration. Migrations are applied automatically on startup via sqlx.
+SQLite database module. `schema.sql` is the source of truth. Migrations are applied automatically on startup via sqlx.
 
-## Design decisions
+## Schema Migrations
+
+Edit `schema.sql`, then run:
+
+```sh
+pnpm db:migrate <name>
+```
+
+Pass one descriptive name. The wrapper normalizes it for the migration filename.
+
+Useful checks:
+
+```sh
+pnpm db:check
+pnpm db:inspect
+```
+
+### Why Wrap Atlas?
+
+Atlas Community Edition does not diff SQLite triggers. `pnpm db:migrate` wraps Atlas so Atlas still manages tables, columns, indexes, foreign keys, and constraints, while `scripts/db-schema.mjs` compares triggers itself.
+
+The wrapper builds temporary SQLite databases from the current migrations and `schema.sql`. Atlas diffs the trigger-free schema, then the wrapper appends trigger changes to the generated migration and refreshes the Atlas migration hash.
+
+### Supported Schema Objects
+
+Currently handled:
+
+- Atlas-managed: tables, columns, indexes, foreign keys, and constraints
+- Wrapper-managed: triggers
+
+Other schema objects fail intentionally until the wrapper has comparison support for them.
+
+## Design Decisions
 
 ### Why does `intention_block` use `intention_id` as its primary key?
 
