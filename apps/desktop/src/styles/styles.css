@@ -75,17 +75,17 @@ a {
 /* MARK: - Utilities */
 
 @utility focus-ring {
-	@apply outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30;
+	@apply focus-visible:border-primary focus-visible:ring-primary/30 outline-none focus-visible:ring-2;
 }
 
 @utility peer-focus-ring {
-	@apply peer-focus-visible:border-primary peer-focus-visible:ring-2 peer-focus-visible:ring-primary/30;
+	@apply peer-focus-visible:border-primary peer-focus-visible:ring-primary/30 peer-focus-visible:ring-2;
 }
 
 @utility invalid-ring {
-	@apply aria-invalid:border-error aria-invalid:ring-2 aria-invalid:ring-error/20;
+	@apply aria-invalid:border-error aria-invalid:ring-error/20 aria-invalid:ring-2;
 }
 
 @utility peer-invalid-ring {
-	@apply peer-aria-invalid:border-error peer-aria-invalid:ring-2 peer-aria-invalid:ring-error/20;
+	@apply peer-aria-invalid:border-error peer-aria-invalid:ring-error/20 peer-aria-invalid:ring-2;
 }

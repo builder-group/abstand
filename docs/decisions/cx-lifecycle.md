@@ -88,31 +88,31 @@ That separation is easier to reason about and safer under React Strict Mode.
 const cx = React.useMemo(() => new SettingsCx(), []);
 
 React.useEffect(() => {
-	return cx.mount();
+  return cx.mount();
 }, [cx]);
 ```
 
 ```ts
 export class SettingsCx {
-	public mount(): () => void {
-		const lifecycle = createMountLifecycle();
+  public mount(): () => void {
+    const lifecycle = createMountLifecycle();
 
-		void (async () => {
-			const settings = await specta.commands.getSettings();
-			if (lifecycle.isUnmounted()) return;
+    void (async () => {
+      const settings = await specta.commands.getSettings();
+      if (lifecycle.isUnmounted()) return;
 
-			// apply initial state
-			this.$appSettings.set(settings);
+      // apply initial state
+      this.$appSettings.set(settings);
 
-			lifecycle.addCleanup(
-				await specta.events.appSettingsChangedEvent.listen((event) => {
-					// update local state
-				})
-			);
-		})();
+      lifecycle.addCleanup(
+        await specta.events.appSettingsChangedEvent.listen((event) => {
+          // update local state
+        })
+      );
+    })();
 
-		return lifecycle.unmount;
-	}
+    return lifecycle.unmount;
+  }
 }
 ```
 

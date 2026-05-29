@@ -77,15 +77,7 @@ function migrateCommand(args) {
 		assertOnlySupportedSchemaObjects(temp.desiredDbPath, schemaPath);
 
 		const configPath = writeAtlasConfig(temp.atlasManagedSchemaPath, temp.dir);
-		const atlasArgs = [
-			'migrate',
-			'diff',
-			'--config',
-			fileUrl(configPath),
-			'--env',
-			'local',
-			name
-		];
+		const atlasArgs = ['migrate', 'diff', '--config', fileUrl(configPath), '--env', 'local', name];
 		run('atlas', atlasArgs, { cwd: tauriDir });
 
 		const afterAtlas = migrationFiles();
