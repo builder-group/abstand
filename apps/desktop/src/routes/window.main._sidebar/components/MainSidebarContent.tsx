@@ -95,6 +95,11 @@ const IntentionListItem: React.FC<TIntentionListItemProps> = (props) => {
 	const { id } = props;
 	const intentionsCx = useIntentionsCx();
 	const intention = useFeatureState(intentionsCx.intentions[id]);
+	const isActive = useCompute(
+		intentionsCx.$activeIntentionIds,
+		(activeIntentionIds) => activeIntentionIds.includes(id),
+		[id]
+	);
 
 	if (intention == null) {
 		return null;
@@ -104,6 +109,7 @@ const IntentionListItem: React.FC<TIntentionListItemProps> = (props) => {
 		<SidebarItem
 			icon={<IntentionBehaviorIcon behavior={intention.behavior} />}
 			label={intention.name}
+			trailing={isActive ? <ActiveIntentionIndicator /> : undefined}
 			render={
 				<Link to="/window/main/intentions/$intentionId" params={{ intentionId: String(id) }} />
 			}
@@ -114,6 +120,14 @@ const IntentionListItem: React.FC<TIntentionListItemProps> = (props) => {
 interface TIntentionListItemProps {
 	id: number;
 }
+
+const ActiveIntentionIndicator: React.FC = () => {
+	return (
+		<span className="bg-success size-2 shrink-0 rounded-full" title="Active Abstand">
+			<span className="sr-only">Active Abstand</span>
+		</span>
+	);
+};
 
 const IntentionBehaviorIcon: React.FC<TIntentionBehaviorIconProps> = (props) => {
 	const { behavior } = props;

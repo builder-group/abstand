@@ -5,7 +5,7 @@ import { Kbd } from '@/components';
 import { cn } from '@/lib';
 
 export const SidebarItem: React.FC<TSidebarItemProps> = (props) => {
-	const { icon, label, shortcut, isAction, render, className, ...rest } = props;
+	const { icon, label, shortcut, trailing, isAction, render, className, ...rest } = props;
 
 	return useRender({
 		defaultTagName: 'button',
@@ -24,6 +24,7 @@ export const SidebarItem: React.FC<TSidebarItemProps> = (props) => {
 						{icon}
 						<span className="min-w-0 flex-1 truncate">{label}</span>
 						{shortcut != null && <Kbd variant="ghost">{shortcut}</Kbd>}
+						{trailing}
 					</>
 				)
 			},
@@ -38,5 +39,6 @@ export type TSidebarItemProps = useRender.ComponentProps<'button'> & {
 	icon: React.ReactNode;
 	label: string;
 	shortcut?: string;
+	trailing?: React.ReactNode;
 	isAction?: boolean;
 };
