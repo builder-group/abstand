@@ -68,6 +68,6 @@ Abstand is source-available under the **Elastic License 2.0 (ELv2)**.
 
 You may inspect, build, modify, and redistribute the software under the license terms. Redistributed versions must preserve the license-key functionality, protected functionality, copyright notices, and license notices required by ELv2.
 
-Abstand is not OSI open source. The license is intended to allow private modifications and community builds while keeping protected functionality tied to the license-key system.
+Abstand is not OSI open source. The public source exists for auditability, private modification, and community builds under ELv2. Official builds, updates, and protected functionality are tied to the paid license and license-key system.
 
 See [LICENSE](./LICENSE) for the full license text, or read the official overview at [elastic.co/licensing/elastic-license](https://www.elastic.co/licensing/elastic-license).

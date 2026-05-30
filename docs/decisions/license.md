@@ -1,153 +1,91 @@
 # License Choice: Elastic License 2.0
 
 Date: 2026-04-25
-Last reviewed: 2026-05-13
+Last reviewed: 2026-05-30
 Status: decided
 
 ## Context
 
-Abstand is an offline macOS app for creating intentional distance from digital distractions. It runs with system-level access to block apps and websites, so user trust is a product requirement, not a nice-to-have.
+Abstand is an offline macOS app for creating intentional distance from digital distractions. It needs system-level permissions to block apps and websites, so user trust is part of the product itself.
 
-The business model is a one-time purchase with one year of updates included. The project needs a license that supports that model without turning the codebase into a black box.
+The business model is a one-time purchase with one year of updates included. Customers keep what they bought. Continued updates require another purchase. The project needs a license that supports that model without turning the codebase into a black box.
 
-The intent is that users should be able to inspect the source, build it themselves, and understand what the app is doing before trusting it with system-level permissions. Developers should be able to modify it for personal or internal use. Redistribution and improvement are acceptable, provided redistributors preserve the license-key functionality, protected functionality, copyright notices, and license notices.
+The source should be public so users can inspect what the app does before trusting it. Developers should be able to self-build, modify it for personal or internal workflows, and share compliant builds under the license terms.
 
-The goal is not to prevent forks or community builds outright. The goal is to make sure redistributed versions keep the same licensing path back to the original project rather than bypassing it. This matters because Abstand is a desktop app, not a managed service. If the app were pure permissive open source, a third party could redistribute substantially the same paid app without preserving any mechanism that supports ongoing development.
+The goal is not to prevent forks or community builds outright. The goal is to make sure redistributed versions preserve the same license-key path instead of bypassing it. This matters because Abstand is a desktop app, not a managed service. If the app were pure permissive open source, a third party could redistribute substantially the same paid app without preserving any mechanism that supports ongoing development.
 
-For this project, the license needs to do three things:
+For this project, the license needs to:
 
 - keep the source publicly readable so users can inspect what the app does
-- allow building from source, modification, and redistribution under clear limits
-- prevent removal or circumvention of license-key functionality and protected functionality
-- avoid giving away unrestricted commercial reuse rights at the start of the project
+- allow self-builds, private or internal modifications, and compliant redistribution
+- require redistributed versions to preserve license-key functionality, protected functionality, and notices
+- keep room for paid official builds, protected functionality, and update access
 
-This is a one-way-door decision. It is easy to move from a more restrictive license to a less restrictive one later. It is not practical to go the other direction for code that has already been published under a permissive open source license.
+Publishing under a permissive open source license is one-way for released versions. Future releases can always become less restrictive, but rights already granted for old releases cannot practically be taken back.
 
 ## Options Considered
 
+Each option is evaluated against the same question: does it keep the source inspectable while preserving the paid desktop model?
+
 ### MIT / Apache 2.0
 
-Pros:
+This would maximize openness and trust. It is OSI-approved, familiar, and simple for contributors and downstream users.
 
-- strongest trust and community signal
-- OSI-approved and familiar
-- simplest legal story for contributors and downstream users
-- allows private modification, forks, and redistribution without friction
-
-Cons:
-
-- allows third parties to redistribute or commercialize the code with very few constraints
-- does not protect a license-key-backed desktop business model
-- gives up the option to keep the initial commercial model protected by default
+It is not the current fit because it would allow unrestricted redistribution and commercialization of substantially the same app without preserving the license-key path.
 
 ### GPL / AGPL
 
-Pros:
+This would make Abstand true open source while requiring redistributed modified versions to keep source available under the same license family.
 
-- OSI-approved and familiar to many open source users
-- preserves user freedom to inspect, modify, share, and rebuild the app
-- requires redistributed modified versions to keep source available under the same license family
-
-Cons:
-
-- still allows third parties to redistribute ready-to-run desktop builds, including for free
-- creates stronger obligations for downstream code integration than this project needs
+It is not the current fit because it still allows free ready-to-run desktop builds and does not preserve a license-key-backed paid desktop model. AGPL is also more useful for network services than for a mostly local Mac app.
 
 ### Commons Clause
 
-Pros:
+This would target resale by adding a selling restriction to an otherwise permissive license.
 
-- targets resale of the software rather than all commercial use
-- can be layered on top of a familiar permissive license
-- narrower than a general non-commercial restriction
+It is not the current fit because it is not OSI open source and focuses on selling rather than the narrower thing Abstand needs: preserving license-key functionality, protected functionality, and notices.
 
-Cons:
+### Delayed-conversion source-available licenses
 
-- not OSI-approved and cannot be presented as open source
-- focuses on the right to "Sell" rather than preserving license-key functionality
-- less clear for acceptable paid support, consulting, redistribution, and value-add scenarios
+This includes Fair Core License, Functional Source License, and Business Source License 1.1. These keep source available now and can convert releases to an open source license later.
 
-### Fair Core License / Functional Source License
-
-Pros:
-
-- designed for source-available commercial products and Fair Source projects
-- allows broad source access while restricting uses that compete with or undermine the producer
-- provides a delayed path to an OSI-approved license for each released version
-- Fair Core License includes license-key protection for commercial features
-
-Cons:
-
-- broader than a license-key preservation rule because these licenses restrict competing or harmful uses more generally
-- the delayed open-source conversion is a real product promise, not just a trust signal
-- two-year conversion may be too short for a paid desktop app whose older versions can remain useful
-- Functional Source License is mainly designed around SaaS-style free-riding rather than offline desktop apps
-
-### Business Source License 1.1
-
-Pros:
-
-- established source-available license family
-- can be customized with an Additional Use Grant
-- provides eventual conversion to an open source license
-
-Cons:
-
-- heavier and more variable because each project-specific grant matters
-- better suited when production use needs to be restricted, which is not the goal here
-- would need careful customization to avoid accidentally blocking normal personal use, private modification, or community builds
+They are not the current fit because delayed conversion is a durable product promise, older desktop versions can remain useful for a long time, and Abstand does not need broader non-compete, production-use, or SaaS free-riding restrictions.
 
 ### Closed source / proprietary
 
-Pros:
+This would give Abstand the most control over official distribution and avoid public redistribution questions.
 
-- strongest control over official distribution
-- simplest message about what is and is not licensed
-
-Cons:
-
-- removes the inspectable-source trust advantage
-- fits poorly for software that operates at the system level
-- does not meaningfully prevent piracy on its own
+It is not the current fit because it removes the source-inspection trust advantage for a system-level focus blocker. It also does not prevent piracy by itself.
 
 ### Elastic License 2.0
 
-Pros:
+This keeps the source public and inspectable while allowing use, modification, derivative works, and redistribution under clear limits.
 
-- keeps the code public and inspectable
-- allows use, modification, derivative works, and redistribution under the license terms
-- blocks hosted or managed-service resale, though this matters less for a mostly offline desktop app
-- blocks removing notices, bypassing license-key functionality, or removing license-key-protected functionality
-- preserves the option to relicense more permissively later
-
-Cons:
-
-- not OSI-approved and cannot be presented as open source
-- some developers and companies avoid source-available licenses on principle
-- does not fully prevent piracy or unauthorized redistribution by itself
+It is the current fit because it preserves license-key functionality, protected functionality, and notices without forbidding compliant community builds. It is not OSI open source, and it does not eliminate piracy or all redistribution risk.
 
 ## Decision
 
-Use Elastic License 2.0 for the public codebase for now.
+Use stock Elastic License 2.0 for the public codebase for now. Package metadata should use the SPDX identifier `Elastic-2.0`.
 
 ## Why This Is The Current Call
 
-This decision is mostly about keeping trust intact while preserving some commercial headroom at the start.
+Abstand needs two things at the same time: trust and a viable paid product.
 
-Closed source protects distribution most directly, but it gives up one of the clearest advantages Abstand can offer: users can inspect the code of a system-level app before trusting it.
+Trust matters because Abstand asks for system-level permissions. A fully closed source app would give the project more control over distribution, but it would also ask users to trust a focus blocker they cannot inspect.
 
-MIT or Apache 2.0 would maximize openness, but they would also allow unrestricted redistribution and commercialization immediately. That may still become the right choice later, but it is harder to justify at the start of a small commercial desktop product.
+Permissive open source would maximize openness, but it would also allow anyone to redistribute substantially the same desktop app without preserving a path back to the paid product. GPL or AGPL would keep derivatives open, but would still allow free ready-to-run desktop builds and would not preserve a license-key-backed paid model.
 
-Elastic License 2.0 keeps the important trust property intact because the source stays public. It permits redistribution while adding practical guardrails around managed-service resale, notice removal, and license-key circumvention.
+ELv2 is the closest fit for now. The source stays public and inspectable. Users and developers can self-build, modify, and redistribute within the license terms. Redistributed builds must preserve the license-key mechanism, protected functionality, and required notices.
 
-For Abstand, the key point is the license-key limitation. ELv2 does not broadly prohibit desktop redistribution, and that is intentional. Redistributed builds are acceptable when they comply with the license and preserve the license-key mechanism, protected functionality, and required notices. This matches the desired model better than a non-compete license because the project does not need to forbid community versions outright.
+This fits Abstand better than a non-compete or broad anti-fork license. Community builds are acceptable when they stay connected to the same license path. The project does not need to forbid redistribution outright.
 
-It is important to be explicit about what this decision does not buy. ELv2 does not eliminate redistribution risk, and it does not stop ordinary piracy by itself. It also does not force every redistributor to pay the project merely because they redistribute a build. The commercial support for the project comes from the product architecture: paid or protected functionality must actually remain behind the license-key mechanism. If Abstand stops relying on license-key-protected functionality, or if the goal changes to preventing redistribution itself, ELv2 becomes a weaker fit and this decision should be revisited.
+ELv2 is not enough on its own. The paid product model still depends on the product architecture: official builds, updates, and protected functionality must remain meaningfully tied to the license-key system.
 
 ## Resources and References
 
 - [Elastic License 2.0 full text](https://www.elastic.co/licensing/elastic-license)
 - [Elastic License 2.0 FAQ](https://www.elastic.co/licensing/elastic-license/faq/)
+- [SPDX Elastic-2.0](https://spdx.github.io/license-list-data/Elastic-2.0.html)
 - [Commons Clause](https://commonsclause.com/)
 - [Fair Core License](https://fcl.dev/)
 - [Functional Source License](https://fsl.software/)
