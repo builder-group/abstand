@@ -27,6 +27,20 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
+	DropMenu,
+	DropMenuCheckboxItem,
+	DropMenuContent,
+	DropMenuGroup,
+	DropMenuItem,
+	DropMenuLabel,
+	DropMenuRadioGroup,
+	DropMenuRadioItem,
+	DropMenuSeparator,
+	DropMenuShortcut,
+	DropMenuSub,
+	DropMenuSubContent,
+	DropMenuSubTrigger,
+	DropMenuTrigger,
 	HelpCarousel,
 	HelpPopover,
 	HelpPopoverLink,
@@ -43,6 +57,7 @@ import {
 	LibraryBigIcon,
 	MonitorIcon,
 	MoonIcon,
+	MoreVerticalIcon,
 	PanelLeftCloseIcon,
 	PanelLeftOpenIcon,
 	Popover,
@@ -55,6 +70,7 @@ import {
 	SegmentedControl,
 	SegmentedControlItem,
 	Select,
+	SettingsIcon,
 	SettingsPage,
 	Slider,
 	SunIcon,
@@ -64,6 +80,7 @@ import {
 	ToggleGroup,
 	ToggleGroupItem,
 	Tooltip,
+	Trash2Icon,
 	useComboboxAnchor,
 	useToastsCx,
 	XCircleIcon
@@ -94,6 +111,7 @@ function RouteComponent() {
 			<ToggleGroupSection />
 			<SegmentedControlSection />
 			<SelectSection />
+			<DropMenuSection />
 			<ComboboxSection />
 			<BadgeSection />
 			<KbdSection />
@@ -585,6 +603,118 @@ const SelectSection: React.FC = () => {
 					<option value="invalid">Invalid ghost</option>
 					<option value="ready">Ready ghost</option>
 				</Select>
+			</PlaygroundRow>
+		</PlaygroundGroup>
+	);
+};
+
+// MARK: - Drop Menu
+
+const DropMenuSection: React.FC = () => {
+	const [showToolbar, setShowToolbar] = React.useState(true);
+	const [showStatusBar, setShowStatusBar] = React.useState(false);
+	const [density, setDensity] = React.useState('comfortable');
+
+	const handleDensityChange = React.useCallback((value: unknown) => {
+		if (typeof value !== 'string') {
+			return;
+		}
+
+		setDensity(value);
+	}, []);
+
+	return (
+		<PlaygroundGroup title="Drop Menu">
+			<PlaygroundRow label="Sizes">
+				<DropMenu>
+					<DropMenuTrigger render={<Button variant="soft" />}>Default (sm)</DropMenuTrigger>
+					<DropMenuContent align="start" className="w-44">
+						<DropMenuItem>Open</DropMenuItem>
+						<DropMenuItem>Rename</DropMenuItem>
+					</DropMenuContent>
+				</DropMenu>
+				<DropMenu size="md">
+					<DropMenuTrigger render={<Button size="md" variant="soft" />}>
+						Medium (md)
+					</DropMenuTrigger>
+					<DropMenuContent align="start" className="w-44">
+						<DropMenuItem>Open</DropMenuItem>
+						<DropMenuItem>Rename</DropMenuItem>
+					</DropMenuContent>
+				</DropMenu>
+			</PlaygroundRow>
+			<PlaygroundRow label="Actions">
+				<DropMenu>
+					<DropMenuTrigger render={<Button variant="soft" />}>
+						<SettingsIcon />
+						Actions
+					</DropMenuTrigger>
+					<DropMenuContent align="start" className="w-56">
+						<DropMenuGroup>
+							<DropMenuLabel>File</DropMenuLabel>
+							<DropMenuItem>
+								<SearchIcon />
+								<span>Open</span>
+								<DropMenuShortcut>⌘O</DropMenuShortcut>
+							</DropMenuItem>
+							<DropMenuItem>
+								<SettingsIcon />
+								<span>Rename</span>
+							</DropMenuItem>
+							<DropMenuSub>
+								<DropMenuSubTrigger>
+									<MonitorIcon />
+									<span>Move to</span>
+								</DropMenuSubTrigger>
+								<DropMenuSubContent className="w-36">
+									<DropMenuItem>Desktop</DropMenuItem>
+									<DropMenuItem>Archive</DropMenuItem>
+								</DropMenuSubContent>
+							</DropMenuSub>
+						</DropMenuGroup>
+						<DropMenuSeparator />
+						<DropMenuItem variant="destructive">
+							<Trash2Icon />
+							<span>Delete</span>
+						</DropMenuItem>
+					</DropMenuContent>
+				</DropMenu>
+				<DropMenu>
+					<DropMenuTrigger
+						render={<Button variant="ghost" size="icon-sm" aria-label="More actions" />}
+					>
+						<MoreVerticalIcon />
+					</DropMenuTrigger>
+					<DropMenuContent align="end" className="w-48">
+						<DropMenuItem>Duplicate</DropMenuItem>
+						<DropMenuItem>Export</DropMenuItem>
+						<DropMenuSeparator />
+						<DropMenuItem variant="destructive">Remove</DropMenuItem>
+					</DropMenuContent>
+				</DropMenu>
+			</PlaygroundRow>
+			<PlaygroundRow label="Selections">
+				<DropMenu>
+					<DropMenuTrigger render={<Button variant="outline" />}>Display</DropMenuTrigger>
+					<DropMenuContent align="start" className="w-60">
+						<DropMenuGroup>
+							<DropMenuLabel>Visible details</DropMenuLabel>
+							<DropMenuCheckboxItem checked={showToolbar} onCheckedChange={setShowToolbar}>
+								Show toolbar
+							</DropMenuCheckboxItem>
+							<DropMenuCheckboxItem checked={showStatusBar} onCheckedChange={setShowStatusBar}>
+								Show status bar
+							</DropMenuCheckboxItem>
+						</DropMenuGroup>
+						<DropMenuSeparator />
+						<DropMenuRadioGroup value={density} onValueChange={handleDensityChange}>
+							<DropMenuLabel>Density</DropMenuLabel>
+							<DropMenuRadioItem value="compact">Compact</DropMenuRadioItem>
+							<DropMenuRadioItem value="comfortable">Comfortable</DropMenuRadioItem>
+							<DropMenuRadioItem value="spacious">Spacious</DropMenuRadioItem>
+						</DropMenuRadioGroup>
+					</DropMenuContent>
+				</DropMenu>
 			</PlaygroundRow>
 		</PlaygroundGroup>
 	);

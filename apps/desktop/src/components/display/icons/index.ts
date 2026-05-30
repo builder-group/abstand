@@ -28,6 +28,7 @@ export {
 	MinusIcon,
 	MonitorIcon,
 	MoonIcon,
+	MoreVerticalIcon,
 	PanelLeftCloseIcon,
 	PanelLeftOpenIcon,
 	PlusIcon,
@@ -37,6 +38,7 @@ export {
 	ShieldIcon,
 	SunIcon,
 	TimerIcon,
+	Trash2Icon,
 	XCircleIcon,
 	XIcon
 } from 'lucide-react';
