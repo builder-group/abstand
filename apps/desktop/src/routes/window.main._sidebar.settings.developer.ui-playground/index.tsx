@@ -1038,6 +1038,12 @@ const PopoverSection: React.FC = () => {
 const ToastSection: React.FC = () => {
 	const toastsCx = useToastsCx();
 
+	function showTitleOnlyToast() {
+		toastsCx.add({
+			title: 'Changes saved'
+		});
+	}
+
 	function showDefaultToast() {
 		toastsCx.add({
 			title: 'Sidebar updated',
@@ -1132,10 +1138,18 @@ const ToastSection: React.FC = () => {
 					Destructive
 				</Button>
 			</PlaygroundRow>
-			<PlaygroundRow label="Behavior">
+			<PlaygroundRow label="Content">
+				<Button variant="soft" onClick={showTitleOnlyToast}>
+					Title only
+				</Button>
+				<Button variant="soft" onClick={showDefaultToast}>
+					Title + description
+				</Button>
 				<Button variant="soft" onClick={showActionToast}>
 					With action
 				</Button>
+			</PlaygroundRow>
+			<PlaygroundRow label="Behavior">
 				<Button variant="soft" onClick={() => void showPromiseToast()}>
 					Promise flow
 				</Button>

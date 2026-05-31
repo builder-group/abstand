@@ -49,6 +49,7 @@ interface TToastStackProps {
 const ToastItem: React.FC<TToastItemProps> = (props) => {
 	const { dismissAfterMs, onClose, toast } = props;
 
+	const hasSecondaryContent = toast.description != null || toast.data?.action != null;
 	const resolvedDismissAfterMs = toast._dismissAfterMs ?? dismissAfterMs;
 	const showCloseProgress =
 		toast.type !== 'loading' && resolvedDismissAfterMs > 0 && toast.transitionStatus !== 'ending';
@@ -89,8 +90,13 @@ const ToastItem: React.FC<TToastItemProps> = (props) => {
 				className="overflow-hidden rounded-[inherit] transition-opacity duration-200 ease-out data-behind:pointer-events-none data-behind:opacity-0 data-expanded:pointer-events-auto data-expanded:opacity-100"
 				render={(contentProps, contentState) => (
 					<div {...contentProps}>
-						<div className="flex items-start gap-2.5 px-3 py-2.5">
-							<ToastLeading toast={toast} />
+						<div
+							className={cn(
+								'flex gap-2.5 px-3 py-2.5',
+								hasSecondaryContent ? 'items-start' : 'items-center'
+							)}
+						>
+							<ToastLeading align={hasSecondaryContent ? 'start' : 'center'} toast={toast} />
 							<div className="min-w-0 flex-1">
 								{toast.title != null && (
 									<ToastPrimitive.Title
@@ -114,6 +120,7 @@ const ToastItem: React.FC<TToastItemProps> = (props) => {
 								key={toast.updateKey}
 								expanded={contentState.expanded}
 								duration={resolvedDismissAfterMs}
+								align={hasSecondaryContent ? 'start' : 'center'}
 								onProgressComplete={() => onClose(toast.id)}
 								showProgress={showCloseProgress}
 							/>
@@ -162,7 +169,7 @@ function getToastTransform(state: ToastPrimitive.Root.State): string {
 }
 
 const ToastCloseButton: React.FC<TToastCloseButtonProps> = (props) => {
-	const { duration, expanded, onProgressComplete, showProgress } = props;
+	const { align, duration, expanded, onProgressComplete, showProgress } = props;
 
 	const windowFocused = useWindowFocused();
 	const paused = expanded || !windowFocused;
@@ -177,7 +184,7 @@ const ToastCloseButton: React.FC<TToastCloseButtonProps> = (props) => {
 					onProgressComplete={onProgressComplete}
 					paused={paused}
 					showProgress={showProgress}
-					className="text-base-400 hover:text-base-950 -mt-1 -mr-1"
+					className={cn('text-base-400 hover:text-base-950 -mr-1', align === 'start' && '-mt-1')}
 				>
 					<XIcon className="size-3.5" />
 				</TimedIconButton>
@@ -187,6 +194,7 @@ const ToastCloseButton: React.FC<TToastCloseButtonProps> = (props) => {
 };
 
 interface TToastCloseButtonProps {
+	align: TToastContentAlignment;
 	duration: number;
 	expanded: boolean;
 	onProgressComplete: () => void;
@@ -194,7 +202,7 @@ interface TToastCloseButtonProps {
 }
 
 const ToastLeading: React.FC<TToastLeadingProps> = (props) => {
-	const { toast } = props;
+	const { align, toast } = props;
 
 	if (toast.data?.icon != null) {
 		return <>{toast.data.icon}</>;
@@ -202,15 +210,24 @@ const ToastLeading: React.FC<TToastLeadingProps> = (props) => {
 
 	switch (toast.type as TToastType | undefined) {
 		case 'warning':
-			return <CircleQuestionMarkIcon className="text-warning mt-0.5 size-4 shrink-0" />;
+			return (
+				<CircleQuestionMarkIcon
+					className={cn('text-warning size-4 shrink-0', align === 'start' && 'mt-0.5')}
+				/>
+			);
 		case 'destructive':
 		case 'error':
-			return <XCircleIcon className="text-error mt-0.5 size-4 shrink-0" />;
+			return (
+				<XCircleIcon className={cn('text-error size-4 shrink-0', align === 'start' && 'mt-0.5')} />
+			);
 		default:
 			return null;
 	}
 };
 
 interface TToastLeadingProps {
+	align: TToastContentAlignment;
 	toast: TToastObject;
 }
+
+type TToastContentAlignment = 'center' | 'start';
