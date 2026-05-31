@@ -39,7 +39,7 @@ function SidebarLayout() {
 							size="icon-sm"
 							pressed={isOpen}
 							onPressedChange={(pressed) => (pressed ? sidebarCx.open() : sidebarCx.close())}
-							className="ml-1"
+							className="ml-0.5"
 						>
 							{isOpen ? (
 								<PanelLeftCloseIcon className="size-3.5" />
