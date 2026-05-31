@@ -43,7 +43,7 @@ function RouteComponent() {
 					});
 					void navigate({
 						to: '/window/main/intentions/$intentionId',
-						params: { intentionId: `${intentionErr.intention.id}` }
+						params: { intentionId: intentionErr.intention.id }
 					});
 					break;
 				default:
@@ -54,7 +54,7 @@ function RouteComponent() {
 
 		void navigate({
 			to: '/window/main/intentions/$intentionId',
-			params: { intentionId: `${intention.id}` }
+			params: { intentionId: intention.id }
 		});
 	}, [cx, navigate, toastsCx]);
 

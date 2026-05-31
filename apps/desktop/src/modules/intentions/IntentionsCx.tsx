@@ -5,10 +5,10 @@ import { specta } from '@/environment';
 import { createMountLifecycle, toTuple } from '@/lib';
 
 export class IntentionsCx {
-	public readonly intentions: Record<number, TState<specta.Intention, []>> = {};
+	private readonly _intentions: Record<number, TState<specta.Intention | null, []>> = {};
 	public readonly $intentionIds = createState<number[]>([]);
 
-	public readonly activeSessions: Record<number, TState<specta.IntentionSession, []>> = {};
+	private readonly _activeSessions: Record<number, TState<specta.IntentionSession | null, []>> = {};
 	public readonly $activeIntentionIds = createState<number[]>([]);
 
 	public readonly $hasLoaded = createState(false);
@@ -109,6 +109,28 @@ export class IntentionsCx {
 		return lifecycle.unmount;
 	}
 
+	// Note: Keep intention states stable so callers can subscribe before the record exists;
+	// direct map reads can return undefined, which feature-react cannot observe later
+	public getIntentionState(intentionId: number): TState<specta.Intention | null, []> {
+		let $intention = this._intentions[intentionId];
+		if ($intention == null) {
+			$intention = createState<specta.Intention | null>(null);
+			this._intentions[intentionId] = $intention;
+		}
+		return $intention;
+	}
+
+	// Note: Keep active session states stable so callers can subscribe before the record exists;
+	// direct map reads can return undefined, which feature-react cannot observe later
+	public getActiveSessionState(intentionId: number): TState<specta.IntentionSession | null, []> {
+		let $activeSession = this._activeSessions[intentionId];
+		if ($activeSession == null) {
+			$activeSession = createState<specta.IntentionSession | null>(null);
+			this._activeSessions[intentionId] = $activeSession;
+		}
+		return $activeSession;
+	}
+
 	public async create(
 		params: specta.CreateIntentionParams
 	): Promise<TResult<specta.Intention, string>> {
@@ -129,40 +151,65 @@ export class IntentionsCx {
 		return result;
 	}
 
+	public async stop(intentionId: number): Promise<TResult<specta.IntentionSession, string>> {
+		const result = toTuple(await specta.commands.stopIntention(intentionId));
+		const [isOk] = result;
+		if (isOk) {
+			this._removeActiveSession(intentionId);
+		}
+		return result;
+	}
+
+	public async deleteIntention(intentionId: number): Promise<TResult<null, string>> {
+		const result = toTuple(await specta.commands.deleteIntention(intentionId));
+		const [isOk] = result;
+		if (isOk) {
+			this._removeIntention(intentionId);
+			this._removeActiveSession(intentionId);
+		}
+		return result;
+	}
+
 	private _upsertIntention(intention: specta.Intention): void {
-		if (this.intentions[intention.id] != null) {
-			this.intentions[intention.id]?.set(intention);
-		} else {
-			this.intentions[intention.id] = createState(intention);
-			this.$intentionIds.set([...this.$intentionIds.get(), intention.id]);
+		this.getIntentionState(intention.id).set(intention);
+
+		const intentionIds = this.$intentionIds.get();
+		if (!intentionIds.includes(intention.id)) {
+			this.$intentionIds.set([...intentionIds, intention.id]);
 		}
 	}
 
 	private _removeIntention(intentionId: number): void {
-		if (this.intentions[intentionId] == null) {
-			return;
+		const $intention = this._intentions[intentionId];
+		if ($intention != null) {
+			$intention.set(null);
 		}
 
-		delete this.intentions[intentionId];
-		this.$intentionIds.set(this.$intentionIds.get().filter((id) => id !== intentionId));
+		const intentionIds = this.$intentionIds.get();
+		if (intentionIds.includes(intentionId)) {
+			this.$intentionIds.set(intentionIds.filter((id) => id !== intentionId));
+		}
 	}
 
 	private _upsertActiveSession(session: specta.IntentionSession): void {
-		if (this.activeSessions[session.intentionId] != null) {
-			this.activeSessions[session.intentionId]?.set(session);
-		} else {
-			this.activeSessions[session.intentionId] = createState(session);
-			this.$activeIntentionIds.set([...this.$activeIntentionIds.get(), session.intentionId]);
+		this.getActiveSessionState(session.intentionId).set(session);
+
+		const activeIntentionIds = this.$activeIntentionIds.get();
+		if (!activeIntentionIds.includes(session.intentionId)) {
+			this.$activeIntentionIds.set([...activeIntentionIds, session.intentionId]);
 		}
 	}
 
 	private _removeActiveSession(intentionId: number): void {
-		if (this.activeSessions[intentionId] == null) {
-			return;
+		const $activeSession = this._activeSessions[intentionId];
+		if ($activeSession != null) {
+			$activeSession.set(null);
 		}
 
-		delete this.activeSessions[intentionId];
-		this.$activeIntentionIds.set(this.$activeIntentionIds.get().filter((id) => id !== intentionId));
+		const activeIntentionIds = this.$activeIntentionIds.get();
+		if (activeIntentionIds.includes(intentionId)) {
+			this.$activeIntentionIds.set(activeIntentionIds.filter((id) => id !== intentionId));
+		}
 	}
 }
 

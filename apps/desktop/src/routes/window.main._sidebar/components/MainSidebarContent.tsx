@@ -94,11 +94,10 @@ interface TMainSidebarContentProps {
 const IntentionListItem: React.FC<TIntentionListItemProps> = (props) => {
 	const { id } = props;
 	const intentionsCx = useIntentionsCx();
-	const intention = useFeatureState(intentionsCx.intentions[id]);
+	const intention = useFeatureState(intentionsCx.getIntentionState(id));
 	const isActive = useCompute(
-		intentionsCx.$activeIntentionIds,
-		(activeIntentionIds) => activeIntentionIds.includes(id),
-		[id]
+		intentionsCx.getActiveSessionState(id),
+		(activeSession) => activeSession?.status === 'active'
 	);
 
 	if (intention == null) {
@@ -110,9 +109,7 @@ const IntentionListItem: React.FC<TIntentionListItemProps> = (props) => {
 			icon={<IntentionBehaviorIcon behavior={intention.behavior} />}
 			label={intention.name}
 			trailing={isActive ? <ActiveIntentionIndicator /> : undefined}
-			render={
-				<Link to="/window/main/intentions/$intentionId" params={{ intentionId: String(id) }} />
-			}
+			render={<Link to="/window/main/intentions/$intentionId" params={{ intentionId: id }} />}
 		/>
 	);
 };
