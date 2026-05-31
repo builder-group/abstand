@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useCompute } from 'feature-react/state';
 import React from 'react';
 import {
+	ArrowUpRightIcon,
 	Button,
 	CircleCheckIcon,
 	CircleSlashIcon,
@@ -18,9 +19,9 @@ import {
 	Switch,
 	useToastsCx
 } from '@/components';
-import type { specta } from '@/environment';
+import { appConfig, type specta } from '@/environment';
 import { useAppInfo } from '@/hooks';
-import { sleep } from '@/lib';
+import { openExternalUrl, sleep } from '@/lib';
 import { SettingsGroup, SettingsRow, SettingsRowFrame, useSettingsCx } from '@/modules/settings';
 
 export const Route = createFileRoute('/window/main/_sidebar/settings/general/')({
@@ -38,6 +39,7 @@ function RouteComponent() {
 			<AppearanceSection />
 			<FeaturesSection />
 			<UpdatesSection />
+			<HelpFeedbackSection />
 		</SettingsPage>
 	);
 }
@@ -294,3 +296,48 @@ const UpdatesSection: React.FC = () => {
 };
 
 type TUpdateStatus = 'idle' | 'checking' | 'upToDate';
+
+const HelpFeedbackSection: React.FC = () => {
+	const handleOpenSupportUrl = React.useCallback((url: string) => {
+		void openExternalUrl(url);
+	}, []);
+
+	return (
+		<SettingsGroup title="Help & Feedback">
+			{helpFeedbackLinks.map((link) => (
+				<SettingsRow
+					key={link.label}
+					label={link.label}
+					description={link.description}
+					render={<button type="button" onClick={() => handleOpenSupportUrl(link.url)} />}
+				>
+					<ArrowUpRightIcon className="text-base-400" />
+				</SettingsRow>
+			))}
+		</SettingsGroup>
+	);
+};
+
+const helpFeedbackLinks = [
+	{
+		label: 'Join Discord',
+		description: 'Chat with the community.',
+		url: appConfig.help.discord
+	},
+	{
+		label: 'Email support',
+		description: 'Send a support email.',
+		url: appConfig.help.mailto('Support')
+	},
+	{
+		label: 'Report issue',
+		description: 'Open a GitHub issue.',
+		url: appConfig.help.githubIssues
+	}
+] satisfies THelpFeedbackLink[];
+
+interface THelpFeedbackLink {
+	label: string;
+	description: string;
+	url: string;
+}

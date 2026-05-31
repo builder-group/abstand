@@ -1,3 +1,4 @@
+export * from './AppHelpPopover';
 export * from './Badge';
 export * from './HelpPopover';
 export * from './IconBubble';

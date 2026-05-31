@@ -25,7 +25,7 @@ function RouteComponent() {
 
 	return (
 		<main className="relative flex h-screen items-center justify-center">
-			<WindowHeader floating />
+			<WindowHeader floating showHelp />
 			<LogoIcon className="text-base-950 size-20" />
 		</main>
 	);

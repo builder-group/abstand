@@ -31,6 +31,7 @@ function SidebarLayout() {
 			<WindowHeader
 				floating
 				compact={!isOpen}
+				showHelp={false}
 				leading={
 					<Tooltip content="Toggle sidebar" shortcut={toggleSidebarHint} side="bottom">
 						<Toggle
@@ -39,7 +40,7 @@ function SidebarLayout() {
 							size="icon-sm"
 							pressed={isOpen}
 							onPressedChange={(pressed) => (pressed ? sidebarCx.open() : sidebarCx.close())}
-							className="ml-2"
+							className="ml-1"
 						>
 							{isOpen ? (
 								<PanelLeftCloseIcon className="size-3.5" />

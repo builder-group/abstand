@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib';
 import type { FileRouteTypes } from '@/routeTree.gen';
-import { IconBubble, type TIconBubbleProps } from '../display';
+import { AppHelpPopover, IconBubble, type TIconBubbleProps } from '../display';
 import { ContentPage } from './ContentPage';
 
 export const SettingsPage: React.FC<TSettingsPageProps> = (props) => {
@@ -41,9 +41,12 @@ export const SettingsPage: React.FC<TSettingsPageProps> = (props) => {
 			}
 			collapseAt={collapseAt}
 			className={className}
-			contentClassName={cn('space-y-5', contentClassName)}
+			contentClassName={cn('flex flex-1 flex-col gap-5', contentClassName)}
 		>
 			{children}
+			<div className="mt-auto flex justify-end">
+				<AppHelpPopover side="top" align="end" />
+			</div>
 		</ContentPage>
 	);
 };

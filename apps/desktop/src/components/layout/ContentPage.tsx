@@ -16,7 +16,7 @@ export const ContentPage: React.FC<TContentPageProps> = (props) => {
 		trailing,
 		footer,
 		collapsedHeader,
-		collapseAt = 44,
+		collapseAt = 42,
 		children,
 		headerClassName,
 		contentClassName,
@@ -113,22 +113,12 @@ export const ContentPage: React.FC<TContentPageProps> = (props) => {
 							<>
 								<div className="flex-1" />
 								<div className="pointer-events-auto flex items-center gap-2">{trailing}</div>
-								{/* Reserve space for shell-owned help chrome so page trailing actions never sit underneath it */}
-								<div
-									className="shrink-0"
-									style={{
-										// 42rem is the row max width from max-w-2xl.
-										// 1.75rem is the shell help gutter (px-4 + ml-2 + size-7 = 3.25rem) minus this row's own px-6 right padding (1.5rem).
-										// As the centered row loses natural right margin, the spacer grows to make up only that lost clearance.
-										width: 'clamp(0rem, calc(1.75rem - ((100cqw - 42rem) / 2)), 1.75rem)'
-									}}
-								/>
 							</>
 						)}
 					</>
 				}
 				foregroundClassName={cn(
-					isCollapsed || hasBackButton ? 'mx-auto w-full max-w-2xl px-6' : 'max-w-0 opacity-0',
+					isCollapsed || hasBackButton ? 'mx-auto w-full max-w-2xl px-5' : 'max-w-0 opacity-0',
 					headerClassName
 				)}
 				backgroundClassName={cn(
@@ -142,7 +132,7 @@ export const ContentPage: React.FC<TContentPageProps> = (props) => {
 
 			<div
 				ref={contentRef}
-				className={cn('mx-auto w-full max-w-2xl px-6 pt-2 pb-5', contentClassName)}
+				className={cn('mx-auto w-full max-w-2xl px-5 pt-2 pb-5', contentClassName)}
 			>
 				{header ?? (
 					<div className="mb-5 flex flex-wrap items-start justify-between gap-3">
@@ -166,7 +156,7 @@ export const ContentPage: React.FC<TContentPageProps> = (props) => {
 				>
 					<div
 						className={cn(
-							'pointer-events-auto mx-auto flex w-full max-w-2xl items-center justify-between gap-3 px-6 pt-3 pb-5',
+							'pointer-events-auto mx-auto flex w-full max-w-2xl items-center justify-between gap-3 px-5 pt-3 pb-5',
 							footerClassName
 						)}
 					>

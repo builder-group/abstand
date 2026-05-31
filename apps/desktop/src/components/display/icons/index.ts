@@ -7,6 +7,7 @@ export * from './LogoIcon';
 export {
 	AppWindowIcon,
 	ArrowLeftIcon,
+	ArrowUpRightIcon,
 	BugIcon,
 	CheckIcon,
 	ChevronDownIcon,
