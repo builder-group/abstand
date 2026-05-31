@@ -3,7 +3,7 @@ import { useRender } from '@base-ui/react/use-render';
 import React from 'react';
 import { useAppInfo, usePlatform } from '@/hooks';
 import { cn } from '@/lib';
-import { AppHelpPopover, Badge } from '../display';
+import { Badge } from '../display';
 
 export const WindowHeader: React.FC<TWindowHeaderProps> = (props) => {
 	const {
@@ -11,7 +11,6 @@ export const WindowHeader: React.FC<TWindowHeaderProps> = (props) => {
 		floating = true,
 		compact = false,
 		showBadges = true,
-		showHelp = false,
 		leading,
 		trailing,
 		className
@@ -52,7 +51,6 @@ export const WindowHeader: React.FC<TWindowHeaderProps> = (props) => {
 			)}
 			<div data-tauri-drag-region className="h-full flex-1" />
 			{trailing}
-			{showHelp && <AppHelpPopover triggerClassName="ml-2" />}
 		</WindowHeaderRow>
 	);
 };
@@ -62,7 +60,6 @@ export interface TWindowHeaderProps {
 	floating?: boolean;
 	compact?: boolean;
 	showBadges?: boolean;
-	showHelp?: boolean;
 	leading?: React.ReactNode;
 	trailing?: React.ReactNode;
 	className?: string;

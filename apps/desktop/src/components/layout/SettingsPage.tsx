@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib';
 import type { FileRouteTypes } from '@/routeTree.gen';
-import { AppHelpPopover, IconBubble, type TIconBubbleProps } from '../display';
+import { IconBubble, SupportPopover, type TIconBubbleProps } from '../display';
 import { ContentPage } from './ContentPage';
 
 export const SettingsPage: React.FC<TSettingsPageProps> = (props) => {
@@ -45,7 +45,7 @@ export const SettingsPage: React.FC<TSettingsPageProps> = (props) => {
 		>
 			{children}
 			<div className="mt-auto flex justify-end">
-				<AppHelpPopover side="top" align="end" />
+				<SupportPopover side="top" align="end" />
 			</div>
 		</ContentPage>
 	);

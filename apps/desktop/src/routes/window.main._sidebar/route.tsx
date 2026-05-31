@@ -31,7 +31,6 @@ function SidebarLayout() {
 			<WindowHeader
 				floating
 				compact={!isOpen}
-				showHelp={false}
 				leading={
 					<Tooltip content="Toggle sidebar" shortcut={toggleSidebarHint} side="bottom">
 						<Toggle

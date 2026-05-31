@@ -311,7 +311,7 @@ const HelpFeedbackSection: React.FC = () => {
 					description={link.description}
 					render={<button type="button" onClick={() => handleOpenSupportUrl(link.url)} />}
 				>
-					<ArrowUpRightIcon className="text-base-400" />
+					<ArrowUpRightIcon aria-hidden className="text-base-400" />
 				</SettingsRow>
 			))}
 		</SettingsGroup>

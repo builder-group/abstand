@@ -1,4 +1,3 @@
-export * from './AppHelpPopover';
 export * from './Badge';
 export * from './HelpPopover';
 export * from './IconBubble';
@@ -6,5 +5,6 @@ export * from './icons';
 export * from './Kbd';
 export * from './Popover';
 export * from './Spinner';
+export * from './SupportPopover';
 export * from './Toast';
 export * from './Tooltip';
