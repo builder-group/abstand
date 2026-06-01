@@ -67,10 +67,15 @@ export const BlockIntentionPage: React.FC<TBlockIntentionPageProps> = (props) =>
 				<>
 					{shouldShowSaveButton && (
 						<Button type="submit" form={formId} variant="primary" disabled={isSubmitting}>
-							Save Changes
+							Save
 						</Button>
 					)}
-					<IntentionActions intention={intention} isActive={isActive} isDisabled={isSubmitting} />
+					<IntentionActions
+						intention={intention}
+						isActive={isActive}
+						isDisabled={isSubmitting}
+						isSessionPrimary={!isActive && !shouldShowSaveButton}
+					/>
 				</>
 			}
 		>

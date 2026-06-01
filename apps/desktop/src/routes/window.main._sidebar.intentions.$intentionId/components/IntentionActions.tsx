@@ -4,7 +4,6 @@ import {
 	DropMenu,
 	DropMenuContent,
 	DropMenuItem,
-	DropMenuSeparator,
 	DropMenuTrigger,
 	MoreVerticalIcon,
 	Trash2Icon,
@@ -15,14 +14,15 @@ import { useIntentionsCx } from '@/modules/intentions';
 import { useIntentionDeleteDialog } from './IntentionDeleteDialog';
 
 export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
-	const { intention, isActive, isDisabled = false } = props;
+	const { intention, isActive, isDisabled = false, isSessionPrimary = false } = props;
 	const intentionsCx = useIntentionsCx();
 	const toastsCx = useToastsCx();
 	const deleteDialog = useIntentionDeleteDialog({ intention, isActive });
 	const [pendingSessionAction, setPendingSessionAction] =
 		React.useState<TPendingSessionAction | null>(null);
-
-	const isSessionPending = pendingSessionAction != null;
+	const hasManualEndCondition = intention.conditions.some(
+		(condition) => condition.transition === 'end' && condition.rule.type === 'manual'
+	);
 
 	// MARK: - Actions
 
@@ -35,7 +35,9 @@ export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 			if (!isSessionOk) {
 				toastsCx.add({
 					type: 'error',
-					title: 'Could not cancel intention',
+					title: hasManualEndCondition
+						? 'Could not end intention'
+						: 'Could not end intention early',
 					description: sessionErr
 				});
 			}
@@ -53,12 +55,20 @@ export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 				description: sessionErr
 			});
 		}
-	}, [intention.id, intentionsCx, isActive, toastsCx]);
+	}, [hasManualEndCondition, intention.id, intentionsCx, isActive, toastsCx]);
 
 	// MARK: - UI
 
 	return (
 		<>
+			<Button
+				type="button"
+				variant={isSessionPrimary ? 'primary' : 'default'}
+				disabled={isDisabled || pendingSessionAction != null || deleteDialog.isPending}
+				onClick={handleSessionAction}
+			>
+				{isActive ? (hasManualEndCondition ? 'End' : 'End Early') : 'Begin'}
+			</Button>
 			<DropMenu>
 				<DropMenuTrigger
 					render={
@@ -74,13 +84,6 @@ export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 					}
 				/>
 				<DropMenuContent side="bottom" align="end" className="w-48">
-					<DropMenuItem
-						disabled={isDisabled || isSessionPending || deleteDialog.isPending}
-						onClick={handleSessionAction}
-					>
-						<span>{isActive ? 'Cancel Intention' : 'Begin Intention'}</span>
-					</DropMenuItem>
-					<DropMenuSeparator />
 					<DropMenuItem
 						variant="destructive"
 						disabled={isDisabled || deleteDialog.isPending}
@@ -100,6 +103,7 @@ interface TIntentionActionsProps {
 	intention: specta.Intention;
 	isActive: boolean;
 	isDisabled?: boolean;
+	isSessionPrimary?: boolean;
 }
 
 type TPendingSessionAction = 'start' | 'stop';
