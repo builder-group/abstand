@@ -74,7 +74,7 @@ function RouteComponent() {
 	return (
 		<ContentPage
 			title="Block Intention"
-			subtitle="Set what's blocked, when it starts and ends, and how strict it is."
+			subtitle="Set what gets blocked, when it runs, and how firmly it should hold."
 			backTo="/window/main/intentions/new"
 		>
 			<form onSubmit={handleSubmit} className="space-y-5">

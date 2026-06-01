@@ -227,12 +227,12 @@ const EnforcementModeRow: React.FC<TEnforcementModeRowProps> = (props) => {
 		() => [
 			{
 				title: 'Enforcement',
-				description: 'Choose how hard this intention is to pause or end early.'
+				description: 'Choose how hard this Intention holds once active.'
 			},
 			{
 				title: 'Casual',
 				titlePrefix: 'Enforcement',
-				description: 'Exit anytime. Good for light accountability.',
+				description: 'End or change it anytime. Good for light accountability.',
 				titleSuffix:
 					enforcementModeField.value === 'casual' ? (
 						<Badge variant="success" size="xs">
@@ -243,7 +243,8 @@ const EnforcementModeRow: React.FC<TEnforcementModeRowProps> = (props) => {
 			{
 				title: 'Balanced',
 				titlePrefix: 'Enforcement',
-				description: 'A brief pause before you can exit early. Good for regular focus sessions.',
+				description:
+					'A brief pause before ending or weakening it early. Good for regular focus sessions.',
 				titleSuffix:
 					enforcementModeField.value === 'balanced' ? (
 						<Badge variant="success" size="xs">
@@ -254,7 +255,8 @@ const EnforcementModeRow: React.FC<TEnforcementModeRowProps> = (props) => {
 			{
 				title: 'Strict',
 				titlePrefix: 'Enforcement',
-				description: 'Cannot be ended early. Best for commitments you want to lock in.',
+				description:
+					'Cannot be ended or weakened early. Best for commitments you want to hold until the end condition is met.',
 				titleSuffix:
 					enforcementModeField.value === 'strict' ? (
 						<Badge variant="success" size="xs">
