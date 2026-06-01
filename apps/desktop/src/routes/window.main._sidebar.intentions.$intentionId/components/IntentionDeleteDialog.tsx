@@ -15,13 +15,15 @@ import {
 } from '@/components';
 import { type specta } from '@/environment';
 import { useCountdown } from '@/hooks';
-import { getIntentionActionPolicy, useIntentionsCx } from '@/modules/intentions';
+import {
+	getIntentionActionPolicy,
+	useIntentionsCx,
+	type TIntentionActionPolicy
+} from '@/modules/intentions';
 
 const IntentionDeleteDialog: React.FC<TIntentionDeleteDialogProps> = (props) => {
-	const { intention, open, isActive, isPending, onOpenChange, onDelete } = props;
-	const deletePolicy = getIntentionActionPolicy(intention, { isActive });
-	const timedDeleteDurationMs =
-		open && deletePolicy.type === 'delayed' ? deletePolicy.durationMs : undefined;
+	const { intention, open, isActive, policy, isPending, onOpenChange, onDelete } = props;
+	const timedDeleteDurationMs = open && policy.type === 'delayed' ? policy.durationMs : undefined;
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
@@ -35,10 +37,10 @@ const IntentionDeleteDialog: React.FC<TIntentionDeleteDialogProps> = (props) => 
 						Delete this Intention? This cannot be undone.
 						{isActive && ' The active Intention will be stopped.'}
 					</p>
-					{deletePolicy.type === 'delayed' && (
+					{policy.type === 'delayed' && (
 						<DelayedDeleteMessage durationMs={timedDeleteDurationMs} isRunning={open} />
 					)}
-					{deletePolicy.type === 'blocked' && (
+					{policy.type === 'blocked' && (
 						<p className="text-base-500">
 							Strict Enforcement prevents deleting while this Intention is active.
 						</p>
@@ -46,7 +48,7 @@ const IntentionDeleteDialog: React.FC<TIntentionDeleteDialogProps> = (props) => 
 				</DialogBody>
 				<DialogFooter>
 					<DialogClose render={<Button type="button" disabled={isPending} />}>Cancel</DialogClose>
-					{deletePolicy.type === 'delayed' ? (
+					{policy.type === 'delayed' ? (
 						<TimedButton
 							key={open ? 'open' : 'closed'}
 							type="button"
@@ -61,7 +63,7 @@ const IntentionDeleteDialog: React.FC<TIntentionDeleteDialogProps> = (props) => 
 						<Button
 							type="button"
 							variant="destructive"
-							disabled={isPending || deletePolicy.type === 'blocked'}
+							disabled={isPending || policy.type === 'blocked'}
 							onClick={onDelete}
 						>
 							Delete
@@ -77,6 +79,7 @@ interface TIntentionDeleteDialogProps {
 	intention: specta.Intention;
 	open: boolean;
 	isActive: boolean;
+	policy: TIntentionActionPolicy;
 	isPending: boolean;
 	onOpenChange: (open: boolean) => void;
 	onDelete: () => void;
@@ -116,6 +119,7 @@ export function useIntentionDeleteDialog(
 	const toastsCx = useToastsCx();
 	const [isOpen, setIsOpen] = React.useState(false);
 	const [isPending, setIsPending] = React.useState(false);
+	const deletePolicy = getIntentionActionPolicy(intention, { isActive });
 
 	const open = React.useCallback(() => {
 		setIsOpen(true);
@@ -151,6 +155,7 @@ export function useIntentionDeleteDialog(
 				intention={intention}
 				open={isOpen}
 				isActive={isActive}
+				policy={deletePolicy}
 				isPending={isPending}
 				onOpenChange={setIsOpen}
 				onDelete={handleDelete}
