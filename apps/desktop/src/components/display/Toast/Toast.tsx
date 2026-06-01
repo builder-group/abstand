@@ -51,7 +51,7 @@ const ToastItem: React.FC<TToastItemProps> = (props) => {
 
 	const hasSecondaryContent = toast.description != null || toast.data?.action != null;
 	const resolvedDismissAfterMs = toast._dismissAfterMs ?? dismissAfterMs;
-	const showCloseProgress =
+	const hasCloseTimer =
 		toast.type !== 'loading' && resolvedDismissAfterMs > 0 && toast.transitionStatus !== 'ending';
 
 	return (
@@ -119,10 +119,9 @@ const ToastItem: React.FC<TToastItemProps> = (props) => {
 							<ToastCloseButton
 								key={toast.updateKey}
 								expanded={contentState.expanded}
-								duration={resolvedDismissAfterMs}
+								duration={hasCloseTimer ? resolvedDismissAfterMs : undefined}
 								align={hasSecondaryContent ? 'start' : 'center'}
-								onProgressComplete={() => onClose(toast.id)}
-								showProgress={showCloseProgress}
+								onProgressComplete={hasCloseTimer ? () => onClose(toast.id) : undefined}
 							/>
 						</div>
 					</div>
@@ -169,7 +168,7 @@ function getToastTransform(state: ToastPrimitive.Root.State): string {
 }
 
 const ToastCloseButton: React.FC<TToastCloseButtonProps> = (props) => {
-	const { align, duration, expanded, onProgressComplete, showProgress } = props;
+	const { align, duration, expanded, onProgressComplete } = props;
 
 	const windowFocused = useWindowFocused();
 	const paused = expanded || !windowFocused;
@@ -183,7 +182,6 @@ const ToastCloseButton: React.FC<TToastCloseButtonProps> = (props) => {
 					duration={duration}
 					onProgressComplete={onProgressComplete}
 					paused={paused}
-					showProgress={showProgress}
 					className={cn('text-base-400 hover:text-base-950 -mr-1', align === 'start' && '-mt-1')}
 				>
 					<XIcon className="size-3.5" />
@@ -195,10 +193,9 @@ const ToastCloseButton: React.FC<TToastCloseButtonProps> = (props) => {
 
 interface TToastCloseButtonProps {
 	align: TToastContentAlignment;
-	duration: number;
+	duration?: number;
 	expanded: boolean;
-	onProgressComplete: () => void;
-	showProgress: boolean;
+	onProgressComplete?: () => void;
 }
 
 const ToastLeading: React.FC<TToastLeadingProps> = (props) => {

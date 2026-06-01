@@ -1,0 +1,16 @@
+.timed-icon-button-progress {
+	stroke-dashoffset: 0;
+	animation-name: timed-icon-button-progress-countdown;
+	animation-timing-function: linear;
+	animation-fill-mode: forwards;
+}
+
+@keyframes timed-icon-button-progress-countdown {
+	from {
+		stroke-dashoffset: 0;
+	}
+
+	to {
+		stroke-dashoffset: 1;
+	}
+}

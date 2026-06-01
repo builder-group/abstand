@@ -76,6 +76,8 @@ import {
 	SunIcon,
 	Switch,
 	Textarea,
+	TimedButton,
+	TimedIconButton,
 	Toggle,
 	ToggleGroup,
 	ToggleGroupItem,
@@ -83,7 +85,8 @@ import {
 	Trash2Icon,
 	useComboboxAnchor,
 	useToastsCx,
-	XCircleIcon
+	XCircleIcon,
+	XIcon
 } from '@/components';
 import { clampNumber, cn } from '@/lib';
 import { SettingsGroup, SettingsRow } from '@/modules/settings';
@@ -160,6 +163,27 @@ const ButtonSection: React.FC = () => {
 				<Button size="icon-md" variant="primary" aria-label="Medium icon">
 					<CheckIcon />
 				</Button>
+			</PlaygroundRow>
+			<PlaygroundRow label="Timed">
+				<TimedButton duration={7000} variant="destructive">
+					Delete
+				</TimedButton>
+				<TimedButton duration={5000} variant="primary" size="md">
+					Save
+				</TimedButton>
+				<TimedButton duration={5000} variant="primary" showProgress={false}>
+					Hidden
+				</TimedButton>
+				<TimedIconButton duration={5000} aria-label="Timed icon">
+					<XIcon />
+				</TimedIconButton>
+				<TimedIconButton
+					duration={5000}
+					showProgress={false}
+					aria-label="Timed icon without progress"
+				>
+					<XIcon />
+				</TimedIconButton>
 			</PlaygroundRow>
 		</PlaygroundGroup>
 	);

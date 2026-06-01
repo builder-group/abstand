@@ -2,6 +2,7 @@ import { useEventCallback } from 'feature-react/state';
 import React from 'react';
 import { cn } from '@/lib';
 import { Button, type TButtonProps } from './Button';
+import './TimedIconButton.css';
 
 export const TimedIconButton: React.FC<TTimedIconButtonProps> = (props) => {
 	const {
@@ -10,49 +11,28 @@ export const TimedIconButton: React.FC<TTimedIconButtonProps> = (props) => {
 		duration,
 		onProgressComplete,
 		paused = false,
+		resetKey,
 		showProgress = true,
 		size = 'icon-sm',
 		variant = 'ghost',
 		...rest
 	} = props;
-	const hasProgress = showProgress && duration != null && duration > 0;
 
-	const circleRef = React.useRef<SVGCircleElement>(null);
-	const animRef = React.useRef<Animation | null>(null);
+	const hasTimer = duration != null && duration > 0;
+	const timerKey = hasTimer ? `${duration}:${String(resetKey)}` : null;
+	const [completedTimerKey, setCompletedTimerKey] = React.useState<string | null>(null);
+	const isTimerComplete = timerKey != null && completedTimerKey === timerKey;
+
+	const isProgressVisible = showProgress && hasTimer && !isTimerComplete;
+
 	const handleComplete = useEventCallback(() => {
+		if (timerKey == null) {
+			return;
+		}
+
+		setCompletedTimerKey(timerKey);
 		onProgressComplete?.();
 	});
-
-	// Note: Keep animation creation separate from playback so pause/resume preserves progress
-	React.useEffect(() => {
-		if (!hasProgress || !circleRef.current) return;
-
-		const anim = circleRef.current.animate([{ strokeDashoffset: 0 }, { strokeDashoffset: 1 }], {
-			duration,
-			fill: 'forwards',
-			easing: 'linear'
-		});
-		anim.onfinish = handleComplete;
-		anim.pause();
-		animRef.current = anim;
-
-		return () => {
-			anim.onfinish = null;
-			anim.cancel();
-			animRef.current = null;
-		};
-	}, [duration, handleComplete, hasProgress]);
-
-	React.useEffect(() => {
-		const anim = animRef.current;
-		if (!anim) return;
-
-		if (paused) {
-			anim.pause();
-		} else if (anim.playState !== 'finished') {
-			anim.play();
-		}
-	}, [paused, duration, hasProgress]);
 
 	return (
 		<Button
@@ -62,11 +42,15 @@ export const TimedIconButton: React.FC<TTimedIconButtonProps> = (props) => {
 			className={cn('relative overflow-visible', className)}
 			{...rest}
 		>
-			{hasProgress && (
+			{hasTimer && !isTimerComplete && (
 				// Note: Reduced motion hides the visual ring only so timed actions still complete
 				<svg
+					key={timerKey}
 					aria-hidden
-					className="pointer-events-none absolute inset-0 size-full -rotate-90 motion-reduce:hidden"
+					className={cn(
+						'pointer-events-none absolute inset-0 size-full -rotate-90 motion-reduce:opacity-0',
+						!isProgressVisible && 'opacity-0'
+					)}
 					viewBox="0 0 28 28"
 				>
 					<circle
@@ -79,8 +63,7 @@ export const TimedIconButton: React.FC<TTimedIconButtonProps> = (props) => {
 						strokeWidth="1.5"
 					/>
 					<circle
-						ref={circleRef}
-						className="stroke-current opacity-60"
+						className="timed-icon-button-progress stroke-current opacity-60"
 						cx="14"
 						cy="14"
 						r="13"
@@ -90,6 +73,11 @@ export const TimedIconButton: React.FC<TTimedIconButtonProps> = (props) => {
 						strokeDashoffset={0}
 						strokeLinecap="round"
 						strokeWidth="1.5"
+						style={{
+							animationDuration: `${duration}ms`,
+							animationPlayState: paused ? 'paused' : 'running'
+						}}
+						onAnimationEnd={handleComplete}
 					/>
 				</svg>
 			)}
@@ -99,13 +87,16 @@ export const TimedIconButton: React.FC<TTimedIconButtonProps> = (props) => {
 };
 
 export type TTimedIconButtonProps = Omit<TButtonProps, 'size'> & {
-	/** How long the countdown runs in milliseconds. */
-	duration?: number;
-	/** Called when the countdown progress animation reaches the end. */
-	onProgressComplete?: () => void;
-	/** Pauses the countdown without resetting it. */
-	paused?: boolean;
 	size?: TTimedIconButtonSize;
+	/** How long the timed action runs in milliseconds. Omit or pass 0 to render a normal icon button. */
+	duration?: number;
+	/** Called once the timed action finishes. */
+	onProgressComplete?: () => void;
+	/** Pauses the countdown at its current progress without resetting it. */
+	paused?: boolean;
+	/** Changes to this value restart the timed action. */
+	resetKey?: React.Key;
+	/** Controls only the visual progress ring. The timer still runs when progress is hidden. */
 	showProgress?: boolean;
 };
 
