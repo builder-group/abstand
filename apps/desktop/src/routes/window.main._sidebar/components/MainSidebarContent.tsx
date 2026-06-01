@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { useCompute, useFeatureState } from 'feature-react/state';
 import React from 'react';
 import {
+	Button,
 	PlusIcon,
 	SearchIcon,
 	SettingsIcon,
@@ -9,6 +10,7 @@ import {
 	Spinner,
 	SunIcon,
 	TimerIcon,
+	Tooltip,
 	WindowHeaderRow
 } from '@/components';
 import { specta } from '@/environment';
@@ -50,7 +52,22 @@ export const MainSidebarContent: React.FC<TMainSidebarContentProps> = (props) =>
 
 			{/* Intentions */}
 			<div className="flex flex-1 flex-col overflow-y-auto px-2 py-3">
-				<span className="text-base-500 px-2 text-sm font-light">Intentions</span>
+				<div className="group/intentions-heading flex items-center gap-1 px-2">
+					<span className="text-base-500 min-w-0 flex-1 truncate text-sm font-light">
+						Intentions
+					</span>
+					<Tooltip content="New Intention">
+						<Button
+							render={<Link to="/window/main/intentions/new" />}
+							variant="ghost"
+							size="icon-xs"
+							className="opacity-0 group-focus-within/intentions-heading:opacity-100 group-hover/intentions-heading:opacity-100"
+							aria-label="New Intention"
+						>
+							<PlusIcon />
+						</Button>
+					</Tooltip>
+				</div>
 				<div className="flex flex-col gap-0.5 py-1.5">
 					{intentionIds.length > 0 ? (
 						intentionIds.map((id) => <IntentionListItem key={id} id={id} />)
