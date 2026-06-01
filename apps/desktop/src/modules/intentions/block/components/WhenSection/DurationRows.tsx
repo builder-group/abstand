@@ -16,7 +16,8 @@ export const DurationRows: React.FC<TConditionRowsProps> = (props) => {
 			condition: { offsetMs, transition },
 			errors: { offsetMs: offsetError }
 		},
-		cx
+		formCx,
+		isDisabled = false
 	} = props;
 	const [isCustomDurationSelected, setIsCustomDurationSelected] = React.useState(false);
 
@@ -29,11 +30,11 @@ export const DurationRows: React.FC<TConditionRowsProps> = (props) => {
 
 	const handleOffsetMinutesChange = React.useCallback(
 		(offsetMinutes: number) => {
-			cx.updateCondition(transition, {
+			formCx.updateCondition(transition, {
 				offsetMs: minutesToMs(clampOffsetMinutes(offsetMinutes))
 			});
 		},
-		[transition, cx]
+		[transition, formCx]
 	);
 
 	const handleDurationChange = React.useCallback(
@@ -67,6 +68,7 @@ export const DurationRows: React.FC<TConditionRowsProps> = (props) => {
 			<Select
 				variant="ghost"
 				value={selectedDurationValue}
+				disabled={isDisabled}
 				onChange={handleDurationChange}
 				aria-invalid={offsetError != null}
 			>
@@ -82,6 +84,7 @@ export const DurationRows: React.FC<TConditionRowsProps> = (props) => {
 					offsetMs={offsetMs}
 					onOffsetMinutesChange={handleOffsetMinutesChange}
 					isInvalid={offsetError != null}
+					isDisabled={isDisabled}
 				/>
 			)}
 		</SettingsRow>
@@ -97,7 +100,7 @@ const durationOptions = [
 const customDurationValue = 'custom';
 
 const CustomDurationInputs: React.FC<TCustomDurationInputsProps> = (props) => {
-	const { offsetMs, onOffsetMinutesChange, isInvalid = false } = props;
+	const { offsetMs, onOffsetMinutesChange, isInvalid = false, isDisabled = false } = props;
 	const offsetMinutes = Math.floor(offsetMs / 60_000);
 	const hours = Math.floor(offsetMinutes / 60);
 	const minutes = offsetMinutes % 60;
@@ -145,6 +148,7 @@ const CustomDurationInputs: React.FC<TCustomDurationInputsProps> = (props) => {
 				onStep={handleHoursStep}
 				ariaLabel="Custom duration hours"
 				isInvalid={isInvalid}
+				isDisabled={isDisabled}
 			/>
 			<DurationNumberInput
 				unit="minutes"
@@ -155,6 +159,7 @@ const CustomDurationInputs: React.FC<TCustomDurationInputsProps> = (props) => {
 				onStep={handleMinutesStep}
 				ariaLabel="Custom duration minutes"
 				isInvalid={isInvalid}
+				isDisabled={isDisabled}
 			/>
 		</>
 	);
@@ -164,10 +169,21 @@ interface TCustomDurationInputsProps {
 	offsetMs: number;
 	onOffsetMinutesChange: (offsetMinutes: number) => void;
 	isInvalid?: boolean;
+	isDisabled?: boolean;
 }
 
 const DurationNumberInput: React.FC<TDurationNumberInputProps> = (props) => {
-	const { unit, min, max, value, onValueChange, onStep, ariaLabel, isInvalid = false } = props;
+	const {
+		unit,
+		min,
+		max,
+		value,
+		onValueChange,
+		onStep,
+		ariaLabel,
+		isInvalid = false,
+		isDisabled = false
+	} = props;
 
 	const handleChange = React.useCallback(
 		(event: React.ChangeEvent<HTMLInputElement>) => {
@@ -188,6 +204,7 @@ const DurationNumberInput: React.FC<TDurationNumberInputProps> = (props) => {
 				min={min}
 				max={max}
 				value={value}
+				disabled={isDisabled}
 				onChange={handleChange}
 				aria-label={ariaLabel}
 				aria-invalid={isInvalid}
@@ -198,8 +215,8 @@ const DurationNumberInput: React.FC<TDurationNumberInputProps> = (props) => {
 			<InputGroupStepper
 				onIncrement={() => onStep(1)}
 				onDecrement={() => onStep(-1)}
-				incrementDisabled={value >= max}
-				decrementDisabled={value <= min}
+				incrementDisabled={isDisabled || value >= max}
+				decrementDisabled={isDisabled || value <= min}
 				incrementLabel={`Increase ${unit}`}
 				decrementLabel={`Decrease ${unit}`}
 			/>
@@ -216,6 +233,7 @@ interface TDurationNumberInputProps {
 	onStep: (delta: number) => void;
 	ariaLabel: string;
 	isInvalid?: boolean;
+	isDisabled?: boolean;
 }
 
 type TDurationInputUnit = 'hours' | 'minutes';

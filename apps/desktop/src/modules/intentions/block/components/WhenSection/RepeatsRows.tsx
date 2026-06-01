@@ -2,7 +2,7 @@ import React from 'react';
 import { Select, ToggleGroup, ToggleGroupItem, Tooltip } from '@/components';
 import { isWeekday, weekdayMaskFromWeekdays, weekdaysFromWeekdayMask } from '@/lib';
 import { SettingsRow } from '@/modules/settings';
-import { newBlockIntentionConfig } from '../NewBlockIntentionCx';
+import { blockIntentionFormConfig } from '../../BlockIntentionFormCx';
 import { TimeOfDayRow } from './TimeOfDayRow';
 import { type TConditionRowsProps } from './types';
 
@@ -12,19 +12,20 @@ export const RepeatsRows: React.FC<TConditionRowsProps> = (props) => {
 			condition: { transition, weekdaysMask },
 			errors: { weekdaysMask: weekdaysError }
 		},
-		cx
+		formCx,
+		isDisabled = false
 	} = props;
 
 	const handleRepeatModeChange = React.useCallback(
 		(event: React.ChangeEvent<HTMLSelectElement>) => {
-			cx.updateCondition(transition, {
+			formCx.updateCondition(transition, {
 				weekdaysMask:
 					event.target.value === 'selectedDays'
-						? newBlockIntentionConfig.defaultSelectedWeekdaysMask
+						? blockIntentionFormConfig.defaultSelectedWeekdaysMask
 						: null
 			});
 		},
-		[transition, cx]
+		[transition, formCx]
 	);
 
 	return (
@@ -40,6 +41,7 @@ export const RepeatsRows: React.FC<TConditionRowsProps> = (props) => {
 				<Select
 					variant="ghost"
 					value={weekdaysMask == null ? 'everyDay' : 'selectedDays'}
+					disabled={isDisabled}
 					onChange={handleRepeatModeChange}
 					aria-invalid={weekdaysError != null}
 				>
@@ -57,7 +59,8 @@ const WeekdayToggleGroup: React.FC<TConditionRowsProps> = (props) => {
 		conditionRow: {
 			condition: { transition, weekdaysMask }
 		},
-		cx
+		formCx,
+		isDisabled = false
 	} = props;
 	const selectedWeekdays = React.useMemo(() => {
 		if (weekdaysMask == null) {
@@ -74,11 +77,11 @@ const WeekdayToggleGroup: React.FC<TConditionRowsProps> = (props) => {
 				return;
 			}
 
-			cx.updateCondition(transition, {
+			formCx.updateCondition(transition, {
 				weekdaysMask: weekdayMaskFromWeekdays(weekdays)
 			});
 		},
-		[transition, cx]
+		[transition, formCx]
 	);
 
 	return (
@@ -88,9 +91,9 @@ const WeekdayToggleGroup: React.FC<TConditionRowsProps> = (props) => {
 			value={selectedWeekdays}
 			onValueChange={handleWeekdaysChange}
 		>
-			{newBlockIntentionConfig.weekdayOptions.map((weekday) => (
+			{blockIntentionFormConfig.weekdayOptions.map((weekday) => (
 				<Tooltip key={weekday.value} content={weekday.label}>
-					<ToggleGroupItem value={weekday.value} aria-label={weekday.label}>
+					<ToggleGroupItem value={weekday.value} disabled={isDisabled} aria-label={weekday.label}>
 						<span className="text-sm">{weekday.shortLabel}</span>
 					</ToggleGroupItem>
 				</Tooltip>

@@ -11,10 +11,10 @@ import {
 	type TCatalogItem
 } from '@/modules/catalog';
 import { SettingsGroup, SettingsRow } from '@/modules/settings';
-import { useNewBlockIntentionCx, type NewBlockIntentionCx } from './NewBlockIntentionCx';
+import { type BlockIntentionFormCx } from '../BlockIntentionFormCx';
 
-export const BlockSection: React.FC = () => {
-	const cx = useNewBlockIntentionCx();
+export const BlockSection: React.FC<TBlockSectionProps> = (props) => {
+	const { formCx, isDisabled = false } = props;
 
 	const {
 		open: openCatalogPicker,
@@ -22,7 +22,12 @@ export const BlockSection: React.FC = () => {
 		cx: catalogPickerCx
 	} = useCatalogPicker({
 		onConfirm: (items: TCatalogItem[]) => {
-			cx.$form.fields.selectedTargets.set(items);
+			// Note: The picker can already be open when a submit starts, so ignore late confirms
+			if (isDisabled) {
+				return;
+			}
+
+			formCx.$form.fields.selectedTargets.set(items);
 		}
 	});
 
@@ -32,15 +37,16 @@ export const BlockSection: React.FC = () => {
 		<>
 			<div className="space-y-2.5">
 				<SettingsGroup title="Block">
-					<BlockScopeRow cx={cx} />
+					<BlockScopeRow formCx={formCx} isDisabled={isDisabled} />
 					<BlockTargetsRow
-						cx={cx}
+						formCx={formCx}
+						isDisabled={isDisabled}
 						catalogPickerCx={catalogPickerCx}
 						onOpenPicker={openCatalogPicker}
 					/>
 				</SettingsGroup>
 				<SettingsGroup>
-					<EnforcementModeRow cx={cx} />
+					<EnforcementModeRow formCx={formCx} isDisabled={isDisabled} />
 				</SettingsGroup>
 			</div>
 			{catalogPickerDialog}
@@ -48,9 +54,14 @@ export const BlockSection: React.FC = () => {
 	);
 };
 
+interface TBlockSectionProps {
+	formCx: BlockIntentionFormCx;
+	isDisabled?: boolean;
+}
+
 const BlockScopeRow: React.FC<TBlockScopeRowProps> = (props) => {
-	const { cx } = props;
-	const scopeField = useFormField(cx.$form, 'scope', { controlled: true });
+	const { formCx, isDisabled = false } = props;
+	const scopeField = useFormField(formCx.$form, 'scope', { controlled: true });
 
 	const carouselItems = React.useMemo(
 		() => [
@@ -112,6 +123,7 @@ const BlockScopeRow: React.FC<TBlockScopeRowProps> = (props) => {
 					format: (value) => value,
 					parse: (value) => value as specta.IntentionBlockScope
 				})}
+				disabled={isDisabled}
 			>
 				{blockScopeOptions.map((scopeOption) => (
 					<option key={scopeOption.value} value={scopeOption.value}>
@@ -124,7 +136,8 @@ const BlockScopeRow: React.FC<TBlockScopeRowProps> = (props) => {
 };
 
 interface TBlockScopeRowProps {
-	cx: NewBlockIntentionCx;
+	formCx: BlockIntentionFormCx;
+	isDisabled?: boolean;
 }
 
 const blockScopeOptions: { value: specta.IntentionBlockScope; label: string }[] = [
@@ -134,10 +147,10 @@ const blockScopeOptions: { value: specta.IntentionBlockScope; label: string }[] 
 ];
 
 const BlockTargetsRow: React.FC<TBlockTargetsRowProps> = (props) => {
-	const { cx, catalogPickerCx, onOpenPicker } = props;
-	const scope = useFeatureState(cx.$form.fields.scope);
-	const selectedTargets = useFeatureState(cx.$form.fields.selectedTargets);
-	const selectedTargetsStatus = useFeatureState(cx.$form.fields.selectedTargets.status);
+	const { formCx, isDisabled = false, catalogPickerCx, onOpenPicker } = props;
+	const scope = useFeatureState(formCx.$form.fields.scope);
+	const selectedTargets = useFeatureState(formCx.$form.fields.selectedTargets);
+	const selectedTargetsStatus = useFeatureState(formCx.$form.fields.selectedTargets.status);
 
 	const isTargetsSelectable = scope !== 'wholeDevice';
 	const hasSelectedTargets = selectedTargets.length > 0;
@@ -151,8 +164,12 @@ const BlockTargetsRow: React.FC<TBlockTargetsRowProps> = (props) => {
 	// MARK: - Actions
 
 	const handleOpenTargets = React.useCallback(() => {
+		if (isDisabled) {
+			return;
+		}
+
 		onOpenPicker(selectedTargets);
-	}, [onOpenPicker, selectedTargets]);
+	}, [isDisabled, onOpenPicker, selectedTargets]);
 
 	// MARK: - UI
 
@@ -169,7 +186,8 @@ const BlockTargetsRow: React.FC<TBlockTargetsRowProps> = (props) => {
 			label="Apps & websites"
 			description={targetsError ?? targetsDescription}
 			descriptionVariant={targetsError != null ? 'error' : 'default'}
-			render={<button type="button" onClick={handleOpenTargets} />}
+			interactive={!isDisabled}
+			render={<button type="button" disabled={isDisabled} onClick={handleOpenTargets} />}
 		>
 			<span
 				className={cn(
@@ -190,7 +208,8 @@ const BlockTargetsRow: React.FC<TBlockTargetsRowProps> = (props) => {
 };
 
 interface TBlockTargetsRowProps {
-	cx: NewBlockIntentionCx;
+	formCx: BlockIntentionFormCx;
+	isDisabled?: boolean;
 	catalogPickerCx: CatalogPickerCx;
 	onOpenPicker: (items: TCatalogItem[]) => void;
 }
@@ -220,8 +239,10 @@ function getTargetsDescription(scope: specta.IntentionBlockScope): string | unde
 }
 
 const EnforcementModeRow: React.FC<TEnforcementModeRowProps> = (props) => {
-	const { cx } = props;
-	const enforcementModeField = useFormField(cx.$form, 'enforcementMode', { controlled: true });
+	const { formCx, isDisabled = false } = props;
+	const enforcementModeField = useFormField(formCx.$form, 'enforcementMode', {
+		controlled: true
+	});
 
 	const carouselItems = React.useMemo(
 		() => [
@@ -284,6 +305,7 @@ const EnforcementModeRow: React.FC<TEnforcementModeRowProps> = (props) => {
 					format: (value) => value,
 					parse: (value) => value as specta.IntentionEnforcementMode
 				})}
+				disabled={isDisabled}
 			>
 				{enforcementModeOptions.map((mode) => (
 					<option key={mode.value} value={mode.value}>
@@ -296,7 +318,8 @@ const EnforcementModeRow: React.FC<TEnforcementModeRowProps> = (props) => {
 };
 
 interface TEnforcementModeRowProps {
-	cx: NewBlockIntentionCx;
+	formCx: BlockIntentionFormCx;
+	isDisabled?: boolean;
 }
 
 const enforcementModeOptions: { value: specta.IntentionEnforcementMode; label: string }[] = [

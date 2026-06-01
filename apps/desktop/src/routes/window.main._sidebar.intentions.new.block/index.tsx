@@ -1,15 +1,14 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useFormField } from 'feature-react/form';
 import { useFeatureState } from 'feature-react/state';
 import React from 'react';
-import { Button, ContentPage, Input, useToastsCx } from '@/components';
+import { Button, ContentPage, useToastsCx } from '@/components';
 import {
 	BlockSection,
-	useNewBlockIntentionCx,
-	WhenSection,
-	type NewBlockIntentionCx
+	NameSection,
+	NewBlockIntentionCx,
+	useIntentionsCx,
+	WhenSection
 } from '@/modules/intentions';
-import { SettingsGroup, SettingsRow } from '@/modules/settings';
 
 export const Route = createFileRoute('/window/main/_sidebar/intentions/new/block/')({
 	component: RouteComponent
@@ -17,10 +16,12 @@ export const Route = createFileRoute('/window/main/_sidebar/intentions/new/block
 
 function RouteComponent() {
 	const navigate = useNavigate();
-	const cx = useNewBlockIntentionCx();
+	const intentionsCx = useIntentionsCx();
 	const toastsCx = useToastsCx();
+	const cx = React.useMemo(() => new NewBlockIntentionCx(intentionsCx), [intentionsCx]);
+	const { formCx } = cx;
 
-	const isSubmitting = useFeatureState(cx.$form.isSubmitting);
+	const isSubmitting = useFeatureState(formCx.$form.isSubmitting);
 
 	// MARK: - Actions
 
@@ -61,12 +62,12 @@ function RouteComponent() {
 	const handleSubmit = React.useCallback(
 		(event: React.FormEvent<HTMLFormElement>) => {
 			event.preventDefault();
-			void cx.$form.submit({
+			void formCx.$form.submit({
 				onValidSubmit: handleValidSubmit,
 				context: { event }
 			});
 		},
-		[cx, handleValidSubmit]
+		[formCx, handleValidSubmit]
 	);
 
 	// MARK: - UI
@@ -78,9 +79,9 @@ function RouteComponent() {
 			backTo="/window/main/intentions/new"
 		>
 			<form onSubmit={handleSubmit} className="space-y-5">
-				<NameSection cx={cx} />
-				<BlockSection />
-				<WhenSection />
+				<NameSection formCx={formCx} autoFocus isDisabled={isSubmitting} />
+				<BlockSection formCx={formCx} isDisabled={isSubmitting} />
+				<WhenSection formCx={formCx} isDisabled={isSubmitting} />
 
 				<div className="flex justify-end">
 					<Button type="submit" variant="primary" disabled={isSubmitting}>
@@ -90,33 +91,4 @@ function RouteComponent() {
 			</form>
 		</ContentPage>
 	);
-}
-
-const NameSection: React.FC<TNameSectionProps> = (props) => {
-	const { cx } = props;
-	const nameField = useFormField(cx.$form, 'name');
-	const nameError =
-		nameField.status.type === 'invalid' ? nameField.status.errors[0]?.message : undefined;
-
-	return (
-		<SettingsGroup>
-			<SettingsRow
-				label="Name"
-				description={nameError}
-				descriptionVariant={nameError != null ? 'error' : 'default'}
-				variant={nameError != null ? 'default' : 'compact'}
-			>
-				<Input
-					{...nameField.input()}
-					autoFocus
-					placeholder="Deep work"
-					aria-invalid={nameField.status.type === 'invalid'}
-				/>
-			</SettingsRow>
-		</SettingsGroup>
-	);
-};
-
-interface TNameSectionProps {
-	cx: NewBlockIntentionCx;
 }

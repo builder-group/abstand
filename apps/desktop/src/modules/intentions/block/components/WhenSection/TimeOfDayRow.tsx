@@ -11,15 +11,16 @@ export const TimeOfDayRow: React.FC<TTimeOfDayRowProps> = (props) => {
 			condition: { timeOfDayMs, transition },
 			errors: { timeOfDayMs: timeError }
 		},
-		cx,
-		ariaLabel
+		formCx,
+		ariaLabel,
+		isDisabled = false
 	} = props;
 
 	const handleTimeChange = React.useCallback(
 		(timeOfDayMs: specta.TimeOnly) => {
-			cx.updateCondition(transition, { timeOfDayMs });
+			formCx.updateCondition(transition, { timeOfDayMs });
 		},
-		[transition, cx]
+		[transition, formCx]
 	);
 
 	return (
@@ -34,6 +35,7 @@ export const TimeOfDayRow: React.FC<TTimeOfDayRowProps> = (props) => {
 				onValueChange={handleTimeChange}
 				ariaLabel={ariaLabel}
 				isInvalid={timeError != null}
+				isDisabled={isDisabled}
 			/>
 		</SettingsRow>
 	);
@@ -44,7 +46,7 @@ interface TTimeOfDayRowProps extends TConditionRowsProps {
 }
 
 const TimeInput: React.FC<TTimeInputProps> = (props) => {
-	const { value, onValueChange, ariaLabel, isInvalid = false } = props;
+	const { value, onValueChange, ariaLabel, isInvalid = false, isDisabled = false } = props;
 
 	const handleChange = React.useCallback(
 		(event: React.ChangeEvent<HTMLInputElement>) => {
@@ -72,6 +74,7 @@ const TimeInput: React.FC<TTimeInputProps> = (props) => {
 				type="time"
 				step={stepMs / 1_000}
 				value={formatTimeInput(value)}
+				disabled={isDisabled}
 				onChange={handleChange}
 				aria-label={ariaLabel}
 				aria-invalid={isInvalid}
@@ -79,6 +82,8 @@ const TimeInput: React.FC<TTimeInputProps> = (props) => {
 			<InputGroupStepper
 				onIncrement={handleIncrement}
 				onDecrement={handleDecrement}
+				incrementDisabled={isDisabled}
+				decrementDisabled={isDisabled}
 				incrementLabel="Increase time"
 				decrementLabel="Decrease time"
 			/>
@@ -91,6 +96,7 @@ interface TTimeInputProps {
 	onValueChange: (value: specta.TimeOnly) => void;
 	ariaLabel: string;
 	isInvalid?: boolean;
+	isDisabled?: boolean;
 }
 
 const stepMs = 5 * 60 * 1_000;

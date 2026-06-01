@@ -1,7 +1,13 @@
 import React from 'react';
 import { Select } from '@/components';
 import { specta } from '@/environment';
-import { formatDateInput, getLocalDateEpochDays, parseDateInput } from '@/lib';
+import {
+	formatDateInput,
+	getLocalDateEpochDays,
+	getLocalDateTime,
+	parseDateInput,
+	timeOnlyFromMs
+} from '@/lib';
 import { SettingsRow } from '@/modules/settings';
 import { TimeOfDayRow } from './TimeOfDayRow';
 import { type TConditionRowsProps } from './types';
@@ -12,9 +18,10 @@ export const AtTimeRows: React.FC<TConditionRowsProps> = (props) => {
 			condition: { dateEpochDays, transition },
 			errors: { dateEpochDays: dateError }
 		},
-		cx
+		formCx,
+		isDisabled = false
 	} = props;
-	const dateOptions = Array.from({ length: 7 }, (_, offset) => getDateOption(offset));
+	const dateOptions = getDateOptions(dateEpochDays);
 
 	// MARK: - Actions
 
@@ -25,9 +32,9 @@ export const AtTimeRows: React.FC<TConditionRowsProps> = (props) => {
 				return;
 			}
 
-			cx.updateCondition(transition, { dateEpochDays });
+			formCx.updateCondition(transition, { dateEpochDays });
 		},
-		[transition, cx]
+		[transition, formCx]
 	);
 
 	// MARK: - UI
@@ -43,6 +50,7 @@ export const AtTimeRows: React.FC<TConditionRowsProps> = (props) => {
 				<Select
 					variant="ghost"
 					value={formatDateInput(dateEpochDays)}
+					disabled={isDisabled}
 					onChange={handleDateChange}
 					aria-invalid={dateError != null}
 				>
@@ -57,6 +65,24 @@ export const AtTimeRows: React.FC<TConditionRowsProps> = (props) => {
 		</>
 	);
 };
+
+function getDateOptions(selectedDateEpochDays: specta.DateOnly): TDateOption[] {
+	const options = Array.from({ length: 7 }, (_, offset) => getDateOption(offset));
+	if (options.some((option) => option.value === selectedDateEpochDays)) {
+		return options;
+	}
+
+	// Note: If an edited date is outside the next seven days, keep it selectable
+	return [
+		{
+			value: selectedDateEpochDays,
+			label: dateOptionLabelFormatter.format(
+				getLocalDateTime(selectedDateEpochDays, timeOnlyFromMs(0))
+			)
+		},
+		...options
+	];
+}
 
 function getDateOption(offset: number): TDateOption {
 	const date = new Date();

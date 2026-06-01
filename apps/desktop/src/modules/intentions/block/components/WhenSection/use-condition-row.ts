@@ -3,22 +3,22 @@ import { useCompute } from 'feature-react/state';
 import React from 'react';
 import { type specta } from '@/environment';
 import {
-	createDefaultNewIntentionCondition,
-	type NewBlockIntentionCx
-} from '../NewBlockIntentionCx';
+	createDefaultBlockIntentionCondition,
+	type BlockIntentionFormCx
+} from '../../BlockIntentionFormCx';
 import { type TConditionErrors, type TConditionRow } from './types';
 
 export function useConditionRow(
-	cx: NewBlockIntentionCx,
+	formCx: BlockIntentionFormCx,
 	transition: specta.IntentionConditionTransition
 ): TConditionRow {
 	const fallbackCondition = React.useMemo(
-		() => createDefaultNewIntentionCondition(transition),
+		() => createDefaultBlockIntentionCondition(transition),
 		[transition]
 	);
 
 	return useCompute(
-		[cx.$form.fields.conditions, cx.$form.fields.conditions.status] as const,
+		[formCx.$form.fields.conditions, formCx.$form.fields.conditions.status] as const,
 		([conditions, conditionsStatus]) => {
 			const conditionIndex = conditions.findIndex(
 				(condition) => condition.transition === transition

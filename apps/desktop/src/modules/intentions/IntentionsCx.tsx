@@ -142,6 +142,17 @@ export class IntentionsCx {
 		return result;
 	}
 
+	public async update(
+		params: specta.UpdateIntentionParams
+	): Promise<TResult<specta.Intention, string>> {
+		const result = toTuple(await specta.commands.updateIntention(params));
+		const [isOk, , intention] = result;
+		if (isOk) {
+			this._upsertIntention(intention);
+		}
+		return result;
+	}
+
 	public async start(intentionId: number): Promise<TResult<specta.IntentionSession, string>> {
 		const result = toTuple(await specta.commands.startIntention(intentionId));
 		const [isOk, , session] = result;

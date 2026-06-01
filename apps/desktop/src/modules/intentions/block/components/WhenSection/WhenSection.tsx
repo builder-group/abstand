@@ -3,43 +3,52 @@ import { Select } from '@/components';
 import { type specta } from '@/environment';
 import { SettingsGroup, SettingsRow } from '@/modules/settings';
 import {
-	useNewBlockIntentionCx,
-	type NewBlockIntentionCx,
-	type TNewIntentionConditionMode
-} from '../NewBlockIntentionCx';
+	type BlockIntentionFormCx,
+	type TBlockIntentionConditionMode
+} from '../../BlockIntentionFormCx';
 import { ConditionDetailRows } from './ConditionDetailRows';
 import { type TConditionRow } from './types';
 import { useConditionRow } from './use-condition-row';
 
-export const WhenSection: React.FC = () => {
-	const cx = useNewBlockIntentionCx();
-
+export const WhenSection: React.FC<TWhenSectionProps> = (props) => {
+	const { formCx, isDisabled = false } = props;
 	return (
 		<div className="space-y-2.5">
 			<SettingsGroup title="When">
-				<ConditionRowSet transition="start" label="Starts" cx={cx} />
+				<ConditionRowSet
+					transition="start"
+					label="Starts"
+					formCx={formCx}
+					isDisabled={isDisabled}
+				/>
 			</SettingsGroup>
 
 			<SettingsGroup>
-				<ConditionRowSet transition="end" label="Ends" cx={cx} />
+				<ConditionRowSet transition="end" label="Ends" formCx={formCx} isDisabled={isDisabled} />
 			</SettingsGroup>
 		</div>
 	);
 };
 
+interface TWhenSectionProps {
+	formCx: BlockIntentionFormCx;
+	isDisabled?: boolean;
+}
+
 const ConditionRowSet: React.FC<TConditionRowSetProps> = (props) => {
-	const { transition, label, description, cx } = props;
-	const conditionRow = useConditionRow(cx, transition);
+	const { transition, label, description, formCx, isDisabled = false } = props;
+	const conditionRow = useConditionRow(formCx, transition);
 
 	return (
 		<>
 			<ConditionModeRow
 				conditionRow={conditionRow}
-				cx={cx}
+				formCx={formCx}
 				label={label}
 				description={description}
+				isDisabled={isDisabled}
 			/>
-			<ConditionDetailRows cx={cx} conditionRow={conditionRow} />
+			<ConditionDetailRows formCx={formCx} conditionRow={conditionRow} isDisabled={isDisabled} />
 		</>
 	);
 };
@@ -48,7 +57,8 @@ interface TConditionRowSetProps {
 	transition: specta.IntentionConditionTransition;
 	label: string;
 	description?: string;
-	cx: NewBlockIntentionCx;
+	formCx: BlockIntentionFormCx;
+	isDisabled?: boolean;
 }
 
 const ConditionModeRow: React.FC<TConditionModeRowProps> = (props) => {
@@ -56,24 +66,26 @@ const ConditionModeRow: React.FC<TConditionModeRowProps> = (props) => {
 		conditionRow: {
 			condition: { mode, transition }
 		},
-		cx,
+		formCx,
 		label,
-		description
+		description,
+		isDisabled = false
 	} = props;
+	const modeOptions = formCx.getConditionModeOptions(transition);
 
 	const handleModeChange = React.useCallback(
 		(event: React.ChangeEvent<HTMLSelectElement>) => {
-			cx.setConditionMode(transition, event.target.value as TNewIntentionConditionMode);
+			formCx.setConditionMode(transition, event.target.value as TBlockIntentionConditionMode);
 		},
-		[cx, transition]
+		[formCx, transition]
 	);
 
 	// MARK: - UI
 
 	return (
 		<SettingsRow label={label} description={description} variant="compact">
-			<Select variant="ghost" value={mode} onChange={handleModeChange}>
-				{modeOptionsByTransition[transition].map((option) => (
+			<Select variant="ghost" value={mode} disabled={isDisabled} onChange={handleModeChange}>
+				{modeOptions.map((option) => (
 					<option key={option.value} value={option.value}>
 						{option.label}
 					</option>
@@ -85,27 +97,8 @@ const ConditionModeRow: React.FC<TConditionModeRowProps> = (props) => {
 
 interface TConditionModeRowProps {
 	conditionRow: TConditionRow;
-	cx: NewBlockIntentionCx;
+	formCx: BlockIntentionFormCx;
 	label: string;
 	description?: string;
-}
-
-const modeOptionsByTransition = {
-	start: [
-		{ value: 'now', label: 'Start now' },
-		{ value: 'atTime', label: 'At time' },
-		{ value: 'afterDelay', label: 'After delay' },
-		{ value: 'repeats', label: 'Repeats' },
-		{ value: 'manual', label: 'Manually' }
-	],
-	end: [
-		{ value: 'afterDuration', label: 'After duration' },
-		{ value: 'atTime', label: 'At time' },
-		{ value: 'manual', label: 'Manually' }
-	]
-} as const satisfies Record<specta.IntentionConditionTransition, TConditionModeOption[]>;
-
-interface TConditionModeOption {
-	value: TNewIntentionConditionMode;
-	label: string;
+	isDisabled?: boolean;
 }
