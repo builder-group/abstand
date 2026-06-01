@@ -1,9 +1,9 @@
-import { createFileRoute, Outlet } from '@tanstack/react-router';
+import { createFileRoute, Outlet, useNavigate } from '@tanstack/react-router';
 import { useFeatureState } from 'feature-react/state';
 import { PanelLeftCloseIcon, PanelLeftOpenIcon, Toggle, Tooltip, WindowHeader } from '@/components';
 import { cn } from '@/lib';
 import { IntentionsCxProvider } from '@/modules/intentions';
-import { useShortcutHint } from '@/modules/shortcuts';
+import { useOnShortcut, useShortcutHint } from '@/modules/shortcuts';
 import { SidebarContent } from './components';
 import { SidebarCxProvider, useSidebarCx } from './SidebarCx';
 
@@ -23,8 +23,13 @@ function LayoutComponent() {
 
 function SidebarLayout() {
 	const sidebarCx = useSidebarCx();
+	const navigate = useNavigate();
 	const isOpen = useFeatureState(sidebarCx.$isOpen);
 	const toggleSidebarHint = useShortcutHint('toggleSidebar');
+
+	useOnShortcut('newIntention', () => {
+		void navigate({ to: '/window/main/intentions/new' });
+	});
 
 	return (
 		<>

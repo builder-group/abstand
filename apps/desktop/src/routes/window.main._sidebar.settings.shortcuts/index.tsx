@@ -41,6 +41,11 @@ function RouteComponent() {
 			<SettingsGroup title="App">
 				<ShortcutSettingsRow label="Search" config={configs.search} onChange={handleChange} />
 				<ShortcutSettingsRow
+					label="New Intention"
+					config={configs.newIntention}
+					onChange={handleChange}
+				/>
+				<ShortcutSettingsRow
 					label="Toggle Sidebar"
 					config={configs.toggleSidebar}
 					onChange={handleChange}

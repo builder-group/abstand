@@ -24,6 +24,7 @@ export const MainSidebarContent: React.FC<TMainSidebarContentProps> = (props) =>
 	const { className } = props;
 	const commandPaletteCx = useCommandPaletteCx();
 	const searchHint = useShortcutHint('search');
+	const newIntentionHint = useShortcutHint('newIntention');
 	const intentionsCx = useIntentionsCx();
 	const intentionIds = useFeatureState(intentionsCx.$intentionIds);
 	const areIntentionsLoading = useCompute(intentionsCx.$hasLoaded, (value) => !value);
@@ -38,6 +39,7 @@ export const MainSidebarContent: React.FC<TMainSidebarContentProps> = (props) =>
 				<SidebarItem
 					icon={<PlusIcon />}
 					label="New Intention"
+					shortcut={newIntentionHint}
 					render={<Link to="/window/main/intentions/new" />}
 					isAction
 				/>
@@ -56,7 +58,7 @@ export const MainSidebarContent: React.FC<TMainSidebarContentProps> = (props) =>
 					<span className="text-base-500 min-w-0 flex-1 truncate text-sm font-light">
 						Intentions
 					</span>
-					<Tooltip content="New Intention">
+					<Tooltip content="New Intention" shortcut={newIntentionHint}>
 						<Button
 							render={<Link to="/window/main/intentions/new" />}
 							variant="ghost"

@@ -226,7 +226,7 @@ export type KeyboardShortcut = { modifiers: ShortcutModifier[];
 code: string }
 export type SearchCatalogParams = { query: string; limit: number | null; includeIcon: CatalogIconMode | null }
 export type SettingsVersion = "0.0.1"
-export type ShortcutAction = "search" | "toggleSidebar"
+export type ShortcutAction = "search" | "newIntention" | "toggleSidebar"
 export type ShortcutActionConfigDto = { action: ShortcutAction; isGlobal: boolean; shortcut: KeyboardShortcut | null }
 export type ShortcutModifier = "meta" | "ctrl" | "alt" | "shift"
 export type ShortcutTriggeredEvent = ShortcutAction

@@ -4,17 +4,18 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "camelCase")]
 pub enum ShortcutAction {
     Search,
+    NewIntention,
     ToggleSidebar,
 }
 
 impl ShortcutAction {
     pub fn all() -> &'static [Self] {
-        return &[Self::Search, Self::ToggleSidebar];
+        return &[Self::Search, Self::NewIntention, Self::ToggleSidebar];
     }
 
     pub fn is_global(&self) -> bool {
         return match self {
-            Self::Search | Self::ToggleSidebar => false,
+            Self::Search | Self::NewIntention | Self::ToggleSidebar => false,
         };
     }
 
@@ -23,6 +24,10 @@ impl ShortcutAction {
             Self::Search => KeyboardShortcut {
                 modifiers: vec![ShortcutModifier::Meta],
                 code: "KeyK".to_string(),
+            },
+            Self::NewIntention => KeyboardShortcut {
+                modifiers: vec![ShortcutModifier::Meta],
+                code: "KeyN".to_string(),
             },
             Self::ToggleSidebar => KeyboardShortcut {
                 modifiers: vec![ShortcutModifier::Meta],
