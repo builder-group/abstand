@@ -4,6 +4,9 @@ import React from 'react';
 import {
 	Badge,
 	Button,
+	ButtonGroup,
+	ButtonGroupSeparator,
+	ButtonGroupText,
 	CheckIcon,
 	CircleQuestionMarkIcon,
 	CodeXmlIcon,
@@ -105,6 +108,7 @@ function RouteComponent() {
 			backTo="/window/main/settings/developer"
 		>
 			<ButtonSection />
+			<ButtonGroupSection />
 			<InputSection />
 			<InputGroupSection />
 			<TextareaSection />
@@ -184,6 +188,53 @@ const ButtonSection: React.FC = () => {
 				>
 					<XIcon />
 				</TimedIconButton>
+			</PlaygroundRow>
+		</PlaygroundGroup>
+	);
+};
+
+// MARK: - Button Group
+
+const ButtonGroupSection: React.FC = () => {
+	return (
+		<PlaygroundGroup title="Button Group">
+			<PlaygroundRow label="Actions">
+				<ButtonGroup>
+					<Button variant="outline">Preview</Button>
+					<Button variant="outline">Code</Button>
+					<Button variant="outline">Split</Button>
+				</ButtonGroup>
+				<ButtonGroup>
+					<Button size="icon-sm" variant="outline" aria-label="Search">
+						<SearchIcon />
+					</Button>
+					<ButtonGroupSeparator />
+					<Button variant="outline">Open</Button>
+				</ButtonGroup>
+			</PlaygroundRow>
+			<PlaygroundRow label="Mixed">
+				<ButtonGroup className="w-80">
+					<ButtonGroupText>Scope</ButtonGroupText>
+					<Input placeholder="Search components" />
+					<Select defaultValue="all" aria-label="Search scope">
+						<option value="all">All</option>
+						<option value="current">Current view</option>
+						<option value="recent">Recent</option>
+					</Select>
+				</ButtonGroup>
+			</PlaygroundRow>
+			<PlaygroundRow label="Vertical">
+				<ButtonGroup orientation="vertical">
+					<Button variant="outline" className="justify-start">
+						Local
+					</Button>
+					<Button variant="outline" className="justify-start">
+						Remote
+					</Button>
+					<Button variant="outline" className="justify-start">
+						Both
+					</Button>
+				</ButtonGroup>
 			</PlaygroundRow>
 		</PlaygroundGroup>
 	);

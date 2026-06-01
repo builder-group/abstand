@@ -1,4 +1,5 @@
 export * from './Button';
+export * from './ButtonGroup';
 export * from './Combobox';
 export * from './DropMenu';
 export * from './Input';
