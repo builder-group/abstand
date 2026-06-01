@@ -48,6 +48,7 @@ export const ContentPage: React.FC<TContentPageProps> = (props) => {
 			return;
 		}
 
+		// eslint-disable-next-line @eslint-react/set-state-in-effect -- footer treatment depends on committed DOM overflow before paint
 		setHasOverflowingContent(main.scrollHeight > main.clientHeight + 1);
 	}, []);
 

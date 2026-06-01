@@ -46,6 +46,7 @@ export const SegmentedControl: React.FC<TSegmentedControlProps> = (props) => {
 			return;
 		}
 
+		// eslint-disable-next-line @eslint-react/set-state-in-effect -- pill position is measured from committed DOM before paint
 		setPill({
 			left: active.offsetLeft,
 			top: active.offsetTop,
@@ -78,7 +79,7 @@ export const SegmentedControl: React.FC<TSegmentedControlProps> = (props) => {
 	// MARK: - UI
 
 	return (
-		<SegmentedControlContext.Provider
+		<SegmentedControlContext
 			value={{
 				registerItem,
 				size
@@ -109,7 +110,7 @@ export const SegmentedControl: React.FC<TSegmentedControlProps> = (props) => {
 				)}
 				{children}
 			</ToggleGroupPrimitive>
-		</SegmentedControlContext.Provider>
+		</SegmentedControlContext>
 	);
 };
 
@@ -142,7 +143,7 @@ const segmentedControlVariants = cva('bg-base-100 relative inline-flex items-cen
 
 export const SegmentedControlItem: React.FC<TSegmentedControlItemProps> = (props) => {
 	const { value, className, ...rest } = props;
-	const { registerItem, size } = React.useContext(SegmentedControlContext);
+	const { registerItem, size } = React.use(SegmentedControlContext);
 
 	const ref = React.useCallback(
 		(node: HTMLButtonElement | null) => {

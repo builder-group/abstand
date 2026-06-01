@@ -22,7 +22,7 @@ export const Combobox = <GValue, GMultiple extends boolean | undefined = false>(
 	const { size = 'sm', children, ...rest } = props;
 
 	return (
-		<ComboboxContext.Provider value={{ size }}>
+		<ComboboxContext value={{ size }}>
 			<ComboboxPrimitive.Root
 				data-slot="combobox"
 				data-size={size}
@@ -30,7 +30,7 @@ export const Combobox = <GValue, GMultiple extends boolean | undefined = false>(
 			>
 				{children}
 			</ComboboxPrimitive.Root>
-		</ComboboxContext.Provider>
+		</ComboboxContext>
 	);
 };
 
@@ -50,7 +50,7 @@ export type TComboboxValueProps = ComboboxPrimitive.Value.Props;
 
 export const ComboboxTrigger: React.FC<TComboboxTriggerProps> = (props) => {
 	const { children, className, ...rest } = props;
-	const { size } = React.useContext(ComboboxContext);
+	const { size } = React.use(ComboboxContext);
 
 	return (
 		<ComboboxPrimitive.Trigger
@@ -109,7 +109,7 @@ export const ComboboxInput: React.FC<TComboboxInputProps> = (props) => {
 		className,
 		...rest
 	} = props;
-	const { size } = React.useContext(ComboboxContext);
+	const { size } = React.use(ComboboxContext);
 
 	return (
 		<InputGroup ref={ref} size={size} className={className}>
@@ -149,7 +149,7 @@ export const ComboboxContent: React.FC<TComboboxContentProps> = (props) => {
 		className,
 		...rest
 	} = props;
-	const { size } = React.useContext(ComboboxContext);
+	const { size } = React.use(ComboboxContext);
 
 	return (
 		<ComboboxPrimitive.Portal>
@@ -195,7 +195,7 @@ const comboboxContentVariants = cva(
 
 export const ComboboxList: React.FC<TComboboxListProps> = (props) => {
 	const { className, ...rest } = props;
-	const { size } = React.useContext(ComboboxContext);
+	const { size } = React.use(ComboboxContext);
 
 	return (
 		<ComboboxPrimitive.List
@@ -226,7 +226,7 @@ const comboboxListVariants = cva(
 
 export const ComboboxItem: React.FC<TComboboxItemProps> = (props) => {
 	const { onMouseMoveCapture, children, className, ...rest } = props;
-	const { size } = React.useContext(ComboboxContext);
+	const { size } = React.use(ComboboxContext);
 
 	const handleMouseMoveCapture = React.useCallback(
 		(event: Parameters<NonNullable<TComboboxItemProps['onMouseMoveCapture']>>[0]) => {
@@ -312,7 +312,7 @@ export type TComboboxGroupProps = ComboboxPrimitive.Group.Props;
 
 export const ComboboxLabel: React.FC<TComboboxLabelProps> = (props) => {
 	const { className, ...rest } = props;
-	const { size } = React.useContext(ComboboxContext);
+	const { size } = React.use(ComboboxContext);
 
 	return (
 		<ComboboxPrimitive.GroupLabel
@@ -346,7 +346,7 @@ export type TComboboxCollectionProps = ComboboxPrimitive.Collection.Props;
 
 export const ComboboxStatus: React.FC<TComboboxStatusProps> = (props) => {
 	const { className, ...rest } = props;
-	const { size } = React.useContext(ComboboxContext);
+	const { size } = React.use(ComboboxContext);
 
 	return (
 		<ComboboxPrimitive.Status
@@ -377,7 +377,7 @@ const comboboxStatusVariants = cva(
 
 export const ComboboxEmpty: React.FC<TComboboxEmptyProps> = (props) => {
 	const { className, ...rest } = props;
-	const { size } = React.useContext(ComboboxContext);
+	const { size } = React.use(ComboboxContext);
 
 	return (
 		<ComboboxPrimitive.Empty
@@ -408,7 +408,7 @@ const comboboxEmptyVariants = cva(
 
 export const ComboboxSeparator: React.FC<TComboboxSeparatorProps> = (props) => {
 	const { className, ...rest } = props;
-	const { size } = React.useContext(ComboboxContext);
+	const { size } = React.use(ComboboxContext);
 
 	return (
 		<ComboboxPrimitive.Separator
@@ -436,7 +436,7 @@ const comboboxSeparatorVariants = cva('bg-base-100 my-1 h-px', {
 
 export const ComboboxChips: React.FC<TComboboxChipsProps> = (props) => {
 	const { className, ...rest } = props;
-	const { size } = React.useContext(ComboboxContext);
+	const { size } = React.use(ComboboxContext);
 
 	return (
 		<ComboboxPrimitive.Chips
@@ -467,7 +467,7 @@ const comboboxChipsVariants = cva(
 
 export const ComboboxChip: React.FC<TComboboxChipProps> = (props) => {
 	const { showRemove = true, children, className, ...rest } = props;
-	const { size } = React.useContext(ComboboxContext);
+	const { size } = React.use(ComboboxContext);
 
 	return (
 		<ComboboxPrimitive.Chip
@@ -516,7 +516,7 @@ const comboboxChipVariants = cva(
 
 export const ComboboxChipsInput: React.FC<TComboboxChipsInputProps> = (props) => {
 	const { className, ...rest } = props;
-	const { size } = React.useContext(ComboboxContext);
+	const { size } = React.use(ComboboxContext);
 
 	return (
 		<ComboboxPrimitive.Input

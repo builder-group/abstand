@@ -19,7 +19,7 @@ export const InputGroup: React.FC<TInputGroupProps> = (props) => {
 	const { size = 'sm', className, ...rest } = props;
 
 	return (
-		<InputGroupContext.Provider value={{ size }}>
+		<InputGroupContext value={{ size }}>
 			<div
 				data-slot="input-group"
 				data-size={size}
@@ -27,7 +27,7 @@ export const InputGroup: React.FC<TInputGroupProps> = (props) => {
 				className={cn(inputGroupVariants({ size }), className)}
 				{...rest}
 			/>
-		</InputGroupContext.Provider>
+		</InputGroupContext>
 	);
 };
 
@@ -52,7 +52,7 @@ const inputGroupVariants = cva(
 
 export const InputGroupAddon: React.FC<TInputGroupAddonProps> = (props) => {
 	const { align = 'inline-start', onClick, className, ...rest } = props;
-	const { size } = React.useContext(InputGroupContext);
+	const { size } = React.use(InputGroupContext);
 
 	const handleClick = React.useCallback(
 		(event: React.MouseEvent<HTMLDivElement>) => {
@@ -138,7 +138,7 @@ export const InputGroupStepper: React.FC<TInputGroupStepperProps> = (props) => {
 		className,
 		...rest
 	} = props;
-	const { size } = React.useContext(InputGroupContext);
+	const { size } = React.use(InputGroupContext);
 
 	const repeatTimeoutRef = React.useRef<number | null>(null);
 	const repeatIntervalRef = React.useRef<number | null>(null);
@@ -319,7 +319,7 @@ const inputGroupStepperIconVariants = cva(
 
 export const InputGroupText: React.FC<TInputGroupTextProps> = (props) => {
 	const { className, ...rest } = props;
-	const { size } = React.useContext(InputGroupContext);
+	const { size } = React.use(InputGroupContext);
 
 	return (
 		<span
@@ -350,7 +350,7 @@ const inputGroupTextVariants = cva(
 
 export const InputGroupInput: React.FC<TInputGroupInputProps> = (props) => {
 	const { className, ...rest } = props;
-	const { size } = React.useContext(InputGroupContext);
+	const { size } = React.use(InputGroupContext);
 
 	return (
 		<Input
@@ -370,7 +370,7 @@ export type TInputGroupInputProps = Omit<React.ComponentProps<typeof Input>, 'si
 
 export const InputGroupTextarea: React.FC<TInputGroupTextareaProps> = (props) => {
 	const { className, ...rest } = props;
-	const { size } = React.useContext(InputGroupContext);
+	const { size } = React.use(InputGroupContext);
 
 	return (
 		<Textarea

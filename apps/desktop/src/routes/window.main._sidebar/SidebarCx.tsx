@@ -33,7 +33,7 @@ export class SidebarCx {
 	}
 }
 
-const ReactSidebarCx = React.createContext<SidebarCx | null>(null);
+const ReactSidebarContext = React.createContext<SidebarCx | null>(null);
 
 export const SidebarCxProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 	const cx = React.useMemo(() => new SidebarCx(), []);
@@ -42,11 +42,11 @@ export const SidebarCxProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 		return cx.mount();
 	}, [cx]);
 
-	return <ReactSidebarCx.Provider value={cx}>{children}</ReactSidebarCx.Provider>;
+	return <ReactSidebarContext value={cx}>{children}</ReactSidebarContext>;
 };
 
 export function useSidebarCx(): SidebarCx {
-	const cx = React.useContext(ReactSidebarCx);
+	const cx = React.use(ReactSidebarContext);
 	if (cx == null) {
 		throw new Error('useSidebarCx must be used within a SidebarCxProvider');
 	}

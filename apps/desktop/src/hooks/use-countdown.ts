@@ -1,6 +1,6 @@
 import React from 'react';
 
-/** Returns remaining milliseconds rounded up to a step, or the full duration while stopped. */
+/** Returns remaining milliseconds rounded up to the selected step. */
 export function useCountdown(options: TUseCountdownOptions): number {
 	const { durationMs, isRunning, stepMs = 1_000 } = options;
 	const resolvedDurationMs =

@@ -18,9 +18,9 @@ export const Dialog: React.FC<TDialogProps> = (props) => {
 	const { size = 'sm', ...rest } = props;
 
 	return (
-		<DialogContext.Provider value={{ size }}>
+		<DialogContext value={{ size }}>
 			<DialogPrimitive.Root data-slot="dialog" data-size={size} {...rest} />
-		</DialogContext.Provider>
+		</DialogContext>
 	);
 };
 
@@ -69,7 +69,7 @@ export type TDialogBackdropProps = DialogPrimitive.Backdrop.Props;
 
 export const DialogContent: React.FC<TDialogContentProps> = (props) => {
 	const { showWindowDragRegion = true, children, className, ...rest } = props;
-	const { size } = React.useContext(DialogContext);
+	const { size } = React.use(DialogContext);
 
 	return (
 		<DialogPortal>
@@ -117,7 +117,7 @@ const dialogContentVariants = cva(
 
 export const DialogHeader: React.FC<TDialogHeaderProps> = (props) => {
 	const { className, ...rest } = props;
-	const { size } = React.useContext(DialogContext);
+	const { size } = React.use(DialogContext);
 
 	return (
 		<div
@@ -145,7 +145,7 @@ const dialogHeaderVariants = cva('flex flex-col', {
 
 export const DialogTitle: React.FC<TDialogTitleProps> = (props) => {
 	const { className, ...rest } = props;
-	const { size } = React.useContext(DialogContext);
+	const { size } = React.use(DialogContext);
 
 	return (
 		<DialogPrimitive.Title
@@ -173,7 +173,7 @@ const dialogTitleVariants = cva('text-base-950 font-semibold', {
 
 export const DialogDescription: React.FC<TDialogDescriptionProps> = (props) => {
 	const { className, ...rest } = props;
-	const { size } = React.useContext(DialogContext);
+	const { size } = React.use(DialogContext);
 
 	return (
 		<DialogPrimitive.Description
@@ -201,7 +201,7 @@ const dialogDescriptionVariants = cva('text-base-500', {
 
 export const DialogBody: React.FC<TDialogBodyProps> = (props) => {
 	const { className, ...rest } = props;
-	const { size } = React.useContext(DialogContext);
+	const { size } = React.use(DialogContext);
 
 	return (
 		<div
@@ -229,7 +229,7 @@ const dialogBodyVariants = cva('text-base-950', {
 
 export const DialogFooter: React.FC<TDialogFooterProps> = (props) => {
 	const { className, ...rest } = props;
-	const { size } = React.useContext(DialogContext);
+	const { size } = React.use(DialogContext);
 
 	return (
 		<div

@@ -62,6 +62,7 @@ export const Slider: React.FC<TSliderProps> = (props) => {
 				{values.map((_, index) => (
 					<SliderPrimitive.Thumb
 						data-slot="slider-thumb"
+						// eslint-disable-next-line @eslint-react/no-array-index-key -- Base UI slider thumbs are positional controls, and values can change or collide while dragging
 						key={index}
 						className={cn(
 							'relative block shrink-0 rounded-full bg-white transition-[box-shadow,opacity] select-none',

@@ -45,9 +45,9 @@ export const ToggleGroup: React.FC<TToggleGroupProps> = (props) => {
 			className={cn(toggleGroupVariants({ orientation, variant }), className)}
 			{...rest}
 		>
-			<ToggleGroupContext.Provider value={{ variant, size, spacing, orientation }}>
+			<ToggleGroupContext value={{ variant, size, spacing, orientation }}>
 				{children}
-			</ToggleGroupContext.Provider>
+			</ToggleGroupContext>
 		</ToggleGroupPrimitive>
 	);
 };
@@ -90,7 +90,7 @@ function getToggleGroupStyle(
 
 export const ToggleGroupItem: React.FC<TToggleGroupItemProps> = (props) => {
 	const { className, ...rest } = props;
-	const context = React.useContext(ToggleGroupContext);
+	const context = React.use(ToggleGroupContext);
 
 	return (
 		<Toggle

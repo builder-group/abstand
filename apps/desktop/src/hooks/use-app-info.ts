@@ -17,7 +17,9 @@ export function useAppInfo(): TAppInfo {
 					...nextAppInfo,
 					isPending: false
 				});
-			} catch {}
+			} catch {
+				// Keep fallback app info if the native command is unavailable
+			}
 		})();
 	}, []);
 

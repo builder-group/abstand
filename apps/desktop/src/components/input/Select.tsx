@@ -42,6 +42,7 @@ export const Select: React.FC<TSelectProps> = (props) => {
 
 		sizerRef.current.textContent = selectedOption.text;
 		// +1 compensates for native <select> rendering text slightly wider than a <span>
+		// eslint-disable-next-line @eslint-react/set-state-in-effect -- ghost width is measured from committed DOM before paint
 		setGhostWidth(
 			Math.ceil(sizerRef.current.getBoundingClientRect().width) + ghostWidthOffsetPx + 1
 		);

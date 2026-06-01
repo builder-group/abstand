@@ -44,6 +44,11 @@ export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
 
 	const handleInputChange = React.useCallback((value: string) => {
 		setQuery(value);
+
+		if (value.trim().length === 0) {
+			setSearchResults([]);
+			setIsLoading(false);
+		}
 	}, []);
 
 	// MARK: - Effects
@@ -51,8 +56,6 @@ export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
 	// Debounce search and cancel stale requests on each query change
 	React.useEffect(() => {
 		if (trimmedQuery.length === 0) {
-			setSearchResults([]);
-			setIsLoading(false);
 			return;
 		}
 

@@ -71,7 +71,7 @@ type TSettingsUpdates = Partial<
 	shortcuts?: specta.AppSettings['shortcuts'];
 };
 
-const ReactSettingsCx = React.createContext<SettingsCx | null>(null);
+const ReactSettingsContext = React.createContext<SettingsCx | null>(null);
 
 export const SettingsCxProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 	const cx = React.useMemo(() => new SettingsCx(), []);
@@ -80,11 +80,11 @@ export const SettingsCxProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 		return cx.mount();
 	}, [cx]);
 
-	return <ReactSettingsCx.Provider value={cx}>{children}</ReactSettingsCx.Provider>;
+	return <ReactSettingsContext value={cx}>{children}</ReactSettingsContext>;
 };
 
 export function useSettingsCx(): SettingsCx {
-	const cx = React.useContext(ReactSettingsCx);
+	const cx = React.use(ReactSettingsContext);
 	if (cx == null) {
 		throw new Error('useSettingsCx must be used within a SettingsCxProvider');
 	}

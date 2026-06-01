@@ -37,7 +37,7 @@ export class ToastsCx {
 	}
 }
 
-const ReactToastsCx = React.createContext<ToastsCx | null>(null);
+const ReactToastsContext = React.createContext<ToastsCx | null>(null);
 
 export const ToastsCxProvider: React.FC<TToastsCxProviderProps> = (props) => {
 	const { children, limit = 3, timeout = 5000, ...rest } = props;
@@ -54,7 +54,7 @@ export const ToastsCxProvider: React.FC<TToastsCxProviderProps> = (props) => {
 		 * timing. Otherwise the visible ring and close timing can drift on pause/resume edges.
 		 */
 		<ToastPrimitive.Provider toastManager={manager} limit={limit} timeout={0} {...rest}>
-			<ReactToastsCx.Provider value={cx}>{children}</ReactToastsCx.Provider>
+			<ReactToastsContext value={cx}>{children}</ReactToastsContext>
 			<ToastViewport dismissAfterMs={timeout} />
 		</ToastPrimitive.Provider>
 	);
@@ -68,7 +68,7 @@ export interface TToastsCxProviderProps extends Omit<
 }
 
 export function useToastsCx(): ToastsCx {
-	const cx = React.useContext(ReactToastsCx);
+	const cx = React.use(ReactToastsContext);
 	if (cx == null) {
 		throw new Error('useToastsCx must be used within a ToastsCxProvider');
 	}

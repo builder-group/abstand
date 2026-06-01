@@ -224,7 +224,7 @@ export class IntentionsCx {
 	}
 }
 
-const ReactIntentionsCx = React.createContext<IntentionsCx | null>(null);
+const ReactIntentionsContext = React.createContext<IntentionsCx | null>(null);
 
 export const IntentionsCxProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 	const cx = React.useMemo(() => new IntentionsCx(), []);
@@ -233,11 +233,11 @@ export const IntentionsCxProvider: React.FC<{ children: React.ReactNode }> = ({ 
 		return cx.mount();
 	}, [cx]);
 
-	return <ReactIntentionsCx.Provider value={cx}>{children}</ReactIntentionsCx.Provider>;
+	return <ReactIntentionsContext value={cx}>{children}</ReactIntentionsContext>;
 };
 
 export function useIntentionsCx(): IntentionsCx {
-	const cx = React.useContext(ReactIntentionsCx);
+	const cx = React.use(ReactIntentionsContext);
 	if (cx == null) {
 		throw new Error('useIntentionsCx must be used within an IntentionsCxProvider');
 	}

@@ -1,9 +1,11 @@
 import React from 'react';
 import type { TIconProps } from './types';
 
-export const LogoIcon = React.forwardRef<SVGSVGElement, TIconProps>((props, ref) => {
+export const LogoIcon: React.FC<TIconProps> = (props) => {
+	const { ref, ...rest } = props;
+
 	return (
-		<svg ref={ref} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
+		<svg ref={ref} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...rest}>
 			<path
 				d="M7.70117 11.2226C7.05194 11.1714 5.93131 11.1082 5.61137 11.8355L2.54247 18.8124C2.26334 19.4469 2.72666 20.1598 3.41819 20.1598H5.46753C6.68196 20.1598 7.22992 18.6392 7.40258 17.6727C7.8651 15.0835 10.6065 15.4207 12.3169 14.1387C14.2285 12.7058 8.14394 11.2575 7.70117 11.2226Z"
 				fill="currentColor"
@@ -14,5 +16,4 @@ export const LogoIcon = React.forwardRef<SVGSVGElement, TIconProps>((props, ref)
 			/>
 		</svg>
 	);
-});
-LogoIcon.displayName = 'LogoIcon';
+};

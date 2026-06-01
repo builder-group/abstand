@@ -83,7 +83,7 @@ export class ShortcutsCx {
 
 type TShortcutConfigs = Partial<Record<specta.ShortcutAction, specta.ShortcutActionConfigDto>>;
 
-const ReactShortcutsCx = React.createContext<ShortcutsCx | null>(null);
+const ReactShortcutsContext = React.createContext<ShortcutsCx | null>(null);
 
 export const ShortcutsCxProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 	const settingsCx = useSettingsCx();
@@ -93,11 +93,11 @@ export const ShortcutsCxProvider: React.FC<{ children: React.ReactNode }> = ({ c
 		return cx.mount();
 	}, [cx]);
 
-	return <ReactShortcutsCx.Provider value={cx}>{children}</ReactShortcutsCx.Provider>;
+	return <ReactShortcutsContext value={cx}>{children}</ReactShortcutsContext>;
 };
 
 export function useShortcutsCx(): ShortcutsCx {
-	const cx = React.useContext(ReactShortcutsCx);
+	const cx = React.use(ReactShortcutsContext);
 	if (cx == null) {
 		throw new Error('useShortcutsCx must be used within a ShortcutsCxProvider');
 	}

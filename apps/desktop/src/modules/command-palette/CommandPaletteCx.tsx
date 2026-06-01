@@ -136,7 +136,7 @@ export class CommandPaletteCx {
 	}
 }
 
-const ReactCommandPaletteCx = React.createContext<CommandPaletteCx | null>(null);
+const ReactCommandPaletteContext = React.createContext<CommandPaletteCx | null>(null);
 
 export const CommandPaletteCxProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 	const settingsCx = useSettingsCx();
@@ -146,11 +146,11 @@ export const CommandPaletteCxProvider: React.FC<{ children: React.ReactNode }> =
 		return cx.mount();
 	}, [cx]);
 
-	return <ReactCommandPaletteCx.Provider value={cx}>{children}</ReactCommandPaletteCx.Provider>;
+	return <ReactCommandPaletteContext value={cx}>{children}</ReactCommandPaletteContext>;
 };
 
 export function useCommandPaletteCx(): CommandPaletteCx {
-	const cx = React.useContext(ReactCommandPaletteCx);
+	const cx = React.use(ReactCommandPaletteContext);
 	if (cx == null) {
 		throw new Error('useCommandPaletteCx must be used within a CommandPaletteCxProvider');
 	}
