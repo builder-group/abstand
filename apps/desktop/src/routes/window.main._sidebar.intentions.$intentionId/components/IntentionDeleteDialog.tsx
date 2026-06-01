@@ -47,7 +47,9 @@ const IntentionDeleteDialog: React.FC<TIntentionDeleteDialogProps> = (props) => 
 					)}
 				</DialogBody>
 				<DialogFooter>
-					<DialogClose render={<Button type="button" disabled={isPending} />}>Cancel</DialogClose>
+					<DialogClose render={<Button type="button" disabled={isPending} />}>
+						{policy.type === 'blocked' ? 'Close' : 'Cancel'}
+					</DialogClose>
 					{policy.type === 'delayed' ? (
 						<TimedButton
 							key={open ? 'open' : 'closed'}
@@ -121,31 +123,40 @@ export function useIntentionDeleteDialog(
 	const [isPending, setIsPending] = React.useState(false);
 	const deletePolicy = getIntentionActionPolicy(intention, { isActive });
 
+	const deleteIntention = React.useCallback(async (): Promise<boolean> => {
+		setIsPending(true);
+		try {
+			const [isDeleteOk, deleteErr] = await intentionsCx.deleteIntention(intention.id);
+			if (!isDeleteOk) {
+				toastsCx.add({
+					type: 'error',
+					title: 'Could not delete intention',
+					description: deleteErr
+				});
+				return false;
+			}
+
+			toastsCx.add({
+				type: 'success',
+				title: 'Deleted intention'
+			});
+			void navigate({ to: '/window/main/today' });
+			return true;
+		} finally {
+			setIsPending(false);
+		}
+	}, [intention.id, intentionsCx, navigate, toastsCx]);
+
 	const open = React.useCallback(() => {
 		setIsOpen(true);
 	}, []);
 
 	const handleDelete = React.useCallback(async () => {
-		setIsPending(true);
-		const [isDeleteOk, deleteErr] = await intentionsCx.deleteIntention(intention.id);
-		setIsPending(false);
-
-		if (!isDeleteOk) {
-			toastsCx.add({
-				type: 'error',
-				title: 'Could not delete intention',
-				description: deleteErr
-			});
-			return;
+		const didDelete = await deleteIntention();
+		if (didDelete) {
+			setIsOpen(false);
 		}
-
-		setIsOpen(false);
-		toastsCx.add({
-			type: 'success',
-			title: 'Deleted intention'
-		});
-		void navigate({ to: '/window/main/today' });
-	}, [intention.id, intentionsCx, navigate, toastsCx]);
+	}, [deleteIntention]);
 
 	return {
 		open,

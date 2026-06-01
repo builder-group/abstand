@@ -1,4 +1,3 @@
-import { useEventCallback } from 'feature-react/state';
 import React from 'react';
 import {
 	Button,
@@ -10,11 +9,16 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	TimedButton
+	TimedButton,
+	useToastsCx
 } from '@/components';
 import { type specta } from '@/environment';
 import { useCountdown } from '@/hooks';
-import { type TIntentionActionPolicy } from '@/modules/intentions';
+import {
+	getIntentionActionPolicy,
+	type EditBlockIntentionCx,
+	type TIntentionActionPolicy
+} from '@/modules/intentions';
 
 const IntentionSaveDialog: React.FC<TIntentionSaveDialogProps> = (props) => {
 	const { intention, open, policy, isPending, onOpenChange, onSave } = props;
@@ -97,27 +101,61 @@ function getDelayedSaveLabel(remainingMs: number): string {
 export function useIntentionSaveDialog(
 	options: TUseIntentionSaveDialogOptions
 ): TIntentionSaveDialogHandle {
-	const { intention, policy, isPending, onSave } = options;
+	const { cx, intention, isActive } = options;
+	const toastsCx = useToastsCx();
 	const [isOpen, setIsOpen] = React.useState(false);
+	const [isPending, setIsPending] = React.useState(false);
+	const savePolicy = getIntentionActionPolicy(intention, { isActive });
 
-	const open = React.useCallback(() => {
+	const saveIntention = React.useCallback(async (): Promise<boolean> => {
+		setIsPending(true);
+		try {
+			const [isIntentionOk, intentionErr] = await cx.save();
+			if (!isIntentionOk) {
+				if (intentionErr.code === 'updateFailed') {
+					toastsCx.add({
+						type: 'error',
+						title: 'Could not save intention',
+						description: intentionErr.message
+					});
+				}
+				return false;
+			}
+
+			toastsCx.add({
+				type: 'success',
+				title: 'Saved intention'
+			});
+			return true;
+		} finally {
+			setIsPending(false);
+		}
+	}, [cx, toastsCx]);
+
+	const save = React.useCallback(() => {
+		if (savePolicy.type === 'available') {
+			void saveIntention();
+			return;
+		}
+
 		setIsOpen(true);
-	}, []);
+	}, [saveIntention, savePolicy.type]);
 
-	const handleSave = useEventCallback(async () => {
-		const didSave = await onSave();
+	const handleSave = React.useCallback(async () => {
+		const didSave = await saveIntention();
 		if (didSave) {
 			setIsOpen(false);
 		}
-	});
+	}, [saveIntention]);
 
 	return {
-		open,
+		save,
+		isPending,
 		dialog: (
 			<IntentionSaveDialog
 				intention={intention}
 				open={isOpen}
-				policy={policy}
+				policy={savePolicy}
 				isPending={isPending}
 				onOpenChange={setIsOpen}
 				onSave={handleSave}
@@ -127,13 +165,13 @@ export function useIntentionSaveDialog(
 }
 
 interface TUseIntentionSaveDialogOptions {
+	cx: EditBlockIntentionCx;
 	intention: specta.Intention;
-	policy: TIntentionActionPolicy;
-	isPending: boolean;
-	onSave: () => Promise<boolean>;
+	isActive: boolean;
 }
 
 interface TIntentionSaveDialogHandle {
-	open: () => void;
+	save: () => void;
+	isPending: boolean;
 	dialog: React.ReactElement;
 }

@@ -12,22 +12,38 @@ import {
 import { type specta } from '@/environment';
 import { useIntentionsCx } from '@/modules/intentions';
 import { useIntentionDeleteDialog } from './IntentionDeleteDialog';
+import { useIntentionEndEarlyDialog } from './IntentionEndEarlyDialog';
 
 export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 	const { intention, isActive, isDisabled = false, isSessionPrimary = false } = props;
 	const intentionsCx = useIntentionsCx();
 	const toastsCx = useToastsCx();
-	const deleteDialog = useIntentionDeleteDialog({ intention, isActive });
 	const [pendingSessionAction, setPendingSessionAction] =
 		React.useState<TPendingSessionAction | null>(null);
+	const {
+		dialog: deleteDialog,
+		isPending: isDeletePending,
+		open: openDeleteDialog
+	} = useIntentionDeleteDialog({ intention, isActive });
+	const {
+		dialog: endEarlyDialog,
+		endEarly,
+		isPending: isEndEarlyPending
+	} = useIntentionEndEarlyDialog({ intention, isActive });
 	const hasManualEndCondition = intention.conditions.some(
 		(condition) => condition.transition === 'end' && condition.rule.type === 'manual'
 	);
+	const isPending = pendingSessionAction != null || isDeletePending || isEndEarlyPending;
 
 	// MARK: - Actions
 
 	const handleSessionAction = React.useCallback(async () => {
 		if (isActive) {
+			if (!hasManualEndCondition) {
+				endEarly();
+				return;
+			}
+
 			setPendingSessionAction('stop');
 			const [isSessionOk, sessionErr] = await intentionsCx.stop(intention.id);
 			setPendingSessionAction(null);
@@ -35,9 +51,7 @@ export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 			if (!isSessionOk) {
 				toastsCx.add({
 					type: 'error',
-					title: hasManualEndCondition
-						? 'Could not end intention'
-						: 'Could not end intention early',
+					title: 'Could not end intention',
 					description: sessionErr
 				});
 			}
@@ -55,7 +69,7 @@ export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 				description: sessionErr
 			});
 		}
-	}, [hasManualEndCondition, intention.id, intentionsCx, isActive, toastsCx]);
+	}, [endEarly, hasManualEndCondition, intention.id, intentionsCx, isActive, toastsCx]);
 
 	// MARK: - UI
 
@@ -64,7 +78,7 @@ export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 			<Button
 				type="button"
 				variant={isSessionPrimary ? 'primary' : 'default'}
-				disabled={isDisabled || pendingSessionAction != null || deleteDialog.isPending}
+				disabled={isDisabled || isPending}
 				onClick={handleSessionAction}
 			>
 				{isActive ? (hasManualEndCondition ? 'End' : 'End Early') : 'Begin'}
@@ -77,7 +91,7 @@ export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 							aria-label="More intention actions"
 							variant="ghost"
 							size="icon-sm"
-							disabled={isDisabled}
+							disabled={isDisabled || isPending}
 						>
 							<MoreVerticalIcon />
 						</Button>
@@ -86,15 +100,16 @@ export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 				<DropMenuContent side="bottom" align="end" className="w-48">
 					<DropMenuItem
 						variant="destructive"
-						disabled={isDisabled || deleteDialog.isPending}
-						onClick={deleteDialog.open}
+						disabled={isDisabled || isPending}
+						onClick={openDeleteDialog}
 					>
 						<Trash2Icon />
 						<span>Delete Intention</span>
 					</DropMenuItem>
 				</DropMenuContent>
 			</DropMenu>
-			{deleteDialog.dialog}
+			{endEarlyDialog}
+			{deleteDialog}
 		</>
 	);
 };

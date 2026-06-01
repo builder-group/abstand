@@ -1,10 +1,9 @@
 import { useFeatureState } from 'feature-react/state';
 import React from 'react';
-import { Button, ContentPage, useToastsCx } from '@/components';
+import { Button, ContentPage } from '@/components';
 import {
 	BlockSection,
 	EditBlockIntentionCx,
-	getIntentionActionPolicy,
 	NameSection,
 	useIntentionsCx,
 	WhenSection
@@ -16,9 +15,7 @@ import { useIntentionSaveDialog } from './IntentionSaveDialog';
 export const BlockIntentionPage: React.FC<TBlockIntentionPageProps> = (props) => {
 	const { intention, isActive } = props;
 	const intentionsCx = useIntentionsCx();
-	const toastsCx = useToastsCx();
 	const formId = React.useId();
-	const [isSaving, setIsSaving] = React.useState(false);
 	const cx = React.useMemo(
 		() => new EditBlockIntentionCx(intentionsCx, intention),
 		[intentionsCx, intention]
@@ -26,60 +23,30 @@ export const BlockIntentionPage: React.FC<TBlockIntentionPageProps> = (props) =>
 	const { formCx } = cx;
 	const isDirty = useFeatureState(formCx.$form.isDirty);
 	const isSubmitting = useFeatureState(formCx.$form.isSubmitting);
+
+	const {
+		dialog: saveDialog,
+		isPending: isSaving,
+		save: saveIntention
+	} = useIntentionSaveDialog({
+		cx,
+		intention,
+		isActive
+	});
 	const isPending = isSubmitting || isSaving;
 	const shouldShowSaveButton = isDirty || isPending;
-	const savePolicy = getIntentionActionPolicy(intention, { isActive });
-
-	const { dialog: saveDialog, open: openSaveDialog } = useIntentionSaveDialog({
-		intention,
-		policy: savePolicy,
-		isPending,
-		onSave: () => saveIntention()
-	});
 
 	// MARK: - Actions
-
-	const saveIntention = React.useCallback(async (): Promise<boolean> => {
-		setIsSaving(true);
-		try {
-			const [isIntentionOk, intentionErr] = await cx.save();
-			if (!isIntentionOk) {
-				if (intentionErr.code === 'updateFailed') {
-					toastsCx.add({
-						type: 'error',
-						title: 'Could not save intention',
-						description: intentionErr.message
-					});
-				}
-				return false;
-			}
-
-			toastsCx.add({
-				type: 'success',
-				title: 'Saved intention'
-			});
-			return true;
-		} finally {
-			setIsSaving(false);
-		}
-	}, [cx, toastsCx]);
 
 	const handleSubmit = React.useCallback(
 		(event: React.FormEvent<HTMLFormElement>) => {
 			event.preventDefault();
 			void formCx.$form.submit({
-				onValidSubmit: async () => {
-					if (savePolicy.type === 'available') {
-						await saveIntention();
-						return;
-					}
-
-					openSaveDialog();
-				},
+				onValidSubmit: saveIntention,
 				context: { event }
 			});
 		},
-		[formCx, openSaveDialog, saveIntention, savePolicy.type]
+		[formCx, saveIntention]
 	);
 
 	// MARK: - UI
