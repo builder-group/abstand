@@ -28,7 +28,8 @@ pub async fn update_intention_with_policy(
 
     match assessment {
         IntentionEditPolicyAssessment::Available => {}
-        // Note: The frontend owns the delayed confirmation flow
+        // Note: Balanced weakening is deliberate UI friction, not backend enforcement.
+        // Strict weakening stays blocked here while the frontend owns the delayed confirmation flow.
         IntentionEditPolicyAssessment::Delayed { .. } => {}
         IntentionEditPolicyAssessment::Blocked { reasons } => {
             return Err(format!(
@@ -278,14 +279,19 @@ fn weakens_block(current: &IntentionBlock, proposed: &WriteIntentionBlockInput) 
         (IntentionBlockScope::WholeDevice, _) => true,
         (_, IntentionBlockScope::WholeDevice) => false,
         (IntentionBlockScope::BlockTargets, IntentionBlockScope::BlockTargets) => {
-            !current_targets.is_subset(&proposed_targets)
+            let removes_blocked_targets = !current_targets.is_subset(&proposed_targets);
+            removes_blocked_targets
         }
         (IntentionBlockScope::AllowTargets, IntentionBlockScope::AllowTargets) => {
-            !proposed_targets.is_subset(&current_targets)
+            let expands_allowed_targets = !proposed_targets.is_subset(&current_targets);
+            expands_allowed_targets
         }
-        (IntentionBlockScope::BlockTargets, IntentionBlockScope::AllowTargets) => current_targets
-            .iter()
-            .any(|target| proposed_targets.contains(target)),
+        (IntentionBlockScope::BlockTargets, IntentionBlockScope::AllowTargets) => {
+            let allows_currently_blocked_target = current_targets
+                .iter()
+                .any(|target| proposed_targets.contains(target));
+            allows_currently_blocked_target
+        }
         (IntentionBlockScope::AllowTargets, IntentionBlockScope::BlockTargets) => true,
     };
 }

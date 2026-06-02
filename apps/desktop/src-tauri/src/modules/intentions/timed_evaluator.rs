@@ -133,28 +133,39 @@ impl TimedDateTimeRule {
         now: i64,
         active_session_started_at: Option<i64>,
     ) -> Result<TimedConditionActivation, TimedEvaluationError> {
-        // Ignore DateTime rules that were already stale when the condition was created
-        if self.trigger_at < condition.created_at {
-            return Ok(TimedConditionActivation::Inactive);
-        }
+        match condition.transition {
+            TimedConditionTransition::Start => {
+                if self.trigger_at < condition.created_at {
+                    return Ok(TimedConditionActivation::Inactive);
+                }
 
-        // Ignore end timestamps that belong to a previous session window
-        if condition.transition == TimedConditionTransition::End
-            && active_session_started_at.is_some_and(|started_at| started_at > self.trigger_at)
-        {
-            return Ok(TimedConditionActivation::Inactive);
-        }
+                let was_consumed = IntentionSessionRepository::has_session_with_start_condition_id(
+                    pool,
+                    condition.condition_id,
+                )
+                .await
+                .map_err(TimedEvaluationError::from)?;
+                if was_consumed {
+                    return Ok(TimedConditionActivation::Inactive);
+                }
+            }
+            TimedConditionTransition::End => {
+                if let Some(started_at) = active_session_started_at {
+                    let is_before_active_session = self.trigger_at < started_at;
+                    let existed_when_session_started = condition.created_at <= started_at;
 
-        if condition.transition == TimedConditionTransition::Start {
-            let was_consumed = IntentionSessionRepository::has_session_with_start_condition_id(
-                pool,
-                condition.condition_id,
-            )
-            .await
-            .map_err(TimedEvaluationError::from)?;
+                    // Note: Ignore stale end times from before this session
+                    if is_before_active_session && existed_when_session_started {
+                        return Ok(TimedConditionActivation::Inactive);
+                    }
 
-            if was_consumed {
-                return Ok(TimedConditionActivation::Inactive);
+                    // Note: Active edits can move the end before the session start, but ended_at cannot be before started_at
+                    if is_before_active_session {
+                        return Ok(TimedConditionActivation::Due {
+                            trigger_at: started_at,
+                        });
+                    }
+                }
             }
         }
 
@@ -192,13 +203,20 @@ impl TimedScheduleRule {
             None
         };
 
-        // Skip start slots before condition creation and end slots before active session start
-        let not_before = match condition.transition {
-            TimedConditionTransition::Start => Some(condition.created_at),
-            TimedConditionTransition::End => active_session_started_at,
+        let (search_from, not_before) = match condition.transition {
+            TimedConditionTransition::Start => (now, Some(condition.created_at)),
+            TimedConditionTransition::End => {
+                let Some(started_at) = active_session_started_at else {
+                    return Ok(TimedConditionActivation::Inactive);
+                };
+
+                // Note: Search end schedules from the active session start so missed slots are due on reevaluation
+                (started_at, Some(started_at))
+            }
         };
 
-        let Some(trigger_at) = self.next_trigger_at(now, latest_started_at, not_before) else {
+        let Some(trigger_at) = self.next_trigger_at(search_from, latest_started_at, not_before)
+        else {
             return Ok(TimedConditionActivation::Inactive);
         };
 
@@ -207,15 +225,15 @@ impl TimedScheduleRule {
 
     fn next_trigger_at(
         &self,
-        now: i64,
+        search_from: i64,
         latest_started_at: Option<i64>,
         not_before: Option<i64>,
     ) -> Option<i64> {
-        let now_datetime = local_datetime_from_unix_ms(now)?;
-        let today = now_datetime.date_naive();
+        let search_from_datetime = local_datetime_from_unix_ms(search_from)?;
+        let search_from_date = search_from_datetime.date_naive();
 
         for day_offset in 0..Self::LOOKAHEAD_DAYS {
-            let date = today + Duration::days(day_offset);
+            let date = search_from_date + Duration::days(day_offset);
             if !self.includes_date(date) {
                 continue;
             }
@@ -224,10 +242,16 @@ impl TimedScheduleRule {
             else {
                 continue;
             };
-            if latest_started_at.is_some_and(|started_at| started_at >= trigger_at) {
+
+            let was_start_slot_consumed =
+                latest_started_at.is_some_and(|started_at| started_at >= trigger_at);
+            if was_start_slot_consumed {
                 continue;
             }
-            if not_before.is_some_and(|not_before| trigger_at < not_before) {
+
+            let is_before_search_window =
+                not_before.is_some_and(|not_before| trigger_at < not_before);
+            if is_before_search_window {
                 continue;
             }
 
@@ -288,7 +312,9 @@ impl TimedAfterTransitionRule {
                 .await
                 .map_err(TimedEvaluationError::from)?;
 
-            if latest_started_at.is_some_and(|started_at| started_at >= trigger_at) {
+            let was_start_trigger_consumed =
+                latest_started_at.is_some_and(|started_at| started_at >= trigger_at);
+            if was_start_trigger_consumed {
                 return Ok(TimedConditionActivation::Inactive);
             }
         }
