@@ -31,7 +31,8 @@ export class EditBlockIntentionCx {
 			return Err({ code: 'updateFailed', message: intentionErr });
 		}
 
-		this.formCx.resetFromIntention(intention);
+		// Note: Use the persisted intention so backend normalization becomes the clean baseline
+		this.formCx.resetToIntention(intention);
 		return Ok(intention);
 	}
 }

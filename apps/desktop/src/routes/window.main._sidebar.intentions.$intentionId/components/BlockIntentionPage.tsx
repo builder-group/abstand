@@ -1,6 +1,6 @@
 import { useFeatureState } from 'feature-react/state';
 import React from 'react';
-import { Button, ContentPage } from '@/components';
+import { Button, ButtonGroup, ContentPage, Tooltip, Undo2Icon } from '@/components';
 import {
 	BlockSection,
 	EditBlockIntentionCx,
@@ -23,6 +23,7 @@ export const BlockIntentionPage: React.FC<TBlockIntentionPageProps> = (props) =>
 	const { formCx } = cx;
 	const isDirty = useFeatureState(formCx.$form.isDirty);
 	const isSubmitting = useFeatureState(formCx.$form.isSubmitting);
+	const resetRevision = useFeatureState(formCx.$resetRevision);
 
 	const {
 		dialog: saveDialog,
@@ -34,9 +35,13 @@ export const BlockIntentionPage: React.FC<TBlockIntentionPageProps> = (props) =>
 		isActive
 	});
 	const isPending = isSubmitting || isSaving;
-	const shouldShowSaveButton = isDirty || isPending;
+	const shouldShowEditActions = isDirty || isPending;
 
 	// MARK: - Actions
+
+	const handleDiscard = React.useCallback(() => {
+		formCx.resetToIntention(intention);
+	}, [formCx, intention]);
 
 	const handleSubmit = React.useCallback(
 		(event: React.FormEvent<HTMLFormElement>) => {
@@ -57,22 +62,37 @@ export const BlockIntentionPage: React.FC<TBlockIntentionPageProps> = (props) =>
 				title={intention.name}
 				subtitle="Block Intention"
 				trailing={
-					<>
-						{shouldShowSaveButton && (
-							<Button type="submit" form={formId} variant="primary" disabled={isPending}>
-								Save
-							</Button>
-						)}
-						<IntentionActions
-							intention={intention}
-							isActive={isActive}
-							isDisabled={isPending}
-							isSessionPrimary={!isActive && !shouldShowSaveButton}
-						/>
-					</>
+					<IntentionActions
+						intention={intention}
+						isActive={isActive}
+						isDisabled={isPending}
+						isSessionPrimary={!isActive && !shouldShowEditActions}
+						leading={
+							shouldShowEditActions && (
+								<ButtonGroup>
+									<Button type="submit" form={formId} variant="primary" disabled={isPending}>
+										Save
+									</Button>
+									{isDirty && (
+										<Tooltip content="Discard changes">
+											<Button
+												type="button"
+												size="icon-sm"
+												aria-label="Discard changes"
+												disabled={isPending}
+												onClick={handleDiscard}
+											>
+												<Undo2Icon />
+											</Button>
+										</Tooltip>
+									)}
+								</ButtonGroup>
+							)
+						}
+					/>
 				}
 			>
-				<form id={formId} onSubmit={handleSubmit} className="space-y-5">
+				<form key={resetRevision} id={formId} onSubmit={handleSubmit} className="space-y-5">
 					<NameSection formCx={formCx} isDisabled={isPending} />
 					<BlockSection formCx={formCx} isDisabled={isPending} />
 					<WhenSection formCx={formCx} isDisabled={isPending} />

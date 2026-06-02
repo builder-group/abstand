@@ -40,6 +40,7 @@ export {
 	SunIcon,
 	TimerIcon,
 	Trash2Icon,
+	Undo2Icon,
 	XCircleIcon,
 	XIcon
 } from 'lucide-react';

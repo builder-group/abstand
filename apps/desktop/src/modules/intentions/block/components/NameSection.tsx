@@ -6,7 +6,7 @@ import { type BlockIntentionFormCx } from '../BlockIntentionFormCx';
 
 export const NameSection: React.FC<TNameSectionProps> = (props) => {
 	const { formCx, autoFocus = false, isDisabled = false } = props;
-	const nameField = useFormField(formCx.$form, 'name');
+	const nameField = useFormField(formCx.$form, 'name', { controlled: true });
 	const nameError =
 		nameField.status.type === 'invalid' ? nameField.status.errors[0]?.message : undefined;
 

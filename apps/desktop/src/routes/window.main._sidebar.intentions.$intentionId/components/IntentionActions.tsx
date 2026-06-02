@@ -15,7 +15,7 @@ import { useIntentionDeleteDialog } from './IntentionDeleteDialog';
 import { useIntentionEndEarlyDialog } from './IntentionEndEarlyDialog';
 
 export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
-	const { intention, isActive, isDisabled = false, isSessionPrimary = false } = props;
+	const { intention, isActive, isDisabled = false, isSessionPrimary = false, leading } = props;
 	const intentionsCx = useIntentionsCx();
 	const toastsCx = useToastsCx();
 	const [pendingSessionAction, setPendingSessionAction] =
@@ -75,6 +75,7 @@ export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 
 	return (
 		<>
+			{leading}
 			<Button
 				type="button"
 				variant={isSessionPrimary ? 'primary' : 'default'}
@@ -119,6 +120,7 @@ interface TIntentionActionsProps {
 	isActive: boolean;
 	isDisabled?: boolean;
 	isSessionPrimary?: boolean;
+	leading?: React.ReactNode;
 }
 
 type TPendingSessionAction = 'start' | 'stop';

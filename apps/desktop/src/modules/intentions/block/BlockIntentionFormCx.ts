@@ -5,6 +5,7 @@ import {
 	type TForm,
 	type TFormValidator
 } from 'feature-form';
+import { createState } from 'feature-state';
 import * as z from 'zod';
 import { type specta } from '@/environment';
 import {
@@ -26,6 +27,8 @@ import { type TCatalogItem } from '@/modules/catalog';
 export class BlockIntentionFormCx {
 	public readonly mode: TBlockIntentionFormMode;
 	public readonly $form: TForm<TBlockIntentionFormData, [TDirtyFeature<TBlockIntentionFormData>]>;
+	// Note: Incremented after resets so React field UIs can remount local state
+	public readonly $resetRevision = createState(0);
 
 	constructor(options: TBlockIntentionFormCxOptions = {}) {
 		const { mode = 'create', initialData = createDefaultBlockIntentionFormData() } = options;
@@ -75,20 +78,23 @@ export class BlockIntentionFormCx {
 		});
 	}
 
-	public resetFromIntention(intention: specta.Intention): void {
+	public resetToIntention(intention: specta.Intention): void {
 		const formData = getFormDataFromIntention(intention);
 		if (formData == null) {
 			throw new Error('BlockIntentionFormCx can only reset from a block intention');
 		}
 
-		// Note: Reapply the persisted intention so backend normalization becomes the clean baseline
-		this.$form.fields.name.set(formData.name);
-		this.$form.fields.scope.set(formData.scope);
-		this.$form.fields.selectedTargets.set([...formData.selectedTargets]);
-		this.$form.fields.enforcementMode.set(formData.enforcementMode);
-		this.$form.fields.conditions.set(formData.conditions.map((condition) => ({ ...condition })));
+		this.$form.fields.name.defaultValue = formData.name;
+		this.$form.fields.scope.defaultValue = formData.scope;
+		this.$form.fields.selectedTargets.defaultValue = [...formData.selectedTargets];
+		this.$form.fields.enforcementMode.defaultValue = formData.enforcementMode;
+		this.$form.fields.conditions.defaultValue = formData.conditions.map((condition) => ({
+			...condition
+		}));
 
+		this.$form.reset();
 		this.$form.resetDirty();
+		this.$resetRevision.set((revision) => revision + 1);
 	}
 
 	public getCondition(
