@@ -268,19 +268,23 @@ impl TimedAfterTransitionRule {
         now: i64,
         active_session_started_at: Option<i64>,
     ) -> Result<TimedConditionActivation, TimedEvaluationError> {
-        let anchor_at = self
+        let anchor = self
             .resolve_anchor_at(condition, pool, active_session_started_at)
             .await?;
-        let Some(anchor_at) = anchor_at else {
+        let Some(anchor) = anchor else {
             return Ok(TimedConditionActivation::Inactive);
         };
 
-        // Ignore anchors that fired before the condition existed
-        if anchor_at < condition.created_at {
+        let should_ignore_anchor_before_condition = match anchor.source {
+            // Note: Active session anchors remain valid when edits recreate condition rows
+            ResolvedAnchorSource::ActiveSessionStart => false,
+            ResolvedAnchorSource::LatestCompletedSession => anchor.at < condition.created_at,
+        };
+        if should_ignore_anchor_before_condition {
             return Ok(TimedConditionActivation::Inactive);
         }
 
-        let trigger_at = anchor_at + self.offset_ms;
+        let trigger_at = anchor.at + self.offset_ms;
 
         // Skip already-consumed start triggers while still allowing later anchors to fire
         if condition.transition == TimedConditionTransition::Start {
@@ -305,23 +309,44 @@ impl TimedAfterTransitionRule {
         condition: &TimedCondition,
         pool: &Pool<Sqlite>,
         active_session_started_at: Option<i64>,
-    ) -> Result<Option<i64>, TimedEvaluationError> {
+    ) -> Result<Option<ResolvedAnchor>, TimedEvaluationError> {
         return match (condition.transition, self.anchor_transition) {
             (TimedConditionTransition::End, IntentionConditionTransition::Start) => {
-                Ok(active_session_started_at)
+                Ok(active_session_started_at.map(|at| ResolvedAnchor {
+                    at,
+                    source: ResolvedAnchorSource::ActiveSessionStart,
+                }))
             }
             (TimedConditionTransition::Start, IntentionConditionTransition::End) => {
-                IntentionSessionRepository::get_latest_completed_at_by_intention_id(
-                    pool,
-                    condition.intention_id,
-                )
-                .await
-                .map_err(TimedEvaluationError::from)
+                let completed_at =
+                    IntentionSessionRepository::get_latest_completed_at_by_intention_id(
+                        pool,
+                        condition.intention_id,
+                    )
+                    .await
+                    .map_err(TimedEvaluationError::from)?;
+
+                Ok(completed_at.map(|at| ResolvedAnchor {
+                    at,
+                    source: ResolvedAnchorSource::LatestCompletedSession,
+                }))
             }
             // Treat unsupported transition-anchor pairs as valid config that cannot trigger here
             _ => Ok(None),
         };
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct ResolvedAnchor {
+    at: i64,
+    source: ResolvedAnchorSource,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ResolvedAnchorSource {
+    ActiveSessionStart,
+    LatestCompletedSession,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
