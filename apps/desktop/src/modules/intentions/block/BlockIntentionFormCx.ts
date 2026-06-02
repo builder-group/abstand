@@ -22,8 +22,6 @@ import {
 } from '@/lib';
 import { type TCatalogItem } from '@/modules/catalog';
 
-// MARK: - Form Cx
-
 export class BlockIntentionFormCx {
 	public readonly mode: TBlockIntentionFormMode;
 	public readonly $form: TForm<TBlockIntentionFormData, [TDirtyFeature<TBlockIntentionFormData>]>;
@@ -134,7 +132,66 @@ export class BlockIntentionFormCx {
 		transition: specta.IntentionConditionTransition,
 		mode: TBlockIntentionConditionMode
 	): void {
-		this.updateCondition(transition, { mode });
+		if (mode !== 'atTime') {
+			this.updateCondition(transition, { mode });
+			return;
+		}
+
+		switch (transition) {
+			case 'start':
+				this.setStartAtTimeMode();
+				return;
+			case 'end':
+				this.setEndAtTimeMode();
+				return;
+		}
+	}
+
+	private setStartAtTimeMode(): void {
+		const condition = this.getCondition('start') ?? createDefaultBlockIntentionCondition('start');
+		const futureDateTime = getDefaultFutureDateTime(15 * 60_000);
+		this.upsertCondition({
+			...condition,
+			mode: 'atTime',
+			dateEpochDays: futureDateTime.dateEpochDays,
+			timeOfDayMs: futureDateTime.timeOfDayMs
+		});
+	}
+
+	private setEndAtTimeMode(): void {
+		const condition = this.getCondition('end') ?? createDefaultBlockIntentionCondition('end');
+
+		const startCondition = this.getCondition('start');
+		if (startCondition?.mode === 'repeats') {
+			const cappedSameDayEndTimeOfDayMs = Math.min(
+				startCondition.timeOfDayMs + 60 * 60_000,
+				24 * 60 * 60_000 - 60_000
+			);
+			this.upsertCondition({
+				...condition,
+				mode: 'atTime',
+				timeOfDayMs: timeOnlyFromMs(cappedSameDayEndTimeOfDayMs)
+			});
+			return;
+		}
+
+		let futureDateTime = getDefaultFutureDateTime(60 * 60_000);
+		if (startCondition?.mode === 'atTime') {
+			const startAt = getLocalDateTime(
+				startCondition.dateEpochDays,
+				startCondition.timeOfDayMs
+			).getTime();
+			futureDateTime = getDefaultFutureDateTime(60 * 60_000, startAt);
+		}
+		if (startCondition?.mode === 'afterDelay') {
+			futureDateTime = getDefaultFutureDateTime(startCondition.offsetMs + 60 * 60_000);
+		}
+		this.upsertCondition({
+			...condition,
+			mode: 'atTime',
+			dateEpochDays: futureDateTime.dateEpochDays,
+			timeOfDayMs: futureDateTime.timeOfDayMs
+		});
 	}
 
 	public getConditionModeOptions(
@@ -404,6 +461,23 @@ export function createDefaultBlockIntentionCondition(
 	};
 }
 
+function getDefaultFutureDateTime(offsetMs: number, baseMs = Date.now()): TDefaultFutureDateTime {
+	const futureMs = baseMs + offsetMs;
+	const stepMs = 5 * 60_000;
+	const roundedFutureMs = Math.ceil(futureMs / stepMs) * stepMs;
+	const date = new Date(roundedFutureMs);
+
+	return {
+		dateEpochDays: getLocalDateEpochDays(date),
+		timeOfDayMs: getLocalTimeOfDayMs(date)
+	};
+}
+
+interface TDefaultFutureDateTime {
+	dateEpochDays: specta.DateOnly;
+	timeOfDayMs: specta.TimeOnly;
+}
+
 // MARK: - Validation
 
 function createConditionsValidator(mode: TBlockIntentionFormMode) {
@@ -458,9 +532,8 @@ function createConditionsValidator(mode: TBlockIntentionFormMode) {
 				endCondition.mode === 'atTime' && !isRepeatingScheduleEnd
 					? getLocalDateTime(endCondition.dateEpochDays, endCondition.timeOfDayMs).getTime()
 					: null;
-			const shouldValidateFutureTimes = mode === 'create';
 
-			if (shouldValidateFutureTimes && startAt != null && startAt <= now) {
+			if (startAt != null && startAt <= now) {
 				ctx.addIssue({
 					code: 'custom',
 					path: [startConditionIndex, 'timeOfDayMs'],
@@ -503,7 +576,7 @@ function createConditionsValidator(mode: TBlockIntentionFormMode) {
 				return;
 			}
 
-			if (shouldValidateFutureTimes && endAt <= now) {
+			if (endAt <= now) {
 				ctx.addIssue({
 					code: 'custom',
 					path: [endConditionIndex, 'timeOfDayMs'],
@@ -511,7 +584,7 @@ function createConditionsValidator(mode: TBlockIntentionFormMode) {
 				});
 			}
 			if (
-				shouldValidateFutureTimes &&
+				mode === 'create' &&
 				startCondition.mode === 'afterDelay' &&
 				endAt <= now + startCondition.offsetMs
 			) {
