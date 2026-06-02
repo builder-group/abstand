@@ -1,6 +1,6 @@
 import { useFeatureState } from 'feature-react/state';
 import React from 'react';
-import { Button, ButtonGroup, ContentPage, Tooltip, Undo2Icon } from '@/components';
+import { Badge, Button, ButtonGroup, ContentPage, Tooltip, Undo2Icon } from '@/components';
 import {
 	BlockSection,
 	EditBlockIntentionCx,
@@ -59,7 +59,7 @@ export const BlockIntentionPage: React.FC<TBlockIntentionPageProps> = (props) =>
 	return (
 		<>
 			<ContentPage
-				title={intention.name}
+				title={<BlockIntentionTitle name={intention.name} isActive={isActive} />}
 				subtitle="Block Intention"
 				trailing={
 					<IntentionActions
@@ -113,5 +113,25 @@ export const BlockIntentionPage: React.FC<TBlockIntentionPageProps> = (props) =>
 
 interface TBlockIntentionPageProps {
 	intention: TBlockIntention;
+	isActive: boolean;
+}
+
+const BlockIntentionTitle: React.FC<TBlockIntentionTitleProps> = (props) => {
+	const { name, isActive } = props;
+
+	return (
+		<span className="inline-flex min-w-0 items-center gap-2">
+			<span className="truncate">{name}</span>
+			{isActive && (
+				<Badge variant="success" size="sm">
+					Active
+				</Badge>
+			)}
+		</span>
+	);
+};
+
+interface TBlockIntentionTitleProps {
+	name: string;
 	isActive: boolean;
 }
