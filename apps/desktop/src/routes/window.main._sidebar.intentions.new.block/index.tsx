@@ -78,14 +78,20 @@ function RouteComponent() {
 			subtitle="Set what gets blocked, when it runs, and how firmly it should hold."
 			backTo="/window/main/intentions/new"
 		>
-			<form onSubmit={handleSubmit} className="space-y-5">
-				<NameSection formCx={formCx} autoFocus isDisabled={isSubmitting} />
-				<BlockSection formCx={formCx} isDisabled={isSubmitting} />
-				<WhenSection formCx={formCx} isDisabled={isSubmitting} />
+			<form
+				onSubmit={handleSubmit}
+				// Note: Use inert instead of disabling section inputs so quick submits do not flicker fields
+				inert={isSubmitting}
+				aria-busy={isSubmitting}
+				className="space-y-5"
+			>
+				<NameSection formCx={formCx} autoFocus />
+				<BlockSection formCx={formCx} />
+				<WhenSection formCx={formCx} />
 
 				<div className="flex justify-end">
 					<Button type="submit" variant="primary" disabled={isSubmitting}>
-						Create Intention
+						{isSubmitting ? 'Creating' : 'Create Intention'}
 					</Button>
 				</div>
 			</form>

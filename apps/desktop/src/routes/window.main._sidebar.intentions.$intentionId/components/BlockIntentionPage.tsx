@@ -71,7 +71,7 @@ export const BlockIntentionPage: React.FC<TBlockIntentionPageProps> = (props) =>
 							shouldShowEditActions && (
 								<ButtonGroup>
 									<Button type="submit" form={formId} variant="primary" disabled={isPending}>
-										Save
+										{isPending ? 'Saving' : 'Save'}
 									</Button>
 									{isDirty && (
 										<Tooltip content="Discard changes">
@@ -92,10 +92,18 @@ export const BlockIntentionPage: React.FC<TBlockIntentionPageProps> = (props) =>
 					/>
 				}
 			>
-				<form key={resetRevision} id={formId} onSubmit={handleSubmit} className="space-y-5">
-					<NameSection formCx={formCx} isDisabled={isPending} />
-					<BlockSection formCx={formCx} isDisabled={isPending} />
-					<WhenSection formCx={formCx} isDisabled={isPending} />
+				<form
+					key={resetRevision}
+					id={formId}
+					onSubmit={handleSubmit}
+					// Note: Use inert instead of disabling section inputs so quick saves do not flicker fields
+					inert={isPending}
+					aria-busy={isPending}
+					className="space-y-5"
+				>
+					<NameSection formCx={formCx} />
+					<BlockSection formCx={formCx} />
+					<WhenSection formCx={formCx} />
 				</form>
 			</ContentPage>
 			{saveDialog}
