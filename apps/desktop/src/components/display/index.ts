@@ -1,3 +1,4 @@
+export * from './Alert';
 export * from './Badge';
 export * from './HelpPopover';
 export * from './IconBubble';

@@ -2,12 +2,16 @@ import { createFileRoute } from '@tanstack/react-router';
 import { cva, type VariantProps } from 'class-variance-authority';
 import React from 'react';
 import {
+	Alert,
+	AlertDescription,
+	AlertTitle,
 	Badge,
 	Button,
 	ButtonGroup,
 	ButtonGroupSeparator,
 	ButtonGroupText,
 	CheckIcon,
+	CircleCheckIcon,
 	CircleQuestionMarkIcon,
 	CodeXmlIcon,
 	Combobox,
@@ -75,6 +79,7 @@ import {
 	Select,
 	SettingsIcon,
 	SettingsPage,
+	ShieldCheckIcon,
 	Slider,
 	SunIcon,
 	Switch,
@@ -121,6 +126,7 @@ function RouteComponent() {
 			<DropMenuSection />
 			<ComboboxSection />
 			<BadgeSection />
+			<AlertSection />
 			<KbdSection />
 			<IconBubbleSection />
 			<TooltipSection />
@@ -957,6 +963,56 @@ const BadgeSection: React.FC = () => {
 				<Badge variant="outline">Outline</Badge>
 				<Badge variant="ghost">Ghost</Badge>
 				<Badge variant="link">Link</Badge>
+			</PlaygroundRow>
+		</PlaygroundGroup>
+	);
+};
+
+// MARK: - Alert
+
+const AlertSection: React.FC = () => {
+	return (
+		<PlaygroundGroup title="Alert">
+			<PlaygroundRow label="Content" contentClassName="flex-col items-stretch">
+				<Alert>
+					<AlertTitle>Screen access required</AlertTitle>
+					<AlertDescription>
+						Grant screen recording permission before starting a focus block.
+					</AlertDescription>
+				</Alert>
+				<Alert variant="success">
+					<CircleCheckIcon />
+					<AlertTitle>Permissions granted</AlertTitle>
+				</Alert>
+				<Alert>
+					<ShieldCheckIcon />
+					<AlertTitle>Ready to run</AlertTitle>
+					<AlertDescription>Abstand can start once the current changes are saved.</AlertDescription>
+				</Alert>
+			</PlaygroundRow>
+			<PlaygroundRow label="Variants" contentClassName="flex-col items-stretch">
+				<Alert variant="info">
+					<CircleQuestionMarkIcon />
+					<AlertTitle>Display changed</AlertTitle>
+					<AlertDescription>The active window moved to another display.</AlertDescription>
+				</Alert>
+				<Alert variant="success">
+					<CircleCheckIcon />
+					<AlertTitle>Block completed</AlertTitle>
+					<AlertDescription>The intention was marked complete and archived.</AlertDescription>
+				</Alert>
+				<Alert variant="warning">
+					<CircleQuestionMarkIcon />
+					<AlertTitle>Permission pending</AlertTitle>
+					<AlertDescription>
+						macOS may ask you to confirm access before tracking starts.
+					</AlertDescription>
+				</Alert>
+				<Alert variant="destructive">
+					<XCircleIcon />
+					<AlertTitle>Sync failed</AlertTitle>
+					<AlertDescription>The latest intention changes could not be uploaded.</AlertDescription>
+				</Alert>
 			</PlaygroundRow>
 		</PlaygroundGroup>
 	);
