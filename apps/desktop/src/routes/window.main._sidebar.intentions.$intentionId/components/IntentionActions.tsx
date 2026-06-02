@@ -9,13 +9,12 @@ import {
 	Trash2Icon,
 	useToastsCx
 } from '@/components';
-import { type specta } from '@/environment';
-import { useIntentionsCx } from '@/modules/intentions';
+import { useIntentionsCx, type EditBlockIntentionCx } from '@/modules/intentions';
 import { useIntentionDeleteDialog } from './IntentionDeleteDialog';
 import { useIntentionEndEarlyDialog } from './IntentionEndEarlyDialog';
 
 export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
-	const { intention, isActive, isDisabled = false, isSessionPrimary = false, leading } = props;
+	const { cx, isActive, isDisabled = false, isSessionPrimary = false, leading } = props;
 	const intentionsCx = useIntentionsCx();
 	const toastsCx = useToastsCx();
 	const [pendingSessionAction, setPendingSessionAction] =
@@ -24,13 +23,13 @@ export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 		dialog: deleteDialog,
 		isPending: isDeletePending,
 		open: openDeleteDialog
-	} = useIntentionDeleteDialog({ intention, isActive });
+	} = useIntentionDeleteDialog({ cx, isActive });
 	const {
 		dialog: endEarlyDialog,
 		endEarly,
 		isPending: isEndEarlyPending
-	} = useIntentionEndEarlyDialog({ intention, isActive });
-	const hasManualEndCondition = intention.conditions.some(
+	} = useIntentionEndEarlyDialog({ cx, isActive });
+	const hasManualEndCondition = cx.intention.conditions.some(
 		(condition) => condition.transition === 'end' && condition.rule.type === 'manual'
 	);
 	const isPending = pendingSessionAction != null || isDeletePending || isEndEarlyPending;
@@ -45,7 +44,7 @@ export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 			}
 
 			setPendingSessionAction('stop');
-			const [isSessionOk, sessionErr] = await intentionsCx.stop(intention.id);
+			const [isSessionOk, sessionErr] = await intentionsCx.stop(cx.intention.id);
 			setPendingSessionAction(null);
 
 			if (!isSessionOk) {
@@ -59,7 +58,7 @@ export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 		}
 
 		setPendingSessionAction('start');
-		const [isSessionOk, sessionErr] = await intentionsCx.start(intention.id);
+		const [isSessionOk, sessionErr] = await intentionsCx.start(cx.intention.id);
 		setPendingSessionAction(null);
 
 		if (!isSessionOk) {
@@ -69,7 +68,7 @@ export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 				description: sessionErr
 			});
 		}
-	}, [endEarly, hasManualEndCondition, intention.id, intentionsCx, isActive, toastsCx]);
+	}, [cx.intention.id, endEarly, hasManualEndCondition, intentionsCx, isActive, toastsCx]);
 
 	// MARK: - UI
 
@@ -116,7 +115,7 @@ export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 };
 
 interface TIntentionActionsProps {
-	intention: specta.Intention;
+	cx: EditBlockIntentionCx;
 	isActive: boolean;
 	isDisabled?: boolean;
 	isSessionPrimary?: boolean;

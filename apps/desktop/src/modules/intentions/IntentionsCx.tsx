@@ -153,6 +153,12 @@ export class IntentionsCx {
 		return result;
 	}
 
+	public async assessEditPolicy(
+		params: specta.UpdateIntentionParams
+	): Promise<TResult<specta.IntentionEditPolicyAssessment | null, string>> {
+		return toTuple(await specta.commands.assessIntentionEditPolicy(params));
+	}
+
 	public async start(intentionId: number): Promise<TResult<specta.IntentionSession, string>> {
 		const result = toTuple(await specta.commands.startIntention(intentionId));
 		const [isOk, , session] = result;

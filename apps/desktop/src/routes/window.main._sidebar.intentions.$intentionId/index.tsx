@@ -2,9 +2,8 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useCompute, useFeatureState } from 'feature-react/state';
 import * as z from 'zod';
 import { ContentPage, Spinner } from '@/components';
-import { useIntentionsCx } from '@/modules/intentions';
+import { useIntentionsCx, type TBlockIntention } from '@/modules/intentions';
 import { BlockIntentionPage } from './components';
-import { type TBlockIntention } from './types';
 
 export const Route = createFileRoute('/window/main/_sidebar/intentions/$intentionId/')({
 	params: {

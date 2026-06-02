@@ -19,9 +19,9 @@ import {
 import { type specta } from '@/environment';
 import { useCountdown } from '@/hooks';
 import {
-	getIntentionActionPolicy,
 	useIntentionsCx,
-	type TIntentionActionPolicy
+	type EditBlockIntentionCx,
+	type TEditBlockIntentionActionPolicy
 } from '@/modules/intentions';
 
 const IntentionEndEarlyDialog: React.FC<TIntentionEndEarlyDialogProps> = (props) => {
@@ -44,7 +44,7 @@ const IntentionEndEarlyDialog: React.FC<TIntentionEndEarlyDialogProps> = (props)
 						<Alert role="note" variant="warning">
 							<ShieldIcon />
 							<AlertDescription>
-								Strict Enforcement prevents ending this Intention early.
+								Strict Enforcement blocks ending this Intention early.
 							</AlertDescription>
 						</Alert>
 					)}
@@ -74,7 +74,7 @@ const IntentionEndEarlyDialog: React.FC<TIntentionEndEarlyDialogProps> = (props)
 interface TIntentionEndEarlyDialogProps {
 	intention: specta.Intention;
 	open: boolean;
-	policy: TIntentionActionPolicy;
+	policy: TEditBlockIntentionActionPolicy;
 	isPending: boolean;
 	onOpenChange: (open: boolean) => void;
 	onEndEarly: () => void;
@@ -107,23 +107,23 @@ interface TDelayedEndEarlyMessageProps {
 function getDelayedEndEarlyLabel(remainingMs: number): string {
 	const remainingSeconds = Math.ceil(remainingMs / 1_000);
 	const unit = remainingSeconds === 1 ? 'second' : 'seconds';
-	return `End unlocks in ${remainingSeconds} ${unit}.`;
+	return `End available in ${remainingSeconds} ${unit}.`;
 }
 
 export function useIntentionEndEarlyDialog(
 	options: TUseIntentionEndEarlyDialogOptions
 ): TIntentionEndEarlyDialogHandle {
-	const { intention, isActive } = options;
+	const { cx, isActive } = options;
 	const intentionsCx = useIntentionsCx();
 	const toastsCx = useToastsCx();
 	const [isOpen, setIsOpen] = React.useState(false);
 	const [isPending, setIsPending] = React.useState(false);
-	const endEarlyPolicy = getIntentionActionPolicy(intention, { isActive });
+	const endEarlyPolicy = cx.getEndEarlyPolicy({ isActive });
 
 	const stopIntentionEarly = React.useCallback(async (): Promise<boolean> => {
 		setIsPending(true);
 		try {
-			const [isSessionOk, sessionErr] = await intentionsCx.stop(intention.id);
+			const [isSessionOk, sessionErr] = await intentionsCx.stop(cx.intention.id);
 			if (!isSessionOk) {
 				toastsCx.add({
 					type: 'error',
@@ -137,7 +137,7 @@ export function useIntentionEndEarlyDialog(
 		} finally {
 			setIsPending(false);
 		}
-	}, [intention.id, intentionsCx, toastsCx]);
+	}, [cx.intention.id, intentionsCx, toastsCx]);
 
 	const endEarly = React.useCallback(() => {
 		if (endEarlyPolicy.type === 'available') {
@@ -160,7 +160,7 @@ export function useIntentionEndEarlyDialog(
 		isPending,
 		dialog: (
 			<IntentionEndEarlyDialog
-				intention={intention}
+				intention={cx.intention}
 				open={isOpen}
 				policy={endEarlyPolicy}
 				isPending={isPending}
@@ -172,7 +172,7 @@ export function useIntentionEndEarlyDialog(
 }
 
 interface TUseIntentionEndEarlyDialogOptions {
-	intention: specta.Intention;
+	cx: EditBlockIntentionCx;
 	isActive: boolean;
 }
 

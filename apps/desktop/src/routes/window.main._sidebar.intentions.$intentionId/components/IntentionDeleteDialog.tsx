@@ -20,9 +20,9 @@ import {
 import { type specta } from '@/environment';
 import { useCountdown } from '@/hooks';
 import {
-	getIntentionActionPolicy,
 	useIntentionsCx,
-	type TIntentionActionPolicy
+	type EditBlockIntentionCx,
+	type TEditBlockIntentionActionPolicy
 } from '@/modules/intentions';
 
 const IntentionDeleteDialog: React.FC<TIntentionDeleteDialogProps> = (props) => {
@@ -39,7 +39,7 @@ const IntentionDeleteDialog: React.FC<TIntentionDeleteDialogProps> = (props) => 
 				<DialogBody className="space-y-2">
 					<p>
 						Delete this Intention? This cannot be undone.
-						{isActive && ' The active Intention will be stopped.'}
+						{isActive && ' Its running session will end.'}
 					</p>
 					{policy.type === 'delayed' && (
 						<DelayedDeleteMessage durationMs={timedDeleteDurationMs} isRunning={open} />
@@ -48,7 +48,7 @@ const IntentionDeleteDialog: React.FC<TIntentionDeleteDialogProps> = (props) => 
 						<Alert role="note" variant="warning">
 							<ShieldIcon />
 							<AlertDescription>
-								Strict Enforcement prevents deleting while this Intention is active.
+								Strict Enforcement blocks deletion while this Intention is running.
 							</AlertDescription>
 						</Alert>
 					)}
@@ -84,7 +84,7 @@ interface TIntentionDeleteDialogProps {
 	intention: specta.Intention;
 	open: boolean;
 	isActive: boolean;
-	policy: TIntentionActionPolicy;
+	policy: TEditBlockIntentionActionPolicy;
 	isPending: boolean;
 	onOpenChange: (open: boolean) => void;
 	onDelete: () => void;
@@ -117,24 +117,24 @@ interface TDelayedDeleteMessageProps {
 function getDelayedDeleteLabel(remainingMs: number): string {
 	const remainingSeconds = Math.ceil(remainingMs / 1_000);
 	const unit = remainingSeconds === 1 ? 'second' : 'seconds';
-	return `Delete unlocks in ${remainingSeconds} ${unit}.`;
+	return `Delete available in ${remainingSeconds} ${unit}.`;
 }
 
 export function useIntentionDeleteDialog(
 	options: TUseIntentionDeleteDialogOptions
 ): TIntentionDeleteDialogHandle {
-	const { intention, isActive } = options;
+	const { cx, isActive } = options;
 	const navigate = useNavigate();
 	const intentionsCx = useIntentionsCx();
 	const toastsCx = useToastsCx();
 	const [isOpen, setIsOpen] = React.useState(false);
 	const [isPending, setIsPending] = React.useState(false);
-	const deletePolicy = getIntentionActionPolicy(intention, { isActive });
+	const deletePolicy = cx.getDeletePolicy({ isActive });
 
 	const deleteIntention = React.useCallback(async (): Promise<boolean> => {
 		setIsPending(true);
 		try {
-			const [isDeleteOk, deleteErr] = await intentionsCx.deleteIntention(intention.id);
+			const [isDeleteOk, deleteErr] = await intentionsCx.deleteIntention(cx.intention.id);
 			if (!isDeleteOk) {
 				toastsCx.add({
 					type: 'error',
@@ -153,7 +153,7 @@ export function useIntentionDeleteDialog(
 		} finally {
 			setIsPending(false);
 		}
-	}, [intention.id, intentionsCx, navigate, toastsCx]);
+	}, [cx.intention.id, intentionsCx, navigate, toastsCx]);
 
 	const open = React.useCallback(() => {
 		setIsOpen(true);
@@ -171,7 +171,7 @@ export function useIntentionDeleteDialog(
 		isPending,
 		dialog: (
 			<IntentionDeleteDialog
-				intention={intention}
+				intention={cx.intention}
 				open={isOpen}
 				isActive={isActive}
 				policy={deletePolicy}
@@ -184,7 +184,7 @@ export function useIntentionDeleteDialog(
 }
 
 interface TUseIntentionDeleteDialogOptions {
-	intention: specta.Intention;
+	cx: EditBlockIntentionCx;
 	isActive: boolean;
 }
 

@@ -19,14 +19,13 @@ import {
 import { type specta } from '@/environment';
 import { useCountdown } from '@/hooks';
 import {
-	getIntentionActionPolicy,
 	type EditBlockIntentionCx,
-	type TIntentionActionPolicy
+	type TEditBlockIntentionSavePolicyError
 } from '@/modules/intentions';
 
 const IntentionSaveDialog: React.FC<TIntentionSaveDialogProps> = (props) => {
 	const { intention, open, policy, isPending, onOpenChange, onSave } = props;
-	const timedSaveDurationMs = open && policy.type === 'delayed' ? policy.durationMs : undefined;
+	const timedSaveDurationMs = open && policy.status === 'delayed' ? policy.durationMs : undefined;
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
@@ -36,24 +35,22 @@ const IntentionSaveDialog: React.FC<TIntentionSaveDialogProps> = (props) => {
 					<DialogDescription>{intention.name}</DialogDescription>
 				</DialogHeader>
 				<DialogBody className="space-y-2">
-					<p>Save changes to this active Intention?</p>
-					{policy.type === 'delayed' && (
+					<p>Save changes to this running Intention?</p>
+					{policy.status === 'delayed' && (
 						<DelayedSaveMessage durationMs={timedSaveDurationMs} isRunning={open} />
 					)}
-					{policy.type === 'blocked' && (
+					{policy.status === 'blocked' && (
 						<Alert role="note" variant="warning">
 							<ShieldIcon />
-							<AlertDescription>
-								Strict Enforcement prevents saving changes while this Intention is active.
-							</AlertDescription>
+							<AlertDescription>{getBlockedSaveDescription(policy.reasons)}</AlertDescription>
 						</Alert>
 					)}
 				</DialogBody>
 				<DialogFooter>
 					<DialogClose render={<Button type="button" disabled={isPending} />}>
-						{policy.type === 'blocked' ? 'Close' : 'Cancel'}
+						{policy.status === 'blocked' ? 'Close' : 'Cancel'}
 					</DialogClose>
-					{policy.type === 'delayed' && (
+					{policy.status === 'delayed' && (
 						<TimedButton
 							key={open ? 'open' : 'closed'}
 							type="button"
@@ -74,10 +71,32 @@ const IntentionSaveDialog: React.FC<TIntentionSaveDialogProps> = (props) => {
 interface TIntentionSaveDialogProps {
 	intention: specta.Intention;
 	open: boolean;
-	policy: TIntentionActionPolicy;
+	policy: specta.IntentionEditPolicyAssessment;
 	isPending: boolean;
 	onOpenChange: (open: boolean) => void;
 	onSave: () => void;
+}
+
+function getBlockedSaveDescription(reasons: specta.IntentionWeakeningReason[]): string {
+	if (!reasons.length) {
+		return 'Strict Enforcement blocks changes that weaken this running Intention.';
+	}
+
+	const reasonLabels = reasons
+		.map((reason) => {
+			switch (reason) {
+				case 'shortensEnd':
+					return 'shortens the end time';
+				case 'removesAutomaticEnd':
+					return 'removes the automatic end';
+				case 'lowersEnforcement':
+					return 'lowers enforcement';
+				case 'weakensBlock':
+					return 'weakens the block';
+			}
+		})
+		.join(', ');
+	return `Strict Enforcement blocks changes that weaken this running Intention: ${reasonLabels}.`;
 }
 
 const DelayedSaveMessage: React.FC<TDelayedSaveMessageProps> = (props) => {
@@ -107,17 +126,45 @@ interface TDelayedSaveMessageProps {
 function getDelayedSaveLabel(remainingMs: number): string {
 	const remainingSeconds = Math.ceil(remainingMs / 1_000);
 	const unit = remainingSeconds === 1 ? 'second' : 'seconds';
-	return `Save unlocks in ${remainingSeconds} ${unit}.`;
+	return `Save available in ${remainingSeconds} ${unit}.`;
 }
 
 export function useIntentionSaveDialog(
 	options: TUseIntentionSaveDialogOptions
 ): TIntentionSaveDialogHandle {
-	const { cx, intention, isActive } = options;
+	const { cx, isActive } = options;
 	const toastsCx = useToastsCx();
 	const [isOpen, setIsOpen] = React.useState(false);
 	const [isPending, setIsPending] = React.useState(false);
-	const savePolicy = getIntentionActionPolicy(intention, { isActive });
+	const [savePolicy, setSavePolicy] = React.useState<specta.IntentionEditPolicyAssessment>({
+		status: 'available'
+	});
+
+	const getSavePolicy =
+		React.useCallback(async (): Promise<specta.IntentionEditPolicyAssessment | null> => {
+			if (!isActive) {
+				return { status: 'available' };
+			}
+
+			setIsPending(true);
+			try {
+				const [isPolicyOk, policyErr, policy] = await cx.getSavePolicy();
+				if (!isPolicyOk) {
+					if (policyErr.code !== 'invalidForm') {
+						toastsCx.add({
+							type: 'error',
+							title: 'Could not check save policy',
+							description: getSavePolicyErrorDescription(policyErr)
+						});
+					}
+					return null;
+				}
+
+				return policy;
+			} finally {
+				setIsPending(false);
+			}
+		}, [cx, isActive, toastsCx]);
 
 	const saveIntention = React.useCallback(async (): Promise<boolean> => {
 		setIsPending(true);
@@ -145,13 +192,21 @@ export function useIntentionSaveDialog(
 	}, [cx, toastsCx]);
 
 	const save = React.useCallback(() => {
-		if (savePolicy.type === 'available') {
-			void saveIntention();
-			return;
-		}
+		void (async () => {
+			const nextSavePolicy = await getSavePolicy();
+			if (nextSavePolicy == null) {
+				return;
+			}
 
-		setIsOpen(true);
-	}, [saveIntention, savePolicy.type]);
+			setSavePolicy(nextSavePolicy);
+			if (nextSavePolicy.status === 'available') {
+				void saveIntention();
+				return;
+			}
+
+			setIsOpen(true);
+		})();
+	}, [getSavePolicy, saveIntention]);
 
 	const handleSave = React.useCallback(async () => {
 		const didSave = await saveIntention();
@@ -165,7 +220,7 @@ export function useIntentionSaveDialog(
 		isPending,
 		dialog: (
 			<IntentionSaveDialog
-				intention={intention}
+				intention={cx.intention}
 				open={isOpen}
 				policy={savePolicy}
 				isPending={isPending}
@@ -178,7 +233,6 @@ export function useIntentionSaveDialog(
 
 interface TUseIntentionSaveDialogOptions {
 	cx: EditBlockIntentionCx;
-	intention: specta.Intention;
 	isActive: boolean;
 }
 
@@ -186,4 +240,15 @@ interface TIntentionSaveDialogHandle {
 	save: () => void;
 	isPending: boolean;
 	dialog: React.ReactElement;
+}
+
+function getSavePolicyErrorDescription(error: TEditBlockIntentionSavePolicyError): string {
+	switch (error.code) {
+		case 'invalidForm':
+			return 'Check the highlighted fields and try again.';
+		case 'assessmentFailed':
+			return error.message;
+		case 'intentionMissing':
+			return 'This Intention no longer exists.';
+	}
 }

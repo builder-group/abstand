@@ -6,9 +6,9 @@ import {
 	EditBlockIntentionCx,
 	NameSection,
 	useIntentionsCx,
-	WhenSection
+	WhenSection,
+	type TBlockIntention
 } from '@/modules/intentions';
-import { type TBlockIntention } from '../types';
 import { IntentionActions } from './IntentionActions';
 import { useIntentionSaveDialog } from './IntentionSaveDialog';
 
@@ -31,7 +31,6 @@ export const BlockIntentionPage: React.FC<TBlockIntentionPageProps> = (props) =>
 		save: saveIntention
 	} = useIntentionSaveDialog({
 		cx,
-		intention,
 		isActive
 	});
 	const isPending = isSubmitting || isSaving;
@@ -63,7 +62,7 @@ export const BlockIntentionPage: React.FC<TBlockIntentionPageProps> = (props) =>
 				subtitle="Block Intention"
 				trailing={
 					<IntentionActions
-						intention={intention}
+						cx={cx}
 						isActive={isActive}
 						isDisabled={isPending}
 						isSessionPrimary={!isActive && !shouldShowEditActions}
