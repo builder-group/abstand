@@ -1,6 +1,8 @@
 import { useNavigate } from '@tanstack/react-router';
 import React from 'react';
 import {
+	Alert,
+	AlertDescription,
 	Button,
 	Dialog,
 	DialogBody,
@@ -10,7 +12,9 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
+	ShieldIcon,
 	TimedButton,
+	TimerIcon,
 	useToastsCx
 } from '@/components';
 import { type specta } from '@/environment';
@@ -41,9 +45,12 @@ const IntentionDeleteDialog: React.FC<TIntentionDeleteDialogProps> = (props) => 
 						<DelayedDeleteMessage durationMs={timedDeleteDurationMs} isRunning={open} />
 					)}
 					{policy.type === 'blocked' && (
-						<p className="text-base-500">
-							Strict Enforcement prevents deleting while this Intention is active.
-						</p>
+						<Alert role="note" variant="warning">
+							<ShieldIcon />
+							<AlertDescription>
+								Strict Enforcement prevents deleting while this Intention is active.
+							</AlertDescription>
+						</Alert>
 					)}
 				</DialogBody>
 				<DialogFooter>
@@ -94,7 +101,12 @@ const DelayedDeleteMessage: React.FC<TDelayedDeleteMessageProps> = (props) => {
 		return null;
 	}
 
-	return <p className="text-base-500">{getDelayedDeleteLabel(remainingDeleteDelayMs)}</p>;
+	return (
+		<Alert role="note" variant="info">
+			<TimerIcon />
+			<AlertDescription>{getDelayedDeleteLabel(remainingDeleteDelayMs)}</AlertDescription>
+		</Alert>
+	);
 };
 
 interface TDelayedDeleteMessageProps {

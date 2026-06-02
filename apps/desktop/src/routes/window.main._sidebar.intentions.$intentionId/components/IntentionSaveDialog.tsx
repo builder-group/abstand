@@ -1,5 +1,7 @@
 import React from 'react';
 import {
+	Alert,
+	AlertDescription,
 	Button,
 	Dialog,
 	DialogBody,
@@ -9,7 +11,9 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
+	ShieldIcon,
 	TimedButton,
+	TimerIcon,
 	useToastsCx
 } from '@/components';
 import { type specta } from '@/environment';
@@ -37,9 +41,12 @@ const IntentionSaveDialog: React.FC<TIntentionSaveDialogProps> = (props) => {
 						<DelayedSaveMessage durationMs={timedSaveDurationMs} isRunning={open} />
 					)}
 					{policy.type === 'blocked' && (
-						<p className="text-base-500">
-							Strict Enforcement prevents saving changes while this Intention is active.
-						</p>
+						<Alert role="note" variant="warning">
+							<ShieldIcon />
+							<AlertDescription>
+								Strict Enforcement prevents saving changes while this Intention is active.
+							</AlertDescription>
+						</Alert>
 					)}
 				</DialogBody>
 				<DialogFooter>
@@ -84,7 +91,12 @@ const DelayedSaveMessage: React.FC<TDelayedSaveMessageProps> = (props) => {
 		return null;
 	}
 
-	return <p className="text-base-500">{getDelayedSaveLabel(remainingSaveDelayMs)}</p>;
+	return (
+		<Alert role="note" variant="info">
+			<TimerIcon />
+			<AlertDescription>{getDelayedSaveLabel(remainingSaveDelayMs)}</AlertDescription>
+		</Alert>
+	);
 };
 
 interface TDelayedSaveMessageProps {

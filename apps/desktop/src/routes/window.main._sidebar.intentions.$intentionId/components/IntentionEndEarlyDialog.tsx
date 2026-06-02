@@ -1,5 +1,7 @@
 import React from 'react';
 import {
+	Alert,
+	AlertDescription,
 	Button,
 	Dialog,
 	DialogBody,
@@ -9,7 +11,9 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
+	ShieldIcon,
 	TimedButton,
+	TimerIcon,
 	useToastsCx
 } from '@/components';
 import { type specta } from '@/environment';
@@ -37,9 +41,12 @@ const IntentionEndEarlyDialog: React.FC<TIntentionEndEarlyDialogProps> = (props)
 						<DelayedEndEarlyMessage durationMs={timedEndEarlyDurationMs} isRunning={open} />
 					)}
 					{policy.type === 'blocked' && (
-						<p className="text-base-500">
-							Strict Enforcement prevents ending this Intention early.
-						</p>
+						<Alert role="note" variant="warning">
+							<ShieldIcon />
+							<AlertDescription>
+								Strict Enforcement prevents ending this Intention early.
+							</AlertDescription>
+						</Alert>
 					)}
 				</DialogBody>
 				<DialogFooter>
@@ -84,7 +91,12 @@ const DelayedEndEarlyMessage: React.FC<TDelayedEndEarlyMessageProps> = (props) =
 		return null;
 	}
 
-	return <p className="text-base-500">{getDelayedEndEarlyLabel(remainingEndEarlyDelayMs)}</p>;
+	return (
+		<Alert role="note" variant="info">
+			<TimerIcon />
+			<AlertDescription>{getDelayedEndEarlyLabel(remainingEndEarlyDelayMs)}</AlertDescription>
+		</Alert>
+	);
 };
 
 interface TDelayedEndEarlyMessageProps {
