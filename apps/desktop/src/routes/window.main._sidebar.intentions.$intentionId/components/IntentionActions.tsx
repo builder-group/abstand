@@ -50,7 +50,7 @@ export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 			if (!isSessionOk) {
 				toastsCx.add({
 					type: 'error',
-					title: 'Could not end intention',
+					title: 'Could not end Intention',
 					description: sessionErr
 				});
 			}
@@ -64,7 +64,7 @@ export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 		if (!isSessionOk) {
 			toastsCx.add({
 				type: 'error',
-				title: 'Could not begin intention',
+				title: 'Could not begin Intention',
 				description: sessionErr
 			});
 		}
@@ -88,7 +88,7 @@ export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 					render={
 						<Button
 							type="button"
-							aria-label="More intention actions"
+							aria-label="More Intention actions"
 							variant="ghost"
 							size="icon-sm"
 							disabled={isDisabled || isPending}

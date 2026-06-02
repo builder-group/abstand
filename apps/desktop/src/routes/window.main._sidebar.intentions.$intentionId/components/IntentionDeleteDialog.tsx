@@ -48,7 +48,7 @@ const IntentionDeleteDialog: React.FC<TIntentionDeleteDialogProps> = (props) => 
 						<Alert role="note" variant="warning">
 							<ShieldIcon />
 							<AlertDescription>
-								Strict Enforcement blocks deletion while this Intention is running.
+								Strict Enforcement prevents deleting this Intention while it is running.
 							</AlertDescription>
 						</Alert>
 					)}
@@ -117,7 +117,7 @@ interface TDelayedDeleteMessageProps {
 function getDelayedDeleteLabel(remainingMs: number): string {
 	const remainingSeconds = Math.ceil(remainingMs / 1_000);
 	const unit = remainingSeconds === 1 ? 'second' : 'seconds';
-	return `Delete available in ${remainingSeconds} ${unit}.`;
+	return `You can delete in ${remainingSeconds} ${unit}.`;
 }
 
 export function useIntentionDeleteDialog(
@@ -138,7 +138,7 @@ export function useIntentionDeleteDialog(
 			if (!isDeleteOk) {
 				toastsCx.add({
 					type: 'error',
-					title: 'Could not delete intention',
+					title: 'Could not delete Intention',
 					description: deleteErr
 				});
 				return false;
@@ -146,7 +146,7 @@ export function useIntentionDeleteDialog(
 
 			toastsCx.add({
 				type: 'success',
-				title: 'Deleted intention'
+				title: 'Deleted Intention'
 			});
 			void navigate({ to: '/window/main/today' });
 			return true;

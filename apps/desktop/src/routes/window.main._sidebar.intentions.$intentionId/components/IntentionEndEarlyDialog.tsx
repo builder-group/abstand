@@ -36,7 +36,7 @@ const IntentionEndEarlyDialog: React.FC<TIntentionEndEarlyDialogProps> = (props)
 					<DialogDescription>{intention.name}</DialogDescription>
 				</DialogHeader>
 				<DialogBody className="space-y-2">
-					<p>End this Intention early?</p>
+					<p>End this running Intention early?</p>
 					{policy.type === 'delayed' && (
 						<DelayedEndEarlyMessage durationMs={timedEndEarlyDurationMs} isRunning={open} />
 					)}
@@ -44,7 +44,7 @@ const IntentionEndEarlyDialog: React.FC<TIntentionEndEarlyDialogProps> = (props)
 						<Alert role="note" variant="warning">
 							<ShieldIcon />
 							<AlertDescription>
-								Strict Enforcement blocks ending this Intention early.
+								Strict Enforcement keeps this Intention running until its end condition is met.
 							</AlertDescription>
 						</Alert>
 					)}
@@ -107,7 +107,7 @@ interface TDelayedEndEarlyMessageProps {
 function getDelayedEndEarlyLabel(remainingMs: number): string {
 	const remainingSeconds = Math.ceil(remainingMs / 1_000);
 	const unit = remainingSeconds === 1 ? 'second' : 'seconds';
-	return `End available in ${remainingSeconds} ${unit}.`;
+	return `You can end it in ${remainingSeconds} ${unit}.`;
 }
 
 export function useIntentionEndEarlyDialog(
@@ -127,7 +127,7 @@ export function useIntentionEndEarlyDialog(
 			if (!isSessionOk) {
 				toastsCx.add({
 					type: 'error',
-					title: 'Could not end intention early',
+					title: 'Could not end Intention early',
 					description: sessionErr
 				});
 				return false;

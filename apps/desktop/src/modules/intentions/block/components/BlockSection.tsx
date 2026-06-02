@@ -67,7 +67,7 @@ const BlockScopeRow: React.FC<TBlockScopeRowProps> = (props) => {
 		() => [
 			{
 				title: 'Blocking',
-				description: 'Choose what this intention blocks while it is active.'
+				description: 'Choose what this Intention blocks while it is running.'
 			},
 			{
 				title: 'Block selected',
@@ -248,12 +248,12 @@ const EnforcementModeRow: React.FC<TEnforcementModeRowProps> = (props) => {
 		() => [
 			{
 				title: 'Enforcement',
-				description: 'Choose how hard this Intention holds once active.'
+				description: 'Choose how hard this Intention holds while it is running.'
 			},
 			{
 				title: 'Casual',
 				titlePrefix: 'Enforcement',
-				description: 'End or change it anytime. Good for light accountability.',
+				description: 'End or weaken it anytime. Good for light accountability.',
 				titleSuffix:
 					enforcementModeField.value === 'casual' ? (
 						<Badge variant="success" size="xs">
@@ -265,7 +265,7 @@ const EnforcementModeRow: React.FC<TEnforcementModeRowProps> = (props) => {
 				title: 'Balanced',
 				titlePrefix: 'Enforcement',
 				description:
-					'A brief pause before ending or weakening it early. Good for regular focus sessions.',
+					'A brief pause before ending or weakening it. Good for regular focus sessions.',
 				titleSuffix:
 					enforcementModeField.value === 'balanced' ? (
 						<Badge variant="success" size="xs">
@@ -277,7 +277,7 @@ const EnforcementModeRow: React.FC<TEnforcementModeRowProps> = (props) => {
 				title: 'Strict',
 				titlePrefix: 'Enforcement',
 				description:
-					'Cannot be ended or weakened early. Best for commitments you want to hold until the end condition is met.',
+					'Cannot be ended or weakened while running. Best for commitments you want held until the end condition is met.',
 				titleSuffix:
 					enforcementModeField.value === 'strict' ? (
 						<Badge variant="success" size="xs">

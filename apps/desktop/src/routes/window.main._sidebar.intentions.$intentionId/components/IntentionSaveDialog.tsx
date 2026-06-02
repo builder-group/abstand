@@ -35,7 +35,7 @@ const IntentionSaveDialog: React.FC<TIntentionSaveDialogProps> = (props) => {
 					<DialogDescription>{intention.name}</DialogDescription>
 				</DialogHeader>
 				<DialogBody className="space-y-2">
-					<p>Save changes to this running Intention?</p>
+					<p>Save these changes to the running Intention?</p>
 					{policy.status === 'delayed' && (
 						<DelayedSaveMessage durationMs={timedSaveDurationMs} isRunning={open} />
 					)}
@@ -79,24 +79,24 @@ interface TIntentionSaveDialogProps {
 
 function getBlockedSaveDescription(reasons: specta.IntentionWeakeningReason[]): string {
 	if (!reasons.length) {
-		return 'Strict Enforcement blocks changes that weaken this running Intention.';
+		return 'Strict Enforcement only allows changes that keep this running Intention at least as strong as it is now.';
 	}
 
 	const reasonLabels = reasons
 		.map((reason) => {
 			switch (reason) {
 				case 'shortensEnd':
-					return 'shortens the end time';
+					return 'shorter end time';
 				case 'removesAutomaticEnd':
-					return 'removes the automatic end';
+					return 'automatic end removed';
 				case 'lowersEnforcement':
-					return 'lowers enforcement';
+					return 'lower enforcement';
 				case 'weakensBlock':
-					return 'weakens the block';
+					return 'weaker block';
 			}
 		})
 		.join(', ');
-	return `Strict Enforcement blocks changes that weaken this running Intention: ${reasonLabels}.`;
+	return `Strict Enforcement does not allow weakening this running Intention: ${reasonLabels}.`;
 }
 
 const DelayedSaveMessage: React.FC<TDelayedSaveMessageProps> = (props) => {
@@ -126,7 +126,7 @@ interface TDelayedSaveMessageProps {
 function getDelayedSaveLabel(remainingMs: number): string {
 	const remainingSeconds = Math.ceil(remainingMs / 1_000);
 	const unit = remainingSeconds === 1 ? 'second' : 'seconds';
-	return `Save available in ${remainingSeconds} ${unit}.`;
+	return `You can save in ${remainingSeconds} ${unit}.`;
 }
 
 export function useIntentionSaveDialog(
@@ -153,7 +153,7 @@ export function useIntentionSaveDialog(
 					if (policyErr.code !== 'invalidForm') {
 						toastsCx.add({
 							type: 'error',
-							title: 'Could not check save policy',
+							title: 'Could not check save rules',
 							description: getSavePolicyErrorDescription(policyErr)
 						});
 					}
@@ -174,7 +174,7 @@ export function useIntentionSaveDialog(
 				if (intentionErr.code === 'updateFailed') {
 					toastsCx.add({
 						type: 'error',
-						title: 'Could not save intention',
+						title: 'Could not save Intention',
 						description: intentionErr.message
 					});
 				}
@@ -183,7 +183,7 @@ export function useIntentionSaveDialog(
 
 			toastsCx.add({
 				type: 'success',
-				title: 'Saved intention'
+				title: 'Saved Intention'
 			});
 			return true;
 		} finally {
