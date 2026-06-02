@@ -70,6 +70,14 @@ async getActiveIntentionSession(intentionId: number) : Promise<Result<IntentionS
     else return { status: "error", error: e  as any };
 }
 },
+async assessIntentionEditPolicy(params: UpdateIntentionParams) : Promise<Result<IntentionEditPolicyAssessment | null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("assess_intention_edit_policy", { params }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async createIntention(params: CreateIntentionParams) : Promise<Result<Intention, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("create_intention", { params }) };
@@ -212,6 +220,7 @@ export type IntentionConditionScheduleRule = { timeOfDayMs: TimeOnly; weekdaysMa
 export type IntentionConditionTransition = "start" | "end"
 export type IntentionCreatedEvent = { intentionId: number }
 export type IntentionDeletedEvent = { intentionId: number }
+export type IntentionEditPolicyAssessment = { status: "available" } | { status: "delayed"; durationMs: number; reasons: IntentionWeakeningReason[] } | { status: "blocked"; reasons: IntentionWeakeningReason[] }
 export type IntentionEnforcementMode = "casual" | "balanced" | "strict"
 export type IntentionSession = { id: number; intentionId: number; status: IntentionSessionStatus; startedAt: number; startConditionId: number | null; endedAt: number | null; endConditionId: number | null; updatedAt: number; createdAt: number }
 export type IntentionSessionCompletedEvent = { intentionId: number; sessionId: number }
@@ -219,6 +228,7 @@ export type IntentionSessionStartedEvent = { intentionId: number; sessionId: num
 export type IntentionSessionStatus = "active" | "completed" | "stopped"
 export type IntentionSessionStoppedEvent = { intentionId: number; sessionId: number }
 export type IntentionUpdatedEvent = { intentionId: number }
+export type IntentionWeakeningReason = "shortensEnd" | "removesAutomaticEnd" | "lowersEnforcement" | "weakensBlock"
 export type KeyboardShortcut = { modifiers: ShortcutModifier[]; 
 /**
  * A browser KeyboardEvent.code value, e.g. "KeyK", "KeyB".

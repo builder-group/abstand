@@ -1,4 +1,5 @@
 use super::{
+    edit_policy,
     intention::{
         Intention, IntentionBlockScope, IntentionConditionAfterTransitionRule,
         IntentionConditionDateTimeRule, IntentionConditionRule, IntentionConditionScheduleRule,
@@ -69,6 +70,18 @@ pub async fn get_active_intention_session(
 
 #[tauri::command]
 #[specta::specta]
+pub async fn assess_intention_edit_policy(
+    state: State<'_, DatabaseState>,
+    params: UpdateIntentionParams,
+) -> Result<Option<edit_policy::IntentionEditPolicyAssessment>, String> {
+    let input = build_write_intention_input(params.name, params.behavior, params.conditions)?;
+
+    return edit_policy::assess_intention_edit_policy(&state.pool, params.intention_id, &input)
+        .await;
+}
+
+#[tauri::command]
+#[specta::specta]
 pub async fn create_intention(
     app: AppHandle,
     state: State<'_, DatabaseState>,
@@ -102,10 +115,10 @@ pub async fn update_intention(
 ) -> Result<Intention, String> {
     let input = build_write_intention_input(params.name, params.behavior, params.conditions)?;
 
-    let intention = IntentionRepository::update(&state.pool, params.intention_id, input)
-        .await
-        .map_err(|error| error.to_string())?
-        .ok_or_else(|| format!("Intention {} does not exist", params.intention_id))?;
+    let intention =
+        edit_policy::update_intention_with_policy(&state.pool, params.intention_id, input)
+            .await?
+            .ok_or_else(|| format!("Intention {} does not exist", params.intention_id))?;
 
     let _ = IntentionUpdatedEvent {
         intention_id: intention.id,

@@ -5,8 +5,10 @@ use super::{
         IntentionSessionRepositoryError,
     },
 };
-use crate::common::time::{local_datetime_from_unix_ms, TimeOnly, WeekdayMask};
-use chrono::{Datelike, Duration, Local, LocalResult, NaiveDate, TimeZone};
+use crate::common::time::{
+    local_datetime_from_unix_ms, local_unix_ms_from_date_and_time, TimeOnly, WeekdayMask,
+};
+use chrono::{Datelike, Duration, NaiveDate};
 use sqlx::{Pool, Sqlite};
 use std::fmt;
 
@@ -218,7 +220,8 @@ impl TimedScheduleRule {
                 continue;
             }
 
-            let Some(trigger_at) = Self::local_trigger_at(date, &self.time_of_day_ms) else {
+            let Some(trigger_at) = local_unix_ms_from_date_and_time(date, &self.time_of_day_ms)
+            else {
                 continue;
             };
             if latest_started_at.is_some_and(|started_at| started_at >= trigger_at) {
@@ -240,17 +243,6 @@ impl TimedScheduleRule {
         };
 
         return weekdays_mask.contains_weekday(date.weekday());
-    }
-
-    fn local_trigger_at(date: NaiveDate, time: &TimeOnly) -> Option<i64> {
-        let time = time.to_naive_time();
-        let naive_datetime = date.and_time(time);
-
-        return match Local.from_local_datetime(&naive_datetime) {
-            LocalResult::Single(datetime) => Some(datetime.timestamp_millis()),
-            LocalResult::Ambiguous(earliest, _) => Some(earliest.timestamp_millis()),
-            LocalResult::None => None,
-        };
     }
 }
 
@@ -276,7 +268,7 @@ impl TimedAfterTransitionRule {
         };
 
         let should_ignore_anchor_before_condition = match anchor.source {
-            // Note: Active session anchors remain valid when edits recreate condition rows
+            // Note: Active session anchors remain valid even when edits recreate condition rows
             ResolvedAnchorSource::ActiveSessionStart => false,
             ResolvedAnchorSource::LatestCompletedSession => anchor.at < condition.created_at,
         };

@@ -95,7 +95,6 @@ impl WeekdayMask {
         return self.0;
     }
 
-    #[allow(dead_code)]
     pub fn contains_weekday(&self, weekday: Weekday) -> bool {
         let bit = weekday.num_days_from_monday();
         return self.0 & (1 << bit) != 0;
@@ -136,6 +135,17 @@ pub fn local_datetime_from_unix_ms(unix_ms: i64) -> Option<DateTime<Local>> {
     return match Local.timestamp_millis_opt(unix_ms) {
         LocalResult::Single(datetime) => Some(datetime),
         LocalResult::Ambiguous(datetime, _) => Some(datetime),
+        LocalResult::None => None,
+    };
+}
+
+pub fn local_unix_ms_from_date_and_time(date: NaiveDate, time: &TimeOnly) -> Option<i64> {
+    let time = time.to_naive_time();
+    let naive_datetime = date.and_time(time);
+
+    return match Local.from_local_datetime(&naive_datetime) {
+        LocalResult::Single(datetime) => Some(datetime.timestamp_millis()),
+        LocalResult::Ambiguous(earliest, _) => Some(earliest.timestamp_millis()),
         LocalResult::None => None,
     };
 }
