@@ -50,7 +50,7 @@ const IntentionDeleteDialog: React.FC<TIntentionDeleteDialogProps> = (props) => 
 					<DialogClose render={<Button type="button" disabled={isPending} />}>
 						{policy.type === 'blocked' ? 'Close' : 'Cancel'}
 					</DialogClose>
-					{policy.type === 'delayed' ? (
+					{policy.type === 'delayed' && (
 						<TimedButton
 							key={open ? 'open' : 'closed'}
 							type="button"
@@ -61,13 +61,9 @@ const IntentionDeleteDialog: React.FC<TIntentionDeleteDialogProps> = (props) => 
 						>
 							Delete
 						</TimedButton>
-					) : (
-						<Button
-							type="button"
-							variant="destructive"
-							disabled={isPending || policy.type === 'blocked'}
-							onClick={onDelete}
-						>
+					)}
+					{policy.type === 'available' && (
+						<Button type="button" variant="destructive" disabled={isPending} onClick={onDelete}>
 							Delete
 						</Button>
 					)}
