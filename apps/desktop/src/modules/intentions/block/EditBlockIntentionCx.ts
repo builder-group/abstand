@@ -17,7 +17,10 @@ export class EditBlockIntentionCx {
 					return null;
 				}
 
-				return { activeSessionStartedAt: activeSession.startedAt };
+				return {
+					activeSessionStartedAt: activeSession.startedAt,
+					baselineIntention: intention
+				};
 			}
 		});
 		if (formCx == null) {

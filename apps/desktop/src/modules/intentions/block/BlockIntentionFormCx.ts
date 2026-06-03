@@ -344,6 +344,7 @@ type TBlockIntentionFormValidationContextInput =
 
 interface TBlockIntentionFormValidationContext {
 	activeSessionStartedAt?: number;
+	baselineIntention?: specta.Intention;
 }
 
 export interface TBlockIntentionFormData {
@@ -553,10 +554,16 @@ function createConditionsValidator(
 				endCondition.mode === 'atTime' && !isRepeatingScheduleEnd
 					? getLocalDateTime(endCondition.dateEpochDays, endCondition.timeOfDayMs).getTime()
 					: null;
-			const { activeSessionStartedAt } = resolveValidationContext(validationContextInput);
+
+			const { activeSessionStartedAt, baselineIntention } =
+				resolveValidationContext(validationContextInput);
 			const isActive = activeSessionStartedAt != null;
 
-			if (!isActive && startAt != null && startAt <= now) {
+			const baselineStartAt = getBaselineDateTimeConditionAt(baselineIntention, 'start');
+			const hasStartAtChanged = startAt !== baselineStartAt;
+
+			// Note: Active sessions may keep historical one-shot starts, but changed values must be future
+			if (startAt != null && startAt <= now && (!isActive || hasStartAtChanged)) {
 				ctx.addIssue({
 					code: 'custom',
 					path: [startConditionIndex, 'timeOfDayMs'],
@@ -599,7 +606,11 @@ function createConditionsValidator(
 				return;
 			}
 
-			if (!isActive && endAt <= now) {
+			const baselineEndAt = getBaselineDateTimeConditionAt(baselineIntention, 'end');
+			const hasEndAtChanged = endAt !== baselineEndAt;
+
+			// Note: Active sessions may keep historical one-shot ends, but changed values must be future
+			if (endAt <= now && (!isActive || hasEndAtChanged)) {
 				ctx.addIssue({
 					code: 'custom',
 					path: [endConditionIndex, 'timeOfDayMs'],
@@ -625,6 +636,18 @@ function createConditionsValidator(
 				});
 			}
 		});
+}
+
+function getBaselineDateTimeConditionAt(
+	intention: specta.Intention | undefined,
+	transition: specta.IntentionConditionTransition
+): number | null {
+	const condition = intention?.conditions.find((condition) => condition.transition === transition);
+	if (condition?.rule.type !== 'dateTime') {
+		return null;
+	}
+
+	return condition.rule.triggerAt;
 }
 
 const blockIntentionFormValidator = {
