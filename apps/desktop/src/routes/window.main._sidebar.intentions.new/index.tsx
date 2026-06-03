@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { Badge, ContentPage, ShieldIcon, TimerIcon } from '@/components';
+import { Badge, ContentPage, MonitorPauseIcon, ShieldIcon } from '@/components';
 import { SettingsGroup } from '@/modules/settings';
 
 export const Route = createFileRoute('/window/main/_sidebar/intentions/new/')({
@@ -27,7 +27,7 @@ function RouteComponent() {
 
 				<div className="flex flex-col gap-2 opacity-40">
 					<div className="flex h-30 items-center justify-center rounded-xl bg-linear-to-br from-emerald-400 to-teal-700">
-						<TimerIcon className="size-7 text-white/50" />
+						<MonitorPauseIcon className="size-7 text-white/50" />
 					</div>
 					<div>
 						<div className="flex items-center gap-1.5">

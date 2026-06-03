@@ -131,13 +131,6 @@ export function formatDisplayTime(date: Date): string {
 	return displayTimeFormatter.format(date);
 }
 
-export function formatDisplayTimeOfDay(timeOfDayMs: specta.TimeOnly): string {
-	const hours = Math.floor(timeOfDayMs / msPerHour);
-	const minutes = Math.floor((timeOfDayMs % msPerHour) / msPerMinute);
-
-	return formatDisplayTime(new Date(2000, 0, 1, hours, minutes, 0, 0));
-}
-
 export function addTimeOfDayMs(timeOfDayMs: specta.TimeOnly, deltaMs: number): specta.TimeOnly {
 	return normalizeTimeOfDayMs(timeOfDayMs + deltaMs);
 }
@@ -153,27 +146,6 @@ function timePartsToTimeOfDayMs(
 
 function normalizeTimeOfDayMs(timeOfDayMs: number): specta.TimeOnly {
 	return ((Math.trunc(timeOfDayMs) % msPerDay) + msPerDay) % msPerDay;
-}
-
-// MARK: - Duration
-
-export function formatCompactDuration(valueMs: number): string {
-	const totalMinutes = Math.round(valueMs / msPerMinute);
-	const hours = Math.floor(totalMinutes / minutesPerHour);
-	const minutes = totalMinutes % minutesPerHour;
-
-	if (hours > 0 && minutes > 0) {
-		return `${hours}h ${minutes}m`;
-	}
-	if (hours > 0) {
-		return `${hours}h`;
-	}
-
-	return `${minutes}m`;
-}
-
-export function minutesToMs(minutes: number): number {
-	return minutes * msPerMinute;
 }
 
 // MARK: - Weekday
@@ -213,7 +185,6 @@ function getWeekdayMaskBit(weekday: TWeekday): number {
 
 const secondsPerMinute = 60;
 const secondsPerHour = 60 * secondsPerMinute;
-const minutesPerHour = 60;
 
 const msPerSecond = 1_000;
 const msPerMinute = secondsPerMinute * msPerSecond;

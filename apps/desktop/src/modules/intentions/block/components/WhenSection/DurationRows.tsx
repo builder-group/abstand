@@ -6,7 +6,7 @@ import {
 	InputGroupStepper,
 	Select
 } from '@/components';
-import { clampNumber, minutesToMs } from '@/lib';
+import { clampNumber } from '@/lib';
 import { SettingsRow } from '@/modules/settings';
 import { type TConditionRowsProps } from './types';
 
@@ -23,15 +23,16 @@ export const DurationRows: React.FC<TConditionRowsProps> = (props) => {
 
 	const selectedDurationValue = isCustomDurationSelected
 		? customDurationValue
-		: (durationOptions.find((o) => minutesToMs(o.minutes) === offsetMs)?.minutes.toString() ??
-			customDurationValue);
+		: (durationOptions
+				.find((o) => durationMinutesToMs(o.minutes) === offsetMs)
+				?.minutes.toString() ?? customDurationValue);
 
 	// MARK: - Actions
 
 	const handleOffsetMinutesChange = React.useCallback(
 		(offsetMinutes: number) => {
 			formCx.updateCondition(transition, {
-				offsetMs: minutesToMs(clampOffsetMinutes(offsetMinutes))
+				offsetMs: durationMinutesToMs(clampOffsetMinutes(offsetMinutes))
 			});
 		},
 		[transition, formCx]
@@ -240,6 +241,10 @@ type TDurationInputUnit = 'hours' | 'minutes';
 
 function getDurationMinutes(hours: number, minutes: number): number {
 	return hours * 60 + minutes;
+}
+
+function durationMinutesToMs(minutes: number): number {
+	return minutes * 60_000;
 }
 
 function clampOffsetMinutes(offsetMinutes: number): number {

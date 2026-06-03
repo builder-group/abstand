@@ -29,6 +29,7 @@ export {
 	MessageCircleIcon,
 	MinusIcon,
 	MonitorIcon,
+	MonitorPauseIcon,
 	MoonIcon,
 	MoreVerticalIcon,
 	PanelLeftCloseIcon,

@@ -1,9 +1,9 @@
 import { Link } from '@tanstack/react-router';
 import { useCompute, useFeatureState } from 'feature-react/state';
 import React from 'react';
-import { MoonIcon, ShieldIcon } from '@/components';
+import { MonitorPauseIcon, ShieldIcon } from '@/components';
 import { type specta } from '@/environment';
-import { formatCompactDuration, formatDisplayTime, formatDisplayTimeOfDay } from '@/lib';
+import { formatDisplayTime } from '@/lib';
 import { type TBlockIntention } from '@/modules/intentions';
 import { SettingsRowFrame } from '@/modules/settings';
 import { type TodayPageCx } from '../lib';
@@ -83,17 +83,12 @@ const ActiveIntentionRow: React.FC<TActiveIntentionRowProps> = (props) => {
 			<div className="flex min-w-0 flex-1 flex-col">
 				<span className="text-base-950 truncate text-sm">{intention.name}</span>
 				<span className="text-base-400 truncate text-xs">
-					{[formatIntentionBehavior(intention), formatEndConditions(intention.conditions)].join(
-						' · '
-					)}
+					{[
+						formatActiveHorizon(session.startedAt, automaticEndAt),
+						formatIntentionBehavior(intention)
+					].join(' · ')}
 				</span>
 			</div>
-			<span className="text-base-500 shrink-0 text-xs tabular-nums">
-				{`${formatDisplayTime(new Date(session.startedAt))} to ${formatEndTime(
-					automaticEndAt,
-					intention.conditions
-				)}`}
-			</span>
 		</SettingsRowFrame>
 	);
 };
@@ -115,7 +110,7 @@ const IntentionIcon: React.FC<TIntentionIconProps> = (props) => {
 		case 'break':
 			return (
 				<span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600">
-					<MoonIcon className="size-3.5" />
+					<MonitorPauseIcon className="size-3.5" />
 				</span>
 			);
 	}
@@ -123,6 +118,14 @@ const IntentionIcon: React.FC<TIntentionIconProps> = (props) => {
 
 interface TIntentionIconProps {
 	intention: specta.Intention;
+}
+
+function formatActiveHorizon(startedAt: number, automaticEndAt: number | null): string {
+	if (automaticEndAt != null) {
+		return `Until ${formatDisplayTime(new Date(automaticEndAt))}`;
+	}
+
+	return `Started ${formatDisplayTime(new Date(startedAt))}`;
 }
 
 function formatIntentionBehavior(intention: specta.Intention): string {
@@ -157,48 +160,4 @@ function formatTargetCounts(appCount: number, websiteCount: number): string {
 	}
 
 	return parts.length > 0 ? parts.join(', ') : 'no targets';
-}
-
-function formatEndConditions(conditions: specta.IntentionCondition[]): string {
-	const endConditions = conditions.filter((condition) => condition.transition === 'end');
-	if (!endConditions.length) {
-		return 'Manual end';
-	}
-
-	const labels = endConditions.map((condition) => formatEndCondition(condition));
-	return labels.join(' or ');
-}
-
-function formatEndCondition(condition: specta.IntentionCondition): string {
-	switch (condition.rule.type) {
-		case 'manual':
-			return 'Manual end';
-		case 'afterTransition':
-			return `Ends after ${formatCompactDuration(condition.rule.offsetMs)}`;
-		case 'dateTime':
-			return `Ends at ${formatDisplayTime(new Date(condition.rule.triggerAt))}`;
-		case 'schedule':
-			return `Ends at ${formatDisplayTimeOfDay(condition.rule.timeOfDayMs)}`;
-	}
-}
-
-function formatEndTime(
-	automaticEndAt: number | null,
-	conditions: specta.IntentionCondition[]
-): string {
-	if (automaticEndAt != null) {
-		return formatDisplayTime(new Date(automaticEndAt));
-	}
-
-	const hasAutomaticEnd = conditions.some(
-		(condition) => condition.transition === 'end' && condition.rule.type !== 'manual'
-	);
-	if (hasAutomaticEnd) {
-		return 'Automatic';
-	}
-
-	const hasManualEnd = conditions.some(
-		(condition) => condition.transition === 'end' && condition.rule.type === 'manual'
-	);
-	return hasManualEnd ? 'Manual' : 'Open';
 }
