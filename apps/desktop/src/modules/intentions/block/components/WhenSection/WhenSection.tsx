@@ -11,20 +11,29 @@ import { type TConditionRow } from './types';
 import { useConditionRow } from './use-condition-row';
 
 export const WhenSection: React.FC<TWhenSectionProps> = (props) => {
-	const { formCx, isDisabled = false } = props;
+	const { formCx, isActive = false, isDisabled = false } = props;
+	const shouldShowActiveEditDescriptions = formCx.mode === 'edit' && isActive;
+
 	return (
 		<div className="space-y-2.5">
 			<SettingsGroup title="When">
 				<ConditionRowSet
 					transition="start"
 					label="Starts"
+					description={shouldShowActiveEditDescriptions ? 'Applies to future sessions' : undefined}
 					formCx={formCx}
 					isDisabled={isDisabled}
 				/>
 			</SettingsGroup>
 
 			<SettingsGroup>
-				<ConditionRowSet transition="end" label="Ends" formCx={formCx} isDisabled={isDisabled} />
+				<ConditionRowSet
+					transition="end"
+					label="Ends"
+					description={shouldShowActiveEditDescriptions ? 'Can affect this session' : undefined}
+					formCx={formCx}
+					isDisabled={isDisabled}
+				/>
 			</SettingsGroup>
 		</div>
 	);
@@ -32,6 +41,7 @@ export const WhenSection: React.FC<TWhenSectionProps> = (props) => {
 
 interface TWhenSectionProps {
 	formCx: BlockIntentionFormCx;
+	isActive?: boolean;
 	isDisabled?: boolean;
 }
 

@@ -102,7 +102,7 @@ export const BlockIntentionPage: React.FC<TBlockIntentionPageProps> = (props) =>
 				>
 					<NameSection formCx={formCx} />
 					<BlockSection formCx={formCx} />
-					<WhenSection formCx={formCx} />
+					<WhenSection formCx={formCx} isActive={isActive} />
 				</form>
 			</ContentPage>
 			{saveDialog}

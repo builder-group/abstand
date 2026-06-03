@@ -29,9 +29,13 @@ export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 		endEarly,
 		isPending: isEndEarlyPending
 	} = useIntentionEndEarlyDialog({ cx, isActive });
+	const hasManualStartCondition = cx.intention.conditions.some(
+		(condition) => condition.transition === 'start' && condition.rule.type === 'manual'
+	);
 	const hasManualEndCondition = cx.intention.conditions.some(
 		(condition) => condition.transition === 'end' && condition.rule.type === 'manual'
 	);
+	const shouldShowSessionAction = isActive || hasManualStartCondition;
 	const isPending = pendingSessionAction != null || isDeletePending || isEndEarlyPending;
 
 	// MARK: - Actions
@@ -57,6 +61,10 @@ export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 			return;
 		}
 
+		if (!hasManualStartCondition) {
+			return;
+		}
+
 		setPendingSessionAction('start');
 		const [isSessionOk, sessionErr] = await intentionsCx.start(cx.intention.id);
 		setPendingSessionAction(null);
@@ -68,21 +76,31 @@ export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 				description: sessionErr
 			});
 		}
-	}, [cx.intention.id, endEarly, hasManualEndCondition, intentionsCx, isActive, toastsCx]);
+	}, [
+		cx.intention.id,
+		endEarly,
+		hasManualEndCondition,
+		hasManualStartCondition,
+		intentionsCx,
+		isActive,
+		toastsCx
+	]);
 
 	// MARK: - UI
 
 	return (
 		<>
 			{leading}
-			<Button
-				type="button"
-				variant={isSessionPrimary ? 'primary' : 'default'}
-				disabled={isDisabled || isPending}
-				onClick={handleSessionAction}
-			>
-				{isActive ? (hasManualEndCondition ? 'End' : 'End Early') : 'Begin'}
-			</Button>
+			{shouldShowSessionAction && (
+				<Button
+					type="button"
+					variant={isSessionPrimary ? 'primary' : 'default'}
+					disabled={isDisabled || isPending}
+					onClick={handleSessionAction}
+				>
+					{isActive ? (hasManualEndCondition ? 'End' : 'End Early') : 'Begin'}
+				</Button>
+			)}
 			<DropMenu>
 				<DropMenuTrigger
 					render={
