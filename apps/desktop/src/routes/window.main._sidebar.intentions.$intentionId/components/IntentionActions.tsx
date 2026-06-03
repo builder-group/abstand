@@ -18,10 +18,10 @@ export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 	const intentionsCx = useIntentionsCx();
 	const toastsCx = useToastsCx();
 
-	const hasManualStartCondition = cx.intention.conditions.some(
+	const manualStartCondition = cx.intention.conditions.find(
 		(condition) => condition.transition === 'start' && condition.rule.type === 'manual'
 	);
-	const hasManualEndCondition = cx.intention.conditions.some(
+	const manualEndCondition = cx.intention.conditions.find(
 		(condition) => condition.transition === 'end' && condition.rule.type === 'manual'
 	);
 
@@ -39,19 +39,22 @@ export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 	const [pendingSessionAction, setPendingSessionAction] =
 		React.useState<TPendingSessionAction | null>(null);
 	const isPending = pendingSessionAction != null || isDeletePending || isEndEarlyPending;
-	const shouldShowSessionAction = isActive || (hasManualStartCondition && !hasUnsavedChanges);
+	const shouldShowSessionAction = isActive || (manualStartCondition != null && !hasUnsavedChanges);
 
 	// MARK: - Actions
 
 	const handleSessionAction = React.useCallback(async () => {
 		if (isActive) {
-			if (!hasManualEndCondition) {
+			if (manualEndCondition == null) {
 				endEarly();
 				return;
 			}
 
-			setPendingSessionAction('stop');
-			const [isSessionOk, sessionErr] = await intentionsCx.stop(cx.intention.id);
+			setPendingSessionAction('end');
+			const [isSessionOk, sessionErr] = await intentionsCx.complete(
+				cx.intention.id,
+				manualEndCondition.id
+			);
 			setPendingSessionAction(null);
 
 			if (!isSessionOk) {
@@ -64,7 +67,7 @@ export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 			return;
 		}
 
-		if (!hasManualStartCondition) {
+		if (manualStartCondition == null) {
 			return;
 		}
 
@@ -82,10 +85,10 @@ export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 	}, [
 		cx.intention.id,
 		endEarly,
-		hasManualEndCondition,
-		hasManualStartCondition,
 		intentionsCx,
 		isActive,
+		manualStartCondition,
+		manualEndCondition,
 		toastsCx
 	]);
 
@@ -101,7 +104,7 @@ export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 					disabled={isDisabled || isPending}
 					onClick={handleSessionAction}
 				>
-					{isActive ? (hasManualEndCondition ? 'End' : 'End Early') : 'Begin'}
+					{isActive ? (manualEndCondition != null ? 'End' : 'End Early') : 'Begin'}
 				</Button>
 			)}
 			<DropMenu>
@@ -143,4 +146,4 @@ interface TIntentionActionsProps {
 	editActions?: React.ReactNode;
 }
 
-type TPendingSessionAction = 'start' | 'stop';
+type TPendingSessionAction = 'start' | 'end';

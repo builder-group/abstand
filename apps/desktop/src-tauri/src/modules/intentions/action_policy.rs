@@ -2,7 +2,7 @@ use super::{
     condition_timing,
     intention::{
         Intention, IntentionBehavior, IntentionBlock, IntentionBlockScope, IntentionCondition,
-        IntentionEnforcementMode,
+        IntentionConditionRule, IntentionConditionTransition, IntentionEnforcementMode,
     },
     repository::{
         IntentionRepository, IntentionSessionRepository, WriteIntentionBehaviorInput,
@@ -13,14 +13,14 @@ use serde::Serialize;
 use sqlx::{Pool, Sqlite};
 use std::collections::BTreeSet;
 
-pub async fn update_intention_with_policy(
+pub async fn require_intention_update_allowed(
     pool: &Pool<Sqlite>,
     intention_id: i64,
-    input: WriteIntentionInput,
-) -> Result<Option<Intention>, String> {
-    let Some(assessment) = assess_intention_edit_policy(pool, intention_id, &input).await? else {
-        return Ok(None);
-    };
+    input: &WriteIntentionInput,
+) -> Result<(), String> {
+    let assessment = assess_intention_edit_policy(pool, intention_id, input)
+        .await?
+        .ok_or_else(|| format!("Intention {} does not exist", intention_id))?;
 
     match assessment {
         IntentionEditPolicyAssessment::Available => {}
@@ -39,10 +39,107 @@ pub async fn update_intention_with_policy(
         }
     }
 
-    return IntentionRepository::update(pool, intention_id, input)
-        .await
-        .map_err(|error| error.to_string());
+    return Ok(());
 }
+
+pub async fn require_intention_delete_allowed(
+    pool: &Pool<Sqlite>,
+    intention_id: i64,
+) -> Result<(), String> {
+    let Some(intention) = get_active_block_intention(pool, intention_id).await? else {
+        return Ok(());
+    };
+
+    if !is_strict_block_intention(&intention) {
+        return Ok(());
+    }
+
+    return Err("Strict Enforcement prevents deleting this active Intention".to_string());
+}
+
+pub async fn require_intention_stop_allowed(
+    pool: &Pool<Sqlite>,
+    intention_id: i64,
+) -> Result<(), String> {
+    let Some(intention) = get_active_block_intention(pool, intention_id).await? else {
+        return Ok(());
+    };
+
+    if !is_strict_block_intention(&intention) {
+        return Ok(());
+    }
+
+    return Err("Strict Enforcement prevents ending this Intention early".to_string());
+}
+
+pub async fn require_intention_complete_allowed(
+    pool: &Pool<Sqlite>,
+    intention_id: i64,
+    end_condition_id: Option<i64>,
+) -> Result<(), String> {
+    let Some(intention) = get_active_block_intention(pool, intention_id).await? else {
+        return Ok(());
+    };
+
+    if !is_strict_block_intention(&intention) {
+        return Ok(());
+    }
+
+    let Some(end_condition_id) = end_condition_id else {
+        return Err("Strict Enforcement requires a manual end condition".to_string());
+    };
+    if has_manual_end_condition(&intention, end_condition_id) {
+        return Ok(());
+    }
+
+    return Err(
+        "Strict Enforcement can only end through its configured manual end condition".to_string(),
+    );
+}
+
+async fn get_active_block_intention(
+    pool: &Pool<Sqlite>,
+    intention_id: i64,
+) -> Result<Option<Intention>, String> {
+    let intention = IntentionRepository::get_by_id(pool, intention_id)
+        .await
+        .map_err(|error| error.to_string())?;
+    let Some(intention) = intention else {
+        return Ok(None);
+    };
+
+    let active_session =
+        IntentionSessionRepository::get_active_session_by_intention_id(pool, intention_id)
+            .await
+            .map_err(|error| error.to_string())?;
+    if active_session.is_none() {
+        return Ok(None);
+    }
+
+    let IntentionBehavior::Block(_) = &intention.behavior else {
+        return Ok(None);
+    };
+
+    return Ok(Some(intention));
+}
+
+fn is_strict_block_intention(intention: &Intention) -> bool {
+    let IntentionBehavior::Block(block) = &intention.behavior else {
+        return false;
+    };
+
+    return block.enforcement_mode == IntentionEnforcementMode::Strict;
+}
+
+fn has_manual_end_condition(intention: &Intention, condition_id: i64) -> bool {
+    return intention.conditions.iter().any(|condition| {
+        condition.id == condition_id
+            && condition.transition == IntentionConditionTransition::End
+            && matches!(&condition.rule, IntentionConditionRule::Manual)
+    });
+}
+
+// MARK: - Assess Edit
 
 pub async fn assess_intention_edit_policy(
     pool: &Pool<Sqlite>,
@@ -68,8 +165,6 @@ pub async fn assess_intention_edit_policy(
         input,
     )));
 }
-
-// MARK: - Assess
 
 fn assess_active_edit_policy(
     current: &Intention,

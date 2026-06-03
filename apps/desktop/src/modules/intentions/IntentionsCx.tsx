@@ -168,6 +168,18 @@ export class IntentionsCx {
 		return result;
 	}
 
+	public async complete(
+		intentionId: number,
+		endConditionId: number | null
+	): Promise<TResult<specta.IntentionSession, string>> {
+		const result = toTuple(await specta.commands.completeIntention(intentionId, endConditionId));
+		const [isOk] = result;
+		if (isOk) {
+			this._removeActiveSession(intentionId);
+		}
+		return result;
+	}
+
 	public async stop(intentionId: number): Promise<TResult<specta.IntentionSession, string>> {
 		const result = toTuple(await specta.commands.stopIntention(intentionId));
 		const [isOk] = result;

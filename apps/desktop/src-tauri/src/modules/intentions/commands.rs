@@ -1,5 +1,5 @@
 use super::{
-    condition_timing, edit_policy,
+    action_policy, condition_timing,
     intention::{
         Intention, IntentionBlockScope, IntentionConditionAfterTransitionRule,
         IntentionConditionDateTimeRule, IntentionConditionRule, IntentionConditionScheduleRule,
@@ -135,10 +135,10 @@ pub struct TodayEarlierIntentionDto {
 pub async fn assess_intention_edit_policy(
     state: State<'_, DatabaseState>,
     params: UpdateIntentionParams,
-) -> Result<Option<edit_policy::IntentionEditPolicyAssessment>, String> {
+) -> Result<Option<action_policy::IntentionEditPolicyAssessment>, String> {
     let input = build_write_intention_input(params.name, params.behavior, params.conditions)?;
 
-    return edit_policy::assess_intention_edit_policy(&state.pool, params.intention_id, &input)
+    return action_policy::assess_intention_edit_policy(&state.pool, params.intention_id, &input)
         .await;
 }
 
@@ -185,10 +185,13 @@ pub async fn update_intention(
 ) -> Result<Intention, String> {
     let input = build_write_intention_input(params.name, params.behavior, params.conditions)?;
 
-    let intention =
-        edit_policy::update_intention_with_policy(&state.pool, params.intention_id, input)
-            .await?
-            .ok_or_else(|| format!("Intention {} does not exist", params.intention_id))?;
+    action_policy::require_intention_update_allowed(&state.pool, params.intention_id, &input)
+        .await?;
+
+    let intention = IntentionRepository::update(&state.pool, params.intention_id, input)
+        .await
+        .map_err(|error| error.to_string())?
+        .ok_or_else(|| format!("Intention {} does not exist", params.intention_id))?;
 
     let _ = IntentionUpdatedEvent {
         intention_id: intention.id,
@@ -218,6 +221,8 @@ pub async fn delete_intention(
     runtime: State<'_, IntentionRuntimeState>,
     intention_id: i64,
 ) -> Result<(), String> {
+    action_policy::require_intention_delete_allowed(&state.pool, intention_id).await?;
+
     let did_delete = IntentionRepository::delete(&state.pool, intention_id)
         .await
         .map_err(|error| error.to_string())?;
@@ -251,10 +256,18 @@ pub async fn start_intention(
 #[specta::specta]
 pub async fn complete_intention(
     app: AppHandle,
+    state: State<'_, DatabaseState>,
     runtime: State<'_, IntentionRuntimeState>,
     intention_id: i64,
     end_condition_id: Option<i64>,
 ) -> Result<IntentionSession, String> {
+    action_policy::require_intention_complete_allowed(
+        &state.pool,
+        intention_id,
+        end_condition_id,
+    )
+    .await?;
+
     return runtime
         .complete_intention(&app, intention_id, end_condition_id)
         .await
@@ -265,9 +278,12 @@ pub async fn complete_intention(
 #[specta::specta]
 pub async fn stop_intention(
     app: AppHandle,
+    state: State<'_, DatabaseState>,
     runtime: State<'_, IntentionRuntimeState>,
     intention_id: i64,
 ) -> Result<IntentionSession, String> {
+    action_policy::require_intention_stop_allowed(&state.pool, intention_id).await?;
+
     return runtime
         .stop_intention(&app, intention_id)
         .await
