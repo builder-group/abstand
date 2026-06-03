@@ -23,10 +23,7 @@ export class NewBlockIntentionCx {
 			return Err({ code: 'createFailed', message: intentionErr });
 		}
 
-		const shouldStartNow = this.formCx.$form.fields.conditions
-			.get()
-			.some((condition) => condition.transition === 'start' && condition.mode === 'now');
-		if (shouldStartNow) {
+		if (this.shouldStartNow()) {
 			const [isStartOk, startErr] = await this.intentionsCx.start(intention.id);
 			if (!isStartOk) {
 				return Err({ code: 'startFailed', message: startErr, intention });
@@ -34,6 +31,12 @@ export class NewBlockIntentionCx {
 		}
 
 		return Ok(intention);
+	}
+
+	public shouldStartNow(): boolean {
+		return this.formCx.$form.fields.conditions
+			.get()
+			.some((condition) => condition.transition === 'start' && condition.mode === 'now');
 	}
 }
 

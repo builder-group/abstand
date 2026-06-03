@@ -53,6 +53,11 @@ function RouteComponent() {
 			return;
 		}
 
+		toastsCx.add({
+			type: 'success',
+			title: cx.shouldStartNow() ? 'Created and began Intention' : 'Created Intention'
+		});
+
 		void navigate({
 			to: '/window/main/intentions/$intentionId',
 			params: { intentionId: intention.id }
