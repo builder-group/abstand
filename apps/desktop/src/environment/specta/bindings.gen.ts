@@ -162,6 +162,7 @@ intentionSessionCompletedEvent: IntentionSessionCompletedEvent,
 intentionSessionStartedEvent: IntentionSessionStartedEvent,
 intentionSessionStoppedEvent: IntentionSessionStoppedEvent,
 intentionUpdatedEvent: IntentionUpdatedEvent,
+quitPreventedEvent: QuitPreventedEvent,
 shortcutTriggeredEvent: ShortcutTriggeredEvent
 }>({
 appSettingsChangedEvent: "app-settings-changed-event",
@@ -172,6 +173,7 @@ intentionSessionCompletedEvent: "intention-session-completed-event",
 intentionSessionStartedEvent: "intention-session-started-event",
 intentionSessionStoppedEvent: "intention-session-stopped-event",
 intentionUpdatedEvent: "intention-updated-event",
+quitPreventedEvent: "quit-prevented-event",
 shortcutTriggeredEvent: "shortcut-triggered-event"
 })
 
@@ -242,6 +244,8 @@ export type KeyboardShortcut = { modifiers: ShortcutModifier[];
  * A browser KeyboardEvent.code value, e.g. "KeyK", "KeyB".
  */
 code: string }
+export type QuitPreventedEvent = { reason: QuitPreventedReason }
+export type QuitPreventedReason = "activeStrictBlock"
 export type SearchCatalogParams = { query: string; limit: number | null; includeIcon: CatalogIconMode | null }
 export type SettingsVersion = "0.0.1"
 export type ShortcutAction = "search" | "newIntention" | "toggleSidebar"

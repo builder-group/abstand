@@ -2,7 +2,9 @@ use crate::{
     app::window::AppWindow,
     modules::{db::types::DatabaseState, intentions::repository::IntentionSessionRepository},
 };
+use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, ExitRequestApi, Manager};
+use tauri_specta::Event;
 
 pub fn request_quit(app: &AppHandle, source: QuitRequestSource) {
     log::debug!(target: LOG_TARGET, "quit requested from {}", source.label());
@@ -40,7 +42,7 @@ fn assess_quit(app: &AppHandle) -> QuitDecision {
 
     return match has_active_strict_block_session {
         Ok(true) => QuitDecision::Denied {
-            reason: QuitDenialReason::ActiveStrictBlock,
+            reason: QuitPreventedReason::ActiveStrictBlock,
         },
         Ok(false) => QuitDecision::Allowed,
         Err(error) => {
@@ -50,8 +52,9 @@ fn assess_quit(app: &AppHandle) -> QuitDecision {
     };
 }
 
-fn handle_quit_denial(app: &AppHandle, reason: QuitDenialReason) {
+fn handle_quit_denial(app: &AppHandle, reason: QuitPreventedReason) {
     log::warn!(target: LOG_TARGET, "quit prevented: {}", reason.message());
+    let _ = QuitPreventedEvent { reason }.emit(app);
     let _ = AppWindow::Main.show(app);
 }
 
@@ -73,20 +76,29 @@ impl QuitRequestSource {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum QuitDecision {
     Allowed,
-    Denied { reason: QuitDenialReason },
+    Denied { reason: QuitPreventedReason },
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum QuitDenialReason {
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub enum QuitPreventedReason {
     ActiveStrictBlock,
 }
 
-impl QuitDenialReason {
+impl QuitPreventedReason {
     fn message(&self) -> &'static str {
         return match self {
             Self::ActiveStrictBlock => "Strict Enforcement is active",
         };
     }
+}
+
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type, tauri_specta::Event,
+)]
+#[serde(rename_all = "camelCase")]
+pub struct QuitPreventedEvent {
+    pub reason: QuitPreventedReason,
 }
 
 const LOG_TARGET: &str = "app::quit_policy";

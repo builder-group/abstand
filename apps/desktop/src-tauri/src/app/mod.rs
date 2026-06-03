@@ -54,6 +54,8 @@ pub fn run() {
             intentions::types::IntentionSessionStartedEvent,
             intentions::types::IntentionSessionCompletedEvent,
             intentions::types::IntentionSessionStoppedEvent,
+            // App events
+            quit_policy::QuitPreventedEvent,
             // Shortcuts events
             shortcuts::types::ShortcutTriggeredEvent,
         ]);

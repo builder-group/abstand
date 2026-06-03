@@ -1,8 +1,11 @@
 import React from 'react';
-import { ThemeProvider, ToastsCxProvider, TypographyProvider } from '@/components';
 import { CommandPaletteCxProvider, CommandPaletteModal } from '@/modules/command-palette';
 import { SettingsCxProvider } from '@/modules/settings';
 import { ShortcutsCxProvider } from '@/modules/shortcuts';
+import { ToastsCxProvider } from '../display';
+import { AppEventToasts } from './AppEventToasts';
+import { ThemeProvider } from './ThemeProvider';
+import { TypographyProvider } from './TypographyProvider';
 
 export const AppProvider: React.FC<TAppProviderProps> = (props) => {
 	const { children } = props;
@@ -14,6 +17,7 @@ export const AppProvider: React.FC<TAppProviderProps> = (props) => {
 					<TypographyProvider>
 						<ThemeProvider>
 							<ToastsCxProvider>
+								<AppEventToasts />
 								{children}
 								<CommandPaletteModal />
 							</ToastsCxProvider>
