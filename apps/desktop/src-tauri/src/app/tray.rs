@@ -124,7 +124,9 @@ impl AppTrayMenuItem {
             Self::ShowApp => {
                 let _ = AppWindow::Main.show(app);
             }
-            Self::Quit => quit_policy::request_quit(app, quit_policy::QuitRequestSource::Tray),
+            Self::Quit => {
+                quit_policy::request_quit_blocking(app, quit_policy::QuitRequestSource::Tray);
+            }
         }
     }
 }

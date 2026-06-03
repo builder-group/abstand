@@ -41,7 +41,7 @@ sqlx = { version = "0.8.6", default-features = false, features = [
     "migrate",
     "macros",
 ] }
-tokio = { version = "1.52.1", features = ["macros", "sync", "time"] }
+tokio = { version = "1.52.1", features = ["macros", "signal", "sync", "time"] }
 abstand-macos = { path = "../crates/macos" }
 mado = "0.0.3"
 nucleo-matcher = "0.3.1"

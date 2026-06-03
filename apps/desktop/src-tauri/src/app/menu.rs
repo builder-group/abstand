@@ -102,7 +102,7 @@ impl AppMenuItem {
                 let _ = AppWindow::Main.show(app);
             }
             Self::Quit => {
-                quit_policy::request_quit(app, quit_policy::QuitRequestSource::AppMenu);
+                quit_policy::request_quit_blocking(app, quit_policy::QuitRequestSource::AppMenu);
             }
         }
     }

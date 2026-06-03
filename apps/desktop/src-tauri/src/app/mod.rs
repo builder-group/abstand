@@ -1,6 +1,8 @@
 mod commands;
 #[cfg(target_os = "macos")]
 mod menu;
+#[cfg(target_os = "macos")]
+mod process_signal;
 mod quit_policy;
 #[cfg(target_os = "macos")]
 pub mod tray;
@@ -10,6 +12,7 @@ use crate::{
     environment::logger,
     modules::{catalog, db, intentions, scheduler, settings, shortcuts},
 };
+#[cfg(debug_assertions)]
 use specta_typescript::{BigIntExportBehavior, Typescript};
 use tauri_specta::{collect_commands, collect_events, Builder as SpectaBuilder};
 
@@ -92,6 +95,8 @@ pub fn run() {
 
             // Setup modules
             db::setup(app)?;
+            #[cfg(target_os = "macos")]
+            process_signal::setup(app.handle());
             scheduler::setup(app);
             catalog::setup(app);
             intentions::setup(app)?;
