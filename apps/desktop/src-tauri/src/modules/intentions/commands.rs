@@ -1,5 +1,5 @@
 use super::{
-    edit_policy,
+    condition_time, edit_policy,
     intention::{
         Intention, IntentionBlockScope, IntentionConditionAfterTransitionRule,
         IntentionConditionDateTimeRule, IntentionConditionRule, IntentionConditionScheduleRule,
@@ -21,7 +21,7 @@ use crate::{
         db::types::DatabaseState,
     },
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, State};
 use tauri_specta::Event;
 
@@ -70,6 +70,68 @@ pub async fn get_active_intention_session(
 
 #[tauri::command]
 #[specta::specta]
+pub async fn get_today_intention_overview(
+    state: State<'_, DatabaseState>,
+) -> Result<TodayIntentionOverviewDto, String> {
+    let active_sessions = IntentionSessionRepository::get_active_sessions(&state.pool)
+        .await
+        .map_err(|error| error.to_string())?;
+
+    let mut active = Vec::new();
+    for session in active_sessions {
+        let intention = IntentionRepository::get_by_id(&state.pool, session.intention_id)
+            .await
+            .map_err(|error| error.to_string())?
+            .ok_or_else(|| format!("Active Intention {} does not exist", session.intention_id))?;
+        let automatic_end_at =
+            condition_time::automatic_intention_end_at(&intention.conditions, session.started_at);
+
+        active.push(TodayActiveIntentionDto {
+            intention,
+            session,
+            automatic_end_at,
+        });
+    }
+
+    return Ok(TodayIntentionOverviewDto {
+        active,
+        upcoming_today: Vec::new(),
+        earlier_today: Vec::new(),
+    });
+}
+
+#[derive(Debug, Clone, Serialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct TodayIntentionOverviewDto {
+    pub active: Vec<TodayActiveIntentionDto>,
+    pub upcoming_today: Vec<TodayUpcomingIntentionDto>,
+    pub earlier_today: Vec<TodayEarlierIntentionDto>,
+}
+
+#[derive(Debug, Clone, Serialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct TodayActiveIntentionDto {
+    pub intention: Intention,
+    pub session: IntentionSession,
+    pub automatic_end_at: Option<i64>,
+}
+
+#[derive(Debug, Clone, Serialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct TodayUpcomingIntentionDto {
+    pub intention: Intention,
+    pub trigger_at: i64,
+}
+
+#[derive(Debug, Clone, Serialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct TodayEarlierIntentionDto {
+    pub intention: Intention,
+    pub session: IntentionSession,
+}
+
+#[tauri::command]
+#[specta::specta]
 pub async fn assess_intention_edit_policy(
     state: State<'_, DatabaseState>,
     params: UpdateIntentionParams,
@@ -105,6 +167,14 @@ pub async fn create_intention(
     return Ok(intention);
 }
 
+#[derive(Debug, Clone, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateIntentionParams {
+    pub name: String,
+    pub behavior: WriteIntentionBehaviorParams,
+    pub conditions: Vec<WriteIntentionConditionParams>,
+}
+
 #[tauri::command]
 #[specta::specta]
 pub async fn update_intention(
@@ -129,6 +199,15 @@ pub async fn update_intention(
     }
 
     return Ok(intention);
+}
+
+#[derive(Debug, Clone, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateIntentionParams {
+    pub intention_id: i64,
+    pub name: String,
+    pub behavior: WriteIntentionBehaviorParams,
+    pub conditions: Vec<WriteIntentionConditionParams>,
 }
 
 #[tauri::command]
@@ -330,23 +409,6 @@ fn validate_write_intention_input(input: &WriteIntentionInput) -> Result<(), Str
     }
 
     return Ok(());
-}
-
-#[derive(Debug, Clone, Deserialize, specta::Type)]
-#[serde(rename_all = "camelCase")]
-pub struct CreateIntentionParams {
-    pub name: String,
-    pub behavior: WriteIntentionBehaviorParams,
-    pub conditions: Vec<WriteIntentionConditionParams>,
-}
-
-#[derive(Debug, Clone, Deserialize, specta::Type)]
-#[serde(rename_all = "camelCase")]
-pub struct UpdateIntentionParams {
-    pub intention_id: i64,
-    pub name: String,
-    pub behavior: WriteIntentionBehaviorParams,
-    pub conditions: Vec<WriteIntentionConditionParams>,
 }
 
 #[derive(Debug, Clone, Deserialize, specta::Type)]

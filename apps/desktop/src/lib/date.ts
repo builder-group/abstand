@@ -127,12 +127,19 @@ export function formatTimeInput(timeOfDayMs: specta.TimeOnly): string {
 	return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 }
 
-export function addTimeOfDayMs(timeOfDayMs: specta.TimeOnly, deltaMs: number): specta.TimeOnly {
-	return normalizeTimeOfDayMs(timeOfDayMs + deltaMs);
+export function formatDisplayTime(date: Date): string {
+	return displayTimeFormatter.format(date);
 }
 
-export function minutesToMs(minutes: number): number {
-	return minutes * msPerMinute;
+export function formatDisplayTimeOfDay(timeOfDayMs: specta.TimeOnly): string {
+	const hours = Math.floor(timeOfDayMs / msPerHour);
+	const minutes = Math.floor((timeOfDayMs % msPerHour) / msPerMinute);
+
+	return formatDisplayTime(new Date(2000, 0, 1, hours, minutes, 0, 0));
+}
+
+export function addTimeOfDayMs(timeOfDayMs: specta.TimeOnly, deltaMs: number): specta.TimeOnly {
+	return normalizeTimeOfDayMs(timeOfDayMs + deltaMs);
 }
 
 function timePartsToTimeOfDayMs(
@@ -148,7 +155,28 @@ function normalizeTimeOfDayMs(timeOfDayMs: number): specta.TimeOnly {
 	return ((Math.trunc(timeOfDayMs) % msPerDay) + msPerDay) % msPerDay;
 }
 
-// MARK: - Weekday mask
+// MARK: - Duration
+
+export function formatCompactDuration(valueMs: number): string {
+	const totalMinutes = Math.round(valueMs / msPerMinute);
+	const hours = Math.floor(totalMinutes / minutesPerHour);
+	const minutes = totalMinutes % minutesPerHour;
+
+	if (hours > 0 && minutes > 0) {
+		return `${hours}h ${minutes}m`;
+	}
+	if (hours > 0) {
+		return `${hours}h`;
+	}
+
+	return `${minutes}m`;
+}
+
+export function minutesToMs(minutes: number): number {
+	return minutes * msPerMinute;
+}
+
+// MARK: - Weekday
 
 export function isWeekdayMask(value: number): value is specta.WeekdayMask {
 	return Number.isInteger(value) && value >= minWeekdayMask && value <= maxWeekdayMask;
@@ -185,6 +213,7 @@ function getWeekdayMaskBit(weekday: TWeekday): number {
 
 const secondsPerMinute = 60;
 const secondsPerHour = 60 * secondsPerMinute;
+const minutesPerHour = 60;
 
 const msPerSecond = 1_000;
 const msPerMinute = secondsPerMinute * msPerSecond;
@@ -198,5 +227,10 @@ const minWeekdayMask = 1;
 const maxWeekdayMask = 0b111_1111;
 // Order defines bit positions: index 0 = Mon (bit 0) .. index 6 = Sun (bit 6)
 const weekdayValues = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
+
+const displayTimeFormatter = new Intl.DateTimeFormat('en-US', {
+	hour: 'numeric',
+	minute: '2-digit'
+});
 
 export type TWeekday = (typeof weekdayValues)[number];

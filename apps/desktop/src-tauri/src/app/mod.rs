@@ -21,6 +21,7 @@ pub fn run() {
             intentions::commands::get_intention,
             intentions::commands::get_active_intention_sessions,
             intentions::commands::get_active_intention_session,
+            intentions::commands::get_today_intention_overview,
             intentions::commands::assess_intention_edit_policy,
             intentions::commands::create_intention,
             intentions::commands::update_intention,

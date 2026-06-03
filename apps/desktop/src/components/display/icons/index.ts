@@ -18,6 +18,7 @@ export {
 	CircleCheckIcon,
 	CircleQuestionMarkIcon,
 	CircleSlashIcon,
+	ClockIcon,
 	CodeXmlIcon,
 	CommandIcon,
 	FolderOpenIcon,

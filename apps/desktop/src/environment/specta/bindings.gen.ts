@@ -70,6 +70,14 @@ async getActiveIntentionSession(intentionId: number) : Promise<Result<IntentionS
     else return { status: "error", error: e  as any };
 }
 },
+async getTodayIntentionOverview() : Promise<Result<TodayIntentionOverviewDto, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_today_intention_overview") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async assessIntentionEditPolicy(params: UpdateIntentionParams) : Promise<Result<IntentionEditPolicyAssessment | null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("assess_intention_edit_policy", { params }) };
@@ -244,6 +252,10 @@ export type Stage = "dev" | "prod"
 export type SystemTypographyDto = { baseFontSize: number; smallFontSize: number }
 export type Theme = "light" | "dark" | "auto"
 export type TimeOnly = number
+export type TodayActiveIntentionDto = { intention: Intention; session: IntentionSession; automaticEndAt: number | null }
+export type TodayEarlierIntentionDto = { intention: Intention; session: IntentionSession }
+export type TodayIntentionOverviewDto = { active: TodayActiveIntentionDto[]; upcomingToday: TodayUpcomingIntentionDto[]; earlierToday: TodayEarlierIntentionDto[] }
+export type TodayUpcomingIntentionDto = { intention: Intention; triggerAt: number }
 export type UpdateIntentionParams = { intentionId: number; name: string; behavior: WriteIntentionBehaviorParams; conditions: WriteIntentionConditionParams[] }
 export type Website = { 
 /**
