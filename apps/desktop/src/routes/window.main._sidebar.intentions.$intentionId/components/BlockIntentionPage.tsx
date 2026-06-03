@@ -1,6 +1,14 @@
 import { useFeatureState } from 'feature-react/state';
 import React from 'react';
-import { Badge, Button, ButtonGroup, ContentPage, Tooltip, Undo2Icon } from '@/components';
+import {
+	Badge,
+	Button,
+	ButtonGroup,
+	ContentPage,
+	Tooltip,
+	Undo2Icon,
+	type TContentPageProps
+} from '@/components';
 import {
 	BlockSection,
 	EditBlockIntentionCx,
@@ -13,7 +21,7 @@ import { IntentionActions } from './IntentionActions';
 import { useIntentionSaveDialog } from './IntentionSaveDialog';
 
 export const BlockIntentionPage: React.FC<TBlockIntentionPageProps> = (props) => {
-	const { intention, isActive } = props;
+	const { intention, isActive, backTo } = props;
 	const intentionsCx = useIntentionsCx();
 	const formId = React.useId();
 	const cx = React.useMemo(
@@ -60,6 +68,7 @@ export const BlockIntentionPage: React.FC<TBlockIntentionPageProps> = (props) =>
 			<ContentPage
 				title={<BlockIntentionTitle name={intention.name} isActive={isActive} />}
 				subtitle="Block Intention"
+				backTo={backTo}
 				trailing={
 					<IntentionActions
 						cx={cx}
@@ -113,6 +122,7 @@ export const BlockIntentionPage: React.FC<TBlockIntentionPageProps> = (props) =>
 interface TBlockIntentionPageProps {
 	intention: TBlockIntention;
 	isActive: boolean;
+	backTo?: TContentPageProps['backTo'];
 }
 
 const BlockIntentionTitle: React.FC<TBlockIntentionTitleProps> = (props) => {

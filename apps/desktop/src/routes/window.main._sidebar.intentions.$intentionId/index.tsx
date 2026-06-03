@@ -15,6 +15,10 @@ export const Route = createFileRoute('/window/main/_sidebar/intentions/$intentio
 			intentionId: String(params.intentionId)
 		})
 	},
+	validateSearch: (search) => {
+		const result = SIntentionRouteSearch.safeParse(search);
+		return result.success ? result.data : {};
+	},
 	component: RouteComponent
 });
 
@@ -26,8 +30,13 @@ const SIntentionRouteParams = z.object({
 		.transform(Number)
 });
 
+const SIntentionRouteSearch = z.object({
+	backTo: z.enum(['/window/main/today']).optional()
+});
+
 function RouteComponent() {
 	const { intentionId } = Route.useParams();
+	const { backTo } = Route.useSearch();
 	const intentionsCx = useIntentionsCx();
 	const hasLoaded = useFeatureState(intentionsCx.$hasLoaded);
 	const intention = useFeatureState(intentionsCx.getIntentionState(intentionId));
@@ -40,7 +49,11 @@ function RouteComponent() {
 
 	if (intention == null && !hasLoaded) {
 		return (
-			<ContentPage title="Loading intention" subtitle={`ID ${intentionId}`}>
+			<ContentPage
+				title="Loading intention"
+				subtitle={`ID ${intentionId}`}
+				backTo={backTo}
+			>
 				<div className="text-base-400 flex items-center gap-2 text-sm">
 					<Spinner />
 					<span>Loading intention...</span>
@@ -51,9 +64,21 @@ function RouteComponent() {
 
 	switch (intention?.behavior.type) {
 		case 'block':
-			return <BlockIntentionPage intention={intention as TBlockIntention} isActive={isActive} />;
+			return (
+				<BlockIntentionPage
+					intention={intention as TBlockIntention}
+					isActive={isActive}
+					backTo={backTo}
+				/>
+			);
 		case 'break':
 		default:
-			return <ContentPage title="Intention not found" subtitle={`ID ${intentionId}`} />;
+			return (
+				<ContentPage
+					title="Intention not found"
+					subtitle={`ID ${intentionId}`}
+					backTo={backTo}
+				/>
+			);
 	}
 }

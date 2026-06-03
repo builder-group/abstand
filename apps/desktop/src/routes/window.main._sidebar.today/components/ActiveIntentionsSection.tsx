@@ -70,7 +70,11 @@ const ActiveIntentionRow: React.FC<TActiveIntentionRowProps> = (props) => {
 	return (
 		<SettingsRowFrame
 			render={
-				<Link to="/window/main/intentions/$intentionId" params={{ intentionId: intention.id }} />
+				<Link
+					to="/window/main/intentions/$intentionId"
+					params={{ intentionId: intention.id }}
+					search={{ backTo: '/window/main/today' }}
+				/>
 			}
 			variant="compact"
 			className="gap-1.5"
