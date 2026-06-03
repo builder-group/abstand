@@ -64,9 +64,9 @@ export const BlockIntentionPage: React.FC<TBlockIntentionPageProps> = (props) =>
 					<IntentionActions
 						cx={cx}
 						isActive={isActive}
+						hasUnsavedChanges={isDirty}
 						isDisabled={isPending}
-						isSessionPrimary={!isActive && !shouldShowEditActions}
-						leading={
+						editActions={
 							shouldShowEditActions && (
 								<ButtonGroup>
 									<Button type="submit" form={formId} variant="primary" disabled={isPending}>

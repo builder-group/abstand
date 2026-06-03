@@ -14,11 +14,17 @@ import { useIntentionDeleteDialog } from './IntentionDeleteDialog';
 import { useIntentionEndEarlyDialog } from './IntentionEndEarlyDialog';
 
 export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
-	const { cx, isActive, isDisabled = false, isSessionPrimary = false, leading } = props;
+	const { cx, isActive, hasUnsavedChanges = false, isDisabled = false, editActions } = props;
 	const intentionsCx = useIntentionsCx();
 	const toastsCx = useToastsCx();
-	const [pendingSessionAction, setPendingSessionAction] =
-		React.useState<TPendingSessionAction | null>(null);
+
+	const hasManualStartCondition = cx.intention.conditions.some(
+		(condition) => condition.transition === 'start' && condition.rule.type === 'manual'
+	);
+	const hasManualEndCondition = cx.intention.conditions.some(
+		(condition) => condition.transition === 'end' && condition.rule.type === 'manual'
+	);
+
 	const {
 		dialog: deleteDialog,
 		isPending: isDeletePending,
@@ -29,14 +35,11 @@ export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 		endEarly,
 		isPending: isEndEarlyPending
 	} = useIntentionEndEarlyDialog({ cx, isActive });
-	const hasManualStartCondition = cx.intention.conditions.some(
-		(condition) => condition.transition === 'start' && condition.rule.type === 'manual'
-	);
-	const hasManualEndCondition = cx.intention.conditions.some(
-		(condition) => condition.transition === 'end' && condition.rule.type === 'manual'
-	);
-	const shouldShowSessionAction = isActive || hasManualStartCondition;
+
+	const [pendingSessionAction, setPendingSessionAction] =
+		React.useState<TPendingSessionAction | null>(null);
 	const isPending = pendingSessionAction != null || isDeletePending || isEndEarlyPending;
+	const shouldShowSessionAction = isActive || (hasManualStartCondition && !hasUnsavedChanges);
 
 	// MARK: - Actions
 
@@ -90,11 +93,11 @@ export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 
 	return (
 		<>
-			{leading}
+			{editActions}
 			{shouldShowSessionAction && (
 				<Button
 					type="button"
-					variant={isSessionPrimary ? 'primary' : 'default'}
+					variant={isActive ? 'default' : 'primary'}
 					disabled={isDisabled || isPending}
 					onClick={handleSessionAction}
 				>
@@ -135,9 +138,9 @@ export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 interface TIntentionActionsProps {
 	cx: EditBlockIntentionCx;
 	isActive: boolean;
+	hasUnsavedChanges?: boolean;
 	isDisabled?: boolean;
-	isSessionPrimary?: boolean;
-	leading?: React.ReactNode;
+	editActions?: React.ReactNode;
 }
 
 type TPendingSessionAction = 'start' | 'stop';
