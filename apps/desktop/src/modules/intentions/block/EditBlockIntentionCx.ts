@@ -10,7 +10,16 @@ export class EditBlockIntentionCx {
 	public readonly formCx: BlockIntentionFormCx;
 
 	constructor(intentionsCx: IntentionsCx, intention: TBlockIntention) {
-		const formCx = BlockIntentionFormCx.fromIntention(intention);
+		const formCx = BlockIntentionFormCx.fromIntention(intention, {
+			validationContext: () => {
+				const activeSession = intentionsCx.getActiveSessionState(intention.id).get();
+				if (activeSession?.status !== 'active') {
+					return null;
+				}
+
+				return { activeSessionStartedAt: activeSession.startedAt };
+			}
+		});
 		if (formCx == null) {
 			throw new Error('EditBlockIntentionCx requires a block intention');
 		}

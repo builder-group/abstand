@@ -29,7 +29,11 @@ export class BlockIntentionFormCx {
 	public readonly $resetRevision = createState(0);
 
 	constructor(options: TBlockIntentionFormCxOptions = {}) {
-		const { mode = 'create', initialData = createDefaultBlockIntentionFormData() } = options;
+		const {
+			mode = 'create',
+			initialData = createDefaultBlockIntentionFormData(),
+			validationContext: validationContextInput = null
+		} = options;
 		this.mode = mode;
 		this.$form = createForm<TBlockIntentionFormData>({
 			fields: {
@@ -55,7 +59,7 @@ export class BlockIntentionFormCx {
 				},
 				conditions: {
 					defaultValue: initialData.conditions.map((condition) => ({ ...condition })),
-					validator: createConditionsValidator(mode)
+					validator: createConditionsValidator(mode, validationContextInput)
 				}
 			},
 			validator: blockIntentionFormValidator,
@@ -64,7 +68,10 @@ export class BlockIntentionFormCx {
 		}).with(dirtyFeature<TBlockIntentionFormData>());
 	}
 
-	public static fromIntention(intention: specta.Intention): BlockIntentionFormCx | null {
+	public static fromIntention(
+		intention: specta.Intention,
+		options: Omit<TBlockIntentionFormCxOptions, 'initialData' | 'mode'> = {}
+	): BlockIntentionFormCx | null {
 		const initialData = getFormDataFromIntention(intention);
 		if (initialData == null) {
 			return null;
@@ -72,7 +79,8 @@ export class BlockIntentionFormCx {
 
 		return new BlockIntentionFormCx({
 			mode: 'edit',
-			initialData
+			initialData,
+			...options
 		});
 	}
 
@@ -324,9 +332,19 @@ export class BlockIntentionFormCx {
 interface TBlockIntentionFormCxOptions {
 	mode?: TBlockIntentionFormMode;
 	initialData?: TBlockIntentionFormData;
+	validationContext?: TBlockIntentionFormValidationContextInput;
 }
 
 export type TBlockIntentionFormMode = 'create' | 'edit';
+
+type TBlockIntentionFormValidationContextInput =
+	| TBlockIntentionFormValidationContext
+	| (() => TBlockIntentionFormValidationContext | null)
+	| null;
+
+interface TBlockIntentionFormValidationContext {
+	activeSessionStartedAt?: number;
+}
 
 export interface TBlockIntentionFormData {
 	name: string;
@@ -480,7 +498,10 @@ interface TDefaultFutureDateTime {
 
 // MARK: - Validation
 
-function createConditionsValidator(mode: TBlockIntentionFormMode) {
+function createConditionsValidator(
+	mode: TBlockIntentionFormMode,
+	validationContextInput: TBlockIntentionFormValidationContextInput
+) {
 	return z
 		.array(
 			z.object({
@@ -532,8 +553,10 @@ function createConditionsValidator(mode: TBlockIntentionFormMode) {
 				endCondition.mode === 'atTime' && !isRepeatingScheduleEnd
 					? getLocalDateTime(endCondition.dateEpochDays, endCondition.timeOfDayMs).getTime()
 					: null;
+			const { activeSessionStartedAt } = resolveValidationContext(validationContextInput);
+			const isActive = activeSessionStartedAt != null;
 
-			if (startAt != null && startAt <= now) {
+			if (!isActive && startAt != null && startAt <= now) {
 				ctx.addIssue({
 					code: 'custom',
 					path: [startConditionIndex, 'timeOfDayMs'],
@@ -576,7 +599,7 @@ function createConditionsValidator(mode: TBlockIntentionFormMode) {
 				return;
 			}
 
-			if (endAt <= now) {
+			if (!isActive && endAt <= now) {
 				ctx.addIssue({
 					code: 'custom',
 					path: [endConditionIndex, 'timeOfDayMs'],
@@ -625,6 +648,16 @@ const blockIntentionFormValidator = {
 		}
 	}
 } satisfies TFormValidator<TBlockIntentionFormData>;
+
+function resolveValidationContext(
+	input: TBlockIntentionFormValidationContextInput
+): TBlockIntentionFormValidationContext {
+	if (typeof input === 'function') {
+		return input() ?? {};
+	}
+
+	return input ?? {};
+}
 
 // MARK: - Config
 
