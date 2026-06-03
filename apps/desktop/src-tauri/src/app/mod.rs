@@ -1,4 +1,6 @@
 mod commands;
+#[cfg(target_os = "macos")]
+pub mod tray;
 pub mod window;
 
 use crate::modules::{catalog, db, intentions, scheduler, settings, shortcuts};
@@ -73,11 +75,18 @@ pub fn run() {
             catalog::setup(app);
             intentions::setup(app)?;
             settings::setup(app);
+            #[cfg(target_os = "macos")]
+            tray::setup(app)?;
 
             // Show main window on startup
             let _ = window::AppWindow::Main.show(app.handle());
 
             return Ok(());
+        })
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                window::AppWindow::handle_close(window.label(), window, api);
+            }
         })
         .run(tauri::generate_context!())
         .expect("Error while running tauri application");

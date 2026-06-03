@@ -1,5 +1,5 @@
 use crate::environment::configs::app::AppConfig;
-use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
+use tauri::{AppHandle, CloseRequestApi, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
 
 #[cfg(target_os = "macos")]
 use tauri::window::{Effect, EffectsBuilder};
@@ -161,6 +161,16 @@ impl AppWindow {
                 "Falling back to native window background for {}",
                 window_label
             );
+        }
+    }
+
+    pub fn handle_close(label: &str, window: &tauri::Window, api: &CloseRequestApi) {
+        match label {
+            label if label == Self::Main.label() => {
+                api.prevent_close();
+                let _ = window.hide();
+            }
+            _ => {}
         }
     }
 }

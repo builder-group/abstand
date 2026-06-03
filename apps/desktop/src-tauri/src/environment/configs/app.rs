@@ -8,6 +8,20 @@ impl AppConfig {
         return "Abstand";
     }
 
+    pub fn tray_tooltip() -> &'static str {
+        return Self::app_name();
+    }
+
+    pub fn tray_icon_bytes() -> &'static [u8] {
+        if cfg!(debug_assertions) {
+            return include_bytes!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/icons/tray-icon-dev.png"
+            ));
+        }
+        return include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/icons/tray-icon.png"));
+    }
+
     pub fn distribution() -> AppDistribution {
         if cfg!(feature = "app-store") {
             return AppDistribution::AppStore;
