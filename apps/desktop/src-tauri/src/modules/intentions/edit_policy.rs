@@ -1,5 +1,5 @@
 use super::{
-    condition_time,
+    condition_timing,
     intention::{
         Intention, IntentionBehavior, IntentionBlock, IntentionBlockScope, IntentionCondition,
         IntentionEnforcementMode,
@@ -183,14 +183,14 @@ fn active_end_weakening_reason(
 }
 
 fn automatic_intention_end_at(conditions: &[IntentionCondition], started_at: i64) -> Option<i64> {
-    return condition_time::automatic_intention_end_at(conditions, started_at);
+    return condition_timing::automatic_intention_end_at(conditions, started_at);
 }
 
 fn automatic_write_end_at(
     conditions: &[WriteIntentionConditionInput],
     started_at: i64,
 ) -> Option<i64> {
-    return condition_time::automatic_condition_end_at(
+    return condition_timing::automatic_condition_end_at(
         conditions
             .iter()
             .map(|condition| (&condition.transition, &condition.rule)),

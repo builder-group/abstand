@@ -1,5 +1,5 @@
 use super::{
-    condition_time, edit_policy,
+    condition_timing, edit_policy,
     intention::{
         Intention, IntentionBlockScope, IntentionConditionAfterTransitionRule,
         IntentionConditionDateTimeRule, IntentionConditionRule, IntentionConditionScheduleRule,
@@ -84,7 +84,7 @@ pub async fn get_today_intention_overview(
             .map_err(|error| error.to_string())?
             .ok_or_else(|| format!("Active Intention {} does not exist", session.intention_id))?;
         let automatic_end_at =
-            condition_time::automatic_intention_end_at(&intention.conditions, session.started_at);
+            condition_timing::automatic_intention_end_at(&intention.conditions, session.started_at);
 
         active.push(TodayActiveIntentionDto {
             intention,

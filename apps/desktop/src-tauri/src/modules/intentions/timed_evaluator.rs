@@ -1,14 +1,12 @@
 use super::{
+    condition_timing,
     intention::IntentionConditionTransition,
     repository::{
         IntentionRepository, IntentionRepositoryError, IntentionSessionRepository,
         IntentionSessionRepositoryError,
     },
 };
-use crate::common::time::{
-    local_datetime_from_unix_ms, local_unix_ms_from_date_and_time, TimeOnly, WeekdayMask,
-};
-use chrono::{Datelike, Duration, NaiveDate};
+use crate::common::time::{TimeOnly, WeekdayMask};
 use sqlx::{Pool, Sqlite};
 use std::fmt;
 
@@ -183,8 +181,6 @@ pub struct TimedScheduleRule {
 }
 
 impl TimedScheduleRule {
-    const LOOKAHEAD_DAYS: i64 = 14;
-
     async fn evaluate(
         &self,
         condition: &TimedCondition,
@@ -192,82 +188,71 @@ impl TimedScheduleRule {
         now: i64,
         active_session_started_at: Option<i64>,
     ) -> Result<TimedConditionActivation, TimedEvaluationError> {
-        let latest_started_at = if condition.transition == TimedConditionTransition::Start {
-            IntentionSessionRepository::get_latest_started_at_by_start_condition_id(
-                pool,
-                condition.condition_id,
-            )
-            .await
-            .map_err(TimedEvaluationError::from)?
-        } else {
-            None
-        };
-
-        let (search_from, not_before) = match condition.transition {
-            TimedConditionTransition::Start => (now, Some(condition.created_at)),
+        let trigger_at = match condition.transition {
+            TimedConditionTransition::Start => {
+                self.next_start_trigger_at(condition, pool, now).await?
+            }
             TimedConditionTransition::End => {
                 let Some(started_at) = active_session_started_at else {
                     return Ok(TimedConditionActivation::Inactive);
                 };
 
                 // Note: Search end schedules from the active session start so missed slots are due on reevaluation
-                (started_at, Some(started_at))
+                condition_timing::next_schedule_trigger_at(
+                    condition_timing::NextScheduleTriggerInput {
+                        time_of_day_ms: &self.time_of_day_ms,
+                        weekdays_mask: self.weekdays_mask.as_ref(),
+                        search_from: started_at,
+                        minimum_trigger_at: started_at,
+                    },
+                )
             }
         };
 
-        let Some(trigger_at) = self.next_trigger_at(search_from, latest_started_at, not_before)
-        else {
+        let Some(trigger_at) = trigger_at else {
             return Ok(TimedConditionActivation::Inactive);
         };
 
         return Ok(TimedConditionActivation::from_trigger_at(now, trigger_at));
     }
 
-    fn next_trigger_at(
+    async fn next_start_trigger_at(
         &self,
-        search_from: i64,
-        latest_started_at: Option<i64>,
-        not_before: Option<i64>,
-    ) -> Option<i64> {
-        let search_from_datetime = local_datetime_from_unix_ms(search_from)?;
-        let search_from_date = search_from_datetime.date_naive();
+        condition: &TimedCondition,
+        pool: &Pool<Sqlite>,
+        now: i64,
+    ) -> Result<Option<i64>, TimedEvaluationError> {
+        let latest_started_at =
+            IntentionSessionRepository::get_latest_started_at_by_start_condition_id(
+                pool,
+                condition.condition_id,
+            )
+            .await
+            .map_err(TimedEvaluationError::from)?;
 
-        for day_offset in 0..Self::LOOKAHEAD_DAYS {
-            let date = search_from_date + Duration::days(day_offset);
-            if !self.includes_date(date) {
-                continue;
-            }
-
-            let Some(trigger_at) = local_unix_ms_from_date_and_time(date, &self.time_of_day_ms)
-            else {
-                continue;
-            };
-
-            let was_start_slot_consumed =
-                latest_started_at.is_some_and(|started_at| started_at >= trigger_at);
-            if was_start_slot_consumed {
-                continue;
-            }
-
-            let is_before_search_window =
-                not_before.is_some_and(|not_before| trigger_at < not_before);
-            if is_before_search_window {
-                continue;
-            }
-
-            return Some(trigger_at);
-        }
-
-        return None;
+        return Ok(condition_timing::next_schedule_trigger_at(
+            condition_timing::NextScheduleTriggerInput {
+                time_of_day_ms: &self.time_of_day_ms,
+                weekdays_mask: self.weekdays_mask.as_ref(),
+                search_from: now,
+                minimum_trigger_at: minimum_start_trigger_at(
+                    condition.created_at,
+                    latest_started_at,
+                ),
+            },
+        ));
     }
+}
 
-    fn includes_date(&self, date: NaiveDate) -> bool {
-        let Some(weekdays_mask) = &self.weekdays_mask else {
-            return true;
-        };
+fn minimum_start_trigger_at(condition_created_at: i64, latest_started_at: Option<i64>) -> i64 {
+    let Some(latest_started_at) = latest_started_at else {
+        return condition_created_at;
+    };
 
-        return weekdays_mask.contains_weekday(date.weekday());
-    }
+    return condition_created_at.max(
+        // Note: A scheduled start consumes its exact trigger time, so the next search must start 1 ms later
+        latest_started_at.saturating_add(1),
+    );
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

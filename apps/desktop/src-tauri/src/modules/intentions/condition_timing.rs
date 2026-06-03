@@ -1,9 +1,6 @@
-use super::intention::{
-    IntentionCondition, IntentionConditionRule, IntentionConditionScheduleRule,
-    IntentionConditionTransition,
-};
+use super::intention::{IntentionCondition, IntentionConditionRule, IntentionConditionTransition};
 use crate::common::time::{
-    local_datetime_from_unix_ms, local_unix_ms_from_date_and_time, WeekdayMask,
+    local_datetime_from_unix_ms, local_unix_ms_from_date_and_time, TimeOnly, WeekdayMask,
 };
 use chrono::{Datelike, Duration, NaiveDate};
 
@@ -40,34 +37,51 @@ fn resolve_end_rule_at(rule: &IntentionConditionRule, started_at: i64) -> Option
         {
             Some(started_at + rule.offset_ms)
         }
-        IntentionConditionRule::Schedule(rule) => resolve_schedule_end_at(rule, started_at),
+        IntentionConditionRule::Schedule(rule) => {
+            next_schedule_trigger_at(NextScheduleTriggerInput {
+                time_of_day_ms: &rule.time_of_day_ms,
+                weekdays_mask: rule.weekdays_mask.as_ref(),
+                search_from: started_at,
+                minimum_trigger_at: started_at,
+            })
+        }
         IntentionConditionRule::Manual => None,
         IntentionConditionRule::AfterTransition(_) => None,
     };
 }
 
-fn resolve_schedule_end_at(rule: &IntentionConditionScheduleRule, started_at: i64) -> Option<i64> {
-    let started_datetime = local_datetime_from_unix_ms(started_at)?;
-    let start_date = started_datetime.date_naive();
+/// Returns the first matching schedule trigger by scanning up to 14 local days from `search_from`.
+pub fn next_schedule_trigger_at(input: NextScheduleTriggerInput<'_>) -> Option<i64> {
+    let search_from_datetime = local_datetime_from_unix_ms(input.search_from)?;
+    let search_from_date = search_from_datetime.date_naive();
 
-    for day_offset in 0..SCHEDULE_END_LOOKAHEAD_DAYS {
-        let date = start_date + Duration::days(day_offset);
-        if !includes_schedule_date(date, rule.weekdays_mask.as_ref()) {
+    for day_offset in 0..SCHEDULE_LOOKAHEAD_DAYS {
+        let date = search_from_date + Duration::days(day_offset);
+        if !includes_schedule_date(date, input.weekdays_mask) {
             continue;
         }
 
-        let Some(trigger_at) = local_unix_ms_from_date_and_time(date, &rule.time_of_day_ms) else {
+        let Some(trigger_at) = local_unix_ms_from_date_and_time(date, input.time_of_day_ms) else {
             continue;
         };
-        if trigger_at >= started_at {
-            return Some(trigger_at);
+        if trigger_at < input.minimum_trigger_at {
+            continue;
         }
+
+        return Some(trigger_at);
     }
 
     return None;
 }
 
-const SCHEDULE_END_LOOKAHEAD_DAYS: i64 = 14;
+pub struct NextScheduleTriggerInput<'a> {
+    pub time_of_day_ms: &'a TimeOnly,
+    pub weekdays_mask: Option<&'a WeekdayMask>,
+    pub search_from: i64,
+    pub minimum_trigger_at: i64,
+}
+
+const SCHEDULE_LOOKAHEAD_DAYS: i64 = 14;
 
 fn includes_schedule_date(date: NaiveDate, weekdays_mask: Option<&WeekdayMask>) -> bool {
     let Some(weekdays_mask) = weekdays_mask else {
