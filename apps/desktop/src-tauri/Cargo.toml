@@ -24,6 +24,7 @@ tauri-build = { version = "2.6.0", features = [] }
 
 [dependencies]
 tauri = { version = "2.11.0", features = ["image-png", "tray-icon"] }
+tauri-plugin-log = "2.8.0"
 tauri-plugin-opener = "2.5.4"
 tauri-plugin-os = "2.3.2"
 
@@ -33,6 +34,7 @@ specta = { version = "2.0.0-rc.21", features = ["derive"] }
 tauri-specta = { version = "2.0.0-rc.21", features = ["derive", "typescript"] }
 specta-typescript = "0.0.9"
 
+log = "0.4"
 sqlx = { version = "0.8.6", default-features = false, features = [
     "runtime-tokio",
     "sqlite",
@@ -43,4 +45,7 @@ tokio = { version = "1.52.1", features = ["macros", "sync", "time"] }
 abstand-macos = { path = "../crates/macos" }
 mado = "0.0.3"
 nucleo-matcher = "0.3.1"
-chrono = { version = "0.4.44", default-features = false, features = ["clock", "std"] }
+chrono = { version = "0.4.44", default-features = false, features = [
+    "clock",
+    "std",
+] }

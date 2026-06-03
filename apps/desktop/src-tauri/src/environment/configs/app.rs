@@ -22,6 +22,18 @@ impl AppConfig {
         return include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/icons/tray-icon.png"));
     }
 
+    pub fn log_file_name() -> &'static str {
+        return "abstand";
+    }
+
+    pub fn log_max_file_size_bytes() -> u128 {
+        return 5 * 1024 * 1024;
+    }
+
+    pub fn log_file_rotation_count() -> usize {
+        return 3;
+    }
+
     pub fn distribution() -> AppDistribution {
         if cfg!(feature = "app-store") {
             return AppDistribution::AppStore;
