@@ -1,9 +1,15 @@
 mod commands;
 #[cfg(target_os = "macos")]
+mod menu;
+mod quit_policy;
+#[cfg(target_os = "macos")]
 pub mod tray;
 pub mod window;
 
-use crate::modules::{catalog, db, intentions, scheduler, settings, shortcuts};
+use crate::{
+    environment::logger,
+    modules::{catalog, db, intentions, scheduler, settings, shortcuts},
+};
 use specta_typescript::{BigIntExportBehavior, Typescript};
 use tauri_specta::{collect_commands, collect_events, Builder as SpectaBuilder};
 
@@ -61,13 +67,26 @@ pub fn run() {
         eprintln!("Skipping TypeScript bindings export: {}", error);
     }
 
-    tauri::Builder::default()
+    let builder = tauri::Builder::default()
+        .plugin(logger::Logger::build())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_os::init())
-        .invoke_handler(specta_builder.invoke_handler())
+        .invoke_handler(specta_builder.invoke_handler());
+
+    #[cfg(target_os = "macos")]
+    let builder = builder
+        .menu(menu::AppMenu::build)
+        .on_menu_event(menu::AppMenu::handle_event);
+
+    let builder = builder.on_window_event(window::AppWindow::handle_event);
+
+    builder
         .setup(move |app| {
             // https://docs.rs/tauri-specta/2.0.0-rc.21/tauri_specta/index.html
             specta_builder.mount_events(app);
+
+            #[cfg(target_os = "macos")]
+            tray::AppTray::setup(app)?;
 
             // Setup modules
             db::setup(app)?;
@@ -75,19 +94,17 @@ pub fn run() {
             catalog::setup(app);
             intentions::setup(app)?;
             settings::setup(app);
-            #[cfg(target_os = "macos")]
-            tray::setup(app)?;
 
             // Show main window on startup
             let _ = window::AppWindow::Main.show(app.handle());
 
             return Ok(());
         })
-        .on_window_event(|window, event| {
-            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                window::AppWindow::handle_close(window.label(), window, api);
+        .build(tauri::generate_context!())
+        .expect("Error while building tauri application")
+        .run(|app_handle, event| {
+            if let tauri::RunEvent::ExitRequested { api, .. } = event {
+                quit_policy::handle_exit_requested(app_handle, &api);
             }
-        })
-        .run(tauri::generate_context!())
-        .expect("Error while running tauri application");
+        });
 }

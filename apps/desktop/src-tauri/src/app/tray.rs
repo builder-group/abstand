@@ -1,34 +1,51 @@
-use crate::{app::window::AppWindow, environment::configs::app::AppConfig};
-use std::sync::Mutex;
+use crate::{
+    app::{quit_policy, window::AppWindow},
+    environment::configs::app::AppConfig,
+};
 use tauri::{
-    menu::{Menu, MenuBuilder, MenuItem},
+    menu::{Menu, MenuBuilder, MenuEvent, MenuItem},
     tray::{TrayIcon, TrayIconBuilder},
-    App, AppHandle, Manager,
+    App, AppHandle,
 };
 
-pub fn setup(app: &mut App) -> tauri::Result<()> {
-    app.set_activation_policy(tauri::ActivationPolicy::Accessory);
-    app.manage(TrayState::init(app)?);
-    TrayState::set_title(app.handle(), None);
-    return Ok(());
-}
+pub struct AppTray;
 
-// MARK: - Tray
+impl AppTray {
+    fn id() -> &'static str {
+        return "tray_main";
+    }
 
-struct Tray;
+    pub fn setup(app: &mut App) -> tauri::Result<()> {
+        // Note: Accessory mode gives Abstand tray-app behavior without a Dock or Cmd-Tab entry
+        app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+        Self::build(app.handle())?;
+        Self::set_title(app.handle(), None);
+        return Ok(());
+    }
 
-impl Tray {
-    fn setup(app: &AppHandle) -> tauri::Result<TrayIcon<tauri::Wry>> {
+    pub fn get(app: &AppHandle) -> Option<TrayIcon<tauri::Wry>> {
+        return app.tray_by_id(Self::id());
+    }
+
+    pub fn set_title(app: &AppHandle, title: Option<&str>) {
+        let Some(tray) = Self::get(app) else {
+            return;
+        };
+
+        let _ = tray.set_title(Some(title.unwrap_or("")));
+    }
+
+    fn build(app: &AppHandle) -> tauri::Result<TrayIcon<tauri::Wry>> {
         let menu = Self::build_menu(app)?;
         let icon = tauri::image::Image::from_bytes(AppConfig::tray_icon_bytes())?;
 
-        return TrayIconBuilder::new()
+        return TrayIconBuilder::with_id(Self::id())
             .icon(icon)
             .icon_as_template(true)
             .menu(&menu)
             .show_menu_on_left_click(false)
             .tooltip(AppConfig::tray_tooltip())
-            .on_menu_event(|app, event| Self::handle_menu_event(app, event.id().as_ref()))
+            .on_menu_event(Self::handle_menu_event)
             .on_tray_icon_event(|tray, event| {
                 if let tauri::tray::TrayIconEvent::Click {
                     button: tauri::tray::MouseButton::Left,
@@ -44,15 +61,15 @@ impl Tray {
     fn build_menu(app: &AppHandle) -> tauri::Result<Menu<tauri::Wry>> {
         let show_app = MenuItem::with_id(
             app,
-            TrayMenuItem::ShowApp.id(),
-            TrayMenuItem::ShowApp.label(),
+            AppTrayMenuItem::ShowApp.id(),
+            AppTrayMenuItem::ShowApp.label(),
             true,
             None::<&str>,
         )?;
         let quit = MenuItem::with_id(
             app,
-            TrayMenuItem::Quit.id(),
-            TrayMenuItem::Quit.label(),
+            AppTrayMenuItem::Quit.id(),
+            AppTrayMenuItem::Quit.label(),
             true,
             None::<&str>,
         )?;
@@ -64,8 +81,8 @@ impl Tray {
             .build();
     }
 
-    fn handle_menu_event(app: &AppHandle, event_id: &str) {
-        let Some(item) = TrayMenuItem::from_id(event_id) else {
+    fn handle_menu_event(app: &AppHandle, event: MenuEvent) {
+        let Some(item) = AppTrayMenuItem::from_id(event.id().as_ref()) else {
             return;
         };
 
@@ -74,30 +91,30 @@ impl Tray {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum TrayMenuItem {
+enum AppTrayMenuItem {
     ShowApp,
     Quit,
 }
 
-impl TrayMenuItem {
+impl AppTrayMenuItem {
     fn id(&self) -> &'static str {
         return match self {
-            Self::ShowApp => "show_app",
-            Self::Quit => "quit",
+            Self::ShowApp => "tray_show_app",
+            Self::Quit => "tray_quit_app",
         };
     }
 
     fn label(&self) -> &'static str {
         return match self {
             Self::ShowApp => "Show Abstand",
-            Self::Quit => "Quit",
+            Self::Quit => "Quit Abstand",
         };
     }
 
     fn from_id(id: &str) -> Option<Self> {
         return match id {
-            "show_app" => Some(Self::ShowApp),
-            "quit" => Some(Self::Quit),
+            "tray_show_app" => Some(Self::ShowApp),
+            "tray_quit_app" => Some(Self::Quit),
             _ => None,
         };
     }
@@ -107,26 +124,7 @@ impl TrayMenuItem {
             Self::ShowApp => {
                 let _ = AppWindow::Main.show(app);
             }
-            Self::Quit => app.exit(0),
+            Self::Quit => quit_policy::request_quit(app, quit_policy::QuitRequestSource::Tray),
         }
-    }
-}
-
-// MARK: - State
-
-pub struct TrayState(Mutex<TrayIcon<tauri::Wry>>);
-
-impl TrayState {
-    fn init(app: &App) -> tauri::Result<Self> {
-        return Ok(Self(Mutex::new(Tray::setup(app.handle())?)));
-    }
-
-    pub fn set_title(app: &AppHandle, title: Option<&str>) {
-        let Some(state) = app.try_state::<TrayState>() else {
-            return;
-        };
-
-        let tray = state.0.lock().unwrap();
-        let _ = tray.set_title(title.or(Some("")));
     }
 }

@@ -940,6 +940,26 @@ impl IntentionSessionRepository {
             .collect::<Result<Vec<_>, _>>();
     }
 
+    pub async fn has_active_strict_block_session(
+        pool: &Pool<Sqlite>,
+    ) -> Result<bool, IntentionSessionRepositoryError> {
+        let exists = sqlx::query_scalar::<_, i64>(
+            "SELECT EXISTS (
+                SELECT 1
+                FROM intention_session session
+                INNER JOIN intention_block block
+                    ON block.intention_id = session.intention_id
+                WHERE session.status = 'active'
+                    AND block.enforcement_mode = 'strict'
+                LIMIT 1
+            )",
+        )
+        .fetch_one(pool)
+        .await?;
+
+        return Ok(exists != 0);
+    }
+
     pub async fn get_active_session_by_intention_id(
         pool: &Pool<Sqlite>,
         intention_id: i64,
