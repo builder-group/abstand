@@ -8,6 +8,16 @@ impl AppConfig {
         return "Abstand";
     }
 
+    /// Rust-side mirror of Tauri's identifier for code that runs before `AppHandle` exists.
+    ///
+    /// Prefer reading the identifier from Tauri config when app state is available.
+    pub fn bundle_identifier() -> &'static str {
+        if cfg!(debug_assertions) {
+            return "com.buildergroup.abstand.dev";
+        }
+        return "com.buildergroup.abstand";
+    }
+
     pub fn tray_tooltip() -> &'static str {
         return Self::app_name();
     }

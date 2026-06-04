@@ -1,3 +1,5 @@
+#[cfg(debug_assertions)]
+use crate::modules::recovery_agent::agent::RecoveryAgent;
 use crate::{
     app::{quit_policy, window::AppWindow},
     environment::configs::app::AppConfig,
@@ -151,6 +153,10 @@ impl AppTrayMenuItem {
             }
             #[cfg(debug_assertions)]
             Self::DevForceQuit => {
+                if let Ok(agent) = RecoveryAgent::new() {
+                    let _ = agent.disable_unchecked();
+                }
+
                 std::process::exit(0);
             }
         }
