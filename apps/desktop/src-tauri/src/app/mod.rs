@@ -10,7 +10,7 @@ pub mod window;
 
 use crate::{
     environment::logger,
-    modules::{catalog, db, intentions, scheduler, settings, shortcuts},
+    modules::{catalog, db, intentions, recovery_agent, scheduler, settings, shortcuts},
 };
 #[cfg(debug_assertions)]
 use specta_typescript::{BigIntExportBehavior, Typescript};
@@ -22,8 +22,14 @@ pub fn run() {
             // App commands
             commands::get_app_info,
             commands::get_system_typography,
+            commands::notify_frontend_ready,
             commands::open_data_directory,
             commands::reveal_log_file,
+            // Recovery agent commands
+            recovery_agent::commands::get_recovery_agent_status,
+            recovery_agent::commands::install_recovery_agent,
+            recovery_agent::commands::uninstall_recovery_agent,
+            recovery_agent::commands::reveal_recovery_agent_plist,
             // Settings commands
             settings::commands::get_settings,
             settings::commands::set_settings,

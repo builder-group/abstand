@@ -153,7 +153,7 @@ impl AppTrayMenuItem {
             }
             #[cfg(debug_assertions)]
             Self::DevForceQuit => {
-                if let Ok(agent) = RecoveryAgent::new() {
+                if let Ok(agent) = RecoveryAgent::for_current_app() {
                     let _ = agent.disable_unchecked();
                 }
 

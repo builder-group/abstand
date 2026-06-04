@@ -2,6 +2,7 @@
 
 pub mod agent;
 pub mod cli;
+pub mod commands;
 mod recovery_condition;
 mod user_launch_agent;
 mod watchdog;

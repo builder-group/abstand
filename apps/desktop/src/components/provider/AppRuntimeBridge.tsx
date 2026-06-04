@@ -3,7 +3,7 @@ import { specta } from '@/environment';
 import { createMountLifecycle } from '@/lib';
 import { useToastsCx } from '../display/Toast';
 
-export const AppEventToasts: React.FC = () => {
+export const AppRuntimeBridge: React.FC = () => {
 	const toastsCx = useToastsCx();
 
 	React.useEffect(() => {
@@ -23,6 +23,10 @@ export const AppEventToasts: React.FC = () => {
 					}
 				})
 			);
+
+			if (lifecycle.isUnmounted()) return;
+
+			await specta.commands.notifyFrontendReady();
 		})();
 
 		return lifecycle.unmount;

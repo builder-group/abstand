@@ -11,6 +11,9 @@ async getAppInfo() : Promise<AppInfoDto> {
 async getSystemTypography() : Promise<SystemTypographyDto> {
     return await TAURI_INVOKE("get_system_typography");
 },
+async notifyFrontendReady() : Promise<void> {
+    await TAURI_INVOKE("notify_frontend_ready");
+},
 async openDataDirectory() : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("open_data_directory") };
@@ -22,6 +25,38 @@ async openDataDirectory() : Promise<Result<null, string>> {
 async revealLogFile() : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("reveal_log_file") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getRecoveryAgentStatus() : Promise<Result<RecoveryAgentStatus, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_recovery_agent_status") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async installRecoveryAgent() : Promise<Result<RecoveryAgentStatus, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("install_recovery_agent") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async uninstallRecoveryAgent() : Promise<Result<RecoveryAgentStatus, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("uninstall_recovery_agent") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async revealRecoveryAgentPlist() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("reveal_recovery_agent_plist") };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -254,6 +289,19 @@ export type KeyboardShortcut = { modifiers: ShortcutModifier[];
 code: string }
 export type QuitPreventedEvent = { reason: QuitPreventedReason }
 export type QuitPreventedReason = "activeStrictBlock"
+export type RecoveryAgentStatus = { 
+/**
+ * Set to `true` when the recovery agent plist exists in the user's LaunchAgents folder.
+ */
+isConfigured: boolean; 
+/**
+ * Set to `true` when launchd has loaded the recovery agent job for the current user.
+ */
+isLoaded: boolean; 
+/**
+ * Set to `true` when the recovery agent is both configured and loaded.
+ */
+isEnabled: boolean; hasActiveStrictBlockSession: boolean; plistPath: string }
 export type SearchCatalogParams = { query: string; limit: number | null; includeIcon: CatalogIconMode | null }
 export type SettingsVersion = "0.0.1"
 export type ShortcutAction = "search" | "newIntention" | "toggleSidebar"

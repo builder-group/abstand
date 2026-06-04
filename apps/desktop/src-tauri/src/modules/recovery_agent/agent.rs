@@ -19,7 +19,7 @@ pub struct RecoveryAgent {
 }
 
 impl RecoveryAgent {
-    pub fn new() -> Result<Self, Box<dyn Error>> {
+    pub fn for_current_app() -> Result<Self, Box<dyn Error>> {
         let user_launch_agent = UserLaunchAgent::new(UserLaunchAgentConfig {
             label: label(),
             executable_path: env::current_exe()?,
