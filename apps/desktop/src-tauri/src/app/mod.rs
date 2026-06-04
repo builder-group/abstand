@@ -36,6 +36,7 @@ pub fn run() {
             launch_at_login::commands::get_launch_at_login_status,
             launch_at_login::commands::enable_launch_at_login,
             launch_at_login::commands::disable_launch_at_login,
+            launch_at_login::commands::reveal_launch_at_login_plist,
             // Settings commands
             settings::commands::get_settings,
             settings::commands::set_settings,
