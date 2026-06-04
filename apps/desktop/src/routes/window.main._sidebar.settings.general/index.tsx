@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useCompute } from 'feature-react/state';
+import { useCompute, useFeatureState } from 'feature-react/state';
 import React from 'react';
 import {
 	ArrowUpRightIcon,
@@ -19,9 +19,10 @@ import {
 	Switch,
 	useToastsCx
 } from '@/components';
-import { appConfig, type specta } from '@/environment';
+import { appConfig, specta } from '@/environment';
 import { useAppInfo } from '@/hooks';
-import { openExternalUrl, sleep } from '@/lib';
+import { openExternalUrl, sleep, toTuple } from '@/lib';
+import { useIntentionsCx } from '@/modules/intentions';
 import { SettingsGroup, SettingsRow, SettingsRowFrame, useSettingsCx } from '@/modules/settings';
 
 export const Route = createFileRoute('/window/main/_sidebar/settings/general/')({
@@ -38,6 +39,7 @@ function RouteComponent() {
 		>
 			<AppearanceSection />
 			<FeaturesSection />
+			<SystemAccessSection />
 			<UpdatesSection />
 			<HelpFeedbackSection />
 		</SettingsPage>
@@ -183,6 +185,127 @@ const FeaturesSection: React.FC = () => {
 		</SettingsGroup>
 	);
 };
+
+const SystemAccessSection: React.FC = () => {
+	const toastsCx = useToastsCx();
+	const intentionsCx = useIntentionsCx();
+	const isUnmountedRef = React.useRef(false);
+
+	const hasActiveStrictBlockSession = useFeatureState(intentionsCx.$hasActiveStrictBlockSession);
+
+	const [recoveryAgentStatus, setRecoveryAgentStatus] =
+		React.useState<specta.RecoveryAgentStatus | null>(null);
+	const [isRecoveryAgentStatusPending, setIsRecoveryAgentStatusPending] = React.useState(true);
+	const [isRecoveryAgentUpdating, setIsRecoveryAgentUpdating] = React.useState(false);
+
+	const isRecoveryAgentStatusEnabled = recoveryAgentStatus?.isEnabled ?? false;
+	const isPreventedByActiveStrictBlock =
+		isRecoveryAgentStatusEnabled && hasActiveStrictBlockSession;
+
+	// MARK: - Actions
+
+	const handleRecoveryAgentToggle = React.useCallback(
+		async (checked: boolean) => {
+			setIsRecoveryAgentUpdating(true);
+
+			try {
+				const [isOk, error, status] = toTuple(
+					checked
+						? await specta.commands.installRecoveryAgent()
+						: await specta.commands.uninstallRecoveryAgent()
+				);
+				if (isUnmountedRef.current) return;
+				if (!isOk) {
+					toastsCx.add({
+						type: 'error',
+						title: checked ? 'Could not turn on system access' : 'Could not turn off system access',
+						description: error
+					});
+					return;
+				}
+
+				setRecoveryAgentStatus(status);
+			} finally {
+				if (!isUnmountedRef.current) {
+					setIsRecoveryAgentUpdating(false);
+				}
+			}
+		},
+		[toastsCx]
+	);
+
+	// MARK: - Effects
+
+	React.useEffect(() => {
+		isUnmountedRef.current = false;
+
+		(async () => {
+			try {
+				const [isOk, error, status] = toTuple(await specta.commands.getRecoveryAgentStatus());
+				if (isUnmountedRef.current) return;
+				if (!isOk) {
+					toastsCx.add({
+						type: 'error',
+						title: 'Could not load system access status',
+						description: error
+					});
+					return;
+				}
+
+				setRecoveryAgentStatus(status);
+			} finally {
+				if (!isUnmountedRef.current) {
+					setIsRecoveryAgentStatusPending(false);
+				}
+			}
+		})();
+
+		return () => {
+			isUnmountedRef.current = true;
+		};
+	}, [toastsCx]);
+
+	// MARK: - UI
+
+	return (
+		<SettingsGroup title="System Access">
+			<SettingsRow
+				label="Keep Abstand running during Strict Enforcement"
+				description={getSystemAccessDescription(recoveryAgentStatus, hasActiveStrictBlockSession)}
+			>
+				<Switch
+					checked={isRecoveryAgentStatusEnabled}
+					disabled={
+						isRecoveryAgentStatusPending ||
+						isRecoveryAgentUpdating ||
+						recoveryAgentStatus == null ||
+						isPreventedByActiveStrictBlock
+					}
+					onCheckedChange={handleRecoveryAgentToggle}
+				/>
+			</SettingsRow>
+		</SettingsGroup>
+	);
+};
+
+function getSystemAccessDescription(
+	status: specta.RecoveryAgentStatus | null,
+	hasActiveStrictBlockSession: boolean
+) {
+	if (status == null) {
+		return 'Checking whether Abstand can reopen during Strict Enforcement...';
+	}
+
+	if (status.isEnabled && hasActiveStrictBlockSession) {
+		return 'Abstand will reopen during this Strict Enforcement session. This cannot be turned off until it ends.';
+	}
+
+	if (status.isConfigured && !status.isLoaded) {
+		return 'Abstand may not reopen during Strict Enforcement until this is turned on again.';
+	}
+
+	return 'Reopen Abstand if it is force quit or crashes during Strict Enforcement.';
+}
 
 const UpdatesSection: React.FC = () => {
 	const appInfo = useAppInfo();

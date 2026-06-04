@@ -35,6 +35,7 @@ export {
 	PanelLeftCloseIcon,
 	PanelLeftOpenIcon,
 	PlusIcon,
+	RefreshCwIcon,
 	SearchIcon,
 	SettingsIcon,
 	ShieldCheckIcon,

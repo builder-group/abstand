@@ -60,12 +60,6 @@ impl RecoveryAgent {
             is_configured,
             is_loaded,
             is_enabled: is_configured && is_loaded,
-            has_active_strict_block_session: recovery_condition::should_recover_app_blocking()?,
-            plist_path: self
-                .user_launch_agent
-                .plist_path()
-                .to_string_lossy()
-                .to_string(),
         });
     }
 
@@ -83,8 +77,6 @@ pub struct RecoveryAgentStatus {
     pub is_loaded: bool,
     /// Set to `true` when the recovery agent is both configured and loaded.
     pub is_enabled: bool,
-    pub has_active_strict_block_session: bool,
-    pub plist_path: String,
 }
 
 fn plist_path() -> Result<PathBuf, Box<dyn Error>> {

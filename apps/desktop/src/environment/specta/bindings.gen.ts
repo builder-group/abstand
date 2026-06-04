@@ -289,19 +289,19 @@ export type KeyboardShortcut = { modifiers: ShortcutModifier[];
 code: string }
 export type QuitPreventedEvent = { reason: QuitPreventedReason }
 export type QuitPreventedReason = "activeStrictBlock"
-export type RecoveryAgentStatus = { 
+export type RecoveryAgentStatus = {
 /**
  * Set to `true` when the recovery agent plist exists in the user's LaunchAgents folder.
  */
-isConfigured: boolean; 
+isConfigured: boolean;
 /**
  * Set to `true` when launchd has loaded the recovery agent job for the current user.
  */
-isLoaded: boolean; 
+isLoaded: boolean;
 /**
  * Set to `true` when the recovery agent is both configured and loaded.
  */
-isEnabled: boolean; hasActiveStrictBlockSession: boolean; plistPath: string }
+isEnabled: boolean }
 export type SearchCatalogParams = { query: string; limit: number | null; includeIcon: CatalogIconMode | null }
 export type SettingsVersion = "0.0.1"
 export type ShortcutAction = "search" | "newIntention" | "toggleSidebar"

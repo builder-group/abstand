@@ -10,6 +10,7 @@ export class IntentionsCx {
 
 	private readonly _activeSessions: Record<number, TState<specta.IntentionSession | null, []>> = {};
 	public readonly $activeIntentionIds = createState<number[]>([]);
+	public readonly $hasActiveStrictBlockSession = createState(false);
 
 	public readonly $hasLoaded = createState(false);
 
@@ -206,6 +207,8 @@ export class IntentionsCx {
 		if (!intentionIds.includes(intention.id)) {
 			this.$intentionIds.set([...intentionIds, intention.id]);
 		}
+
+		this._syncHasActiveStrictBlockSession();
 	}
 
 	private _removeIntention(intentionId: number): void {
@@ -218,6 +221,8 @@ export class IntentionsCx {
 		if (intentionIds.includes(intentionId)) {
 			this.$intentionIds.set(intentionIds.filter((id) => id !== intentionId));
 		}
+
+		this._syncHasActiveStrictBlockSession();
 	}
 
 	private _upsertActiveSession(session: specta.IntentionSession): void {
@@ -227,6 +232,8 @@ export class IntentionsCx {
 		if (!activeIntentionIds.includes(session.intentionId)) {
 			this.$activeIntentionIds.set([...activeIntentionIds, session.intentionId]);
 		}
+
+		this._syncHasActiveStrictBlockSession();
 	}
 
 	private _removeActiveSession(intentionId: number): void {
@@ -239,6 +246,19 @@ export class IntentionsCx {
 		if (activeIntentionIds.includes(intentionId)) {
 			this.$activeIntentionIds.set(activeIntentionIds.filter((id) => id !== intentionId));
 		}
+
+		this._syncHasActiveStrictBlockSession();
+	}
+
+	private _syncHasActiveStrictBlockSession(): void {
+		const hasActiveStrictBlockSession = this.$activeIntentionIds.get().some((intentionId) => {
+			const intention = this._intentions[intentionId]?.get();
+			return (
+				intention?.behavior.type === 'block' && intention.behavior.enforcementMode === 'strict'
+			);
+		});
+
+		this.$hasActiveStrictBlockSession.set(hasActiveStrictBlockSession);
 	}
 }
 
