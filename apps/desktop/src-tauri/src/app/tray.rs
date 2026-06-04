@@ -73,12 +73,26 @@ impl AppTray {
             true,
             None::<&str>,
         )?;
+        #[cfg(debug_assertions)]
+        let dev_force_quit = MenuItem::with_id(
+            app,
+            AppTrayMenuItem::DevForceQuit.id(),
+            AppTrayMenuItem::DevForceQuit.label(),
+            true,
+            None::<&str>,
+        )?;
 
-        return MenuBuilder::new(app)
+        let builder = MenuBuilder::new(app)
             .item(&show_app)
             .separator()
-            .item(&quit)
-            .build();
+            .item(&quit);
+
+        // Keep the development escape hatch in the tray so it remains visible when
+        // Strict Enforcement blocks normal quit or the main window is hidden or broken
+        #[cfg(debug_assertions)]
+        let builder = builder.item(&dev_force_quit);
+
+        return builder.build();
     }
 
     fn handle_menu_event(app: &AppHandle, event: MenuEvent) {
@@ -94,6 +108,8 @@ impl AppTray {
 enum AppTrayMenuItem {
     ShowApp,
     Quit,
+    #[cfg(debug_assertions)]
+    DevForceQuit,
 }
 
 impl AppTrayMenuItem {
@@ -101,13 +117,17 @@ impl AppTrayMenuItem {
         return match self {
             Self::ShowApp => "tray_show_app",
             Self::Quit => "tray_quit_app",
+            #[cfg(debug_assertions)]
+            Self::DevForceQuit => "tray_dev_force_quit",
         };
     }
 
     fn label(&self) -> &'static str {
         return match self {
             Self::ShowApp => "Show Abstand",
-            Self::Quit => "Quit Abstand",
+            Self::Quit => "Quit",
+            #[cfg(debug_assertions)]
+            Self::DevForceQuit => "Force Quit (Dev)",
         };
     }
 
@@ -115,6 +135,8 @@ impl AppTrayMenuItem {
         return match id {
             "tray_show_app" => Some(Self::ShowApp),
             "tray_quit_app" => Some(Self::Quit),
+            #[cfg(debug_assertions)]
+            "tray_dev_force_quit" => Some(Self::DevForceQuit),
             _ => None,
         };
     }
@@ -126,6 +148,10 @@ impl AppTrayMenuItem {
             }
             Self::Quit => {
                 quit_policy::request_quit_blocking(app, quit_policy::QuitRequestSource::Tray);
+            }
+            #[cfg(debug_assertions)]
+            Self::DevForceQuit => {
+                std::process::exit(0);
             }
         }
     }

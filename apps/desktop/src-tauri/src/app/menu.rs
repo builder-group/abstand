@@ -84,7 +84,7 @@ impl AppMenuItem {
     fn label(&self) -> &'static str {
         return match self {
             Self::ShowApp => "Show Abstand",
-            Self::Quit => "Quit Abstand",
+            Self::Quit => "Quit",
         };
     }
 
