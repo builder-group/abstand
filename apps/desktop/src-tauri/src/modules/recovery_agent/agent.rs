@@ -7,7 +7,11 @@ use crate::environment::{
     path::{get_app_support_dir, get_user_launch_agents_dir},
 };
 use serde::Serialize;
-use std::{env, error::Error, path::PathBuf};
+use std::{
+    env,
+    error::Error,
+    path::{Path, PathBuf},
+};
 
 /// Installs and controls the agent that reopens Abstand during active Strict Enforcement.
 pub struct RecoveryAgent {
@@ -48,14 +52,14 @@ impl RecoveryAgent {
         return Ok(());
     }
 
-    pub fn is_enabled(&self) -> bool {
-        return self.user_launch_agent.is_enabled();
-    }
-
     pub fn status(&self) -> Result<RecoveryAgentStatus, Box<dyn Error>> {
+        let is_configured = self.user_launch_agent.is_configured();
+        let is_loaded = self.user_launch_agent.is_loaded()?;
+
         return Ok(RecoveryAgentStatus {
-            is_installed: self.is_enabled(),
-            is_loaded: self.user_launch_agent.is_loaded()?,
+            is_configured,
+            is_loaded,
+            is_enabled: is_configured && is_loaded,
             has_active_strict_block_session: recovery_condition::should_recover_app_blocking()?,
             plist_path: self
                 .user_launch_agent
@@ -64,14 +68,21 @@ impl RecoveryAgent {
                 .to_string(),
         });
     }
+
+    pub fn plist_path(&self) -> &Path {
+        return self.user_launch_agent.plist_path();
+    }
 }
 
 #[derive(Debug, Clone, Serialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct RecoveryAgentStatus {
-    pub is_installed: bool,
+    /// Set to `true` when the recovery agent plist exists in the user's LaunchAgents folder.
+    pub is_configured: bool,
     /// Set to `true` when launchd has loaded the recovery agent job for the current user.
     pub is_loaded: bool,
+    /// Set to `true` when the recovery agent is both configured and loaded.
+    pub is_enabled: bool,
     pub has_active_strict_block_session: bool,
     pub plist_path: String,
 }

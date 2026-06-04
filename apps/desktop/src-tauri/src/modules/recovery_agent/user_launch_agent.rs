@@ -29,12 +29,20 @@ impl UserLaunchAgent {
 
     pub fn enable(&self) -> Result<(), Box<dyn Error>> {
         self.validate_executable_path()?;
+        let was_configured = self.is_configured();
+
         self.write_plist()?;
 
         if self.is_loaded()? {
             self.unload()?;
         }
-        self.load()?;
+
+        if let Err(error) = self.load() {
+            if !was_configured && self.plist_path.exists() {
+                fs::remove_file(&self.plist_path)?;
+            }
+            return Err(error);
+        }
 
         return Ok(());
     }
@@ -51,7 +59,7 @@ impl UserLaunchAgent {
         return Ok(());
     }
 
-    pub fn is_enabled(&self) -> bool {
+    pub fn is_configured(&self) -> bool {
         return self.plist_path.exists();
     }
 
