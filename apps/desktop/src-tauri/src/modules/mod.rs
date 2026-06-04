@@ -1,6 +1,7 @@
 pub mod catalog;
 pub mod db;
 pub mod intentions;
+pub mod launch_at_login;
 #[cfg(target_os = "macos")]
 pub mod recovery_agent;
 pub mod scheduler;

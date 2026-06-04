@@ -10,10 +10,13 @@ pub mod window;
 
 use crate::{
     environment::logger,
-    modules::{catalog, db, intentions, recovery_agent, scheduler, settings, shortcuts},
+    modules::{
+        catalog, db, intentions, launch_at_login, recovery_agent, scheduler, settings, shortcuts,
+    },
 };
 #[cfg(debug_assertions)]
 use specta_typescript::{BigIntExportBehavior, Typescript};
+use tauri_plugin_autostart::MacosLauncher;
 use tauri_specta::{collect_commands, collect_events, Builder as SpectaBuilder};
 
 pub fn run() {
@@ -30,6 +33,10 @@ pub fn run() {
             recovery_agent::commands::install_recovery_agent,
             recovery_agent::commands::uninstall_recovery_agent,
             recovery_agent::commands::reveal_recovery_agent_plist,
+            // Launch at login commands
+            launch_at_login::commands::get_launch_at_login_status,
+            launch_at_login::commands::enable_launch_at_login,
+            launch_at_login::commands::disable_launch_at_login,
             // Settings commands
             settings::commands::get_settings,
             settings::commands::set_settings,
@@ -83,6 +90,10 @@ pub fn run() {
         .plugin(logger::Logger::build())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_os::init())
+        .plugin(tauri_plugin_autostart::init(
+            MacosLauncher::LaunchAgent,
+            None,
+        ))
         .invoke_handler(specta_builder.invoke_handler());
 
     #[cfg(target_os = "macos")]

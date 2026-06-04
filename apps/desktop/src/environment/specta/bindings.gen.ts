@@ -62,6 +62,30 @@ async revealRecoveryAgentPlist() : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+async getLaunchAtLoginStatus() : Promise<Result<LaunchAtLoginStatus, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_launch_at_login_status") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async enableLaunchAtLogin() : Promise<Result<LaunchAtLoginStatus, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("enable_launch_at_login") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async disableLaunchAtLogin() : Promise<Result<LaunchAtLoginStatus, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("disable_launch_at_login") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getSettings() : Promise<AppSettings> {
     return await TAURI_INVOKE("get_settings");
 },
@@ -287,6 +311,7 @@ export type KeyboardShortcut = { modifiers: ShortcutModifier[];
  * A browser KeyboardEvent.code value, e.g. "KeyK", "KeyB".
  */
 code: string }
+export type LaunchAtLoginStatus = { isEnabled: boolean }
 export type QuitPreventedEvent = { reason: QuitPreventedReason }
 export type QuitPreventedReason = "activeStrictBlock"
 export type RecoveryAgentStatus = {
