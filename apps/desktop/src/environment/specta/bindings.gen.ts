@@ -314,15 +314,15 @@ code: string }
 export type LaunchAtLoginStatus = { isEnabled: boolean }
 export type QuitPreventedEvent = { reason: QuitPreventedReason }
 export type QuitPreventedReason = "activeStrictBlock"
-export type RecoveryAgentStatus = {
+export type RecoveryAgentStatus = { 
 /**
  * Set to `true` when the recovery agent plist exists in the user's LaunchAgents folder.
  */
-isConfigured: boolean;
+isConfigured: boolean; 
 /**
  * Set to `true` when launchd has loaded the recovery agent job for the current user.
  */
-isLoaded: boolean;
+isLoaded: boolean; 
 /**
  * Set to `true` when the recovery agent is both configured and loaded.
  */

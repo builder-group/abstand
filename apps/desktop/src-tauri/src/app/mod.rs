@@ -16,7 +16,6 @@ use crate::{
 };
 #[cfg(debug_assertions)]
 use specta_typescript::{BigIntExportBehavior, Typescript};
-use tauri_plugin_autostart::MacosLauncher;
 use tauri_specta::{collect_commands, collect_events, Builder as SpectaBuilder};
 
 pub fn run() {
@@ -90,10 +89,7 @@ pub fn run() {
         .plugin(logger::Logger::build())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_os::init())
-        .plugin(tauri_plugin_autostart::init(
-            MacosLauncher::LaunchAgent,
-            None,
-        ))
+        .plugin(launch_at_login::plugin())
         .invoke_handler(specta_builder.invoke_handler());
 
     #[cfg(target_os = "macos")]
@@ -120,8 +116,9 @@ pub fn run() {
             intentions::setup(app)?;
             settings::setup(app);
 
-            // Show main window on startup
-            let _ = window::AppWindow::Main.show(app.handle());
+            if !launch_at_login::cli::was_launched_at_login() {
+                let _ = window::AppWindow::Main.show(app.handle());
+            }
 
             return Ok(());
         })
