@@ -16,9 +16,9 @@ Use this file first when working in this repository. It defines the default agen
 - Follow the user request and explicit task constraints first
 - If a rule appears to conflict with the user's explicit request or clearly implied task goal, follow the user. Mention meaningful conflicts briefly so the rule can be improved.
 - Before editing, read the matching rule from `.agent/rules/` and the nearby implementation
-- Before product behavior, UI copy, or concept changes, also read `docs/project-spec.md` and the relevant file in `docs/concepts/`
-- Before Tauri command, database, scheduler, native bridge, or module-structure changes, also read the relevant files in `docs/conventions/`
-- Before package-level changes, also read the owning `package.json`, `Cargo.toml`, or Tauri config and nearby tests
+- Before product behavior, UI copy, or concept changes, read `docs/project-spec.md` and the relevant file in `docs/concepts/`
+- Before Tauri command, database, scheduler, native bridge, or module-structure changes, read the relevant files in `docs/conventions/`
+- Before package-level changes, read the owning `package.json`, `Cargo.toml`, or Tauri config and nearby tests
 - Prefer repository conventions and local package patterns over generic defaults
 - Keep changes focused on the requested behavior. Do not do unrelated cleanup or opportunistic rewrites.
 - Match surrounding style unless a local, low-risk improvement makes the edited code clearer
