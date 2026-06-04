@@ -187,26 +187,32 @@ const FeaturesSection: React.FC = () => {
 };
 
 const SystemAccessSection: React.FC = () => {
+	return (
+		<SettingsGroup title="System Access">
+			<RecoveryAgentSystemAccessRow />
+		</SettingsGroup>
+	);
+};
+
+const RecoveryAgentSystemAccessRow: React.FC = () => {
 	const toastsCx = useToastsCx();
 	const intentionsCx = useIntentionsCx();
 	const isUnmountedRef = React.useRef(false);
 
 	const hasActiveStrictBlockSession = useFeatureState(intentionsCx.$hasActiveStrictBlockSession);
 
-	const [recoveryAgentStatus, setRecoveryAgentStatus] =
-		React.useState<specta.RecoveryAgentStatus | null>(null);
-	const [isRecoveryAgentStatusPending, setIsRecoveryAgentStatusPending] = React.useState(true);
-	const [isRecoveryAgentUpdating, setIsRecoveryAgentUpdating] = React.useState(false);
+	const [status, setStatus] = React.useState<specta.RecoveryAgentStatus | null>(null);
+	const [isStatusPending, setIsStatusPending] = React.useState(true);
+	const [isUpdating, setIsUpdating] = React.useState(false);
 
-	const isRecoveryAgentStatusEnabled = recoveryAgentStatus?.isEnabled ?? false;
-	const isPreventedByActiveStrictBlock =
-		isRecoveryAgentStatusEnabled && hasActiveStrictBlockSession;
+	const isEnabled = status?.isEnabled ?? false;
+	const isPreventedByActiveStrictBlock = isEnabled && hasActiveStrictBlockSession;
 
 	// MARK: - Actions
 
-	const handleRecoveryAgentToggle = React.useCallback(
+	const handleToggle = React.useCallback(
 		async (checked: boolean) => {
-			setIsRecoveryAgentUpdating(true);
+			setIsUpdating(true);
 
 			try {
 				const [isOk, error, status] = toTuple(
@@ -224,10 +230,10 @@ const SystemAccessSection: React.FC = () => {
 					return;
 				}
 
-				setRecoveryAgentStatus(status);
+				setStatus(status);
 			} finally {
 				if (!isUnmountedRef.current) {
-					setIsRecoveryAgentUpdating(false);
+					setIsUpdating(false);
 				}
 			}
 		},
@@ -252,10 +258,10 @@ const SystemAccessSection: React.FC = () => {
 					return;
 				}
 
-				setRecoveryAgentStatus(status);
+				setStatus(status);
 			} finally {
 				if (!isUnmountedRef.current) {
-					setIsRecoveryAgentStatusPending(false);
+					setIsStatusPending(false);
 				}
 			}
 		})();
@@ -268,23 +274,16 @@ const SystemAccessSection: React.FC = () => {
 	// MARK: - UI
 
 	return (
-		<SettingsGroup title="System Access">
-			<SettingsRow
-				label="Keep Abstand running during Strict Enforcement"
-				description={getSystemAccessDescription(recoveryAgentStatus, hasActiveStrictBlockSession)}
-			>
-				<Switch
-					checked={isRecoveryAgentStatusEnabled}
-					disabled={
-						isRecoveryAgentStatusPending ||
-						isRecoveryAgentUpdating ||
-						recoveryAgentStatus == null ||
-						isPreventedByActiveStrictBlock
-					}
-					onCheckedChange={handleRecoveryAgentToggle}
-				/>
-			</SettingsRow>
-		</SettingsGroup>
+		<SettingsRow
+			label="Keep Abstand running during Strict Enforcement"
+			description={getSystemAccessDescription(status, hasActiveStrictBlockSession)}
+		>
+			<Switch
+				checked={isEnabled}
+				disabled={isStatusPending || isUpdating || status == null || isPreventedByActiveStrictBlock}
+				onCheckedChange={handleToggle}
+			/>
+		</SettingsRow>
 	);
 };
 
