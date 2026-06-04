@@ -273,12 +273,8 @@ pub async fn complete_intention(
     intention_id: i64,
     end_condition_id: Option<i64>,
 ) -> Result<IntentionSession, String> {
-    action_policy::require_intention_complete_allowed(
-        &state.pool,
-        intention_id,
-        end_condition_id,
-    )
-    .await?;
+    action_policy::require_intention_complete_allowed(&state.pool, intention_id, end_condition_id)
+        .await?;
 
     return runtime
         .complete_intention(&app, intention_id, end_condition_id)
