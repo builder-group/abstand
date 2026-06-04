@@ -1,6 +1,7 @@
-use crate::environment::configs::app::AppConfig;
+use crate::environment::{configs::app::AppConfig, path::get_app_log_dir};
 use log::LevelFilter;
-use tauri::{plugin::TauriPlugin, Runtime};
+use std::{fs, path::PathBuf};
+use tauri::{plugin::TauriPlugin, Manager, Runtime};
 use tauri_plugin_log::{RotationStrategy, Target, TargetKind, TimezoneStrategy};
 
 pub struct Logger;
@@ -33,5 +34,21 @@ impl Logger {
             return LevelFilter::Debug;
         }
         return LevelFilter::Info;
+    }
+
+    pub fn ensure_log_file<R: Runtime, M: Manager<R>>(app: &M) -> Result<PathBuf, String> {
+        let log_file_path = Self::log_file_path(app)?;
+        fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&log_file_path)
+            .map_err(|e| e.to_string())?;
+        return Ok(log_file_path);
+    }
+
+    fn log_file_path<R: Runtime, M: Manager<R>>(app: &M) -> Result<PathBuf, String> {
+        return Ok(get_app_log_dir(app)?
+            .join(AppConfig::log_file_name())
+            .with_extension("log"));
     }
 }

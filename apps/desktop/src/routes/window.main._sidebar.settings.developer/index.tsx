@@ -29,6 +29,17 @@ function RouteComponent() {
 		}
 	}, [toastsCx]);
 
+	const handleRevealLogFile = React.useCallback(async () => {
+		const [isRevealOk, revealErr] = toTuple(await specta.commands.revealLogFile());
+		if (!isRevealOk) {
+			toastsCx.add({
+				type: 'error',
+				title: 'Could not show log file',
+				description: revealErr
+			});
+		}
+	}, [toastsCx]);
+
 	// MARK: - UI
 
 	return (
@@ -47,11 +58,23 @@ function RouteComponent() {
 					<FolderOpenIcon className="text-base-400 size-4" />
 					<ChevronRightIcon className="text-base-400" />
 				</SettingsRow>
+			</SettingsGroup>
+			<SettingsGroup title="Interface">
 				<SettingsRow
 					label="UI Playground"
 					description="Preview shared desktop components and sizing."
 					render={<Link to="/window/main/settings/developer/ui-playground" />}
 				>
+					<ChevronRightIcon className="text-base-400" />
+				</SettingsRow>
+			</SettingsGroup>
+			<SettingsGroup title="Diagnostics">
+				<SettingsRow
+					label="Log File"
+					description="Reveal the current app log file in Finder."
+					render={<button onClick={handleRevealLogFile} />}
+				>
+					<FolderOpenIcon className="text-base-400 size-4" />
 					<ChevronRightIcon className="text-base-400" />
 				</SettingsRow>
 			</SettingsGroup>

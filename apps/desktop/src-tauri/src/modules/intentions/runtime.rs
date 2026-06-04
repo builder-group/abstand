@@ -33,8 +33,9 @@ impl IntentionRuntime {
     ) -> Result<IntentionSession, IntentionRuntimeError> {
         let session = start_session(app, intention_id, None, unix_ms_now()).await?;
         if let Err(error) = self.reevaluate(app).await {
-            eprintln!(
-                "Intention reevaluation after manual start failed: {}",
+            log::error!(
+                target: LOG_TARGET,
+                "intention reevaluation after manual start failed: {}",
                 error
             );
         }
@@ -49,8 +50,9 @@ impl IntentionRuntime {
     ) -> Result<IntentionSession, IntentionRuntimeError> {
         let session = complete_session(app, intention_id, end_condition_id, unix_ms_now()).await?;
         if let Err(error) = self.reevaluate(app).await {
-            eprintln!(
-                "Intention reevaluation after manual complete failed: {}",
+            log::error!(
+                target: LOG_TARGET,
+                "intention reevaluation after manual complete failed: {}",
                 error
             );
         }
@@ -64,7 +66,11 @@ impl IntentionRuntime {
     ) -> Result<IntentionSession, IntentionRuntimeError> {
         let session = stop_session(app, intention_id, unix_ms_now()).await?;
         if let Err(error) = self.reevaluate(app).await {
-            eprintln!("Intention reevaluation after manual stop failed: {}", error);
+            log::error!(
+                target: LOG_TARGET,
+                "intention reevaluation after manual stop failed: {}",
+                error
+            );
         }
         return Ok(session);
     }
@@ -92,3 +98,5 @@ impl From<SessionTransitionError> for IntentionRuntimeError {
         return Self::SessionTransition(value);
     }
 }
+
+const LOG_TARGET: &str = "modules::intentions::runtime";

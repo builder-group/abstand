@@ -62,7 +62,11 @@ impl TimedRuntime {
                     Ok(did_apply) => did_apply_due_condition |= did_apply,
                     Err(error) => {
                         did_fail_due_condition = true;
-                        eprintln!("Failed to apply due condition: {}", error);
+                        log::error!(
+                            target: LOG_TARGET,
+                            "failed to apply due condition: {}",
+                            error
+                        );
                     }
                 }
             }
@@ -81,8 +85,9 @@ impl TimedRuntime {
             }
         }
 
-        eprintln!(
-            "Timed reevaluation did not settle after {} passes",
+        log::error!(
+            target: LOG_TARGET,
+            "timed reevaluation did not settle after {} passes",
             Self::MAX_REEVALUATION_PASSES
         );
         self.schedule_wakeup(app, next_wake_at);
@@ -133,7 +138,11 @@ impl TimedRuntime {
                 tauri::async_runtime::spawn(async move {
                     let runtime = app.state::<IntentionRuntimeState>();
                     if let Err(error) = runtime.reevaluate(&app).await {
-                        eprintln!("Intention reevaluation failed: {}", error);
+                        log::error!(
+                            target: LOG_TARGET,
+                            "intention reevaluation failed: {}",
+                            error
+                        );
                     }
                 });
             },
@@ -181,3 +190,5 @@ impl From<SessionTransitionError> for TimedRuntimeError {
         return Self::SessionTransition(value);
     }
 }
+
+const LOG_TARGET: &str = "modules::intentions::timed_runtime";

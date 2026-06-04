@@ -161,7 +161,11 @@ pub async fn create_intention(
     }
     .emit(&app);
     if let Err(error) = runtime.reevaluate(&app).await {
-        eprintln!("Intention reevaluation after create failed: {}", error);
+        log::error!(
+            target: LOG_TARGET,
+            "intention reevaluation after create failed: {}",
+            error
+        );
     }
 
     return Ok(intention);
@@ -198,7 +202,11 @@ pub async fn update_intention(
     }
     .emit(&app);
     if let Err(error) = runtime.reevaluate(&app).await {
-        eprintln!("Intention reevaluation after update failed: {}", error);
+        log::error!(
+            target: LOG_TARGET,
+            "intention reevaluation after update failed: {}",
+            error
+        );
     }
 
     return Ok(intention);
@@ -233,7 +241,11 @@ pub async fn delete_intention(
 
     let _ = IntentionDeletedEvent { intention_id }.emit(&app);
     if let Err(error) = runtime.reevaluate(&app).await {
-        eprintln!("Intention reevaluation after delete failed: {}", error);
+        log::error!(
+            target: LOG_TARGET,
+            "intention reevaluation after delete failed: {}",
+            error
+        );
     }
 
     return Ok(());
@@ -491,3 +503,5 @@ pub struct WriteIntentionConditionDateTimeRuleParams {
     pub date_epoch_days: DateOnly,
     pub time_of_day_ms: TimeOnly,
 }
+
+const LOG_TARGET: &str = "modules::intentions::commands";

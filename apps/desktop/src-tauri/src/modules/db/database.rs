@@ -8,7 +8,7 @@ pub struct Database {
 
 impl Database {
     pub async fn new(app: &App) -> Result<Self, Box<dyn std::error::Error>> {
-        let data_dir_path = get_app_data_dir(app);
+        let data_dir_path = get_app_data_dir(app)?;
         let db_path = data_dir_path.join(DbConfig::db_name());
         let connection_options = sqlx::sqlite::SqliteConnectOptions::new()
             .filename(&db_path)

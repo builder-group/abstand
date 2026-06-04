@@ -161,9 +161,7 @@ impl AppWindow {
     #[cfg(target_os = "macos")]
     fn apply_macos_liquid_glass(window: &WebviewWindow, window_label: &str) {
         let Ok(window_ptr) = window.ns_window() else {
-            if cfg!(debug_assertions) {
-                eprintln!("Failed to access NSWindow for {}", window_label);
-            }
+            log::debug!(target: LOG_TARGET, "failed to access NSWindow for {}", window_label);
             return;
         };
 
@@ -178,11 +176,12 @@ impl AppWindow {
                 .build(),
         );
 
-        if cfg!(debug_assertions) {
-            eprintln!(
-                "Falling back to native window background for {}",
-                window_label
-            );
-        }
+        log::debug!(
+            target: LOG_TARGET,
+            "falling back to native window background for {}",
+            window_label
+        );
     }
 }
+
+const LOG_TARGET: &str = "app::window";

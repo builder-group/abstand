@@ -19,6 +19,14 @@ async openDataDirectory() : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+async revealLogFile() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("reveal_log_file") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getSettings() : Promise<AppSettings> {
     return await TAURI_INVOKE("get_settings");
 },

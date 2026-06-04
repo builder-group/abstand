@@ -4,14 +4,15 @@ use serde_json::Value;
 use std::{fs, path::PathBuf};
 use tauri::{Manager, Runtime};
 
-fn get_settings_path<R: Runtime, M: Manager<R>>(app: &M) -> PathBuf {
-    let data_dir = get_app_data_dir(app);
-    return data_dir.join(SettingsConfig::file_name());
-}
-
 /// Load settings from disk, or return defaults if file doesn't exist.
 pub fn load_settings<R: Runtime, M: Manager<R>>(app: &M) -> AppSettings {
-    let settings_path = get_settings_path(app);
+    let settings_path = match get_settings_path(app) {
+        Ok(settings_path) => settings_path,
+        Err(error) => {
+            log::warn!(target: LOG_TARGET, "failed to resolve settings path: {}", error);
+            return AppSettings::default();
+        }
+    };
 
     if !settings_path.exists() {
         return AppSettings::default();
@@ -20,7 +21,7 @@ pub fn load_settings<R: Runtime, M: Manager<R>>(app: &M) -> AppSettings {
     let content = match fs::read_to_string(&settings_path) {
         Ok(content) => content,
         Err(error) => {
-            eprintln!("[Settings] Failed to read settings file: {}", error);
+            log::warn!(target: LOG_TARGET, "failed to read settings file: {}", error);
             return AppSettings::default();
         }
     };
@@ -28,7 +29,7 @@ pub fn load_settings<R: Runtime, M: Manager<R>>(app: &M) -> AppSettings {
     let mut value = match serde_json::from_str::<Value>(&content) {
         Ok(value) => value,
         Err(error) => {
-            eprintln!("[Settings] Failed to parse settings file: {}", error);
+            log::warn!(target: LOG_TARGET, "failed to parse settings file: {}", error);
             return AppSettings::default();
         }
     };
@@ -41,8 +42,9 @@ pub fn load_settings<R: Runtime, M: Manager<R>>(app: &M) -> AppSettings {
     let settings = match serde_json::from_value::<AppSettings>(value) {
         Ok(settings) => settings,
         Err(error) => {
-            eprintln!(
-                "[Settings] Failed to deserialize settings after migration: {}",
+            log::warn!(
+                target: LOG_TARGET,
+                "failed to deserialize settings after migration: {}",
                 error
             );
             return AppSettings::default();
@@ -51,7 +53,7 @@ pub fn load_settings<R: Runtime, M: Manager<R>>(app: &M) -> AppSettings {
 
     if version_before != SettingsVersion::current() {
         if let Err(error) = save_settings(app, &settings) {
-            eprintln!("[Settings] Failed to persist migrated settings: {}", error);
+            log::warn!(target: LOG_TARGET, "failed to persist migrated settings: {}", error);
         }
     }
 
@@ -63,7 +65,7 @@ pub fn save_settings<R: Runtime, M: Manager<R>>(
     app: &M,
     settings: &AppSettings,
 ) -> Result<(), String> {
-    let settings_path = get_settings_path(app);
+    let settings_path = get_settings_path(app)?;
 
     let json = serde_json::to_string_pretty(settings)
         .map_err(|error| format!("Failed to serialize settings: {}", error))?;
@@ -72,6 +74,11 @@ pub fn save_settings<R: Runtime, M: Manager<R>>(
         .map_err(|error| format!("Failed to write settings file: {}", error))?;
 
     return Ok(());
+}
+
+fn get_settings_path<R: Runtime, M: Manager<R>>(app: &M) -> Result<PathBuf, String> {
+    let data_dir = get_app_data_dir(app)?;
+    return Ok(data_dir.join(SettingsConfig::file_name()));
 }
 
 fn migrate_value_one_step(value: &mut Value) {
@@ -86,3 +93,5 @@ fn version_from_value(value: &Value) -> SettingsVersion {
         .and_then(|version| serde_json::from_value(version.clone()).ok())
         .unwrap_or(SettingsVersion::default());
 }
+
+const LOG_TARGET: &str = "modules::settings::persistence";

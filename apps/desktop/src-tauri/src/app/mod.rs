@@ -23,6 +23,7 @@ pub fn run() {
             commands::get_app_info,
             commands::get_system_typography,
             commands::open_data_directory,
+            commands::reveal_log_file,
             // Settings commands
             settings::commands::get_settings,
             settings::commands::set_settings,
