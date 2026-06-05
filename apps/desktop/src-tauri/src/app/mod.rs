@@ -27,6 +27,8 @@ pub fn run() {
             commands::notify_frontend_ready,
             commands::open_data_directory,
             commands::reveal_log_file,
+            // Quit policy commands
+            quit_policy::commands::confirm_balanced_quit,
             // Recovery agent commands
             recovery_agent::commands::get_recovery_agent_status,
             recovery_agent::commands::install_recovery_agent,
@@ -115,6 +117,7 @@ pub fn run() {
             db::setup(app)?;
             #[cfg(target_os = "macos")]
             process_signal::setup(app.handle());
+            quit_policy::setup(app);
             scheduler::setup(app);
             catalog::setup(app);
             intentions::setup(app)?;

@@ -31,3 +31,9 @@ Abstand is a tray app, so the tray process owns timed activation while it is run
 ### Why can reevaluation run multiple passes?
 
 Applying one due condition can make another condition evaluable. For example, a DateTime start can create an active session, which makes an end-after-start condition resolvable. The timed runtime repeats evaluation while due conditions are making real state changes, with a fixed pass limit to avoid infinite immediate cycles.
+
+### Why does the frontend own Balanced action delays?
+
+Balanced action delays are UI friction, not backend enforcement. The backend assesses weakening actions and returns `durationMs`, while the frontend owns the countdown and confirmation UI.
+
+Strict remains backend-enforced. Commands that mutate active Strict block sessions still reject weakening actions.

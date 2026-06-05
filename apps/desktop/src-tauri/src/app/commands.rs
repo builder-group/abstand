@@ -5,7 +5,7 @@ use crate::environment::{
     path::get_app_data_dir,
 };
 #[cfg(target_os = "macos")]
-use crate::modules::quit_policy::types::{QuitPreventedEvent, QuitPreventedReason};
+use crate::modules::quit_policy::types::QuitPreventedEvent;
 #[cfg(target_os = "macos")]
 use crate::modules::recovery_agent::cli;
 use serde::Serialize;
@@ -71,10 +71,7 @@ pub fn notify_frontend_ready(app: AppHandle) {
     // emitting the existing quit-prevented event so the toast listener can receive it
     #[cfg(target_os = "macos")]
     if cli::consume_relaunched_by_agent_arg() {
-        let _ = QuitPreventedEvent {
-            reason: QuitPreventedReason::ActiveStrictBlock,
-        }
-        .emit(&app);
+        let _ = QuitPreventedEvent::active_strict_block().emit(&app);
     }
 }
 

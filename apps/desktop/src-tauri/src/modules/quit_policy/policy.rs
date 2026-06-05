@@ -1,7 +1,10 @@
-use super::types::{QuitPreventedEvent, QuitPreventedReason, QuitRequestSource};
+use super::types::{QuitPolicyState, QuitPreventedEvent, QuitRequestSource};
 use crate::{
     app::window::AppWindow,
-    modules::{db::types::DatabaseState, intentions::repository::IntentionSessionRepository},
+    modules::{
+        db::types::DatabaseState,
+        intentions::{intention::IntentionEnforcementMode, repository::IntentionSessionRepository},
+    },
 };
 use tauri::{AppHandle, ExitRequestApi, Manager};
 use tauri_specta::Event;
@@ -9,8 +12,13 @@ use tauri_specta::Event;
 pub async fn request_quit(app: &AppHandle, source: QuitRequestSource) {
     log::debug!(target: LOG_TARGET, "quit requested from {}", source.label());
 
-    match assess_quit(app).await {
+    match assess_quit(app, QuitAssessmentMode::Unconfirmed).await {
         QuitDecision::Allowed => {
+            if let Err(error) = approve_next_exit_request(app) {
+                log::error!(target: LOG_TARGET, "failed to request quit: {}", error);
+                return;
+            }
+
             app.exit(0);
         }
         QuitDecision::Denied { reason } => {
@@ -23,9 +31,28 @@ pub fn request_quit_blocking(app: &AppHandle, source: QuitRequestSource) {
     tauri::async_runtime::block_on(request_quit(app, source));
 }
 
+pub async fn confirm_balanced_quit(app: &AppHandle) -> Result<(), String> {
+    match assess_quit(app, QuitAssessmentMode::ConfirmedBalanced).await {
+        QuitDecision::Allowed => {
+            approve_next_exit_request(app)?;
+            app.exit(0);
+            return Ok(());
+        }
+        QuitDecision::Denied { reason } => {
+            handle_quit_denial(app, reason);
+            return Err(reason.message().to_string());
+        }
+    }
+}
+
 pub fn handle_exit_requested(app: &AppHandle, api: &ExitRequestApi) {
+    // App-initiated exits are assessed before `app.exit(0)` and approved for this callback
+    if consume_next_exit_request_approval(app) {
+        return;
+    }
+
     // Note: RunEvent::ExitRequested is synchronous, so prevent_exit must be decided before returning
-    match tauri::async_runtime::block_on(assess_quit(app)) {
+    match tauri::async_runtime::block_on(assess_quit(app, QuitAssessmentMode::Unconfirmed)) {
         QuitDecision::Allowed => {}
         QuitDecision::Denied { reason } => {
             api.prevent_exit();
@@ -34,38 +61,112 @@ pub fn handle_exit_requested(app: &AppHandle, api: &ExitRequestApi) {
     }
 }
 
-fn handle_quit_denial(app: &AppHandle, reason: QuitPreventedReason) {
-    log::warn!(target: LOG_TARGET, "quit prevented: {}", reason.message());
-    let _ = QuitPreventedEvent { reason }.emit(app);
-    let _ = AppWindow::Main.show(app);
+fn approve_next_exit_request(app: &AppHandle) -> Result<(), String> {
+    let Some(quit_policy_state) = app.try_state::<QuitPolicyState>() else {
+        log::error!(target: LOG_TARGET, "quit policy state unavailable");
+        return Err("Quit policy state unavailable".to_string());
+    };
+
+    quit_policy_state.approve_next_exit_request();
+    return Ok(());
 }
 
-async fn assess_quit(app: &AppHandle) -> QuitDecision {
+fn consume_next_exit_request_approval(app: &AppHandle) -> bool {
+    let Some(quit_policy_state) = app.try_state::<QuitPolicyState>() else {
+        log::error!(target: LOG_TARGET, "quit policy state unavailable");
+        return false;
+    };
+
+    return quit_policy_state.consume_next_exit_request_approval();
+}
+
+async fn assess_quit(app: &AppHandle, mode: QuitAssessmentMode) -> QuitDecision {
     let Some(db_state) = app.try_state::<DatabaseState>() else {
         log::warn!(target: LOG_TARGET, "database state unavailable, allowing quit");
         return QuitDecision::Allowed;
     };
     let pool = db_state.pool.clone();
 
-    let has_active_strict_block_session =
-        IntentionSessionRepository::has_active_strict_block_session(&pool).await;
-
-    return match has_active_strict_block_session {
-        Ok(true) => QuitDecision::Denied {
-            reason: QuitPreventedReason::ActiveStrictBlock,
-        },
-        Ok(false) => QuitDecision::Allowed,
+    match IntentionSessionRepository::has_active_block_session_with_enforcement(
+        &pool,
+        IntentionEnforcementMode::Strict,
+    )
+    .await
+    {
+        Ok(true) => {
+            return QuitDecision::Denied {
+                reason: QuitPreventedReason::ActiveStrictBlock,
+            };
+        }
+        Ok(false) => {}
         Err(error) => {
             log::error!(target: LOG_TARGET, "failed to assess quit policy: {}", error);
-            QuitDecision::Allowed
+            return QuitDecision::Allowed;
         }
     };
+
+    match IntentionSessionRepository::has_active_block_session_with_enforcement(
+        &pool,
+        IntentionEnforcementMode::Balanced,
+    )
+    .await
+    {
+        Ok(true) => {
+            return match mode {
+                QuitAssessmentMode::ConfirmedBalanced => QuitDecision::Allowed,
+                QuitAssessmentMode::Unconfirmed => QuitDecision::Denied {
+                    reason: QuitPreventedReason::ActiveBalancedBlock,
+                },
+            };
+        }
+        Ok(false) => {}
+        Err(error) => {
+            log::error!(target: LOG_TARGET, "failed to assess quit policy: {}", error);
+            return QuitDecision::Allowed;
+        }
+    }
+
+    return QuitDecision::Allowed;
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum QuitAssessmentMode {
+    Unconfirmed,
+    ConfirmedBalanced,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum QuitDecision {
     Allowed,
     Denied { reason: QuitPreventedReason },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum QuitPreventedReason {
+    ActiveBalancedBlock,
+    ActiveStrictBlock,
+}
+
+impl QuitPreventedReason {
+    fn message(&self) -> &'static str {
+        return match self {
+            Self::ActiveBalancedBlock => "Balanced Enforcement is active",
+            Self::ActiveStrictBlock => "Strict Enforcement is active",
+        };
+    }
+
+    fn to_event(&self) -> QuitPreventedEvent {
+        return match self {
+            Self::ActiveBalancedBlock => QuitPreventedEvent::active_balanced_block(),
+            Self::ActiveStrictBlock => QuitPreventedEvent::active_strict_block(),
+        };
+    }
+}
+
+fn handle_quit_denial(app: &AppHandle, reason: QuitPreventedReason) {
+    log::warn!(target: LOG_TARGET, "quit prevented: {}", reason.message());
+    let _ = reason.to_event().emit(app);
+    let _ = AppWindow::Main.show(app);
 }
 
 const LOG_TARGET: &str = "modules::quit_policy";

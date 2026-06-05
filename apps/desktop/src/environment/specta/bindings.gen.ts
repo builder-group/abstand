@@ -30,6 +30,14 @@ async revealLogFile() : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+async confirmBalancedQuit() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("confirm_balanced_quit") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getRecoveryAgentStatus() : Promise<Result<RecoveryAgentStatus, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_recovery_agent_status") };
@@ -331,8 +339,7 @@ export type KeyboardShortcut = { modifiers: ShortcutModifier[];
  */
 code: string }
 export type LaunchAtLoginStatus = { isEnabled: boolean }
-export type QuitPreventedEvent = { reason: QuitPreventedReason }
-export type QuitPreventedReason = "activeStrictBlock"
+export type QuitPreventedEvent = { reason: "activeBalancedBlock"; durationMs: number } | { reason: "activeStrictBlock" }
 export type RecoveryAgentStatus = { 
 /**
  * Set to `true` when the recovery agent plist exists in the user's LaunchAgents folder.

@@ -3,7 +3,9 @@ use crate::{
         configs::{app::AppConfig, db::DbConfig},
         path::get_app_support_dir,
     },
-    modules::intentions::repository::IntentionSessionRepository,
+    modules::intentions::{
+        intention::IntentionEnforcementMode, repository::IntentionSessionRepository,
+    },
 };
 use sqlx::{sqlite::SqliteConnectOptions, SqlitePool};
 use std::{error::Error, path::PathBuf};
@@ -46,9 +48,12 @@ impl RecoveryConditionProbe {
             .pool
             .as_ref()
             .ok_or("recovery condition pool unavailable")?;
-        return IntentionSessionRepository::has_active_strict_block_session(pool)
-            .await
-            .map_err(|error| error.to_string().into());
+        return IntentionSessionRepository::has_active_block_session_with_enforcement(
+            pool,
+            IntentionEnforcementMode::Strict,
+        )
+        .await
+        .map_err(|error| error.to_string().into());
     }
 }
 
