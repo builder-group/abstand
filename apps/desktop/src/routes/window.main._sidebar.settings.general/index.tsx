@@ -38,8 +38,8 @@ function RouteComponent() {
 			iconVariant="neutral"
 		>
 			<AppearanceSection />
+			<StartupRecoverySection />
 			<FeaturesSection />
-			<SystemAccessSection />
 			<UpdatesSection />
 			<HelpFeedbackSection />
 		</SettingsPage>
@@ -186,15 +186,16 @@ const FeaturesSection: React.FC = () => {
 	);
 };
 
-const SystemAccessSection: React.FC = () => {
+const StartupRecoverySection: React.FC = () => {
 	return (
-		<SettingsGroup title="System Access">
-			<RecoveryAgentSystemAccessRow />
+		<SettingsGroup title="Startup & Recovery">
+			<RecoveryAgentStartupRecoveryRow />
+			<LaunchAtLoginStartupRecoveryRow />
 		</SettingsGroup>
 	);
 };
 
-const RecoveryAgentSystemAccessRow: React.FC = () => {
+const RecoveryAgentStartupRecoveryRow: React.FC = () => {
 	const toastsCx = useToastsCx();
 	const intentionsCx = useIntentionsCx();
 	const isUnmountedRef = React.useRef(false);
@@ -275,24 +276,30 @@ const RecoveryAgentSystemAccessRow: React.FC = () => {
 
 	return (
 		<SettingsRow
-			label="Keep Abstand running during Strict Enforcement"
-			description={getSystemAccessDescription(status, hasActiveStrictBlockSession)}
+			label="Reopen Abstand during Strict Enforcement"
+			description={getRecoveryAgentDescription(status, hasActiveStrictBlockSession)}
 		>
-			<Switch
-				checked={isEnabled}
-				disabled={isStatusPending || isUpdating || status == null || isPreventedByActiveStrictBlock}
-				onCheckedChange={handleToggle}
-			/>
+			{status != null ? (
+				<Switch
+					checked={isEnabled}
+					disabled={isStatusPending || isUpdating || isPreventedByActiveStrictBlock}
+					onCheckedChange={handleToggle}
+				/>
+			) : isStatusPending ? (
+				<Spinner size="sm" />
+			) : (
+				<Switch checked={false} disabled />
+			)}
 		</SettingsRow>
 	);
 };
 
-function getSystemAccessDescription(
+function getRecoveryAgentDescription(
 	status: specta.RecoveryAgentStatus | null,
 	hasActiveStrictBlockSession: boolean
 ) {
 	if (status == null) {
-		return 'Checking whether Abstand can reopen during Strict Enforcement...';
+		return 'Checking recovery status...';
 	}
 
 	if (status.isEnabled && hasActiveStrictBlockSession) {
@@ -300,10 +307,126 @@ function getSystemAccessDescription(
 	}
 
 	if (status.isConfigured && !status.isLoaded) {
-		return 'Abstand may not reopen during Strict Enforcement until this is turned on again.';
+		return 'Turn this on again to repair recovery before your next Strict Enforcement session.';
 	}
 
-	return 'Reopen Abstand if it is force quit or crashes during Strict Enforcement.';
+	return 'Bring Abstand back if it quits or crashes during a Strict Enforcement session.';
+}
+
+const LaunchAtLoginStartupRecoveryRow: React.FC = () => {
+	const toastsCx = useToastsCx();
+	const intentionsCx = useIntentionsCx();
+	const isUnmountedRef = React.useRef(false);
+
+	const hasActiveStrictBlockSession = useFeatureState(intentionsCx.$hasActiveStrictBlockSession);
+
+	const [status, setStatus] = React.useState<specta.LaunchAtLoginStatus | null>(null);
+	const [isStatusPending, setIsStatusPending] = React.useState(true);
+	const [isUpdating, setIsUpdating] = React.useState(false);
+
+	const isEnabled = status?.isEnabled ?? false;
+	const isPreventedByActiveStrictBlock = isEnabled && hasActiveStrictBlockSession;
+
+	// MARK: - Actions
+
+	const handleToggle = React.useCallback(
+		async (checked: boolean) => {
+			setIsUpdating(true);
+
+			try {
+				const [isOk, error, status] = toTuple(
+					checked
+						? await specta.commands.enableLaunchAtLogin()
+						: await specta.commands.disableLaunchAtLogin()
+				);
+				if (isUnmountedRef.current) return;
+				if (!isOk) {
+					toastsCx.add({
+						type: 'error',
+						title: checked
+							? 'Could not turn on launch at login'
+							: 'Could not turn off launch at login',
+						description: error
+					});
+					return;
+				}
+
+				setStatus(status);
+			} finally {
+				if (!isUnmountedRef.current) {
+					setIsUpdating(false);
+				}
+			}
+		},
+		[toastsCx]
+	);
+
+	// MARK: - Effects
+
+	React.useEffect(() => {
+		isUnmountedRef.current = false;
+
+		(async () => {
+			try {
+				const [isOk, error, status] = toTuple(await specta.commands.getLaunchAtLoginStatus());
+				if (isUnmountedRef.current) return;
+				if (!isOk) {
+					toastsCx.add({
+						type: 'error',
+						title: 'Could not load launch at login status',
+						description: error
+					});
+					return;
+				}
+
+				setStatus(status);
+			} finally {
+				if (!isUnmountedRef.current) {
+					setIsStatusPending(false);
+				}
+			}
+		})();
+
+		return () => {
+			isUnmountedRef.current = true;
+		};
+	}, [toastsCx]);
+
+	// MARK: - UI
+
+	return (
+		<SettingsRow
+			label="Open Abstand at login"
+			description={getLaunchAtLoginDescription(status, hasActiveStrictBlockSession)}
+		>
+			{status != null ? (
+				<Switch
+					checked={isEnabled}
+					disabled={isStatusPending || isUpdating || isPreventedByActiveStrictBlock}
+					onCheckedChange={handleToggle}
+				/>
+			) : isStatusPending ? (
+				<Spinner size="sm" />
+			) : (
+				<Switch checked={false} disabled />
+			)}
+		</SettingsRow>
+	);
+};
+
+function getLaunchAtLoginDescription(
+	status: specta.LaunchAtLoginStatus | null,
+	hasActiveStrictBlockSession: boolean
+) {
+	if (status == null) {
+		return 'Checking login startup status...';
+	}
+
+	if (status.isEnabled && hasActiveStrictBlockSession) {
+		return 'Abstand will open when you sign in during this Strict Enforcement session. This cannot be turned off until it ends.';
+	}
+
+	return 'Start Abstand quietly when you sign in.';
 }
 
 const UpdatesSection: React.FC = () => {

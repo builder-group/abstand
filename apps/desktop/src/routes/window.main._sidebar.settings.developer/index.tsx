@@ -29,6 +29,7 @@ function RouteComponent() {
 			<AppSection />
 			<DiagnosticsSection />
 			<RecoveryAgentDiagnosticsSection />
+			<LaunchAtLoginDiagnosticsSection />
 			<SettingsGroup title="Interface">
 				<SettingsRow
 					label="UI Playground"
@@ -196,39 +197,24 @@ const RecoveryAgentDiagnosticsSection: React.FC = () => {
 				</SettingsRow>
 			</SettingsGroup>
 			<SettingsGroup>
-				<SettingsRow
+				<DiagnosticsStatusRow
 					label="Status"
-					variant="compact"
-					className="group/recovery-agent-status"
-					contentClassName="gap-0 transition-[gap] group-focus-within/recovery-agent-status:gap-2 group-hover/recovery-agent-status:gap-2"
-				>
-					<Badge variant={statusDisplay.variant} size="xs">
-						{statusDisplay.label}
-					</Badge>
-					<Button
-						type="button"
-						variant="ghost"
-						size="icon-sm"
-						disabled={isStatusPending}
-						onClick={handleRefreshStatus}
-						aria-label="Refresh recovery agent status"
-						title="Refresh recovery agent status"
-						className="w-0 shrink-0 overflow-hidden transition-[width] group-focus-within/recovery-agent-status:w-7 group-hover/recovery-agent-status:w-7 focus-visible:w-7"
-					>
-						<RefreshCwIcon />
-					</Button>
-				</SettingsRow>
-				<RecoveryAgentStatusBooleanRow
+					display={statusDisplay}
+					isPending={isStatusPending}
+					onRefresh={handleRefreshStatus}
+					refreshLabel="Refresh recovery agent status"
+				/>
+				<StatusBooleanRow
 					label="Enabled"
 					value={status?.isEnabled ?? false}
 					isLoading={status == null}
 				/>
-				<RecoveryAgentStatusBooleanRow
+				<StatusBooleanRow
 					label="Configured"
 					value={status?.isConfigured ?? false}
 					isLoading={status == null}
 				/>
-				<RecoveryAgentStatusBooleanRow
+				<StatusBooleanRow
 					label="Loaded"
 					value={status?.isLoaded ?? false}
 					isLoading={status == null}
@@ -243,42 +229,207 @@ function getRecoveryAgentStatusDisplay(status: specta.RecoveryAgentStatus | null
 		return {
 			label: 'Loading',
 			variant: 'secondary'
-		} satisfies TRecoveryAgentStatusDisplay;
+		} satisfies TStatusDisplay;
 	}
 
 	if (status.isEnabled) {
 		return {
 			label: 'Enabled',
 			variant: 'success'
-		} satisfies TRecoveryAgentStatusDisplay;
+		} satisfies TStatusDisplay;
 	}
 
 	if (status.isConfigured && !status.isLoaded) {
 		return {
 			label: 'Needs Repair',
 			variant: 'warning'
-		} satisfies TRecoveryAgentStatusDisplay;
+		} satisfies TStatusDisplay;
 	}
 
 	if (!status.isConfigured && status.isLoaded) {
 		return {
 			label: 'Stale',
 			variant: 'destructive'
-		} satisfies TRecoveryAgentStatusDisplay;
+		} satisfies TStatusDisplay;
 	}
 
 	return {
 		label: 'Off',
 		variant: 'secondary'
-	} satisfies TRecoveryAgentStatusDisplay;
+	} satisfies TStatusDisplay;
 }
 
-interface TRecoveryAgentStatusDisplay {
+const LaunchAtLoginDiagnosticsSection: React.FC = () => {
+	const toastsCx = useToastsCx();
+	const isUnmountedRef = React.useRef(false);
+
+	const [status, setStatus] = React.useState<specta.LaunchAtLoginStatus | null>(null);
+	const [isStatusPending, setIsStatusPending] = React.useState(true);
+	const statusDisplay = getLaunchAtLoginStatusDisplay(status);
+
+	// MARK: - Actions
+
+	const handleRefreshStatus = React.useCallback(async () => {
+		setIsStatusPending(true);
+
+		try {
+			const [isOk, error, status] = toTuple(await specta.commands.getLaunchAtLoginStatus());
+			if (isUnmountedRef.current) return;
+			if (!isOk) {
+				toastsCx.add({
+					type: 'error',
+					title: 'Could not load launch at login status',
+					description: error
+				});
+				return;
+			}
+
+			setStatus(status);
+		} finally {
+			if (!isUnmountedRef.current) {
+				setIsStatusPending(false);
+			}
+		}
+	}, [toastsCx]);
+
+	const handleRevealPlist = React.useCallback(async () => {
+		const [isRevealOk, revealErr] = toTuple(await specta.commands.revealLaunchAtLoginPlist());
+		if (!isRevealOk) {
+			toastsCx.add({
+				type: 'error',
+				title: 'Could not show launch at login plist',
+				description: revealErr
+			});
+		}
+	}, [toastsCx]);
+
+	// MARK: - Effects
+
+	React.useEffect(() => {
+		isUnmountedRef.current = false;
+
+		(async () => {
+			try {
+				const [isOk, error, status] = toTuple(await specta.commands.getLaunchAtLoginStatus());
+				if (isUnmountedRef.current) return;
+				if (!isOk) {
+					toastsCx.add({
+						type: 'error',
+						title: 'Could not load launch at login status',
+						description: error
+					});
+					return;
+				}
+
+				setStatus(status);
+			} finally {
+				if (!isUnmountedRef.current) {
+					setIsStatusPending(false);
+				}
+			}
+		})();
+
+		return () => {
+			isUnmountedRef.current = true;
+		};
+	}, [toastsCx]);
+
+	// MARK: - UI
+
+	return (
+		<div className="space-y-2.5">
+			<SettingsGroup title="Launch at Login">
+				<SettingsRow
+					label="Plist"
+					description="Reveal the LaunchAgent plist in Finder."
+					render={<button onClick={handleRevealPlist} />}
+				>
+					<FolderOpenIcon className="text-base-400 size-4" />
+					<ChevronRightIcon className="text-base-400" />
+				</SettingsRow>
+			</SettingsGroup>
+			<SettingsGroup>
+				<DiagnosticsStatusRow
+					label="Status"
+					display={statusDisplay}
+					isPending={isStatusPending}
+					onRefresh={handleRefreshStatus}
+					refreshLabel="Refresh launch at login status"
+				/>
+				<StatusBooleanRow
+					label="Enabled"
+					value={status?.isEnabled ?? false}
+					isLoading={status == null}
+				/>
+			</SettingsGroup>
+		</div>
+	);
+};
+
+function getLaunchAtLoginStatusDisplay(status: specta.LaunchAtLoginStatus | null) {
+	if (status == null) {
+		return {
+			label: 'Loading',
+			variant: 'secondary'
+		} satisfies TStatusDisplay;
+	}
+
+	if (status.isEnabled) {
+		return {
+			label: 'Enabled',
+			variant: 'success'
+		} satisfies TStatusDisplay;
+	}
+
+	return {
+		label: 'Off',
+		variant: 'secondary'
+	} satisfies TStatusDisplay;
+}
+
+const DiagnosticsStatusRow: React.FC<TDiagnosticsStatusRowProps> = (props) => {
+	const { label, display, isPending, onRefresh, refreshLabel } = props;
+
+	return (
+		<SettingsRow
+			label={label}
+			variant="compact"
+			className="group/diagnostics-status"
+			contentClassName="gap-0 transition-[gap] group-focus-within/diagnostics-status:gap-2 group-hover/diagnostics-status:gap-2"
+		>
+			<Badge variant={display.variant} size="xs">
+				{display.label}
+			</Badge>
+			<Button
+				type="button"
+				variant="ghost"
+				size="icon-sm"
+				disabled={isPending}
+				onClick={onRefresh}
+				aria-label={refreshLabel}
+				title={refreshLabel}
+				className="w-0 shrink-0 overflow-hidden transition-[width] group-focus-within/diagnostics-status:w-7 group-hover/diagnostics-status:w-7 focus-visible:w-7"
+			>
+				<RefreshCwIcon />
+			</Button>
+		</SettingsRow>
+	);
+};
+
+interface TDiagnosticsStatusRowProps {
+	label: string;
+	display: TStatusDisplay;
+	isPending: boolean;
+	onRefresh: () => void;
+	refreshLabel: string;
+}
+
+interface TStatusDisplay {
 	label: string;
 	variant: React.ComponentProps<typeof Badge>['variant'];
 }
 
-const RecoveryAgentStatusBooleanRow: React.FC<TRecoveryAgentStatusBooleanRowProps> = (props) => {
+const StatusBooleanRow: React.FC<TStatusBooleanRowProps> = (props) => {
 	const { label, value, isLoading } = props;
 
 	return (
@@ -290,7 +441,7 @@ const RecoveryAgentStatusBooleanRow: React.FC<TRecoveryAgentStatusBooleanRowProp
 	);
 };
 
-interface TRecoveryAgentStatusBooleanRowProps {
+interface TStatusBooleanRowProps {
 	label: string;
 	value: boolean;
 	isLoading: boolean;
