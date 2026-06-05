@@ -3,7 +3,7 @@ import React from 'react';
 import { useWindowFocused } from '@/hooks';
 import { cn } from '@/lib';
 import { TimedIconButton } from '../../input/TimedIconButton';
-import { CircleQuestionMarkIcon, XCircleIcon, XIcon } from '../icons';
+import { CircleAlertIcon, XCircleIcon, XIcon } from '../icons';
 import type { TToastData, TToastObject, TToastType } from './types';
 
 export const ToastViewport: React.FC<TToastViewportProps> = (props) => {
@@ -208,7 +208,7 @@ const ToastLeading: React.FC<TToastLeadingProps> = (props) => {
 	switch (toast.type as TToastType | undefined) {
 		case 'warning':
 			return (
-				<CircleQuestionMarkIcon
+				<CircleAlertIcon
 					className={cn('text-warning size-4 shrink-0', align === 'start' && 'mt-0.5')}
 				/>
 			);

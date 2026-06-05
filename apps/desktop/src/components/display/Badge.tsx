@@ -38,9 +38,9 @@ const badgeVariants = cva(
 				link: 'text-primary underline-offset-4 [a&]:hover:underline'
 			},
 			size: {
-				xs: "h-3.5 gap-1 rounded-full px-1.5 text-xs [&_svg:not([class*='size-'])]:size-2.5",
-				sm: "h-4.5 gap-1 rounded-full px-1.5 text-xs [&_svg:not([class*='size-'])]:size-2.5",
-				md: "h-5 gap-1 rounded-full px-2 py-0.5 text-xs [&_svg:not([class*='size-'])]:size-3"
+				xs: "h-3.5 gap-1 rounded-full px-1.5 text-xs [&_svg:not([class*='size-'])]:size-3",
+				sm: "h-4.5 gap-1 rounded-full px-1.5 text-xs [&_svg:not([class*='size-'])]:size-3",
+				md: "h-5 gap-1 rounded-full px-2 py-0.5 text-xs [&_svg:not([class*='size-'])]:size-3.5"
 			}
 		},
 		defaultVariants: {

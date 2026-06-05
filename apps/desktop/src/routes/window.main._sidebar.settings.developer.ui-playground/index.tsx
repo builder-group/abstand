@@ -11,6 +11,7 @@ import {
 	ButtonGroupSeparator,
 	ButtonGroupText,
 	CheckIcon,
+	CircleAlertIcon,
 	CircleCheckIcon,
 	CircleQuestionMarkIcon,
 	CodeXmlIcon,
@@ -954,6 +955,20 @@ const BadgeSection: React.FC = () => {
 				<Badge>Default (sm)</Badge>
 				<Badge size="md">Medium (md)</Badge>
 			</PlaygroundRow>
+			<PlaygroundRow label="Icons">
+				<Badge size="xs" variant="success">
+					<CheckIcon />
+					Selected
+				</Badge>
+				<Badge variant="success">
+					<CheckIcon />
+					Selected
+				</Badge>
+				<Badge size="md" variant="success">
+					<CheckIcon />
+					Selected
+				</Badge>
+			</PlaygroundRow>
 			<PlaygroundRow label="Variants">
 				<Badge>Default</Badge>
 				<Badge variant="secondary">Secondary</Badge>
@@ -1002,7 +1017,7 @@ const AlertSection: React.FC = () => {
 					<AlertDescription>The intention was marked complete and archived.</AlertDescription>
 				</Alert>
 				<Alert variant="warning">
-					<CircleQuestionMarkIcon />
+					<CircleAlertIcon />
 					<AlertTitle>Permission pending</AlertTitle>
 					<AlertDescription>
 						macOS may ask you to confirm access before tracking starts.
@@ -1062,7 +1077,7 @@ const IconBubbleSection: React.FC = () => {
 					<CheckIcon />
 				</IconBubble>
 				<IconBubble variant="warning">
-					<CircleQuestionMarkIcon />
+					<CircleAlertIcon />
 				</IconBubble>
 				<IconBubble variant="destructive">
 					<XCircleIcon />
