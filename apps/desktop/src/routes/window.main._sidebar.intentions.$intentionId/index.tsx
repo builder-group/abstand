@@ -49,11 +49,7 @@ function RouteComponent() {
 
 	if (intention == null && !hasLoaded) {
 		return (
-			<ContentPage
-				title="Loading intention"
-				subtitle={`ID ${intentionId}`}
-				backTo={backTo}
-			>
+			<ContentPage title="Loading intention" subtitle={`ID ${intentionId}`} backTo={backTo}>
 				<div className="text-base-400 flex items-center gap-2 text-sm">
 					<Spinner />
 					<span>Loading intention...</span>
@@ -74,11 +70,7 @@ function RouteComponent() {
 		case 'break':
 		default:
 			return (
-				<ContentPage
-					title="Intention not found"
-					subtitle={`ID ${intentionId}`}
-					backTo={backTo}
-				/>
+				<ContentPage title="Intention not found" subtitle={`ID ${intentionId}`} backTo={backTo} />
 			);
 	}
 }

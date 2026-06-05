@@ -22,7 +22,7 @@ export type TIconBubbleProps = React.ComponentPropsWithoutRef<'span'> &
 	VariantProps<typeof iconBubbleVariants>;
 
 const iconBubbleVariants = cva(
-	'relative inline-flex shrink-0 items-center justify-center overflow-hidden border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_1px_2px_rgba(0,0,0,0.12)] before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-linear-to-b before:from-white/20 before:to-transparent [&>svg]:pointer-events-none [&>svg]:shrink-0',
+	'relative inline-flex shrink-0 items-center justify-center overflow-hidden border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_1px_2px_rgba(0,0,0,0.12)] before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-linear-to-b before:from-white/20 before:to-transparent [&_svg]:pointer-events-none [&_svg]:shrink-0',
 	{
 		variants: {
 			variant: {
@@ -34,9 +34,9 @@ const iconBubbleVariants = cva(
 				neutral: 'bg-base-950 text-base-0'
 			},
 			size: {
-				xs: "size-5 rounded-md [&>svg:not([class*='size-'])]:size-3.5",
-				sm: "size-7 rounded-lg [&>svg:not([class*='size-'])]:size-5",
-				md: "size-8 rounded-lg [&>svg:not([class*='size-'])]:size-6"
+				xs: "size-5 rounded-md [&_svg:not([class*='size-'])]:size-3.5",
+				sm: "size-7 rounded-lg [&_svg:not([class*='size-'])]:size-5",
+				md: "size-8 rounded-lg [&_svg:not([class*='size-'])]:size-6"
 			}
 		},
 		defaultVariants: {

@@ -273,12 +273,12 @@ export const ComboboxItem: React.FC<TComboboxItemProps> = (props) => {
 export type TComboboxItemProps = ComboboxPrimitive.Item.Props;
 
 const comboboxItemVariants = cva(
-	'group/combobox-item text-base-700 data-highlighted:bg-base-950/6 data-highlighted:text-base-950 relative flex w-full cursor-default items-center outline-none select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0',
+	'group/combobox-item text-base-700 data-highlighted:bg-base-950/6 data-highlighted:text-base-950 relative flex w-full cursor-default items-center outline-none select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&>svg]:pointer-events-none [&>svg]:shrink-0',
 	{
 		variants: {
 			size: {
-				sm: "gap-1.5 rounded-lg px-1.5 py-1.25 text-sm [&_svg:not([class*='size-'])]:size-3.5",
-				md: "gap-2 rounded-lg px-2 py-1.5 text-sm [&_svg:not([class*='size-'])]:size-4"
+				sm: "gap-1.5 rounded-lg px-1.5 py-1.25 text-sm [&>svg:not([class*='size-'])]:size-3.5",
+				md: "gap-2 rounded-lg px-2 py-1.5 text-sm [&>svg:not([class*='size-'])]:size-4"
 			}
 		},
 		defaultVariants: {
@@ -288,12 +288,12 @@ const comboboxItemVariants = cva(
 );
 
 const comboboxItemIndicatorVariants = cva(
-	'text-primary pointer-events-none absolute flex items-center justify-center',
+	'text-primary pointer-events-none absolute flex items-center justify-center [&_svg]:pointer-events-none [&_svg]:shrink-0',
 	{
 		variants: {
 			size: {
-				sm: 'right-1.5 size-3.5',
-				md: 'right-2 size-4'
+				sm: 'right-1.5 size-3.5 [&_svg]:size-3.5',
+				md: 'right-2 size-4 [&_svg]:size-4'
 			}
 		},
 		defaultVariants: {

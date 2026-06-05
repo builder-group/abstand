@@ -85,7 +85,7 @@ export type TInputGroupAddonProps = React.ComponentProps<'div'> &
 	Omit<VariantProps<typeof inputGroupAddonVariants>, 'size'>;
 
 const inputGroupAddonVariants = cva(
-	'text-base-500 flex shrink-0 cursor-text items-center font-medium select-none [&_svg]:pointer-events-none [&_svg]:shrink-0',
+	'text-base-500 flex shrink-0 cursor-text items-center font-medium select-none [&>svg]:pointer-events-none [&>svg]:shrink-0',
 	{
 		variants: {
 			size: {

@@ -85,7 +85,7 @@ export const Select: React.FC<TSelectProps> = (props) => {
 				data-size={size}
 				className={chevronWrapperVariants({ size, variant })}
 			>
-				<ChevronsUpDownIcon aria-hidden className={chevronIconVariants({ variant, size })} />
+				<ChevronsUpDownIcon aria-hidden />
 			</div>
 		</div>
 	);
@@ -133,17 +133,17 @@ const ghostSizerVariants = cva('pointer-events-none invisible absolute whitespac
 });
 
 const chevronWrapperVariants = cva(
-	'pointer-events-none absolute top-1/2 right-1 flex -translate-y-1/2 items-center justify-center transition-colors',
+	'pointer-events-none absolute top-1/2 right-1 flex -translate-y-1/2 items-center justify-center transition-colors [&_svg]:select-none',
 	{
 		variants: {
 			variant: {
-				default: '',
+				default: '[&_svg]:text-base-500',
 				ghost:
-					'peer-focus-ring bg-base-100 peer-invalid-ring rounded-full border border-transparent group-has-[select:hover]/select:bg-transparent'
+					'peer-focus-ring bg-base-100 peer-invalid-ring [&_svg]:text-base-950 rounded-full border border-transparent group-has-[select:hover]/select:bg-transparent'
 			},
 			size: {
-				sm: 'size-5.5',
-				md: 'size-6'
+				sm: 'size-5.5 [&_svg]:size-3.5',
+				md: 'size-6 [&_svg]:size-4'
 			}
 		},
 		defaultVariants: {
@@ -152,20 +152,3 @@ const chevronWrapperVariants = cva(
 		}
 	}
 );
-
-const chevronIconVariants = cva('select-none', {
-	variants: {
-		variant: {
-			default: 'text-base-500',
-			ghost: 'text-base-950'
-		},
-		size: {
-			sm: 'size-3.5',
-			md: 'size-4'
-		}
-	},
-	defaultVariants: {
-		variant: 'default',
-		size: 'sm'
-	}
-});

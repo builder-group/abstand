@@ -49,10 +49,10 @@ export const SupportPopover: React.FC<TSupportPopoverProps> = (props) => {
 						<PopoverClose
 							key={link.label}
 							type="button"
-							className="text-base-600 hover:bg-base-950/6 hover:text-base-950 focus-ring flex w-full items-center gap-2 rounded-lg border border-transparent px-2 py-1 text-left text-sm transition-colors select-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+							className="text-base-600 hover:bg-base-950/6 hover:text-base-950 focus-ring flex w-full items-center gap-2 rounded-lg border border-transparent px-2 py-1 text-left text-sm transition-colors select-none"
 							onClick={() => handleOpenSupportUrl(link.url)}
 						>
-							<link.Icon aria-hidden />
+							<link.Icon aria-hidden className="pointer-events-none size-4 shrink-0" />
 							<span>{link.label}</span>
 						</PopoverClose>
 					))}

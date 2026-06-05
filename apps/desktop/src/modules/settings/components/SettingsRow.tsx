@@ -88,8 +88,8 @@ const descriptionVariants = cva('', {
 const controlVariants = cva('flex shrink-0 items-center', {
 	variants: {
 		size: {
-			sm: 'gap-2',
-			md: 'gap-2.5'
+			sm: "gap-2 [&>svg:not([class*='size-'])]:size-3.5",
+			md: "gap-2.5 [&>svg:not([class*='size-'])]:size-4"
 		}
 	},
 	defaultVariants: {
@@ -140,8 +140,8 @@ const settingsRowFrameVariants = cva('flex w-full items-center justify-between t
 			false: ''
 		},
 		size: {
-			sm: "min-h-9 gap-4 px-2.5 [&_svg:not([class*='size-'])]:size-3.5",
-			md: "min-h-11 gap-5 px-3 [&_svg:not([class*='size-'])]:size-4"
+			sm: 'min-h-9 gap-4 px-2.5',
+			md: 'min-h-11 gap-5 px-3'
 		}
 	},
 	defaultVariants: {

@@ -462,8 +462,8 @@ const LaunchAtLoginStartupRecoveryRow: React.FC = () => {
 					toastsCx.add({
 						type: 'error',
 						title: checked
-							? 'Could not turn on launch at login'
-							: 'Could not turn off launch at login',
+							? 'Could not enable launch at login'
+							: 'Could not disable launch at login',
 						description: error
 					});
 					return;

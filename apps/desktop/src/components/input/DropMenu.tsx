@@ -158,7 +158,7 @@ export type TDropMenuItemProps = MenuPrimitive.Item.Props &
 	Omit<VariantProps<typeof dropMenuItemVariants>, 'size'>;
 
 const dropMenuItemVariants = cva(
-	'group/drop-menu-item active:bg-base-950/10 relative flex w-full cursor-default items-center border border-transparent transition-colors outline-none select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0',
+	'group/drop-menu-item active:bg-base-950/10 relative flex w-full cursor-default items-center border border-transparent transition-colors outline-none select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&>svg]:pointer-events-none [&>svg]:shrink-0',
 	{
 		variants: {
 			variant: {
@@ -167,8 +167,8 @@ const dropMenuItemVariants = cva(
 					'text-error data-highlighted:bg-error/10 data-highlighted:text-error active:bg-error/15'
 			},
 			size: {
-				sm: "min-h-7 gap-2 rounded-lg px-2 py-1 text-sm [&_svg:not([class*='size-'])]:size-3.5",
-				md: "min-h-8 gap-2 rounded-lg px-2.5 py-1.5 text-sm [&_svg:not([class*='size-'])]:size-4"
+				sm: "min-h-7 gap-2 rounded-lg px-2 py-1 text-sm [&>svg:not([class*='size-'])]:size-3.5",
+				md: "min-h-8 gap-2 rounded-lg px-2.5 py-1.5 text-sm [&>svg:not([class*='size-'])]:size-4"
 			},
 			inset: {
 				true: '',
@@ -215,12 +215,12 @@ export type TDropMenuSubTriggerProps = MenuPrimitive.SubmenuTrigger.Props &
 	Omit<VariantProps<typeof dropMenuSubTriggerVariants>, 'size'>;
 
 const dropMenuSubTriggerVariants = cva(
-	'group/drop-menu-sub-trigger text-base-600 data-highlighted:bg-base-950/6 data-highlighted:text-base-950 data-popup-open:bg-base-950/6 data-popup-open:text-base-950 active:bg-base-950/10 relative flex w-full cursor-default items-center border border-transparent transition-colors outline-none select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0',
+	'group/drop-menu-sub-trigger text-base-600 data-highlighted:bg-base-950/6 data-highlighted:text-base-950 data-popup-open:bg-base-950/6 data-popup-open:text-base-950 active:bg-base-950/10 relative flex w-full cursor-default items-center border border-transparent transition-colors outline-none select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&>svg]:pointer-events-none [&>svg]:shrink-0',
 	{
 		variants: {
 			size: {
-				sm: "min-h-7 gap-2 rounded-lg px-2 py-1 text-sm [&_svg:not([class*='size-'])]:size-3.5",
-				md: "min-h-8 gap-2 rounded-lg px-2.5 py-1.5 text-sm [&_svg:not([class*='size-'])]:size-4"
+				sm: "min-h-7 gap-2 rounded-lg px-2 py-1 text-sm [&>svg:not([class*='size-'])]:size-3.5",
+				md: "min-h-8 gap-2 rounded-lg px-2.5 py-1.5 text-sm [&>svg:not([class*='size-'])]:size-4"
 			},
 			inset: {
 				true: '',
@@ -276,10 +276,10 @@ export const DropMenuCheckboxItem: React.FC<TDropMenuCheckboxItemProps> = (props
 		>
 			<span
 				data-slot="drop-menu-item-indicator"
-				className={dropMenuItemIndicatorVariants({ size })}
+				className={dropMenuChoiceIndicatorVariants({ size })}
 			>
 				<MenuPrimitive.CheckboxItemIndicator>
-					<CheckIcon />
+					<CheckIcon className={dropMenuChoiceCheckIconVariants({ size })} />
 				</MenuPrimitive.CheckboxItemIndicator>
 			</span>
 			{children}
@@ -308,10 +308,10 @@ export const DropMenuRadioItem: React.FC<TDropMenuRadioItemProps> = (props) => {
 		>
 			<span
 				data-slot="drop-menu-item-indicator"
-				className={dropMenuItemIndicatorVariants({ size })}
+				className={dropMenuChoiceIndicatorVariants({ size })}
 			>
 				<MenuPrimitive.RadioItemIndicator>
-					<CheckIcon />
+					<CheckIcon className={dropMenuChoiceCheckIconVariants({ size })} />
 				</MenuPrimitive.RadioItemIndicator>
 			</span>
 			{children}
@@ -322,12 +322,12 @@ export const DropMenuRadioItem: React.FC<TDropMenuRadioItemProps> = (props) => {
 export type TDropMenuRadioItemProps = MenuPrimitive.RadioItem.Props;
 
 const dropMenuChoiceItemVariants = cva(
-	'group/drop-menu-choice-item text-base-600 data-highlighted:bg-base-950/6 data-highlighted:text-base-950 active:bg-base-950/10 relative flex w-full cursor-default items-center border border-transparent transition-colors outline-none select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0',
+	'group/drop-menu-choice-item text-base-600 data-highlighted:bg-base-950/6 data-highlighted:text-base-950 active:bg-base-950/10 relative flex w-full cursor-default items-center border border-transparent transition-colors outline-none select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&>svg]:pointer-events-none [&>svg]:shrink-0',
 	{
 		variants: {
 			size: {
-				sm: "min-h-7 gap-2 rounded-lg py-1 pr-2 pl-7 text-sm [&_svg:not([class*='size-'])]:size-3.5",
-				md: "min-h-8 gap-2 rounded-lg py-1.5 pr-2.5 pl-8 text-sm [&_svg:not([class*='size-'])]:size-4"
+				sm: "min-h-7 gap-2 rounded-lg py-1 pr-2 pl-7 text-sm [&>svg:not([class*='size-'])]:size-3.5",
+				md: "min-h-8 gap-2 rounded-lg py-1.5 pr-2.5 pl-8 text-sm [&>svg:not([class*='size-'])]:size-4"
 			}
 		},
 		defaultVariants: {
@@ -336,7 +336,7 @@ const dropMenuChoiceItemVariants = cva(
 	}
 );
 
-const dropMenuItemIndicatorVariants = cva(
+const dropMenuChoiceIndicatorVariants = cva(
 	'text-primary pointer-events-none absolute flex items-center justify-center',
 	{
 		variants: {
@@ -350,6 +350,18 @@ const dropMenuItemIndicatorVariants = cva(
 		}
 	}
 );
+
+const dropMenuChoiceCheckIconVariants = cva('pointer-events-none shrink-0', {
+	variants: {
+		size: {
+			sm: 'size-3.5',
+			md: 'size-4'
+		}
+	},
+	defaultVariants: {
+		size: 'sm'
+	}
+});
 
 export const DropMenuSeparator: React.FC<TDropMenuSeparatorProps> = (props) => {
 	const { className, ...rest } = props;

@@ -180,13 +180,13 @@ const CommandPaletteItem: React.FC<TCommandPaletteItemProps> = (props) => {
 			className={cn(
 				'flex w-full cursor-default items-center gap-2 rounded-lg px-2 py-1.25',
 				'text-base-600 text-sm transition-colors',
-				'select-none [&_svg]:pointer-events-none [&_svg]:shrink-0',
+				'select-none',
 				isActive && 'bg-base-950/6 text-base-950'
 			)}
 			onClick={() => void onSelect(item)}
 			onPointerMove={onPointerMove}
 		>
-			<span className="flex-1 truncate">{item.label}</span>
+			<span className="min-w-0 flex-1 truncate">{item.label}</span>
 			<span className="text-base-400 shrink-0 text-xs">{item.group}</span>
 		</div>
 	);

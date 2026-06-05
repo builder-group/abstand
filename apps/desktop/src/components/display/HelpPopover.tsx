@@ -77,8 +77,8 @@ const helpPopoverTriggerVariants = cva(
 	{
 		variants: {
 			size: {
-				sm: "size-5 [&_svg:not([class*='size-'])]:size-3.5",
-				md: "size-7 [&_svg:not([class*='size-'])]:size-4"
+				sm: 'size-5 [&_svg]:size-3.5',
+				md: 'size-7 [&_svg]:size-4'
 			}
 		},
 		defaultVariants: {
