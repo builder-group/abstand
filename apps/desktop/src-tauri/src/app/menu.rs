@@ -1,6 +1,7 @@
 use crate::{
-    app::{quit_policy, window::AppWindow},
+    app::window::AppWindow,
     environment::configs::app::AppConfig,
+    modules::quit_policy::{policy::request_quit_blocking, types::QuitRequestSource},
 };
 use tauri::{
     menu::{Menu, MenuBuilder, MenuEvent, MenuItem, SubmenuBuilder},
@@ -102,7 +103,7 @@ impl AppMenuItem {
                 let _ = AppWindow::Main.show(app);
             }
             Self::Quit => {
-                quit_policy::request_quit_blocking(app, quit_policy::QuitRequestSource::AppMenu);
+                request_quit_blocking(app, QuitRequestSource::AppMenu);
             }
         }
     }

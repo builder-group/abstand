@@ -1,10 +1,11 @@
 #[cfg(target_os = "macos")]
-use super::quit_policy::{QuitPreventedEvent, QuitPreventedReason};
 use crate::environment::{
     configs::app::{AppConfig, AppDistribution},
     logger::Logger,
     path::get_app_data_dir,
 };
+#[cfg(target_os = "macos")]
+use crate::modules::quit_policy::types::{QuitPreventedEvent, QuitPreventedReason};
 #[cfg(target_os = "macos")]
 use crate::modules::recovery_agent::cli;
 use serde::Serialize;

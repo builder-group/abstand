@@ -1,4 +1,7 @@
-use crate::app::quit_policy::{self, ProcessQuitSignal, QuitRequestSource};
+use crate::modules::quit_policy::{
+    policy::request_quit,
+    types::{ProcessQuitSignal, QuitRequestSource},
+};
 use tauri::AppHandle;
 use tokio::signal::unix::{signal, SignalKind};
 
@@ -42,7 +45,7 @@ pub fn setup(app: &AppHandle) {
                 else => return,
             };
 
-            quit_policy::request_quit(&app, QuitRequestSource::ProcessSignal(signal)).await;
+            request_quit(&app, QuitRequestSource::ProcessSignal(signal)).await;
         }
     });
 }

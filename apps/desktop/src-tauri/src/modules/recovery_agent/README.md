@@ -2,7 +2,7 @@
 
 The recovery agent keeps Abstand recoverable during active Strict Enforcement.
 
-It is separate from the normal Tauri app process. The normal app can prevent graceful quits through `app::quit_policy`, but it cannot recover itself after the process exits, crashes, or is killed. The recovery agent covers that out-of-process case.
+It is separate from the normal Tauri app process. The normal app can prevent graceful quits through `modules::quit_policy`, but it cannot recover itself after the process exits, crashes, or is killed. The recovery agent covers that out-of-process case.
 
 ## How It Works
 

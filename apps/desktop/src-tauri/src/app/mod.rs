@@ -3,7 +3,6 @@ mod commands;
 mod menu;
 #[cfg(target_os = "macos")]
 mod process_signal;
-mod quit_policy;
 #[cfg(target_os = "macos")]
 pub mod tray;
 pub mod window;
@@ -11,8 +10,8 @@ pub mod window;
 use crate::{
     environment::logger,
     modules::{
-        catalog, db, intentions, launch_at_login, permissions, recovery_agent, scheduler, settings,
-        shortcuts,
+        catalog, db, intentions, launch_at_login, permissions, quit_policy, recovery_agent,
+        scheduler, settings, shortcuts,
     },
 };
 #[cfg(debug_assertions)]
@@ -76,7 +75,7 @@ pub fn run() {
             intentions::types::IntentionSessionCompletedEvent,
             intentions::types::IntentionSessionStoppedEvent,
             // App events
-            quit_policy::QuitPreventedEvent,
+            quit_policy::types::QuitPreventedEvent,
             // Shortcuts events
             shortcuts::types::ShortcutTriggeredEvent,
         ]);
@@ -131,7 +130,7 @@ pub fn run() {
         .expect("Error while building tauri application")
         .run(|app_handle, event| {
             if let tauri::RunEvent::ExitRequested { api, .. } = event {
-                quit_policy::handle_exit_requested(app_handle, &api);
+                quit_policy::policy::handle_exit_requested(app_handle, &api);
             }
         });
 }

@@ -3,6 +3,7 @@ pub mod db;
 pub mod intentions;
 pub mod launch_at_login;
 pub mod permissions;
+pub mod quit_policy;
 #[cfg(target_os = "macos")]
 pub mod recovery_agent;
 pub mod scheduler;
