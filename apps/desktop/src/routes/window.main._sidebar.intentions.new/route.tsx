@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 import React from 'react';
-import { useSidebarCx } from '../window.main._sidebar/SidebarCx';
+import { useSidebarCx } from '../window.main._sidebar/lib';
 
 export const Route = createFileRoute('/window/main/_sidebar/intentions/new')({
 	component: LayoutComponent

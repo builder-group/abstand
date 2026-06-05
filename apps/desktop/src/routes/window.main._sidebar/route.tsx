@@ -5,7 +5,7 @@ import { cn } from '@/lib';
 import { IntentionsCxProvider } from '@/modules/intentions';
 import { useOnShortcut, useShortcutHint } from '@/modules/shortcuts';
 import { SidebarContent } from './components';
-import { SidebarCxProvider, useSidebarCx } from './SidebarCx';
+import { SidebarCxProvider, useSidebarCx } from './lib';
 
 export const Route = createFileRoute('/window/main/_sidebar')({
 	component: LayoutComponent
