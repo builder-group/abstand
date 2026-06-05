@@ -14,7 +14,6 @@ import {
 	DialogTitle,
 	ShieldIcon,
 	TimedButton,
-	TimerIcon,
 	useToastsCx
 } from '@/components';
 import { type specta } from '@/environment';
@@ -27,7 +26,6 @@ import {
 
 const IntentionDeleteDialog: React.FC<TIntentionDeleteDialogProps> = (props) => {
 	const { intention, open, isActive, policy, isPending, onOpenChange, onDelete } = props;
-	const timedDeleteDurationMs = open && policy.type === 'delayed' ? policy.durationMs : undefined;
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
@@ -42,13 +40,15 @@ const IntentionDeleteDialog: React.FC<TIntentionDeleteDialogProps> = (props) => 
 						{isActive && ' Its running session will end.'}
 					</p>
 					{policy.type === 'delayed' && (
-						<DelayedDeleteMessage durationMs={timedDeleteDurationMs} isRunning={open} />
+						<p className="text-base-500 text-sm">
+							Balanced Enforcement delays this action briefly so it stays intentional.
+						</p>
 					)}
 					{policy.type === 'blocked' && (
 						<Alert role="note" variant="warning">
 							<ShieldIcon />
 							<AlertDescription>
-								Strict Enforcement prevents deleting this Intention while it is running.
+								Strict Enforcement blocks deleting this Intention while it is running.
 							</AlertDescription>
 						</Alert>
 					)}
@@ -58,16 +58,12 @@ const IntentionDeleteDialog: React.FC<TIntentionDeleteDialogProps> = (props) => 
 						{policy.type === 'blocked' ? 'Close' : 'Cancel'}
 					</DialogClose>
 					{policy.type === 'delayed' && (
-						<TimedButton
-							key={open ? 'open' : 'closed'}
-							type="button"
-							variant="destructive"
-							duration={timedDeleteDurationMs}
-							disabled={isPending}
-							onClick={onDelete}
-						>
-							Delete
-						</TimedButton>
+						<DelayedDeleteButton
+							durationMs={policy.durationMs}
+							isPending={isPending}
+							isRunning={open}
+							onDelete={onDelete}
+						/>
 					)}
 					{policy.type === 'available' && (
 						<Button type="button" variant="destructive" disabled={isPending} onClick={onDelete}>
@@ -90,34 +86,41 @@ interface TIntentionDeleteDialogProps {
 	onDelete: () => void;
 }
 
-const DelayedDeleteMessage: React.FC<TDelayedDeleteMessageProps> = (props) => {
-	const { durationMs, isRunning } = props;
+const DelayedDeleteButton: React.FC<TDelayedDeleteButtonProps> = (props) => {
+	const { durationMs, isPending, isRunning, onDelete } = props;
 	const remainingDeleteDelayMs = useCountdown({
 		durationMs,
 		isRunning
 	});
 
-	if (remainingDeleteDelayMs <= 0) {
-		return null;
-	}
-
 	return (
-		<Alert role="note" variant="info">
-			<TimerIcon />
-			<AlertDescription>{getDelayedDeleteLabel(remainingDeleteDelayMs)}</AlertDescription>
-		</Alert>
+		<TimedButton
+			key={isRunning ? 'running' : 'idle'}
+			type="button"
+			variant="destructive"
+			duration={isRunning ? durationMs : undefined}
+			disabled={isPending}
+			onClick={onDelete}
+		>
+			{getDelayedDeleteActionLabel(remainingDeleteDelayMs)}
+		</TimedButton>
 	);
 };
 
-interface TDelayedDeleteMessageProps {
-	durationMs?: number;
+interface TDelayedDeleteButtonProps {
+	durationMs: number;
+	isPending: boolean;
 	isRunning: boolean;
+	onDelete: () => void;
 }
 
-function getDelayedDeleteLabel(remainingMs: number): string {
+function getDelayedDeleteActionLabel(remainingMs: number): string {
+	if (remainingMs <= 0) {
+		return 'Delete';
+	}
+
 	const remainingSeconds = Math.ceil(remainingMs / 1_000);
-	const unit = remainingSeconds === 1 ? 'second' : 'seconds';
-	return `You can delete in ${remainingSeconds} ${unit}.`;
+	return `Delete in ${remainingSeconds}s`;
 }
 
 export function useIntentionDeleteDialog(

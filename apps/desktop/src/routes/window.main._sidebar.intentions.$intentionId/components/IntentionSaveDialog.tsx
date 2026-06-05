@@ -13,7 +13,6 @@ import {
 	DialogTitle,
 	ShieldIcon,
 	TimedButton,
-	TimerIcon,
 	useToastsCx
 } from '@/components';
 import { type specta } from '@/environment';
@@ -25,7 +24,6 @@ import {
 
 const IntentionSaveDialog: React.FC<TIntentionSaveDialogProps> = (props) => {
 	const { intention, open, policy, isPending, onOpenChange, onSave } = props;
-	const timedSaveDurationMs = open && policy.status === 'delayed' ? policy.durationMs : undefined;
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
@@ -37,7 +35,9 @@ const IntentionSaveDialog: React.FC<TIntentionSaveDialogProps> = (props) => {
 				<DialogBody className="space-y-2">
 					<p>Save these changes to the running Intention?</p>
 					{policy.status === 'delayed' && (
-						<DelayedSaveMessage durationMs={timedSaveDurationMs} isRunning={open} />
+						<p className="text-base-500 text-sm">
+							Balanced Enforcement delays this action briefly so it stays intentional.
+						</p>
 					)}
 					{policy.status === 'blocked' && (
 						<Alert role="note" variant="warning">
@@ -51,16 +51,12 @@ const IntentionSaveDialog: React.FC<TIntentionSaveDialogProps> = (props) => {
 						{policy.status === 'blocked' ? 'Close' : 'Cancel'}
 					</DialogClose>
 					{policy.status === 'delayed' && (
-						<TimedButton
-							key={open ? 'open' : 'closed'}
-							type="button"
-							variant="primary"
-							duration={timedSaveDurationMs}
-							disabled={isPending}
-							onClick={onSave}
-						>
-							Save Changes
-						</TimedButton>
+						<DelayedSaveButton
+							durationMs={policy.durationMs}
+							isPending={isPending}
+							isRunning={open}
+							onSave={onSave}
+						/>
 					)}
 				</DialogFooter>
 			</DialogContent>
@@ -79,7 +75,7 @@ interface TIntentionSaveDialogProps {
 
 function getBlockedSaveDescription(reasons: specta.IntentionWeakeningReason[]): string {
 	if (!reasons.length) {
-		return 'Strict Enforcement only allows changes that keep this running Intention at least as strong as it is now.';
+		return 'Strict Enforcement blocks changes that would weaken this running Intention.';
 	}
 
 	const reasonLabels = reasons
@@ -88,7 +84,7 @@ function getBlockedSaveDescription(reasons: specta.IntentionWeakeningReason[]): 
 				case 'shortensEnd':
 					return 'shorter end time';
 				case 'removesAutomaticEnd':
-					return 'automatic end removed';
+					return 'removed automatic end';
 				case 'lowersEnforcement':
 					return 'lower enforcement';
 				case 'weakensBlock':
@@ -96,37 +92,44 @@ function getBlockedSaveDescription(reasons: specta.IntentionWeakeningReason[]): 
 			}
 		})
 		.join(', ');
-	return `Strict Enforcement does not allow weakening this running Intention: ${reasonLabels}.`;
+	return `Strict Enforcement blocks changes that would weaken this running Intention: ${reasonLabels}.`;
 }
 
-const DelayedSaveMessage: React.FC<TDelayedSaveMessageProps> = (props) => {
-	const { durationMs, isRunning } = props;
+const DelayedSaveButton: React.FC<TDelayedSaveButtonProps> = (props) => {
+	const { durationMs, isPending, isRunning, onSave } = props;
 	const remainingSaveDelayMs = useCountdown({
 		durationMs,
 		isRunning
 	});
 
-	if (remainingSaveDelayMs <= 0) {
-		return null;
-	}
-
 	return (
-		<Alert role="note" variant="info">
-			<TimerIcon />
-			<AlertDescription>{getDelayedSaveLabel(remainingSaveDelayMs)}</AlertDescription>
-		</Alert>
+		<TimedButton
+			key={isRunning ? 'running' : 'idle'}
+			type="button"
+			variant="primary"
+			duration={isRunning ? durationMs : undefined}
+			disabled={isPending}
+			onClick={onSave}
+		>
+			{getDelayedSaveActionLabel(remainingSaveDelayMs)}
+		</TimedButton>
 	);
 };
 
-interface TDelayedSaveMessageProps {
-	durationMs?: number;
+interface TDelayedSaveButtonProps {
+	durationMs: number;
+	isPending: boolean;
 	isRunning: boolean;
+	onSave: () => void;
 }
 
-function getDelayedSaveLabel(remainingMs: number): string {
+function getDelayedSaveActionLabel(remainingMs: number): string {
+	if (remainingMs <= 0) {
+		return 'Save Changes';
+	}
+
 	const remainingSeconds = Math.ceil(remainingMs / 1_000);
-	const unit = remainingSeconds === 1 ? 'second' : 'seconds';
-	return `You can save in ${remainingSeconds} ${unit}.`;
+	return `Save in ${remainingSeconds}s`;
 }
 
 export function useIntentionSaveDialog(

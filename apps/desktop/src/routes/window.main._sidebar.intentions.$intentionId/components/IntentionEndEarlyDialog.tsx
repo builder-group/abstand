@@ -13,7 +13,6 @@ import {
 	DialogTitle,
 	ShieldIcon,
 	TimedButton,
-	TimerIcon,
 	useToastsCx
 } from '@/components';
 import { type specta } from '@/environment';
@@ -26,7 +25,6 @@ import {
 
 const IntentionEndEarlyDialog: React.FC<TIntentionEndEarlyDialogProps> = (props) => {
 	const { intention, open, policy, isPending, onOpenChange, onEndEarly } = props;
-	const timedEndEarlyDurationMs = open && policy.type === 'delayed' ? policy.durationMs : undefined;
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
@@ -38,13 +36,15 @@ const IntentionEndEarlyDialog: React.FC<TIntentionEndEarlyDialogProps> = (props)
 				<DialogBody className="space-y-2">
 					<p>End this running Intention early?</p>
 					{policy.type === 'delayed' && (
-						<DelayedEndEarlyMessage durationMs={timedEndEarlyDurationMs} isRunning={open} />
+						<p className="text-base-500 text-sm">
+							Balanced Enforcement delays this action briefly so it stays intentional.
+						</p>
 					)}
 					{policy.type === 'blocked' && (
 						<Alert role="note" variant="warning">
 							<ShieldIcon />
 							<AlertDescription>
-								Strict Enforcement keeps this Intention running until its end condition is met.
+								Strict Enforcement blocks ending this Intention early.
 							</AlertDescription>
 						</Alert>
 					)}
@@ -54,16 +54,12 @@ const IntentionEndEarlyDialog: React.FC<TIntentionEndEarlyDialogProps> = (props)
 						{policy.type === 'blocked' ? 'Close' : 'Cancel'}
 					</DialogClose>
 					{policy.type === 'delayed' && (
-						<TimedButton
-							key={open ? 'open' : 'closed'}
-							type="button"
-							variant="destructive"
-							duration={timedEndEarlyDurationMs}
-							disabled={isPending}
-							onClick={onEndEarly}
-						>
-							End Early
-						</TimedButton>
+						<DelayedEndEarlyButton
+							durationMs={policy.durationMs}
+							isPending={isPending}
+							isRunning={open}
+							onEndEarly={onEndEarly}
+						/>
 					)}
 				</DialogFooter>
 			</DialogContent>
@@ -80,34 +76,41 @@ interface TIntentionEndEarlyDialogProps {
 	onEndEarly: () => void;
 }
 
-const DelayedEndEarlyMessage: React.FC<TDelayedEndEarlyMessageProps> = (props) => {
-	const { durationMs, isRunning } = props;
+const DelayedEndEarlyButton: React.FC<TDelayedEndEarlyButtonProps> = (props) => {
+	const { durationMs, isPending, isRunning, onEndEarly } = props;
 	const remainingEndEarlyDelayMs = useCountdown({
 		durationMs,
 		isRunning
 	});
 
-	if (remainingEndEarlyDelayMs <= 0) {
-		return null;
-	}
-
 	return (
-		<Alert role="note" variant="info">
-			<TimerIcon />
-			<AlertDescription>{getDelayedEndEarlyLabel(remainingEndEarlyDelayMs)}</AlertDescription>
-		</Alert>
+		<TimedButton
+			key={isRunning ? 'running' : 'idle'}
+			type="button"
+			variant="destructive"
+			duration={isRunning ? durationMs : undefined}
+			disabled={isPending}
+			onClick={onEndEarly}
+		>
+			{getDelayedEndEarlyActionLabel(remainingEndEarlyDelayMs)}
+		</TimedButton>
 	);
 };
 
-interface TDelayedEndEarlyMessageProps {
-	durationMs?: number;
+interface TDelayedEndEarlyButtonProps {
+	durationMs: number;
+	isPending: boolean;
 	isRunning: boolean;
+	onEndEarly: () => void;
 }
 
-function getDelayedEndEarlyLabel(remainingMs: number): string {
+function getDelayedEndEarlyActionLabel(remainingMs: number): string {
+	if (remainingMs <= 0) {
+		return 'End Early';
+	}
+
 	const remainingSeconds = Math.ceil(remainingMs / 1_000);
-	const unit = remainingSeconds === 1 ? 'second' : 'seconds';
-	return `You can end it in ${remainingSeconds} ${unit}.`;
+	return `End in ${remainingSeconds}s`;
 }
 
 export function useIntentionEndEarlyDialog(
