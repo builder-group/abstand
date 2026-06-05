@@ -3,9 +3,13 @@ import { useCompute, useFeatureState } from 'feature-react/state';
 import React from 'react';
 import {
 	ArrowUpRightIcon,
+	Badge,
 	Button,
+	CheckIcon,
+	ChevronRightIcon,
 	CircleCheckIcon,
 	CircleSlashIcon,
+	HelpPopover,
 	MonitorIcon,
 	MoonIcon,
 	SegmentedControl,
@@ -38,6 +42,7 @@ function RouteComponent() {
 			iconVariant="neutral"
 		>
 			<AppearanceSection />
+			<PermissionsSection />
 			<StartupRecoverySection />
 			<FeaturesSection />
 			<UpdatesSection />
@@ -119,7 +124,7 @@ const AppearanceSection: React.FC = () => {
 			</SettingsRow>
 			<SettingsRow
 				label="Text size"
-				description="Scale interface text from the system default."
+				description="Adjust how large text appears in the app."
 				contentClassName="gap-2"
 			>
 				<span className="text-base-400 w-3 text-center text-xs font-medium select-none" aria-hidden>
@@ -179,12 +184,122 @@ const FeaturesSection: React.FC = () => {
 
 	return (
 		<SettingsGroup title="Features">
-			<SettingsRow label="Developer" description="Enable developer tools and settings.">
+			<SettingsRow label="Developer" description="Unlock the Developer settings panel.">
 				<Switch checked={developerEnabled} onCheckedChange={handleDeveloperToggle} />
 			</SettingsRow>
 		</SettingsGroup>
 	);
 };
+
+const PermissionsSection: React.FC = () => {
+	const appInfo = useAppInfo();
+
+	if (appInfo.isPending || appInfo.distribution === 'appStore') {
+		return null;
+	}
+
+	return (
+		<SettingsGroup title="Permissions">
+			<AccessibilityPermissionRow />
+		</SettingsGroup>
+	);
+};
+
+const AccessibilityPermissionRow: React.FC = () => {
+	const toastsCx = useToastsCx();
+	const isUnmountedRef = React.useRef(false);
+
+	const [isGranted, setIsGranted] = React.useState<boolean | null>(null);
+	const [isStatusPending, setIsStatusPending] = React.useState(true);
+
+	// MARK: - Actions
+
+	const loadStatus = React.useCallback(async () => {
+		const isGranted = await specta.commands.isAccessibilityPermissionGranted();
+		if (isUnmountedRef.current) return;
+
+		setIsGranted(isGranted);
+		setIsStatusPending(false);
+	}, []);
+
+	const handleOpenSettings = React.useCallback(async () => {
+		const [isOpenOk, openErr] = toTuple(
+			await specta.commands.openAccessibilityPermissionSettings()
+		);
+		if (!isOpenOk) {
+			toastsCx.add({
+				type: 'error',
+				title: 'Could not open Accessibility settings',
+				description: openErr
+			});
+		}
+	}, [toastsCx]);
+
+	// MARK: - Effects
+
+	React.useEffect(() => {
+		isUnmountedRef.current = false;
+
+		(async () => {
+			const isGranted = await specta.commands.isAccessibilityPermissionGranted();
+			if (isUnmountedRef.current) return;
+
+			setIsGranted(isGranted);
+			setIsStatusPending(false);
+		})();
+
+		// Re-check after returning from System Settings
+		window.addEventListener('focus', loadStatus);
+
+		return () => {
+			isUnmountedRef.current = true;
+			window.removeEventListener('focus', loadStatus);
+		};
+	}, [loadStatus]);
+
+	// MARK: - UI
+
+	return (
+		<SettingsRow
+			label="Accessibility"
+			description="Required to detect active windows."
+			render={<button type="button" onClick={handleOpenSettings} />}
+		>
+			{isGranted != null ? (
+				<PermissionStatusBadge isGranted={isGranted} />
+			) : isStatusPending ? (
+				<Spinner size="sm" />
+			) : (
+				<Badge variant="secondary">Unknown</Badge>
+			)}
+			<ChevronRightIcon className="text-base-400" />
+		</SettingsRow>
+	);
+};
+
+const PermissionStatusBadge: React.FC<TPermissionStatusBadgeProps> = (props) => {
+	const { isGranted } = props;
+
+	if (isGranted) {
+		return (
+			<Badge variant="success">
+				<CheckIcon />
+				Granted
+			</Badge>
+		);
+	}
+
+	return (
+		<Badge variant="warning">
+			<CircleSlashIcon />
+			Required
+		</Badge>
+	);
+};
+
+interface TPermissionStatusBadgeProps {
+	isGranted: boolean;
+}
 
 const StartupRecoverySection: React.FC = () => {
 	return (
@@ -225,7 +340,7 @@ const RecoveryAgentStartupRecoveryRow: React.FC = () => {
 				if (!isOk) {
 					toastsCx.add({
 						type: 'error',
-						title: checked ? 'Could not turn on system access' : 'Could not turn off system access',
+						title: checked ? 'Could not enable recovery' : 'Could not disable recovery',
 						description: error
 					});
 					return;
@@ -253,7 +368,7 @@ const RecoveryAgentStartupRecoveryRow: React.FC = () => {
 				if (!isOk) {
 					toastsCx.add({
 						type: 'error',
-						title: 'Could not load system access status',
+						title: 'Could not load recovery status',
 						description: error
 					});
 					return;
@@ -277,6 +392,9 @@ const RecoveryAgentStartupRecoveryRow: React.FC = () => {
 	return (
 		<SettingsRow
 			label="Reopen Abstand during Strict Enforcement"
+			labelAccessory={
+				<HelpPopover description="A background process that watches Abstand and relaunches it automatically if it closes unexpectedly." />
+			}
 			description={getRecoveryAgentDescription(status, hasActiveStrictBlockSession)}
 		>
 			{status != null ? (
@@ -303,14 +421,14 @@ function getRecoveryAgentDescription(
 	}
 
 	if (status.isEnabled && hasActiveStrictBlockSession) {
-		return 'Abstand will reopen during this Strict Enforcement session. This cannot be turned off until it ends.';
+		return 'Abstand will reopen during this Strict Enforcement session. Cannot be turned off until it ends.';
 	}
 
 	if (status.isConfigured && !status.isLoaded) {
-		return 'Turn this on again to repair recovery before your next Strict Enforcement session.';
+		return 'Recovery stopped working. Turn this on again before your next Strict Enforcement session.';
 	}
 
-	return 'Bring Abstand back if it quits or crashes during a Strict Enforcement session.';
+	return 'Automatically relaunch Abstand if it closes during a Strict Enforcement session.';
 }
 
 const LaunchAtLoginStartupRecoveryRow: React.FC = () => {
@@ -419,14 +537,14 @@ function getLaunchAtLoginDescription(
 	hasActiveStrictBlockSession: boolean
 ) {
 	if (status == null) {
-		return 'Checking login startup status...';
+		return 'Checking status...';
 	}
 
 	if (status.isEnabled && hasActiveStrictBlockSession) {
-		return 'Abstand will open when you sign in during this Strict Enforcement session. This cannot be turned off until it ends.';
+		return 'Abstand opens at login during this Strict Enforcement session. Cannot be turned off until it ends.';
 	}
 
-	return 'Start Abstand quietly when you sign in.';
+	return 'Launches in the background when you sign in.';
 }
 
 const UpdatesSection: React.FC = () => {
@@ -571,7 +689,7 @@ const helpFeedbackLinks = [
 	},
 	{
 		label: 'Email support',
-		description: 'Send a support email.',
+		description: 'Get help by email.',
 		url: appConfig.help.mailto('Support')
 	},
 	{

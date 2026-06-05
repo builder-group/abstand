@@ -97,7 +97,7 @@ const DiagnosticsSection: React.FC = () => {
 		<SettingsGroup title="Diagnostics">
 			<SettingsRow
 				label="Log File"
-				description="Reveal the current app log file in Finder."
+				description="Reveal the app log file in Finder."
 				render={<button onClick={handleRevealLogFile} />}
 			>
 				<FolderOpenIcon className="text-base-400 size-4" />
@@ -387,6 +387,24 @@ function getLaunchAtLoginStatusDisplay(status: specta.LaunchAtLoginStatus | null
 	} satisfies TStatusDisplay;
 }
 
+const StatusBooleanRow: React.FC<TStatusBooleanRowProps> = (props) => {
+	const { label, value, isLoading } = props;
+
+	return (
+		<SettingsRow label={label} variant="compact">
+			<Badge variant={value ? 'success' : 'secondary'}>
+				{isLoading ? 'Loading' : value ? 'Yes' : 'No'}
+			</Badge>
+		</SettingsRow>
+	);
+};
+
+interface TStatusBooleanRowProps {
+	label: string;
+	value: boolean;
+	isLoading: boolean;
+}
+
 const DiagnosticsStatusRow: React.FC<TDiagnosticsStatusRowProps> = (props) => {
 	const { label, display, isPending, onRefresh, refreshLabel } = props;
 
@@ -397,9 +415,7 @@ const DiagnosticsStatusRow: React.FC<TDiagnosticsStatusRowProps> = (props) => {
 			className="group/diagnostics-status"
 			contentClassName="gap-0 transition-[gap] group-focus-within/diagnostics-status:gap-2 group-hover/diagnostics-status:gap-2"
 		>
-			<Badge variant={display.variant} size="xs">
-				{display.label}
-			</Badge>
+			<Badge variant={display.variant}>{display.label}</Badge>
 			<Button
 				type="button"
 				variant="ghost"
@@ -427,22 +443,4 @@ interface TDiagnosticsStatusRowProps {
 interface TStatusDisplay {
 	label: string;
 	variant: React.ComponentProps<typeof Badge>['variant'];
-}
-
-const StatusBooleanRow: React.FC<TStatusBooleanRowProps> = (props) => {
-	const { label, value, isLoading } = props;
-
-	return (
-		<SettingsRow label={label} variant="compact">
-			<Badge variant={value ? 'success' : 'secondary'} size="xs">
-				{isLoading ? 'Loading' : value ? 'Yes' : 'No'}
-			</Badge>
-		</SettingsRow>
-	);
-};
-
-interface TStatusBooleanRowProps {
-	label: string;
-	value: boolean;
-	isLoading: boolean;
 }

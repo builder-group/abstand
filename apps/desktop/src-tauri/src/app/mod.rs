@@ -11,7 +11,8 @@ pub mod window;
 use crate::{
     environment::logger,
     modules::{
-        catalog, db, intentions, launch_at_login, recovery_agent, scheduler, settings, shortcuts,
+        catalog, db, intentions, launch_at_login, permissions, recovery_agent, scheduler, settings,
+        shortcuts,
     },
 };
 #[cfg(debug_assertions)]
@@ -37,6 +38,9 @@ pub fn run() {
             launch_at_login::commands::enable_launch_at_login,
             launch_at_login::commands::disable_launch_at_login,
             launch_at_login::commands::reveal_launch_at_login_plist,
+            // Permission commands
+            permissions::commands::is_accessibility_permission_granted,
+            permissions::commands::open_accessibility_permission_settings,
             // Settings commands
             settings::commands::get_settings,
             settings::commands::set_settings,
