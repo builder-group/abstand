@@ -3,21 +3,22 @@ import React from 'react';
 import { cn } from '@/lib';
 
 export const SettingsGroup: React.FC<TSettingsGroupProps> = (props) => {
-	const { title, size = 'sm', children, contentClassName, className } = props;
+	const { title, size = 'sm', children, contentClassName, className, ...rest } = props;
 
 	return (
-		<div className={cn(settingsGroupVariants({ size }), className)}>
+		<div className={cn(settingsGroupVariants({ size }), className)} {...rest}>
 			{title != null && <p className={titleVariants({ size })}>{title}</p>}
 			<div className={cn(contentVariants({ size }), contentClassName)}>{children}</div>
 		</div>
 	);
 };
 
-interface TSettingsGroupProps extends VariantProps<typeof settingsGroupVariants> {
+interface TSettingsGroupProps
+	extends
+		Omit<React.ComponentPropsWithoutRef<'div'>, 'title'>,
+		VariantProps<typeof settingsGroupVariants> {
 	title?: string;
-	children?: React.ReactNode;
 	contentClassName?: string;
-	className?: string;
 }
 
 const settingsGroupVariants = cva('flex w-full flex-col', {
