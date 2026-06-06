@@ -60,7 +60,10 @@ pub fn get_system_typography() -> SystemTypographyDto {
 #[derive(Debug, Clone, Copy, Serialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct SystemTypographyDto {
+    // Note: macOS reports finite point sizes; export the frontend type as `number`
+    #[specta(type = specta_typescript::Number)]
     pub base_font_size: f64,
+    #[specta(type = specta_typescript::Number)]
     pub small_font_size: f64,
 }
 

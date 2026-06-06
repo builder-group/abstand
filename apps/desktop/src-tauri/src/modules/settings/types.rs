@@ -5,7 +5,7 @@ use std::{collections::HashMap, ops::Deref, sync::Mutex};
 use tauri::App;
 
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
-#[serde(rename_all = "camelCase", default)]
+#[serde(rename_all = "camelCase")]
 pub struct AppSettings {
     pub version: SettingsVersion,
     pub appearance: AppearanceSettings,
@@ -44,9 +44,11 @@ impl Default for SettingsVersion {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
-#[serde(rename_all = "camelCase", default)]
+#[serde(rename_all = "camelCase")]
 pub struct AppearanceSettings {
     pub theme: Theme,
+    // Note: Font scale is app-controlled and finite; export the frontend type as `number`
+    #[specta(type = specta_typescript::Number)]
     pub font_scale: f64,
 }
 
@@ -69,7 +71,7 @@ pub enum Theme {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type, Default)]
-#[serde(rename_all = "camelCase", default)]
+#[serde(rename_all = "camelCase")]
 pub struct DeveloperSettings {
     pub enabled: bool,
 }

@@ -15,7 +15,7 @@ use crate::{
     },
 };
 #[cfg(debug_assertions)]
-use specta_typescript::{BigIntExportBehavior, Typescript};
+use specta_typescript::Typescript;
 use tauri_specta::{collect_commands, collect_events, Builder as SpectaBuilder};
 
 pub fn run() {
@@ -80,12 +80,13 @@ pub fn run() {
             quit_policy::types::QuitPreventedEvent,
             // Shortcuts events
             shortcuts::types::ShortcutTriggeredEvent,
-        ]);
+        ])
+        .dangerously_cast_bigints_to_number();
 
     // Generate Typescript bindings
     #[cfg(debug_assertions)]
     if let Err(error) = specta_builder.export(
-        Typescript::default().bigint(BigIntExportBehavior::Number),
+        Typescript::default(),
         "../src/environment/specta/bindings.gen.ts",
     ) {
         eprintln!("Skipping TypeScript bindings export: {}", error);
