@@ -81,6 +81,7 @@ pub fn run() {
             // Shortcuts events
             shortcuts::types::ShortcutTriggeredEvent,
         ])
+        // Note: Current large integer exports are mainly app-local IDs and millisecond timestamps expected to stay within JS safe-integer range
         .dangerously_cast_bigints_to_number();
 
     // Generate Typescript bindings
