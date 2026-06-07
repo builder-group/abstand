@@ -1,0 +1,155 @@
+name: Build Tauri macOS
+description: Build signed macOS Tauri distribution and updater artifacts.
+
+inputs:
+  app-directory:
+    description: Path to the Tauri frontend package.
+    required: true
+  target:
+    description: Rust target triple.
+    required: true
+  apple-certificate:
+    description: Base64-encoded Developer ID Application certificate.
+    required: true
+  apple-certificate-password:
+    description: Password used when exporting the Developer ID Application certificate.
+    required: true
+  apple-id:
+    description: Apple ID used for notarization.
+    required: true
+  apple-password:
+    description: App-specific Apple password used for notarization.
+    required: true
+  apple-team-id:
+    description: Apple Developer Team ID used for notarization.
+    required: true
+  tauri-signing-private-key:
+    description: Tauri updater private key contents or path.
+    required: true
+  tauri-signing-private-key-password:
+    description: Password for the Tauri updater private key, if one was set.
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - name: Validate macOS runner
+      shell: bash
+      run: |
+        if [ "$RUNNER_OS" != "macOS" ]; then
+          echo "build-tauri-macos must run on a macOS runner."
+          exit 1
+        fi
+
+    - name: Setup pnpm
+      uses: ./.github/actions/setup-pnpm
+
+    - name: Setup Rust
+      uses: ./.github/actions/setup-rust
+
+    - name: Build workspace dependencies
+      shell: bash
+      env:
+        APP_DIRECTORY: ${{ inputs.app-directory }}
+      run: |
+        package_name="$(node -p "require('./' + process.env.APP_DIRECTORY + '/package.json').name")"
+        pnpm exec turbo run build --filter="${package_name}^..."
+
+    - name: Validate signing requirements
+      shell: bash
+      env:
+        APPLE_CERTIFICATE: ${{ inputs.apple-certificate }}
+        APPLE_CERTIFICATE_PASSWORD: ${{ inputs.apple-certificate-password }}
+        APPLE_ID: ${{ inputs.apple-id }}
+        APPLE_PASSWORD: ${{ inputs.apple-password }}
+        APPLE_TEAM_ID: ${{ inputs.apple-team-id }}
+        TAURI_SIGNING_PRIVATE_KEY: ${{ inputs.tauri-signing-private-key }}
+      run: |
+        # Note: macOS distribution and updater artifacts both rely on secrets, so fail
+        # before Tauri starts when signing credentials are incomplete
+        missing=()
+        for name in APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID TAURI_SIGNING_PRIVATE_KEY; do
+          if [ -z "${!name}" ]; then
+            missing+=("$name")
+          fi
+        done
+
+        if [ "${#missing[@]}" -gt 0 ]; then
+          printf 'Missing signing secrets: %s\n' "${missing[*]}"
+          exit 1
+        fi
+
+    - name: Clear previous bundle output
+      shell: bash
+      env:
+        TARGET: ${{ inputs.target }}
+      run: |
+        # Note: remove only final bundles so stale files cannot satisfy artifact checks while preserving Rust cache output
+        bundle_root="target/$TARGET/release/bundle"
+        rm -rf "$bundle_root"
+
+    - name: Build Tauri app
+      shell: bash
+      working-directory: ${{ inputs.app-directory }}
+      env:
+        TARGET: ${{ inputs.target }}
+        APPLE_CERTIFICATE: ${{ inputs.apple-certificate }}
+        APPLE_CERTIFICATE_PASSWORD: ${{ inputs.apple-certificate-password }}
+        APPLE_ID: ${{ inputs.apple-id }}
+        APPLE_PASSWORD: ${{ inputs.apple-password }}
+        APPLE_TEAM_ID: ${{ inputs.apple-team-id }}
+        TAURI_SIGNING_PRIVATE_KEY: ${{ inputs.tauri-signing-private-key }}
+        TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ inputs.tauri-signing-private-key-password }}
+      run: pnpm tauri build --target "$TARGET" --config src-tauri/tauri.prod.conf.json
+
+    - name: Verify macOS artifacts
+      shell: bash
+      env:
+        TARGET: ${{ inputs.target }}
+      run: |
+        # Gatekeeper validation catches broken signatures or unstapled notarization tickets before upload
+        bundle_root="target/$TARGET/release/bundle"
+        shopt -s nullglob
+        apps=("$bundle_root"/macos/*.app)
+        dmgs=("$bundle_root"/dmg/*.dmg)
+
+        if [ "${#apps[@]}" -eq 0 ] || [ "${#dmgs[@]}" -eq 0 ]; then
+          echo "Expected app and DMG artifacts in $bundle_root."
+          exit 1
+        fi
+
+        for app in "${apps[@]}"; do
+          codesign --verify --deep --strict --verbose=2 "$app"
+          xcrun stapler validate "$app"
+          spctl --assess --type execute --verbose=4 "$app"
+        done
+
+        for dmg in "${dmgs[@]}"; do
+          xcrun stapler validate "$dmg"
+          spctl --assess --type open --context context:primary-signature --verbose=4 "$dmg"
+        done
+
+    - name: Collect bundle artifacts
+      shell: bash
+      env:
+        TARGET: ${{ inputs.target }}
+      run: |
+        # Note: Cargo workspace builds place Tauri bundles under the repository root target directory
+        bundle_root="target/$TARGET/release/bundle"
+        artifact_dir="release-bundle/$TARGET"
+        rm -rf "$artifact_dir"
+        mkdir -p "$artifact_dir"
+
+        shopt -s nullglob
+        dmgs=("$bundle_root"/dmg/*.dmg)
+        updater_bundles=("$bundle_root"/macos/*.app.tar.gz)
+        updater_signatures=("$bundle_root"/macos/*.app.tar.gz.sig)
+
+        # Note: updater bundles are release contract artifacts, so missing updater signing or config must fail the build
+        if [ "${#dmgs[@]}" -eq 0 ] || [ "${#updater_bundles[@]}" -eq 0 ] || [ "${#updater_signatures[@]}" -eq 0 ]; then
+          echo "Expected DMG, updater bundle, and updater signature artifacts in $bundle_root."
+          exit 1
+        fi
+
+        cp "${dmgs[@]}" "${updater_bundles[@]}" "${updater_signatures[@]}" "$artifact_dir/"

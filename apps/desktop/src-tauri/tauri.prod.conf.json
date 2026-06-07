@@ -2,5 +2,8 @@
 	"$schema": "https://schema.tauri.app/config/2",
 	"productName": "Abstand",
 	"mainBinaryName": "Abstand",
-	"identifier": "com.buildergroup.abstand"
+	"identifier": "com.buildergroup.abstand",
+	"bundle": {
+		"createUpdaterArtifacts": true
+	}
 }

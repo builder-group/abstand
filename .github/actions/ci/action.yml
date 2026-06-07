@@ -1,0 +1,44 @@
+name: CI
+description: Run lint, package build, and tests for a workspace app.
+
+inputs:
+  app-directory:
+    description: Path to the workspace app package.
+    required: true
+  build-script:
+    description: Package script used for the CI build check.
+    required: false
+    default: build
+
+runs:
+  using: composite
+  steps:
+    - name: Setup pnpm
+      uses: ./.github/actions/setup-pnpm
+
+    - name: Resolve package name
+      id: package
+      shell: bash
+      env:
+        APP_DIRECTORY: ${{ inputs.app-directory }}
+      run: |
+        package_name="$(node -p "require('./' + process.env.APP_DIRECTORY + '/package.json').name")"
+        printf 'name=%s\n' "$package_name" >> "$GITHUB_OUTPUT"
+
+    - name: Build workspace dependencies
+      shell: bash
+      run: pnpm exec turbo run build --filter="${{ steps.package.outputs.name }}^..."
+
+    - name: Lint
+      shell: bash
+      run: pnpm --filter "${{ steps.package.outputs.name }}" lint
+
+    - name: Build package
+      shell: bash
+      env:
+        BUILD_SCRIPT: ${{ inputs.build-script }}
+      run: pnpm --filter "${{ steps.package.outputs.name }}" "$BUILD_SCRIPT"
+
+    - name: Test
+      shell: bash
+      run: pnpm --filter "${{ steps.package.outputs.name }}" test
