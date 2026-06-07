@@ -111,8 +111,8 @@ runs:
         APPLE_PASSWORD: ${{ inputs.apple-password }}
         APPLE_TEAM_ID: ${{ inputs.apple-team-id }}
       run: |
-        # Note: Tauri notarizes and staples the app bundle before creating the DMG.
-        # Notarize the signed DMG separately so the uploaded installer is also stapled.
+        # Note: Tauri signs the DMG but only notarizes the app bundle,
+        # so notarize the uploaded installer separately before stapling it
         bundle_root="target/$TARGET/release/bundle"
         shopt -s nullglob
         dmgs=("$bundle_root"/dmg/*.dmg)
