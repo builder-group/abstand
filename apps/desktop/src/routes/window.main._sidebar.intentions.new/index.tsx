@@ -55,8 +55,8 @@ function RouteComponent() {
 								<Badge variant="outline">Coming soon</Badge>
 							</div>
 							<p className="text-base-500 mt-px text-xs">
-								Schedules regular screen breaks during longer sessions, so you can rest your eyes and
-								reset your posture.
+								Schedules regular screen breaks during longer sessions, so you can rest your eyes
+								and reset your posture.
 							</p>
 						</div>
 					</div>
