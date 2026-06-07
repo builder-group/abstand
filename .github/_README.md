@@ -51,7 +51,7 @@ macOS builds require Apple signing secrets and a Tauri updater signing key. Add 
 | `APPLE_ID`                           | Apple ID email                                       |
 | `APPLE_PASSWORD`                     | App-specific password                                |
 | `APPLE_TEAM_ID`                      | Apple team ID                                        |
-| `TAURI_SIGNING_PRIVATE_KEY`          | Tauri updater private key contents or path           |
+| `TAURI_SIGNING_PRIVATE_KEY`          | Tauri updater private key contents                   |
 | `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | Password for the updater private key, if one was set |
 
 `APPLE_SIGNING_IDENTITY` is intentionally omitted. Tauri infers the signing identity from `APPLE_CERTIFICATE`; add it only if inference fails or the certificate bundle contains multiple usable identities.

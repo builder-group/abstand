@@ -24,7 +24,7 @@ inputs:
     description: Apple Developer Team ID used for notarization.
     required: true
   tauri-signing-private-key:
-    description: Tauri updater private key contents or path.
+    description: Tauri updater private key contents.
     required: true
   tauri-signing-private-key-password:
     description: Password for the Tauri updater private key, if one was set.
