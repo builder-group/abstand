@@ -55,15 +55,15 @@ function RouteComponent() {
 								<Badge variant="outline">Coming soon</Badge>
 							</div>
 							<p className="text-base-500 mt-px text-xs">
-								Schedules screen breaks during longer sessions, so you can rest your eyes and reset
-								your posture.
+								Schedules regular screen breaks during longer sessions, so you can rest your eyes and
+								reset your posture.
 							</p>
 						</div>
 					</div>
 				</SettingsGroup>
 
 				<div className="text-base-500 flex flex-wrap items-center gap-x-1.5 gap-y-1 px-2.5 text-xs">
-					<span>Need a different kind of Intention? Tell me what would help you most.</span>
+					<span>Need a different kind of Intention? Let me know what would help you most.</span>
 					<Button
 						type="button"
 						variant="link"
@@ -72,7 +72,7 @@ function RouteComponent() {
 						onClick={handleConceptsVisibilityToggle}
 						className="h-auto rounded-xs px-0 text-xs"
 					>
-						{areConceptsVisible ? 'Hide concepts' : 'Show more concepts'}
+						{areConceptsVisible ? 'Hide concepts' : 'See more concepts'}
 					</Button>
 				</div>
 
@@ -91,7 +91,7 @@ function RouteComponent() {
 									<Badge variant="outline">Concept</Badge>
 								</div>
 								<p className="text-base-500 mt-px text-xs">
-									Starts with small focus blocks, adapts each round, and helps momentum build.
+									Starts with small focus blocks, adapts each round, and helps you build momentum.
 								</p>
 							</div>
 						</div>
