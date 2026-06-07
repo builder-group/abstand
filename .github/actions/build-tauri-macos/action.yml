@@ -103,6 +103,34 @@ runs:
         TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ inputs.tauri-signing-private-key-password }}
       run: pnpm tauri build --target "$TARGET" --config src-tauri/tauri.prod.conf.json
 
+    - name: Notarize DMG artifacts
+      shell: bash
+      env:
+        TARGET: ${{ inputs.target }}
+        APPLE_ID: ${{ inputs.apple-id }}
+        APPLE_PASSWORD: ${{ inputs.apple-password }}
+        APPLE_TEAM_ID: ${{ inputs.apple-team-id }}
+      run: |
+        # Note: Tauri notarizes and staples the app bundle before creating the DMG.
+        # Notarize the signed DMG separately so the uploaded installer is also stapled.
+        bundle_root="target/$TARGET/release/bundle"
+        shopt -s nullglob
+        dmgs=("$bundle_root"/dmg/*.dmg)
+
+        if [ "${#dmgs[@]}" -eq 0 ]; then
+          echo "Expected DMG artifacts in $bundle_root."
+          exit 1
+        fi
+
+        for dmg in "${dmgs[@]}"; do
+          xcrun notarytool submit "$dmg" \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --wait
+          xcrun stapler staple "$dmg"
+        done
+
     - name: Verify macOS artifacts
       shell: bash
       env:
