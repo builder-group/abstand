@@ -1,77 +1,72 @@
 # GitHub Actions
 
-This directory contains the desktop build pipeline for Abstand.
+This directory contains GitHub workflows, composite actions, release secret references, and repository assets.
 
 ## Workflows
 
 ### `pr.yml`
 
-Runs CI when a pull request opens or updates:
+Runs on pull request open, update, and reopen events.
 
-- Install pnpm dependencies
-- Build workspace dependencies for `apps/desktop`
-- Run desktop lint, configured package build (`ui:build`), and test scripts
+Runs desktop package checks before merge.
 
 ### `develop.yml`
 
-Runs CI and macOS desktop builds on pushes to `develop`. It can also run manually from the Actions tab.
+Runs on pushes to `develop` and from manual dispatch.
 
-The build matrix creates artifacts for:
+Runs desktop package checks on the main branch. Release artifacts are built only by `release.yml`.
 
-- macOS Apple Silicon (`aarch64-apple-darwin`)
-- macOS Intel (`x86_64-apple-darwin`)
+### `release.yml`
 
-The macOS build uses explicit runner labels, scopes signing secrets to the signing steps, clears stale bundle outputs before building, and verifies signed artifacts before upload.
+Runs from manual dispatch and requires the selected ref to be `develop`.
 
-The build job uses the `release-signing` GitHub Environment so signing secrets can be scoped and audited separately from ordinary CI.
+Runs CI first, then builds both macOS targets:
 
-The workflow uploads signed DMG artifacts and updater bundles through `actions/upload-artifact`.
+- `aarch64-apple-darwin` on `macos-26`
+- `x86_64-apple-darwin` on `macos-26-intel`
 
-It does not bump versions, push tags, create GitHub releases, or generate updater metadata.
+Release builds use macOS 26 runners because the native desktop bridge type-checks macOS 26 AppKit symbols. Runtime availability guards keep fallback behavior available on older supported macOS versions.
 
-## Actions
+Release builds upload:
 
-- `setup-pnpm`: installs pnpm, Node.js 24, pnpm cache, and frozen dependencies
-- `setup-rust`: installs the pinned Rust toolchain from `rust-toolchain.toml` and restores the Cargo workspace cache
-- `ci`: resolves the package from `app-directory`, builds workspace dependencies, then runs lint, a configurable package build script, and tests
-- `build-tauri-macos`: builds signed macOS distribution and updater artifacts
+- `.dmg` installers
+- `.app.tar.gz` updater bundles
+- `.app.tar.gz.sig` updater signatures
 
-## Updater Artifacts
+The workflow verifies signed apps and DMGs before upload. Updater bundles and signatures are part of the release artifact set.
 
-The production Tauri config enables `createUpdaterArtifacts` and includes updater public-key configuration, so macOS builds produce `.app.tar.gz` updater bundles and `.sig` files next to the DMG. The app still needs updater runtime code and published release metadata before users can receive updates.
+Release secrets are listed in `.secrets.template` and live in Settings -> Environments -> `release-signing`:
 
-## Signing
-
-macOS builds require Apple signing secrets and a Tauri updater signing key. Add these secrets to the `release-signing` environment under Settings -> Environments:
-
-| Secret                               | Purpose                                              |
-| ------------------------------------ | ---------------------------------------------------- |
-| `APPLE_CERTIFICATE`                  | Base64-encoded Developer ID Application `.p12`       |
-| `APPLE_CERTIFICATE_PASSWORD`         | Password used when exporting the `.p12`              |
-| `APPLE_ID`                           | Apple ID email                                       |
-| `APPLE_PASSWORD`                     | App-specific password                                |
-| `APPLE_TEAM_ID`                      | Apple team ID                                        |
-| `TAURI_SIGNING_PRIVATE_KEY`          | Tauri updater private key contents                   |
-| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | Password for the updater private key, if one was set |
+| Secret                               | Purpose                                        |
+| ------------------------------------ | ---------------------------------------------- |
+| `APPLE_CERTIFICATE`                  | Base64-encoded Developer ID Application `.p12` |
+| `APPLE_CERTIFICATE_PASSWORD`         | Password used when exporting the `.p12`        |
+| `APPLE_ID`                           | Apple ID email                                 |
+| `APPLE_PASSWORD`                     | App-specific password                          |
+| `APPLE_TEAM_ID`                      | Apple team ID                                  |
+| `TAURI_SIGNING_PRIVATE_KEY`          | Tauri updater private key contents             |
+| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | Password for the updater key, if one was set   |
 
 `APPLE_SIGNING_IDENTITY` is intentionally omitted. Tauri infers the signing identity from `APPLE_CERTIFICATE`; add it only if inference fails or the certificate bundle contains multiple usable identities.
 
-## Local Checks
+## Actions
 
-Run the same package checks locally:
+### `setup-pnpm`
 
-```bash
-pnpm --filter @repo/desktop lint
-pnpm --filter @repo/desktop ui:build
-pnpm --filter @repo/desktop test
-```
+Sets up Node, pnpm, dependency install, and the pnpm cache.
 
-Run a production Tauri build locally:
+### `setup-rust`
 
-```bash
-pnpm --filter @repo/desktop build:prod
-```
+Sets up the Rust toolchain from `rust-toolchain.toml` and restores the Cargo workspace cache.
 
-The local production build needs the same Apple and Tauri signing environment variables as CI when you want signed, notarized distribution artifacts.
+### `ci`
 
-Rust uses the repo-root `rust-toolchain.toml`, so local Rust commands and CI use the same compiler version and macOS targets.
+Resolves the package from `app-directory`, builds workspace dependencies, then runs lint, the configured build script, and tests.
+
+Desktop CI passes `ui:build` because `apps/desktop` reserves `build` for the full Tauri production build.
+
+### `build-tauri-macos`
+
+Builds one signed macOS target and verifies the produced artifacts.
+
+It validates signing inputs before Tauri starts, clears stale final bundle output, runs `pnpm tauri build` with the production Tauri config, notarizes and staples DMGs, then collects DMGs, updater bundles, and updater signatures for upload.
