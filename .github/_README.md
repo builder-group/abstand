@@ -38,7 +38,7 @@ It does not bump versions, push tags, create GitHub releases, or generate update
 
 ## Updater Artifacts
 
-The production Tauri config enables `createUpdaterArtifacts`, so macOS builds produce `.app.tar.gz` updater bundles and `.sig` files next to the DMG. The app still needs updater runtime code, public key configuration, and release metadata before users can receive updates.
+The production Tauri config enables `createUpdaterArtifacts` and includes updater public-key configuration, so macOS builds produce `.app.tar.gz` updater bundles and `.sig` files next to the DMG. The app still needs updater runtime code and published release metadata before users can receive updates.
 
 ## Signing
 
