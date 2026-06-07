@@ -12,10 +12,13 @@ enum WindowPointer {
 
     /// Resolves the window pointer and runs the action on the main thread.
     /// Returns `false` if the pointer is invalid.
-    static func withWindow(_ windowPtr: Int, perform action: (NSWindow) -> Void)
+    static func withWindow(
+        _ windowPtr: Int,
+        perform action: @MainActor @escaping (NSWindow) -> Void
+    )
         -> Bool
     {
-        return WindowMainThread.run {
+        return FfiMainActorBridge.run {
             guard let window = resolve(windowPtr) else {
                 return false
             }

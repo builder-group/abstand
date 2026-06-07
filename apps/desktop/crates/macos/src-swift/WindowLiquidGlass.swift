@@ -3,7 +3,7 @@ import WebKit
 
 enum WindowLiquidGlass {
     static func apply(windowPtr: Int) -> Bool {
-        return WindowMainThread.run {
+        return FfiMainActorBridge.run {
             guard let window = WindowPointer.resolve(windowPtr) else {
                 return false
             }
@@ -11,7 +11,10 @@ enum WindowLiquidGlass {
             return apply(to: window)
         }
     }
+}
 
+@MainActor
+extension WindowLiquidGlass {
     /// Applies the liquid glass effect and makes all WKWebViews in the window transparent.
     /// Returns `false` on macOS versions below 26.0.
     @discardableResult

@@ -17,9 +17,13 @@ public func abstandMacosGetSmallSystemFontSize() -> Double {
 }
 
 @_cdecl("abstand_macos_is_app_running")
-public func abstandMacosIsAppRunning(bundleIdentifier: SRString, excludedPid: Int32) -> Bool {
+public func abstandMacosIsAppRunning(
+    bundleIdentifier: SRString,
+    excludedPid: Int32
+) -> Bool {
     let bundleIdentifier = bundleIdentifier.toString()
-    return NSRunningApplication
+    return
+        NSRunningApplication
         .runningApplications(withBundleIdentifier: bundleIdentifier)
         .contains { app in
             app.processIdentifier != pid_t(excludedPid) && !app.isTerminated
