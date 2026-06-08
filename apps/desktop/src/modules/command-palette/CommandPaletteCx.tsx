@@ -136,6 +136,8 @@ export class CommandPaletteCx {
 	}
 }
 
+// MARK: - React Context
+
 const ReactCommandPaletteContext = React.createContext<CommandPaletteCx | null>(null);
 
 export const CommandPaletteCxProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {

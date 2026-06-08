@@ -14,8 +14,14 @@ export class SettingsCx {
 		developer: {
 			enabled: false
 		},
+		updates: {
+			automaticallyCheck: true,
+			releaseChannel: 'stable'
+		},
 		shortcuts: {}
 	} satisfies specta.AppSettings);
+
+	public readonly $hasLoaded = createState(false);
 
 	public mount(): () => void {
 		const lifecycle = createMountLifecycle();
@@ -24,6 +30,7 @@ export class SettingsCx {
 			const appSettings = await specta.commands.getSettings();
 			if (lifecycle.isUnmounted()) return;
 			this.$appSettings.set(appSettings);
+			this.$hasLoaded.set(true);
 
 			lifecycle.addCleanup(
 				await specta.events.appSettingsChangedEvent.listen((event) => {
@@ -35,22 +42,26 @@ export class SettingsCx {
 		return lifecycle.unmount;
 	}
 
-	public async update(updates: TSettingsUpdates): Promise<TResult<null, string>> {
+	public async update(changes: TSettingsUpdates): Promise<TResult<null, string>> {
 		const currentSettings = this.$appSettings._v;
 		const nextSettings: specta.AppSettings = {
 			...currentSettings,
-			...updates,
+			...changes,
 			appearance: {
 				...currentSettings.appearance,
-				...updates.appearance
+				...changes.appearance
 			},
 			developer: {
 				...currentSettings.developer,
-				...updates.developer
+				...changes.developer
+			},
+			updates: {
+				...currentSettings.updates,
+				...changes.updates
 			},
 			shortcuts: {
 				...currentSettings.shortcuts,
-				...updates.shortcuts
+				...changes.shortcuts
 			}
 		};
 		// Note: Successful writes sync back through appSettingsChangedEvent
@@ -64,12 +75,15 @@ export class SettingsCx {
 }
 
 type TSettingsUpdates = Partial<
-	Omit<specta.AppSettings, 'appearance' | 'developer' | 'shortcuts'>
+	Omit<specta.AppSettings, 'appearance' | 'developer' | 'updates' | 'shortcuts'>
 > & {
 	appearance?: Partial<specta.AppearanceSettings>;
 	developer?: Partial<specta.DeveloperSettings>;
+	updates?: Partial<specta.UpdateSettings>;
 	shortcuts?: specta.AppSettings['shortcuts'];
 };
+
+// MARK: - React Context
 
 const ReactSettingsContext = React.createContext<SettingsCx | null>(null);
 

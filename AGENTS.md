@@ -27,6 +27,15 @@ Use this file first when working in this repository. It defines the default agen
 - Treat matching rules as the target standard for new and touched code. If rules conflict, the more specific package, pattern, or framework rule wins.
 - Do repo-wide cleanup only when the task explicitly calls for migration
 
+## Design Bias
+
+- When reworking messy staged code, reduce the surface area before polishing it
+- Treat generated or staged code as disposable draft work, not as an architecture to preserve
+- Remove unused state, helpers, options, and lifecycle paths instead of routing around them
+- Keep public methods returning only what callers actually need
+- Do not add cancellation, notification, lifecycle, or migration machinery unless the current behavior requires it
+- Inline one-off helpers that hide only a few lines; keep supporting logic close to its single consumer
+
 ## Git
 
 - Use read-only git commands such as `git status`, `git diff`, `git log`, and `git show` when useful

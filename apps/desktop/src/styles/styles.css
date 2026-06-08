@@ -43,7 +43,7 @@ a {
 	--color-success: var(--color-apple-green);
 	--color-success-content: #ffffff;
 	--color-warning: var(--color-apple-orange);
-	--color-warning-content: #1c1c1e;
+	--color-warning-content: #ffffff;
 	--color-error: var(--color-apple-red);
 	--color-error-content: #ffffff;
 }

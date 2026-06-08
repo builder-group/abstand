@@ -7,6 +7,7 @@ import {
 	Button,
 	CheckIcon,
 	ChevronRightIcon,
+	CircleArrowDownIcon,
 	CircleCheckIcon,
 	CircleSlashIcon,
 	HelpPopover,
@@ -21,13 +22,15 @@ import {
 	Spinner,
 	SunIcon,
 	Switch,
-	useToastsCx
+	useToastsCx,
+	XCircleIcon
 } from '@/components';
 import { appConfig, specta } from '@/environment';
 import { useAppInfo } from '@/hooks';
-import { openExternalUrl, sleep, toTuple } from '@/lib';
+import { openExternalUrl, toTuple } from '@/lib';
 import { useIntentionsCx } from '@/modules/intentions';
 import { SettingsGroup, SettingsRow, SettingsRowFrame, useSettingsCx } from '@/modules/settings';
+import { useUpdaterCx, type TUpdaterState } from '@/modules/updater';
 
 export const Route = createFileRoute('/window/main/_sidebar/settings/general/')({
 	component: RouteComponent
@@ -548,92 +551,109 @@ function getLaunchAtLoginDescription(
 }
 
 const UpdatesSection: React.FC = () => {
+	const settingsCx = useSettingsCx();
+	const updaterCx = useUpdaterCx();
+	const toastsCx = useToastsCx();
 	const appInfo = useAppInfo();
+	const updateState = useFeatureState(updaterCx.$updateState);
 
-	const [releaseChannel, setReleaseChannel] = React.useState('stable');
-	const [automaticallyCheckUpdates, setAutomaticallyCheckUpdates] = React.useState(true);
-	const [updateStatus, setUpdateStatus] = React.useState<TUpdateStatus>(
-		automaticallyCheckUpdates ? 'checking' : 'idle'
+	const areAutomaticUpdateChecksEnabled = useCompute(
+		settingsCx.$appSettings,
+		(value) => value.updates.automaticallyCheck
+	);
+	const releaseChannel = useCompute(
+		settingsCx.$appSettings,
+		(value) => value.updates.releaseChannel
 	);
 
 	// MARK: - Actions
 
-	const handleCheckUpdates = React.useCallback(() => {
-		setUpdateStatus('checking');
-	}, []);
+	const handleUpdateAction = React.useCallback(async () => {
+		switch (updateState.type) {
+			case 'available': {
+				const [isInstallOk, installErr] = await updaterCx.installUpdate();
+				if (!isInstallOk) {
+					toastsCx.add({
+						type: 'error',
+						title: 'Could not install update',
+						description: installErr
+					});
+				}
+				break;
+			}
+			default: {
+				const [isUpdateCheckOk, updateCheckErr] = await updaterCx.checkForUpdates();
+				if (!isUpdateCheckOk) {
+					toastsCx.add({
+						type: 'error',
+						title: 'Could not check for updates',
+						description: updateCheckErr
+					});
+				}
+			}
+		}
+	}, [toastsCx, updaterCx, updateState.type]);
 
-	const handleAutomaticallyCheckUpdatesChange = React.useCallback((checked: boolean) => {
-		setAutomaticallyCheckUpdates(checked);
-		setUpdateStatus(checked ? 'checking' : 'idle');
-	}, []);
-
-	const handleReleaseChannelChange = React.useCallback(
-		(event: React.ChangeEvent<HTMLSelectElement>) => {
-			setReleaseChannel(event.target.value);
-			setUpdateStatus(automaticallyCheckUpdates ? 'checking' : 'idle');
+	const handleAutomaticUpdateChecksChange = React.useCallback(
+		async (checked: boolean) => {
+			const [isUpdateOk, updateErr] = await settingsCx.update({
+				updates: { automaticallyCheck: checked }
+			});
+			if (!isUpdateOk) {
+				toastsCx.add({
+					type: 'error',
+					title: 'Could not save setting',
+					description: updateErr
+				});
+			}
 		},
-		[automaticallyCheckUpdates]
+		[settingsCx, toastsCx]
 	);
 
-	// MARK: - Effects
-
-	React.useEffect(() => {
-		if (updateStatus !== 'checking') {
-			return;
-		}
-
-		let isCancelled = false;
-		void (async () => {
-			console.info(`Checking updates for ${releaseChannel} release channel`);
-			await sleep(2000);
-			if (isCancelled) return;
-			setUpdateStatus('upToDate');
-		})();
-
-		return () => {
-			isCancelled = true;
-		};
-	}, [releaseChannel, updateStatus]);
+	const handleReleaseChannelChange = React.useCallback(
+		async (event: React.ChangeEvent<HTMLSelectElement>) => {
+			const [isUpdateOk, updateErr] = await settingsCx.update({
+				updates: { releaseChannel: event.target.value as specta.ReleaseChannel }
+			});
+			if (!isUpdateOk) {
+				toastsCx.add({
+					type: 'error',
+					title: 'Could not save setting',
+					description: updateErr
+				});
+			}
+		},
+		[settingsCx, toastsCx]
+	);
 
 	// MARK: - UI
 
+	const updateView = getUpdateView(updateState, appInfo);
+
 	return (
-		<div className="space-y-2.5">
+		<div id="updates" className="space-y-2.5">
 			<SettingsGroup title="Updates">
 				<SettingsRowFrame variant="default">
-					{updateStatus === 'checking' ? (
+					{updateView.type === 'pending' ? (
 						<>
-							<p className="text-base-950 truncate text-sm">Checking for updates...</p>
+							<p className="text-base-950 truncate text-sm">{updateView.label}</p>
 							<Spinner size="md" />
 						</>
 					) : (
 						<>
 							<div className="flex min-w-0 items-center gap-2.5">
-								{updateStatus === 'upToDate' ? (
-									<span className="bg-success text-success-content flex size-7 shrink-0 items-center justify-center rounded-lg">
-										<CircleCheckIcon
-											aria-hidden
-											className="[&_path]:stroke-success size-4 [&_circle]:fill-current"
-										/>
-									</span>
-								) : (
-									<span className="bg-base-100 text-base-500 flex size-7 shrink-0 items-center justify-center rounded-lg">
-										<CircleSlashIcon aria-hidden className="size-4" />
-									</span>
-								)}
+								<UpdateStatusIndicator tone={updateView.tone} />
 								<div className="min-w-0">
-									<p className="text-base-950 truncate text-sm">
-										{updateStatus === 'upToDate'
-											? 'Abstand is up to date.'
-											: 'Automatic update checks are off.'}
-									</p>
-									<p className="text-base-500 truncate text-xs">
-										{appInfo.isPending ? 'Loading version...' : appInfo.version}
-									</p>
+									<p className="text-base-950 truncate text-sm">{updateView.label}</p>
+									<p className="text-base-500 truncate text-xs">{updateView.description}</p>
 								</div>
 							</div>
-							<Button type="button" onClick={handleCheckUpdates}>
-								Check for Updates
+							<Button
+								type="button"
+								onClick={handleUpdateAction}
+								disabled={updateView.isActionDisabled}
+							>
+								{updateView.actionLabel}
 							</Button>
 						</>
 					)}
@@ -642,15 +662,24 @@ const UpdatesSection: React.FC = () => {
 			<SettingsGroup>
 				<SettingsRow label="Automatically check for updates" variant="compact">
 					<Switch
-						checked={automaticallyCheckUpdates}
-						onCheckedChange={handleAutomaticallyCheckUpdatesChange}
+						checked={areAutomaticUpdateChecksEnabled}
+						onCheckedChange={handleAutomaticUpdateChecksChange}
 					/>
 				</SettingsRow>
 				<SettingsRow label="Release channel" variant="compact">
-					<Select variant="ghost" value={releaseChannel} onChange={handleReleaseChannelChange}>
+					<Select
+						variant="ghost"
+						value={releaseChannel}
+						onChange={handleReleaseChannelChange}
+						aria-label="Release channel"
+					>
 						<option value="stable">Stable</option>
-						<option value="beta">Beta</option>
-						<option value="nightly">Nightly</option>
+						<option value="beta" disabled>
+							Beta
+						</option>
+						<option value="nightly" disabled>
+							Nightly
+						</option>
 					</Select>
 				</SettingsRow>
 			</SettingsGroup>
@@ -658,7 +687,172 @@ const UpdatesSection: React.FC = () => {
 	);
 };
 
-type TUpdateStatus = 'idle' | 'checking' | 'upToDate';
+function getUpdateView(state: TUpdaterState, appInfo: TUpdateAppInfo): TUpdateView {
+	if (appInfo.isPending) {
+		return {
+			type: 'pending',
+			label: 'Loading update status...'
+		};
+	}
+
+	const currentAppVersion = appInfo.version;
+
+	if (appInfo.stage === 'dev') {
+		return {
+			type: 'status',
+			status: 'development',
+			tone: 'muted',
+			label: 'Updates are not available in development builds.',
+			description: currentAppVersion,
+			actionLabel: 'Check for Updates',
+			isActionDisabled: true
+		};
+	}
+
+	if (appInfo.distribution === 'appStore') {
+		return {
+			type: 'status',
+			status: 'appStore',
+			tone: 'muted',
+			label: 'Updates are managed by the App Store.',
+			description: currentAppVersion,
+			actionLabel: 'Check for Updates',
+			isActionDisabled: true
+		};
+	}
+
+	switch (state.type) {
+		case 'checking':
+			return {
+				type: 'pending',
+				label: 'Checking for updates...'
+			};
+		case 'installing':
+			return {
+				type: 'pending',
+				label: 'Installing update...'
+			};
+		case 'available':
+			return {
+				type: 'status',
+				status: 'available',
+				tone: 'primary',
+				label: `Abstand ${state.updateInfo.version} is available.`,
+				description: 'Install the update and restart Abstand.',
+				actionLabel: 'Install Update'
+			};
+		case 'upToDate':
+			return {
+				type: 'status',
+				status: 'upToDate',
+				tone: 'success',
+				label: 'Abstand is up to date.',
+				description: currentAppVersion,
+				actionLabel: 'Check for Updates'
+			};
+		case 'unsupported':
+			return {
+				type: 'status',
+				status: 'unsupported',
+				tone: 'muted',
+				label: 'Updates are not available in this build.',
+				description: 'Use a signed production build to check for updates.',
+				actionLabel: 'Check for Updates',
+				isActionDisabled: true
+			};
+		case 'error':
+			return {
+				type: 'status',
+				status: 'error',
+				tone: 'error',
+				label: 'Could not check for updates.',
+				description: state.message,
+				actionLabel: 'Try Again'
+			};
+		case 'idle':
+			return {
+				type: 'status',
+				status: 'idle',
+				tone: 'muted',
+				label: 'Automatic update checks are off.',
+				description: currentAppVersion,
+				actionLabel: 'Check for Updates'
+			};
+	}
+}
+
+type TUpdateAppInfo = Pick<specta.AppInfoDto, 'stage' | 'distribution' | 'version'> & {
+	isPending: boolean;
+};
+
+type TUpdateView =
+	| {
+			type: 'pending';
+			label: string;
+	  }
+	| {
+			type: 'status';
+			status: TUpdateStatus;
+			tone: TUpdateStatusTone;
+			label: string;
+			description: string;
+			actionLabel: string;
+			isActionDisabled?: boolean;
+	  };
+
+type TUpdateStatus =
+	| 'available'
+	| 'upToDate'
+	| 'unsupported'
+	| 'error'
+	| 'idle'
+	| 'development'
+	| 'appStore';
+type TUpdateStatusTone = 'primary' | 'success' | 'error' | 'muted';
+
+const UpdateStatusIndicator: React.FC<TUpdateStatusIndicatorProps> = (props) => {
+	const { tone } = props;
+
+	switch (tone) {
+		case 'primary':
+			return (
+				<span className="bg-primary text-primary-content flex size-7 shrink-0 items-center justify-center rounded-lg">
+					<CircleArrowDownIcon
+						aria-hidden
+						className="[&_path]:stroke-primary size-4 [&_circle]:fill-current"
+					/>
+				</span>
+			);
+		case 'success':
+			return (
+				<span className="bg-success text-success-content flex size-7 shrink-0 items-center justify-center rounded-lg">
+					<CircleCheckIcon
+						aria-hidden
+						className="[&_path]:stroke-success size-4 [&_circle]:fill-current"
+					/>
+				</span>
+			);
+		case 'error':
+			return (
+				<span className="bg-error text-error-content flex size-7 shrink-0 items-center justify-center rounded-lg">
+					<XCircleIcon
+						aria-hidden
+						className="[&_path]:stroke-error size-4 [&_circle]:fill-current"
+					/>
+				</span>
+			);
+		case 'muted':
+			return (
+				<span className="bg-base-100 text-base-500 flex size-7 shrink-0 items-center justify-center rounded-lg">
+					<CircleSlashIcon aria-hidden className="size-4" />
+				</span>
+			);
+	}
+};
+
+interface TUpdateStatusIndicatorProps {
+	tone: TUpdateStatusTone;
+}
 
 const HelpFeedbackSection: React.FC = () => {
 	const handleOpenSupportUrl = React.useCallback((url: string) => {

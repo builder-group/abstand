@@ -262,6 +262,8 @@ export class IntentionsCx {
 	}
 }
 
+// MARK: - React Context
+
 const ReactIntentionsContext = React.createContext<IntentionsCx | null>(null);
 
 export const IntentionsCxProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {

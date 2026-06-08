@@ -1,8 +1,11 @@
 import { mergeProps } from '@base-ui/react/merge-props';
 import { useRender } from '@base-ui/react/use-render';
+import { useNavigate } from '@tanstack/react-router';
+import { useFeatureState } from 'feature-react/state';
 import React from 'react';
 import { useAppInfo, usePlatform } from '@/hooks';
 import { cn } from '@/lib';
+import { useUpdaterCx } from '@/modules/updater';
 import { Badge } from '../display';
 
 export const WindowHeader: React.FC<TWindowHeaderProps> = (props) => {
@@ -16,14 +19,30 @@ export const WindowHeader: React.FC<TWindowHeaderProps> = (props) => {
 		className
 	} = props;
 	const appInfo = useAppInfo();
+	const navigate = useNavigate();
+	const updaterCx = useUpdaterCx();
+	const updateState = useFeatureState(updaterCx.$updateState);
 
-	const showDevBadge = showBadges && !appInfo.isPending && appInfo.stage === 'dev';
+	const showUpdateBadge = showBadges && updateState.type === 'available';
+	const showDevBadge =
+		showBadges && !showUpdateBadge && !appInfo.isPending && appInfo.stage === 'dev';
 	const showBetaBadge =
 		showBadges &&
 		!appInfo.isPending &&
 		appInfo.stage === 'prod' &&
 		appInfo.version.startsWith('v0.') &&
 		appInfo.distribution !== 'appStore';
+
+	// MARK: - Actions
+
+	const handleOpenUpdates = React.useCallback(() => {
+		void navigate({
+			to: '/window/main/settings/general',
+			hash: 'updates'
+		});
+	}, [navigate]);
+
+	// MARK: - UI
 
 	return (
 		<WindowHeaderRow
@@ -32,7 +51,7 @@ export const WindowHeader: React.FC<TWindowHeaderProps> = (props) => {
 		>
 			<WindowControlsInset />
 			{leading}
-			{(title != null || showDevBadge || showBetaBadge) && !compact && (
+			{(title != null || showDevBadge || showBetaBadge || showUpdateBadge) && !compact && (
 				<div className="ml-2 flex min-w-0 items-center gap-2">
 					{title != null && (
 						<span className="text-base-950 truncate text-sm font-semibold">{title}</span>
@@ -45,6 +64,16 @@ export const WindowHeader: React.FC<TWindowHeaderProps> = (props) => {
 					{showBetaBadge && (
 						<Badge variant="secondary" className="font-semibold tracking-wide uppercase">
 							Beta
+						</Badge>
+					)}
+					{showUpdateBadge && (
+						<Badge
+							render={<button type="button" aria-label="Review available update" />}
+							variant="default"
+							className="bg-primary text-primary-content hover:bg-primary/90 font-semibold"
+							onClick={handleOpenUpdates}
+						>
+							Update
 						</Badge>
 					)}
 				</div>

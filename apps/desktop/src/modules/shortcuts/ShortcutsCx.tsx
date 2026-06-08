@@ -83,6 +83,8 @@ export class ShortcutsCx {
 
 type TShortcutConfigs = Partial<Record<specta.ShortcutAction, specta.ShortcutActionConfigDto>>;
 
+// MARK: - React Context
+
 const ReactShortcutsContext = React.createContext<ShortcutsCx | null>(null);
 
 export const ShortcutsCxProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {

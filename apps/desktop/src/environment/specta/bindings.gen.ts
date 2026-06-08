@@ -101,6 +101,7 @@ export type AppSettings = {
 	version: SettingsVersion,
 	appearance: AppearanceSettings,
 	developer: DeveloperSettings,
+	updates: UpdateSettings,
 	/**  User overrides per action. Absent key = use default. None value = shortcut cleared. */
 	shortcuts: Partial<{ [key in ShortcutAction]: KeyboardShortcut | null }>,
 };
@@ -276,6 +277,8 @@ export type RecoveryAgentStatus = {
 	isEnabled: boolean,
 };
 
+export type ReleaseChannel = "stable" | "beta" | "nightly";
+
 export type SearchCatalogParams = {
 	query: string,
 	limit: number | null,
@@ -341,6 +344,11 @@ export type UpdateIntentionParams = {
 	name: string,
 	behavior: WriteIntentionBehaviorParams,
 	conditions: WriteIntentionConditionParams[],
+};
+
+export type UpdateSettings = {
+	automaticallyCheck: boolean,
+	releaseChannel: ReleaseChannel,
 };
 
 export type Website = {

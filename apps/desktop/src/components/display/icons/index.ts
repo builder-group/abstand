@@ -16,6 +16,7 @@ export {
 	ChevronsUpDownIcon,
 	ChevronUpIcon,
 	CircleAlertIcon,
+	CircleArrowDownIcon,
 	CircleCheckIcon,
 	CircleQuestionMarkIcon,
 	CircleSlashIcon,
