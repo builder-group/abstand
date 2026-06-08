@@ -18,9 +18,9 @@ Runs desktop package checks on the main branch. Release artifacts are built only
 
 ### `release.yml`
 
-Runs from manual dispatch, requires the selected ref to be `develop`, and accepts a `draft`, `beta`, or `stable` channel.
+Runs from manual dispatch and requires the selected ref to be `develop`.
 
-Runs CI first, then builds both macOS targets:
+Resolves the `channel` and `version_bump` inputs with `resolve-release-version`, runs CI, applies the resolved version with `apply-tauri-version`, then builds both macOS targets:
 
 - `aarch64-apple-darwin` on `macos-26`
 - `x86_64-apple-darwin` on `macos-26-intel`
@@ -34,7 +34,7 @@ Release builds produce:
 - `.app.tar.gz.sig` updater signatures
 - `latest.json` updater metadata
 
-The workflow verifies signed apps and DMGs before upload, creates arch-qualified release assets, then creates a GitHub Release tagged from `apps/desktop/package.json` (`v<version>`). Draft releases stay unpublished, beta releases are prereleases, and stable releases are full releases.
+The workflow commits release version changes before building when the resolved version differs from the current source version. It verifies signed apps and DMGs before upload, creates arch-qualified release assets, then creates a GitHub Release tagged from the versioned build commit. Draft releases stay unpublished, beta releases are prereleases, and stable releases are full releases.
 
 Release secrets are listed in `.secrets.template` and live in Settings -> Environments -> `release-signing`:
 
@@ -65,6 +65,31 @@ Sets up the Rust toolchain from `rust-toolchain.toml` and restores the Cargo wor
 Resolves the package from `app-directory`, builds workspace dependencies, then runs lint, the configured build script, and tests.
 
 Desktop CI passes `ui:build` because `apps/desktop` reserves `build` for the full Tauri production build.
+
+### `resolve-release-version`
+
+Resolves the release version from `app-directory`, `channel`, and `version-bump`.
+
+It returns the current version, resolved version, release tag, and whether the version changed.
+
+```text
+channel  version-bump  behavior
+draft    none          Build the current version as an unpublished draft
+draft    patch         Reject
+draft    minor         Reject
+beta     patch         Start the next patch beta series: 0.0.1 -> 0.0.2-beta.1
+beta     minor         Start the next minor beta series: 0.0.1 -> 0.1.0-beta.1
+beta     none          Continue the current beta series: 0.1.0-beta.1 -> 0.1.0-beta.2
+stable   patch         Release the next patch version: 0.0.1 -> 0.0.2
+stable   minor         Release the next minor version: 0.0.1 -> 0.1.0
+stable   none          Promote the current beta series: 0.0.2-beta.2 -> 0.0.2
+```
+
+### `apply-tauri-version`
+
+Applies a resolved version to a Tauri app.
+
+It updates the app package version, Tauri app crate version, and matching `Cargo.lock` package entry. It returns whether files changed and the changed file list.
 
 ### `build-tauri-macos`
 

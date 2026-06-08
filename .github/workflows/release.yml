@@ -12,6 +12,15 @@ on:
           - draft
           - beta
           - stable
+      version_bump:
+        description: Version bump.
+        type: choice
+        required: true
+        default: none
+        options:
+          - none
+          - patch
+          - minor
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -34,14 +43,57 @@ jobs:
             exit 1
           fi
 
+  resolve-release:
+    name: Resolve release intent
+    runs-on: ubuntu-latest
+    needs: validate-ref
+    timeout-minutes: 10
+    outputs:
+      current-version: ${{ steps.version.outputs.current-version }}
+      version: ${{ steps.version.outputs.next-version }}
+      tag: ${{ steps.version.outputs.tag }}
+      target-sha: ${{ steps.release.outputs.target-sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Resolve release version
+        id: version
+        uses: ./.github/actions/resolve-release-version
+        with:
+          app-directory: apps/desktop
+          channel: ${{ inputs.channel }}
+          version-bump: ${{ inputs.version_bump }}
+
+      - name: Check release target
+        id: release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release already exists: $TAG"
+            exit 1
+          fi
+
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "Release tag already exists: $TAG"
+            exit 1
+          fi
+
+          printf 'target-sha=%s\n' "$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+
   ci:
     name: CI
     runs-on: ubuntu-latest
-    needs: validate-ref
+    needs: resolve-release
     timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.resolve-release.outputs.target-sha }}
 
       - name: Run CI
         uses: ./.github/actions/ci
@@ -49,10 +101,65 @@ jobs:
           app-directory: apps/desktop
           build-script: ui:build
 
+  write-release-version:
+    name: Write release version
+    runs-on: ubuntu-latest
+    needs: [resolve-release, ci]
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    outputs:
+      target-sha: ${{ steps.target.outputs.target-sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.resolve-release.outputs.target-sha }}
+
+      - name: Write release version
+        id: apply
+        if: needs.resolve-release.outputs.version != needs.resolve-release.outputs.current-version
+        uses: ./.github/actions/apply-tauri-version
+        with:
+          app-directory: apps/desktop
+          version: ${{ needs.resolve-release.outputs.version }}
+
+      - name: Commit release version
+        id: target
+        shell: bash
+        env:
+          VERSION: ${{ needs.resolve-release.outputs.version }}
+          CHANGED_FILES: ${{ steps.apply.outputs.changed-files }}
+        run: |
+          if [ -z "$CHANGED_FILES" ] || [ "$CHANGED_FILES" = "[]" ]; then
+            printf 'target-sha=%s\n' "$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          node <<'NODE'
+          const { execFileSync } = require('node:child_process');
+
+          const changedFiles = JSON.parse(process.env.CHANGED_FILES);
+
+          if (!Array.isArray(changedFiles) || changedFiles.length === 0) {
+            process.exit(0);
+          }
+
+          execFileSync('git', ['add', ...changedFiles], { stdio: 'inherit' });
+          NODE
+
+          git commit -m "#develop prepare Abstand $VERSION"
+          git push origin HEAD:develop
+
+          printf 'target-sha=%s\n' "$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
   build:
     name: Build ${{ matrix.name }}
     runs-on: ${{ matrix.runner }}
-    needs: ci
+    needs: [resolve-release, write-release-version]
     environment: release-signing
     timeout-minutes: 75
     strategy:
@@ -71,6 +178,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.write-release-version.outputs.target-sha }}
 
       - name: Build desktop app
         uses: ./.github/actions/build-tauri-macos
@@ -97,13 +206,15 @@ jobs:
   create-release:
     name: Create ${{ inputs.channel }} release
     runs-on: ubuntu-latest
-    needs: build
+    needs: [resolve-release, write-release-version, build]
     timeout-minutes: 15
     permissions:
       contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.write-release-version.outputs.target-sha }}
 
       - name: Download build artifacts
         uses: actions/download-artifact@v7
@@ -111,38 +222,11 @@ jobs:
           pattern: abstand-macos-*
           path: release-artifacts
 
-      - name: Resolve release metadata
-        id: release
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          version="$(node -p "require('./apps/desktop/package.json').version")"
-          tag="v$version"
-
-          if [ -z "$version" ]; then
-            echo "Expected apps/desktop/package.json to contain a version."
-            exit 1
-          fi
-
-          if gh release view "$tag" >/dev/null 2>&1; then
-            echo "Release already exists: $tag"
-            exit 1
-          fi
-
-          if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1; then
-            echo "Release tag already exists: $tag"
-            exit 1
-          fi
-
-          printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
-          printf 'tag=%s\n' "$tag" >> "$GITHUB_OUTPUT"
-
       - name: Stage release assets
         shell: bash
         env:
-          VERSION: ${{ steps.release.outputs.version }}
-          TAG: ${{ steps.release.outputs.tag }}
+          VERSION: ${{ needs.resolve-release.outputs.version }}
+          TAG: ${{ needs.resolve-release.outputs.tag }}
         run: |
           stage_arch() {
             local artifact_dir="$1"
@@ -173,8 +257,8 @@ jobs:
       - name: Generate updater metadata
         shell: bash
         env:
-          VERSION: ${{ steps.release.outputs.version }}
-          TAG: ${{ steps.release.outputs.tag }}
+          VERSION: ${{ needs.resolve-release.outputs.version }}
+          TAG: ${{ needs.resolve-release.outputs.tag }}
         run: |
           node <<'NODE'
           const fs = require('fs');
@@ -207,9 +291,10 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ steps.release.outputs.tag }}
-          VERSION: ${{ steps.release.outputs.version }}
+          TAG: ${{ needs.resolve-release.outputs.tag }}
+          VERSION: ${{ needs.resolve-release.outputs.version }}
           CHANNEL: ${{ inputs.channel }}
+          TARGET_SHA: ${{ needs.write-release-version.outputs.target-sha }}
         run: |
           shopt -s nullglob
           files=(release-assets/*)
@@ -232,6 +317,6 @@ jobs:
 
           gh release create "$TAG" "${files[@]}" \
             "${release_args[@]}" \
-            --target "$GITHUB_SHA" \
+            --target "$TARGET_SHA" \
             --title "Abstand $TAG" \
             --notes "macOS $CHANNEL release for Abstand $VERSION."
