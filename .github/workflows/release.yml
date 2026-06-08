@@ -2,6 +2,16 @@ name: Release
 
 on:
   workflow_dispatch:
+    inputs:
+      channel:
+        description: Release channel.
+        type: choice
+        required: true
+        default: draft
+        options:
+          - draft
+          - beta
+          - stable
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -84,8 +94,8 @@ jobs:
           compression-level: 0
           retention-days: 14
 
-  create-draft-release:
-    name: Create draft release
+  create-release:
+    name: Create ${{ inputs.channel }} release
     runs-on: ubuntu-latest
     needs: build
     timeout-minutes: 15
@@ -104,12 +114,19 @@ jobs:
       - name: Resolve release metadata
         id: release
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           version="$(node -p "require('./apps/desktop/package.json').version")"
           tag="v$version"
 
           if [ -z "$version" ]; then
             echo "Expected apps/desktop/package.json to contain a version."
+            exit 1
+          fi
+
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release already exists: $tag"
             exit 1
           fi
 
@@ -186,18 +203,35 @@ jobs:
           fs.writeFileSync('release-assets/latest.json', `${JSON.stringify(latest, null, 2)}\n`);
           NODE
 
-      - name: Create draft GitHub release
+      - name: Create GitHub release
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.release.outputs.tag }}
           VERSION: ${{ steps.release.outputs.version }}
+          CHANNEL: ${{ inputs.channel }}
         run: |
           shopt -s nullglob
           files=(release-assets/*)
+          release_args=()
+
+          case "$CHANNEL" in
+            draft)
+              release_args+=(--draft)
+              ;;
+            beta)
+              release_args+=(--prerelease)
+              ;;
+            stable)
+              ;;
+            *)
+              echo "Unsupported release channel: $CHANNEL"
+              exit 1
+              ;;
+          esac
 
           gh release create "$TAG" "${files[@]}" \
-            --draft \
+            "${release_args[@]}" \
             --target "$GITHUB_SHA" \
             --title "Abstand $TAG" \
-            --notes "Draft macOS release for Abstand $VERSION."
+            --notes "macOS $CHANNEL release for Abstand $VERSION."

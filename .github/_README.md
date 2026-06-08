@@ -18,7 +18,7 @@ Runs desktop package checks on the main branch. Release artifacts are built only
 
 ### `release.yml`
 
-Runs from manual dispatch and requires the selected ref to be `develop`.
+Runs from manual dispatch, requires the selected ref to be `develop`, and accepts a `draft`, `beta`, or `stable` channel.
 
 Runs CI first, then builds both macOS targets:
 
@@ -34,7 +34,7 @@ Release builds produce:
 - `.app.tar.gz.sig` updater signatures
 - `latest.json` updater metadata
 
-The workflow verifies signed apps and DMGs before upload, creates arch-qualified release assets, then creates a draft GitHub Release tagged from `apps/desktop/package.json` (`v<version>`).
+The workflow verifies signed apps and DMGs before upload, creates arch-qualified release assets, then creates a GitHub Release tagged from `apps/desktop/package.json` (`v<version>`). Draft releases stay unpublished, beta releases are prereleases, and stable releases are full releases.
 
 Release secrets are listed in `.secrets.template` and live in Settings -> Environments -> `release-signing`:
 
