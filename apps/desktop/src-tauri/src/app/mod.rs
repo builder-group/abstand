@@ -11,7 +11,7 @@ use crate::{
     environment::logger,
     modules::{
         catalog, db, intentions, launch_at_login, permissions, quit_policy, recovery_agent,
-        scheduler, settings, shortcuts,
+        scheduler, settings, shortcuts, updater,
     },
 };
 #[cfg(debug_assertions)]
@@ -61,6 +61,9 @@ pub fn run() {
             intentions::commands::stop_intention,
             // Shortcuts commands
             shortcuts::commands::get_shortcut_configs,
+            // Updater commands
+            updater::commands::check_for_update,
+            updater::commands::install_update,
             // Catalog commands
             catalog::commands::search_catalog,
         ])
@@ -99,6 +102,9 @@ pub fn run() {
         .plugin(tauri_plugin_os::init())
         .plugin(launch_at_login::plugin())
         .invoke_handler(specta_builder.invoke_handler());
+
+    #[cfg(all(desktop, not(debug_assertions), not(feature = "app-store")))]
+    let builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
 
     #[cfg(target_os = "macos")]
     let builder = builder

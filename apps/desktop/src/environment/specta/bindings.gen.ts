@@ -54,6 +54,8 @@ export const commands = {
 	completeIntention: (intentionId: number, endConditionId: number | null) => typedError<IntentionSession, string>(__TAURI_INVOKE("complete_intention", { intentionId, endConditionId })),
 	stopIntention: (intentionId: number) => typedError<IntentionSession, string>(__TAURI_INVOKE("stop_intention", { intentionId })),
 	getShortcutConfigs: () => __TAURI_INVOKE<ShortcutActionConfigDto[]>("get_shortcut_configs"),
+	checkForUpdate: () => typedError<UpdateCheckResult, string>(__TAURI_INVOKE("check_for_update")),
+	installUpdate: () => typedError<null, string>(__TAURI_INVOKE("install_update")),
 	/**  Searches cached catalog items by query. */
 	searchCatalog: (params: SearchCatalogParams) => typedError<CatalogSearchResultDto[], string>(__TAURI_INVOKE("search_catalog", { params })),
 };
@@ -325,6 +327,13 @@ export type TodayIntentionOverviewDto = {
 export type TodayUpcomingIntentionDto = {
 	intention: Intention,
 	triggerAt: number,
+};
+
+export type UpdateCheckResult = { status: "unsupported" } | { status: "upToDate" } | { status: "available"; update: UpdateInfo };
+
+export type UpdateInfo = {
+	version: string,
+	currentVersion: string,
 };
 
 export type UpdateIntentionParams = {

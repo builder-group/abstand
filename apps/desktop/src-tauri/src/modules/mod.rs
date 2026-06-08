@@ -9,3 +9,4 @@ pub mod recovery_agent;
 pub mod scheduler;
 pub mod settings;
 pub mod shortcuts;
+pub mod updater;
