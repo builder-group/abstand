@@ -83,3 +83,121 @@ jobs:
           if-no-files-found: error
           compression-level: 0
           retention-days: 14
+
+  create-draft-release:
+    name: Create draft release
+    runs-on: ubuntu-latest
+    needs: build
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v7
+        with:
+          pattern: abstand-macos-*
+          path: release-artifacts
+
+      - name: Resolve release metadata
+        id: release
+        shell: bash
+        run: |
+          version="$(node -p "require('./apps/desktop/package.json').version")"
+          tag="v$version"
+
+          if [ -z "$version" ]; then
+            echo "Expected apps/desktop/package.json to contain a version."
+            exit 1
+          fi
+
+          if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1; then
+            echo "Release tag already exists: $tag"
+            exit 1
+          fi
+
+          printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
+          printf 'tag=%s\n' "$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Stage release assets
+        shell: bash
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+          TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          stage_arch() {
+            local artifact_dir="$1"
+            local arch="$2"
+
+            shopt -s nullglob
+            local dmgs=("$artifact_dir"/*.dmg)
+            local updater_bundles=("$artifact_dir"/*.app.tar.gz)
+            local updater_signatures=("$artifact_dir"/*.app.tar.gz.sig)
+
+            if [ "${#dmgs[@]}" -ne 1 ] || [ "${#updater_bundles[@]}" -ne 1 ] || [ "${#updater_signatures[@]}" -ne 1 ]; then
+              echo "Expected one DMG, one updater bundle, and one updater signature in $artifact_dir."
+              find "$artifact_dir" -maxdepth 1 -type f -print
+              exit 1
+            fi
+
+            cp "${dmgs[0]}" "release-assets/Abstand_${VERSION}_${arch}.dmg"
+            cp "${updater_bundles[0]}" "release-assets/Abstand_${arch}.app.tar.gz"
+            cp "${updater_signatures[0]}" "release-assets/Abstand_${arch}.app.tar.gz.sig"
+          }
+
+          rm -rf release-assets
+          mkdir -p release-assets
+
+          stage_arch "release-artifacts/abstand-macos-aarch64" "aarch64"
+          stage_arch "release-artifacts/abstand-macos-x64" "x64"
+
+      - name: Generate updater metadata
+        shell: bash
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+          TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+
+          const version = process.env.VERSION;
+          const tag = process.env.TAG;
+          const repository = process.env.GITHUB_REPOSITORY;
+          const baseUrl = `https://github.com/${repository}/releases/download/${tag}`;
+          const signature = (arch) => fs.readFileSync(`release-assets/Abstand_${arch}.app.tar.gz.sig`, 'utf8').trim();
+
+          const latest = {
+            version,
+            pub_date: new Date().toISOString(),
+            platforms: {
+              'darwin-aarch64': {
+                signature: signature('aarch64'),
+                url: `${baseUrl}/Abstand_aarch64.app.tar.gz`
+              },
+              'darwin-x86_64': {
+                signature: signature('x64'),
+                url: `${baseUrl}/Abstand_x64.app.tar.gz`
+              }
+            }
+          };
+
+          fs.writeFileSync('release-assets/latest.json', `${JSON.stringify(latest, null, 2)}\n`);
+          NODE
+
+      - name: Create draft GitHub release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release.outputs.tag }}
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          shopt -s nullglob
+          files=(release-assets/*)
+
+          gh release create "$TAG" "${files[@]}" \
+            --draft \
+            --target "$GITHUB_SHA" \
+            --title "Abstand $TAG" \
+            --notes "Draft macOS release for Abstand $VERSION."

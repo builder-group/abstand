@@ -27,13 +27,14 @@ Runs CI first, then builds both macOS targets:
 
 Release builds use macOS 26 runners because the native desktop bridge type-checks macOS 26 AppKit symbols. Runtime availability guards keep fallback behavior available on older supported macOS versions.
 
-Release builds upload:
+Release builds produce:
 
 - `.dmg` installers
 - `.app.tar.gz` updater bundles
 - `.app.tar.gz.sig` updater signatures
+- `latest.json` updater metadata
 
-The workflow verifies signed apps and DMGs before upload. Updater bundles and signatures are part of the release artifact set.
+The workflow verifies signed apps and DMGs before upload, creates arch-qualified release assets, then creates a draft GitHub Release tagged from `apps/desktop/package.json` (`v<version>`).
 
 Release secrets are listed in `.secrets.template` and live in Settings -> Environments -> `release-signing`:
 
