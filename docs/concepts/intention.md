@@ -1,6 +1,6 @@
 # Intention
 
-An Intention is a configured commitment. It defines when it starts, when it ends, and which behavior enforces the Abstand. The app holds it and runs it automatically.
+An Intention is a configured commitment. It defines when it starts, when it ends, and what kind of Abstand is enforced. The app holds it and runs it automatically.
 
 ## Why Intention
 
@@ -16,20 +16,20 @@ Multiple conditions in the same phase are evaluated with OR logic: any start con
 
 ## What it does
 
-The behavior on an Intention determines what kind of Abstand is enforced when it fires. Each behavior has its own configuration and creates a different kind of distance.
+The Intention type determines what kind of Abstand is enforced when it fires. Each type has its own configuration and creates a different kind of distance.
 
-Current and explored behaviors:
+Current and explored Intention types:
 
-| Behavior | Status      | Purpose                                                     |
-| -------- | ----------- | ----------------------------------------------------------- |
-| Block    | Implemented | Keeps selected apps and websites out of reach               |
-| Break    | Planned     | Schedules screen breaks during longer sessions              |
-| Flow     | Concept     | Builds momentum with progressive, adaptive focus blocks     |
-| Focus    | Concept     | Keeps one chosen app clear while other apps visually recede |
+| Type  | Status      | Purpose                                                     |
+| ----- | ----------- | ----------------------------------------------------------- |
+| Block | Implemented | Keeps selected apps and websites out of reach               |
+| Break | Planned     | Schedules screen breaks during longer sessions              |
+| Flow  | Concept     | Builds momentum with progressive, adaptive focus blocks     |
+| Focus | Concept     | Keeps one chosen app clear while other apps visually recede |
 
 ## Overlapping Intentions
 
-When two Intentions are active simultaneously, both run independently unless a specific behavior defines a different interaction. A Block and a Break active at the same time both enforce: the block stays in effect, and the break appears on top.
+When two Intentions are active simultaneously, both run independently unless a specific Intention type defines a different interaction. A Block and a Break active at the same time both enforce: the block stays in effect, and the break appears on top.
 
 ## Profiles
 

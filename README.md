@@ -46,14 +46,10 @@ The word is German for distance. That is exactly what it creates.
 
 ## How it works
 
-**Intentions** are configured commitments. You set when they start, when they end, and how they enforce your focus. When an Intention fires, you take an **Abstand**: the active experience of intentional distance.
-
-Two behaviors are available:
+**Intentions** are configured commitments. You set when they start, when they end, and what kind of distance they enforce. When an Intention fires, you take an **Abstand**: the active experience of intentional distance.
 
 - **Block** builds a hard wall. Configured apps and websites are inaccessible for the full duration. For a complete lockdown, the entire computer can be blocked behind a full-screen overlay.
-- **Break** creates a rhythm of breaks. A full-screen overlay fires at regular intervals, pulling your attention away from the screen before resuming.
-
-Intentions are organized into **Profiles** in the sidebar, so you can build out your full day: a hard block overnight, selective blocking during morning focus hours, breaks during the workday.
+- **Break** (coming soon): a rhythm of screen breaks at regular intervals, pulling your attention away from the screen before resuming.
 
 ## Tech Stack
 

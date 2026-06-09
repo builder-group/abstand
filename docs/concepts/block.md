@@ -2,7 +2,7 @@
 
 > Status: Implemented
 
-Block is a behavior that builds hard banks around attention for the full duration of an Intention. Configured apps and websites are inaccessible until the end condition is met.
+Block is an Intention type that builds hard banks around attention for the full duration. Configured apps and websites are inaccessible until the end condition is met.
 
 The goal is to remove access to known distractions before the moment of temptation. The user decides once, then Abstand holds the boundary.
 
@@ -15,19 +15,19 @@ The goal is to remove access to known distractions before the moment of temptati
 
 ## Scope
 
-**Block targets:** selected apps and websites are blocked. The rest of the computer is unaffected.
+**Block selected:** selected apps and websites are blocked. The rest of the computer is unaffected.
 
-**Allow targets:** selected apps and websites remain available while everything else is blocked.
+**Allow selected:** selected apps and websites remain available while everything else is blocked.
 
 **Whole device:** the entire computer is locked behind a full-screen immersive overlay. This suits Intentions like overnight screen limits or deep focus windows where no access at all is the goal.
 
 ## Enforcement
 
-Enforcement controls whether the Abstand can be ended early.
+Enforcement controls whether the Abstand can be ended early or weakened. Weakening means reducing the enforcement level while the Intention keeps running.
 
-- `casual`: exit anytime
-- `balanced`: exit after a deliberate pause
-- `strict`: no exit until the end condition is met
+- `casual`: end or weaken anytime
+- `balanced`: end or weaken after a deliberate pause
+- `strict`: cannot be ended or weakened until the end condition is met
 
 The right level depends on the Intention. Overnight blocks usually fit `strict`. Morning focus windows usually fit `balanced`.
 

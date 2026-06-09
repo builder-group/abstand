@@ -8,14 +8,14 @@ An Abstand is the active experience of stepping back on purpose. It begins when 
 
 ## How it is enforced
 
-An Abstand is always created by an Intention. The Intention defines when it fires and which behavior enforces the distance:
+An Abstand is always created by an Intention. The Intention type determines how the distance is enforced:
 
 - **Block**: a hard wall. The river has banks. Distractions are inaccessible.
 - **Break**: a rhythm of breaks. The river pauses and recharges at intervals.
 - **Flow**: progressive focus blocks. The river gathers momentum instead of being forced into a fixed timer.
 - **Focus**: one clear channel. The chosen app stays visible while other apps recede.
 
-The Abstand is the same across behaviors: intentional distance. The behavior is the mechanism that creates it.
+The Abstand is the same across all Intention types: intentional distance. The type determines the mechanism.
 
 ## Portage
 

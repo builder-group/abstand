@@ -2,7 +2,7 @@
 
 > Status: Concept
 
-Focus is a behavior for narrowing the visible workspace to one chosen app. The selected app stays clear, while other apps recede into the background.
+Focus is an Intention type for narrowing the visible workspace to one chosen app. The selected app stays clear, while other apps recede into the background.
 
 The goal is not to block the whole device. The goal is to reduce visual pull from everything except the app the user chose for the Intention.
 

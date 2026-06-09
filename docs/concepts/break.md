@@ -2,7 +2,7 @@
 
 > Status: Planned
 
-Break is a behavior that schedules screen breaks inside a longer Intention. It supports eye rest, posture resets, and recovery during extended computer use.
+Break is an Intention type that schedules screen breaks during a longer Intention. It supports eye rest, posture resets, and recovery during extended computer use.
 
 The goal is to make screen breaks part of the plan. The user decides the rhythm in advance, then Abstand holds that rhythm when work gets absorbing.
 

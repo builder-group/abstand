@@ -18,17 +18,17 @@ The concepts are the foundation of every decision in this project. When somethin
 
 - **The River:** attention is a river. Fixed energy. Concentrated it travels far. Branched it spreads thin. Abstand builds the banks. See `docs/concepts/river.md`.
 - **Abstand:** the active experience of intentional distance. What the user lives through when an Intention fires. See `docs/concepts/abstand.md`.
-- **Intention:** the configured commitment. When it starts, when it ends, which behavior enforces it. The planning layer that makes Abstands happen automatically. See `docs/concepts/intention.md`.
-- **Block:** implemented behavior that builds a hard wall for the full duration. Apps and websites stay inaccessible until the end condition is met. See `docs/concepts/behavior-block.md`.
-- **Break:** planned behavior that schedules screen breaks during longer sessions. See `docs/concepts/behavior-break.md`.
-- **Flow:** concept behavior for progressive, adaptive focus blocks that build momentum. See `docs/concepts/behavior-flow.md`.
-- **Focus:** concept behavior for keeping one chosen app visually clear while other apps recede. See `docs/concepts/behavior-focus.md`.
+- **Intention:** the configured commitment. When it starts, when it ends, and what kind of Abstand it enforces. The planning layer that makes Abstands happen automatically. See `docs/concepts/intention.md`.
+- **Block:** implemented Intention type that builds a hard wall for the full duration. Apps and websites stay inaccessible until the end condition is met. See `docs/concepts/block.md`.
+- **Break:** planned Intention type that schedules screen breaks during longer sessions. See `docs/concepts/break.md`.
+- **Flow:** concept Intention type for progressive, adaptive focus blocks that build momentum. See `docs/concepts/flow.md`.
+- **Focus:** concept Intention type for keeping one chosen app visually clear while other apps recede. See `docs/concepts/focus.md`.
 
 ## Interface
 
 The app is centered on a sidebar for navigation, a detail panel for configuration, and a menu bar icon for tracking live session state.
 
-Intentions are grouped by profile. Selecting one opens the detail panel, which shows configuration when idle and live state when an Abstand is active. The menu bar shows the current Abstand state and elapsed time.
+The sidebar opens to a Today view showing active, upcoming, and earlier Intentions for the day. Selecting an Intention opens the detail panel, which shows configuration when idle and live state when an Abstand is active. The menu bar shows the current Abstand state and elapsed time.
 
 ## Product language
 
@@ -38,10 +38,10 @@ Intentions are grouped by profile. Selecting one opens the detail panel, which s
 | --------- | ---------------------------------------------------------------- |
 | Intention | A configured commitment that triggers an Abstand                 |
 | Abstand   | The active experience of intentional distance                    |
-| Block     | A behavior that builds a hard wall for the duration              |
-| Break     | A behavior that schedules screen breaks at regular intervals     |
-| Flow      | A concept behavior that builds focus with adaptive work blocks   |
-| Focus     | A concept behavior that narrows attention to one chosen app      |
+| Block     | An Intention that builds a hard wall for the duration            |
+| Break     | An Intention that schedules screen breaks at regular intervals   |
+| Flow      | A concept Intention that builds focus with adaptive work blocks  |
+| Focus     | A concept Intention that narrows attention to one chosen app     |
 | Portage   | Ending an Abstand early, treated as a valid decision not failure |
 | Profile   | An organizational grouping of Intentions in the sidebar          |
 
@@ -54,12 +54,12 @@ Intentions are grouped by profile. Selecting one opens the detail panel, which s
 ## What is in scope now
 
 - Block Intention: app and website blocking with time-based and manual start and end conditions
-- Profiles: organizational grouping of Intentions in the sidebar
 - Menu bar icon with live Abstand state
 
 ## What comes later
 
 - Break Intention: rhythm of screen breaks over a longer window, with enforcement levels
+- Profiles: organizational grouping of Intentions in the sidebar
 - Flow Intention: immersive progressive focus timer with adaptive work blocks
 - Focus Intention: one selected app stays clear while other apps visually recede
 - Session recording: activity data collected during an Abstand to support the Flow Map
