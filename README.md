@@ -27,7 +27,7 @@
 
 <p align="center">
   <a href="./LICENSE">
-    <img src="https://img.shields.io/badge/License-Elastic%20License%202.0-blue.svg" alt="Elastic License 2.0" />
+    <img src="https://img.shields.io/badge/License-AGPL%20v3-blue.svg" alt="GNU AGPL v3" />
   </a>
   <a href="https://discord.com/invite/w4xE3bSjhQ">
     <img src="https://img.shields.io/discord/795291052897992724.svg?label=&logo=discord&logoColor=ffffff&color=293140&labelColor=3377FF" alt="Join Discord" />
@@ -60,10 +60,6 @@ The word is German for distance. That is exactly what it creates.
 
 ## License
 
-Abstand is source-available under the **Elastic License 2.0 (ELv2)**.
+Abstand is open source under the **GNU Affero General Public License v3.0 (AGPL v3)**.
 
-You may inspect, build, modify, and redistribute the software under the license terms. Redistributed versions must preserve the license-key functionality, protected functionality, copyright notices, and license notices required by ELv2.
-
-Abstand is not OSI open source. The public source exists for auditability, private modification, and community builds under ELv2. Official builds, updates, and protected functionality are tied to the paid license and license-key system.
-
-See [LICENSE](./LICENSE) for the full license text, or read the official overview at [elastic.co/licensing/elastic-license](https://www.elastic.co/licensing/elastic-license).
+See [LICENSE](./LICENSE) for the full license text and [docs/decisions/license.md](./docs/decisions/license.md) for the reasoning behind this choice.
