@@ -31,6 +31,19 @@ pub fn request_quit_blocking(app: &AppHandle, source: QuitRequestSource) {
     tauri::async_runtime::block_on(request_quit(app, source));
 }
 
+pub fn request_restart(app: &AppHandle) -> Result<(), String> {
+    log::debug!(target: LOG_TARGET, "restart requested");
+
+    // Note: Restart is a controlled relaunch, not a quit. Approve the Tauri exit
+    // handoff so ExitRequested does not assess it as a normal quit.
+    if let Err(error) = approve_next_exit_request(app) {
+        log::error!(target: LOG_TARGET, "failed to request restart: {}", error);
+        return Err(error);
+    }
+
+    app.restart();
+}
+
 pub async fn confirm_balanced_quit(app: &AppHandle) -> Result<(), String> {
     match assess_quit(app, QuitAssessmentMode::ConfirmedBalanced).await {
         QuitDecision::Allowed => {

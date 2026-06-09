@@ -4,6 +4,7 @@ use crate::environment::{
     logger::Logger,
     path::get_app_data_dir,
 };
+use crate::modules::quit_policy::policy::request_restart;
 #[cfg(target_os = "macos")]
 use crate::modules::quit_policy::types::QuitPreventedEvent;
 #[cfg(target_os = "macos")]
@@ -76,6 +77,12 @@ pub fn notify_frontend_ready(app: AppHandle) {
     if cli::consume_relaunched_by_agent_arg() {
         let _ = QuitPreventedEvent::active_strict_block().emit(&app);
     }
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn restart_app(app: AppHandle) -> Result<(), String> {
+    return request_restart(&app);
 }
 
 #[tauri::command]

@@ -8,6 +8,7 @@ export const commands = {
 	getAppInfo: () => __TAURI_INVOKE<AppInfoDto>("get_app_info"),
 	getSystemTypography: () => __TAURI_INVOKE<SystemTypographyDto>("get_system_typography"),
 	notifyFrontendReady: () => __TAURI_INVOKE<void>("notify_frontend_ready"),
+	restartApp: () => typedError<null, string>(__TAURI_INVOKE("restart_app")),
 	openDataDirectory: () => typedError<null, string>(__TAURI_INVOKE("open_data_directory")),
 	revealLogFile: () => typedError<null, string>(__TAURI_INVOKE("reveal_log_file")),
 	confirmBalancedQuit: () => typedError<null, string>(__TAURI_INVOKE("confirm_balanced_quit")),
@@ -24,6 +25,11 @@ export const commands = {
 	getSettings: () => __TAURI_INVOKE<AppSettings>("get_settings"),
 	setSettings: (settings: AppSettings) => typedError<null, string>(__TAURI_INVOKE("set_settings", { settings })),
 	resetSettings: () => typedError<AppSettings, string>(__TAURI_INVOKE("reset_settings")),
+	getBlockingViolation: () => __TAURI_INVOKE<{
+	intentionId: number,
+	intentionName: string,
+	blockedTarget: BlockedTarget,
+} | null>("get_blocking_violation"),
 	getIntentions: () => typedError<Intention[], string>(__TAURI_INVOKE("get_intentions")),
 	getIntention: (intentionId: number) => typedError<{
 	id: number,
@@ -63,6 +69,7 @@ export const commands = {
 /** Events */
 export const events = {
 	appSettingsChangedEvent: makeEvent<AppSettingsChangedEvent>("app-settings-changed-event"),
+	blockingViolationChangedEvent: makeEvent<BlockingViolationChangedEvent>("blocking-violation-changed-event"),
 	catalogAssetLoadedEvent: makeEvent<CatalogAssetLoadedEvent>("catalog-asset-loaded-event"),
 	intentionCreatedEvent: makeEvent<IntentionCreatedEvent>("intention-created-event"),
 	intentionDeletedEvent: makeEvent<IntentionDeletedEvent>("intention-deleted-event"),
@@ -112,6 +119,16 @@ export type AppearanceSettings = {
 	theme: Theme,
 	fontScale: number,
 };
+
+export type BlockedTarget = { type: "app"; bundleId: string } | { type: "website"; hostname: string } | { type: "device" };
+
+export type BlockingViolation = {
+	intentionId: number,
+	intentionName: string,
+	blockedTarget: BlockedTarget,
+};
+
+export type BlockingViolationChangedEvent = BlockingViolation | null;
 
 export type CatalogAppSearchResultDto = {
 	stableId: string,

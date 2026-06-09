@@ -1,3 +1,5 @@
+pub mod activity;
+pub mod blocking;
 pub mod catalog;
 pub mod db;
 pub mod intentions;

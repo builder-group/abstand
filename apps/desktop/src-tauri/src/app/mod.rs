@@ -10,8 +10,8 @@ pub mod window;
 use crate::{
     environment::logger,
     modules::{
-        catalog, db, intentions, launch_at_login, permissions, quit_policy, recovery_agent,
-        scheduler, settings, shortcuts, updater,
+        activity, blocking, catalog, db, intentions, launch_at_login, permissions, quit_policy,
+        recovery_agent, scheduler, settings, shortcuts, updater,
     },
 };
 #[cfg(debug_assertions)]
@@ -25,6 +25,7 @@ pub fn run() {
             commands::get_app_info,
             commands::get_system_typography,
             commands::notify_frontend_ready,
+            commands::restart_app,
             commands::open_data_directory,
             commands::reveal_log_file,
             // Quit policy commands
@@ -46,6 +47,8 @@ pub fn run() {
             settings::commands::get_settings,
             settings::commands::set_settings,
             settings::commands::reset_settings,
+            // Blocking commands
+            blocking::commands::get_blocking_violation,
             // Intention commands
             intentions::commands::get_intentions,
             intentions::commands::get_intention,
@@ -72,6 +75,8 @@ pub fn run() {
             catalog::types::CatalogAssetLoadedEvent,
             // Settings events
             settings::types::AppSettingsChangedEvent,
+            // Blocking events
+            blocking::types::BlockingViolationChangedEvent,
             // Intentions events
             intentions::types::IntentionCreatedEvent,
             intentions::types::IntentionUpdatedEvent,
@@ -129,6 +134,8 @@ pub fn run() {
             scheduler::setup(app);
             catalog::setup(app);
             intentions::setup(app)?;
+            blocking::setup(app);
+            activity::setup(app);
             settings::setup(app);
 
             if !launch_at_login::cli::was_launched_at_login() {

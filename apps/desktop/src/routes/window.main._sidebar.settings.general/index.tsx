@@ -23,7 +23,8 @@ import {
 	SunIcon,
 	Switch,
 	useToastsCx,
-	XCircleIcon
+	XCircleIcon,
+	type ToastsCx
 } from '@/components';
 import { appConfig, specta } from '@/environment';
 import { useAppInfo } from '@/hooks';
@@ -211,19 +212,46 @@ const PermissionsSection: React.FC = () => {
 const AccessibilityPermissionRow: React.FC = () => {
 	const toastsCx = useToastsCx();
 	const isUnmountedRef = React.useRef(false);
+	const lastIsGrantedRef = React.useRef<boolean | null>(null);
 
 	const [isGranted, setIsGranted] = React.useState<boolean | null>(null);
 	const [isStatusPending, setIsStatusPending] = React.useState(true);
 
 	// MARK: - Actions
 
+	const showRestartToast = React.useCallback(() => {
+		toastsCx.add({
+			type: 'info',
+			title: 'Restart required',
+			description: 'Accessibility changes require a restart to take effect.',
+			timeout: 0,
+			data: {
+				action: <RestartAppToastAction toastsCx={toastsCx} />
+			}
+		});
+	}, [toastsCx]);
+
+	const applyStatus = React.useCallback(
+		(nextIsGranted: boolean) => {
+			const previousIsGranted = lastIsGrantedRef.current;
+
+			lastIsGrantedRef.current = nextIsGranted;
+			setIsGranted(nextIsGranted);
+			setIsStatusPending(false);
+
+			if (previousIsGranted === false && nextIsGranted) {
+				showRestartToast();
+			}
+		},
+		[showRestartToast]
+	);
+
 	const loadStatus = React.useCallback(async () => {
 		const isGranted = await specta.commands.isAccessibilityPermissionGranted();
 		if (isUnmountedRef.current) return;
 
-		setIsGranted(isGranted);
-		setIsStatusPending(false);
-	}, []);
+		applyStatus(isGranted);
+	}, [applyStatus]);
 
 	const handleOpenSettings = React.useCallback(async () => {
 		const [isOpenOk, openErr] = toTuple(
@@ -243,13 +271,7 @@ const AccessibilityPermissionRow: React.FC = () => {
 	React.useEffect(() => {
 		isUnmountedRef.current = false;
 
-		(async () => {
-			const isGranted = await specta.commands.isAccessibilityPermissionGranted();
-			if (isUnmountedRef.current) return;
-
-			setIsGranted(isGranted);
-			setIsStatusPending(false);
-		})();
+		void loadStatus();
 
 		// Re-check after returning from System Settings
 		window.addEventListener('focus', loadStatus);
@@ -265,7 +287,7 @@ const AccessibilityPermissionRow: React.FC = () => {
 	return (
 		<SettingsRow
 			label="Accessibility"
-			description="Required to detect active windows."
+			description="Required to detect active windows and browser sites."
 			render={<button type="button" onClick={handleOpenSettings} />}
 		>
 			{isGranted != null ? (
@@ -279,6 +301,44 @@ const AccessibilityPermissionRow: React.FC = () => {
 		</SettingsRow>
 	);
 };
+
+const RestartAppToastAction: React.FC<TRestartAppToastActionProps> = (props) => {
+	const { toastsCx } = props;
+	const [isPending, setIsPending] = React.useState(false);
+
+	const handleRestart = React.useCallback(async () => {
+		setIsPending(true);
+
+		try {
+			const [isRestartOk, restartErr] = toTuple(await specta.commands.restartApp());
+			if (!isRestartOk) {
+				toastsCx.add({
+					type: 'error',
+					title: 'Could not restart',
+					description: restartErr
+				});
+			}
+		} finally {
+			setIsPending(false);
+		}
+	}, [toastsCx]);
+
+	return (
+		<Button
+			type="button"
+			variant="soft"
+			size="sm"
+			disabled={isPending}
+			onClick={() => void handleRestart()}
+		>
+			Restart
+		</Button>
+	);
+};
+
+interface TRestartAppToastActionProps {
+	toastsCx: ToastsCx;
+}
 
 const PermissionStatusBadge: React.FC<TPermissionStatusBadgeProps> = (props) => {
 	const { isGranted } = props;
