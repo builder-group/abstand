@@ -6,8 +6,8 @@ pub fn show(app: &AppHandle, focus: &ActivityFocus, violation: &BlockingViolatio
     let bounds = resolve_bounds_for_violation(app, focus, violation);
     let app = app.clone();
 
-    // Note: Focus handling via mado runs off Tauri's main thread, but native window
-    // mutations must run on it
+    // Note: Focus handling is driven by mado outside Tauri's main thread, but
+    // native window mutations must run on it
     if let Err(error) = app.clone().run_on_main_thread(move || {
         let window = match AppWindow::Overlay.get_or_build_at(&app, BLOCKING_OVERLAY_ROUTE) {
             Ok(window) => window,
@@ -62,8 +62,8 @@ pub fn show(app: &AppHandle, focus: &ActivityFocus, violation: &BlockingViolatio
 pub fn hide(app: &AppHandle) {
     let app = app.clone();
 
-    // Note: Focus handling via mado runs off Tauri's main thread, but native window
-    // mutations must run on it
+    // Note: Focus handling is driven by mado outside Tauri's main thread, but
+    // native window mutations must run on it
     if let Err(error) = app.clone().run_on_main_thread(move || {
         let Some(window) = AppWindow::Overlay.get(&app) else {
             return;

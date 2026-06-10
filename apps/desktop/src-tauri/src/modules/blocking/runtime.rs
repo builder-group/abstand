@@ -30,8 +30,8 @@ pub async fn handle_activity_focus(app: &AppHandle, focus: ActivityFocus) {
         return;
     }
 
-    // Note: AppActivated can precede browser URL and window bounds. Wait for
-    // WindowChanged so browser policy sees the full focused target.
+    // Note: AppActivated can arrive before browser URL and window bounds. Wait
+    // for WindowChanged to avoid transient app-only decisions.
     if focus.is_waiting_for_window_details() {
         let runtime_state = app.state::<BlockingRuntimeState>();
         let mut runtime = runtime_state.lock().unwrap();
