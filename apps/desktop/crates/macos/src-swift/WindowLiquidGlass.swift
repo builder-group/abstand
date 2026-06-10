@@ -1,5 +1,4 @@
 import AppKit
-import WebKit
 
 enum WindowLiquidGlass {
     static func apply(windowPtr: Int) -> Bool {
@@ -15,8 +14,8 @@ enum WindowLiquidGlass {
 
 @MainActor
 extension WindowLiquidGlass {
-    /// Applies the liquid glass effect and makes all WKWebViews in the window transparent.
-    /// Returns `false` on macOS versions below 26.0.
+    /// Applies Liquid Glass and requests hosted WKWebView transparency.
+    /// Returns `false` when Liquid Glass is unavailable.
     @discardableResult
     static func apply(to window: NSWindow) -> Bool {
         guard #available(macOS 26.0, *) else {
@@ -24,41 +23,8 @@ extension WindowLiquidGlass {
         }
 
         guard applyGlassEffect(to: window) else { return false }
-        _ = applyWebviewTransparency(to: window)
+        _ = WindowTransparency.applyWebviewTransparency(to: window)
         return true
-    }
-
-    /// Sets `drawsBackground = false` on all WKWebViews in the window hierarchy.
-    /// Returns `true` if at least one WKWebView was found and patched.
-    /// Uses a private KVC API; no-op on App Store builds.
-    @discardableResult
-    static func applyWebviewTransparency(to window: NSWindow) -> Bool {
-        #if APP_STORE
-            return false
-        #else
-            guard let contentView = window.contentView else { return false }
-            return setDrawsBackground(false, in: contentView)
-        #endif
-    }
-
-    @discardableResult
-    private static func setDrawsBackground(_ draws: Bool, in view: NSView)
-        -> Bool
-    {
-        var patched = false
-
-        if view is WKWebView {
-            view.setValue(draws, forKey: "drawsBackground")
-            patched = true
-        }
-
-        for subview in view.subviews {
-            if setDrawsBackground(draws, in: subview) {
-                patched = true
-            }
-        }
-
-        return patched
     }
 
     @available(macOS 26.0, *)

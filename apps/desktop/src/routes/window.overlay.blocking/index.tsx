@@ -6,7 +6,7 @@ export const Route = createFileRoute('/window/overlay/blocking/')({
 
 function RouteComponent() {
 	return (
-		<main className="grid h-screen w-screen place-items-center bg-transparent text-center select-none">
+		<main className="bg-base-0/70 supports-backdrop-filter:bg-base-0/60 flex h-screen w-screen items-center text-center select-none supports-backdrop-filter:backdrop-blur-2xl">
 			<h1 className="text-base-950 text-4xl font-semibold">Block Overlay</h1>
 		</main>
 	);

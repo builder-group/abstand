@@ -182,7 +182,7 @@ impl AppWindow {
                     .build()?;
 
                 #[cfg(target_os = "macos")]
-                Self::apply_macos_liquid_glass(&window, self.label());
+                Self::apply_macos_window_transparency(&window, self.label());
 
                 return Ok(window);
             }
@@ -259,6 +259,24 @@ impl AppWindow {
         log::debug!(
             target: LOG_TARGET,
             "falling back to native window background for {}",
+            window_label
+        );
+    }
+
+    #[cfg(target_os = "macos")]
+    fn apply_macos_window_transparency(window: &WebviewWindow, window_label: &str) {
+        let Ok(window_ptr) = window.ns_window() else {
+            log::debug!(target: LOG_TARGET, "failed to access NSWindow for {}", window_label);
+            return;
+        };
+
+        if abstand_macos::apply_window_transparency(window_ptr) {
+            return;
+        }
+
+        log::debug!(
+            target: LOG_TARGET,
+            "failed to apply native window transparency for {}",
             window_label
         );
     }
