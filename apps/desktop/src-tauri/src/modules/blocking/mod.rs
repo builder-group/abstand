@@ -1,6 +1,7 @@
 //! Evaluates and applies block intention decisions from activity focus events.
 
 pub mod commands;
+mod overlay;
 mod policy;
 pub mod runtime;
 pub mod types;

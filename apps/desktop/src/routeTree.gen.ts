@@ -9,7 +9,10 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WindowOverlayRouteRouteImport } from './routes/window.overlay/route'
+import { Route as WindowMainRouteRouteImport } from './routes/window.main/route'
 import { Route as WindowMainSidebarRouteRouteImport } from './routes/window.main._sidebar/route'
+import { Route as WindowOverlayBlockingIndexRouteImport } from './routes/window.overlay.blocking/index'
 import { Route as WindowMainSplashIndexRouteImport } from './routes/window.main.splash/index'
 import { Route as WindowMainSidebarTodayIndexRouteImport } from './routes/window.main._sidebar.today/index'
 import { Route as WindowMainSidebarSettingsIndexRouteImport } from './routes/window.main._sidebar.settings/index'
@@ -22,15 +25,30 @@ import { Route as WindowMainSidebarIntentionsIntentionIdIndexRouteImport } from 
 import { Route as WindowMainSidebarSettingsDeveloperUiPlaygroundIndexRouteImport } from './routes/window.main._sidebar.settings.developer.ui-playground/index'
 import { Route as WindowMainSidebarIntentionsNewBlockIndexRouteImport } from './routes/window.main._sidebar.intentions.new.block/index'
 
-const WindowMainSidebarRouteRoute = WindowMainSidebarRouteRouteImport.update({
-  id: '/window/main/_sidebar',
+const WindowOverlayRouteRoute = WindowOverlayRouteRouteImport.update({
+  id: '/window/overlay',
+  path: '/window/overlay',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WindowMainRouteRoute = WindowMainRouteRouteImport.update({
+  id: '/window/main',
   path: '/window/main',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WindowMainSidebarRouteRoute = WindowMainSidebarRouteRouteImport.update({
+  id: '/_sidebar',
+  getParentRoute: () => WindowMainRouteRoute,
+} as any)
+const WindowOverlayBlockingIndexRoute =
+  WindowOverlayBlockingIndexRouteImport.update({
+    id: '/blocking/',
+    path: '/blocking/',
+    getParentRoute: () => WindowOverlayRouteRoute,
+  } as any)
 const WindowMainSplashIndexRoute = WindowMainSplashIndexRouteImport.update({
-  id: '/window/main/splash/',
-  path: '/window/main/splash/',
-  getParentRoute: () => rootRouteImport,
+  id: '/splash/',
+  path: '/splash/',
+  getParentRoute: () => WindowMainRouteRoute,
 } as any)
 const WindowMainSidebarTodayIndexRoute =
   WindowMainSidebarTodayIndexRouteImport.update({
@@ -94,8 +112,10 @@ const WindowMainSidebarIntentionsNewBlockIndexRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
-  '/window/main': typeof WindowMainSidebarRouteRouteWithChildren
+  '/window/main': typeof WindowMainRouteRouteWithChildren
+  '/window/overlay': typeof WindowOverlayRouteRouteWithChildren
   '/window/main/splash/': typeof WindowMainSplashIndexRoute
+  '/window/overlay/blocking/': typeof WindowOverlayBlockingIndexRoute
   '/window/main/intentions/new': typeof WindowMainSidebarIntentionsNewRouteRouteWithChildren
   '/window/main/settings/': typeof WindowMainSidebarSettingsIndexRoute
   '/window/main/today/': typeof WindowMainSidebarTodayIndexRoute
@@ -108,8 +128,10 @@ export interface FileRoutesByFullPath {
   '/window/main/settings/developer/ui-playground/': typeof WindowMainSidebarSettingsDeveloperUiPlaygroundIndexRoute
 }
 export interface FileRoutesByTo {
-  '/window/main': typeof WindowMainSidebarRouteRouteWithChildren
+  '/window/main': typeof WindowMainRouteRouteWithChildren
+  '/window/overlay': typeof WindowOverlayRouteRouteWithChildren
   '/window/main/splash': typeof WindowMainSplashIndexRoute
+  '/window/overlay/blocking': typeof WindowOverlayBlockingIndexRoute
   '/window/main/settings': typeof WindowMainSidebarSettingsIndexRoute
   '/window/main/today': typeof WindowMainSidebarTodayIndexRoute
   '/window/main/intentions/$intentionId': typeof WindowMainSidebarIntentionsIntentionIdIndexRoute
@@ -122,8 +144,11 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/window/main': typeof WindowMainRouteRouteWithChildren
+  '/window/overlay': typeof WindowOverlayRouteRouteWithChildren
   '/window/main/_sidebar': typeof WindowMainSidebarRouteRouteWithChildren
   '/window/main/splash/': typeof WindowMainSplashIndexRoute
+  '/window/overlay/blocking/': typeof WindowOverlayBlockingIndexRoute
   '/window/main/_sidebar/intentions/new': typeof WindowMainSidebarIntentionsNewRouteRouteWithChildren
   '/window/main/_sidebar/settings/': typeof WindowMainSidebarSettingsIndexRoute
   '/window/main/_sidebar/today/': typeof WindowMainSidebarTodayIndexRoute
@@ -139,7 +164,9 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/window/main'
+    | '/window/overlay'
     | '/window/main/splash/'
+    | '/window/overlay/blocking/'
     | '/window/main/intentions/new'
     | '/window/main/settings/'
     | '/window/main/today/'
@@ -153,7 +180,9 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/window/main'
+    | '/window/overlay'
     | '/window/main/splash'
+    | '/window/overlay/blocking'
     | '/window/main/settings'
     | '/window/main/today'
     | '/window/main/intentions/$intentionId'
@@ -165,8 +194,11 @@ export interface FileRouteTypes {
     | '/window/main/settings/developer/ui-playground'
   id:
     | '__root__'
+    | '/window/main'
+    | '/window/overlay'
     | '/window/main/_sidebar'
     | '/window/main/splash/'
+    | '/window/overlay/blocking/'
     | '/window/main/_sidebar/intentions/new'
     | '/window/main/_sidebar/settings/'
     | '/window/main/_sidebar/today/'
@@ -180,25 +212,46 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  WindowMainSidebarRouteRoute: typeof WindowMainSidebarRouteRouteWithChildren
-  WindowMainSplashIndexRoute: typeof WindowMainSplashIndexRoute
+  WindowMainRouteRoute: typeof WindowMainRouteRouteWithChildren
+  WindowOverlayRouteRoute: typeof WindowOverlayRouteRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/window/main/_sidebar': {
-      id: '/window/main/_sidebar'
+    '/window/overlay': {
+      id: '/window/overlay'
+      path: '/window/overlay'
+      fullPath: '/window/overlay'
+      preLoaderRoute: typeof WindowOverlayRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/window/main': {
+      id: '/window/main'
       path: '/window/main'
       fullPath: '/window/main'
-      preLoaderRoute: typeof WindowMainSidebarRouteRouteImport
+      preLoaderRoute: typeof WindowMainRouteRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/window/main/_sidebar': {
+      id: '/window/main/_sidebar'
+      path: ''
+      fullPath: '/window/main'
+      preLoaderRoute: typeof WindowMainSidebarRouteRouteImport
+      parentRoute: typeof WindowMainRouteRoute
+    }
+    '/window/overlay/blocking/': {
+      id: '/window/overlay/blocking/'
+      path: '/blocking'
+      fullPath: '/window/overlay/blocking/'
+      preLoaderRoute: typeof WindowOverlayBlockingIndexRouteImport
+      parentRoute: typeof WindowOverlayRouteRoute
     }
     '/window/main/splash/': {
       id: '/window/main/splash/'
-      path: '/window/main/splash'
+      path: '/splash'
       fullPath: '/window/main/splash/'
       preLoaderRoute: typeof WindowMainSplashIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof WindowMainRouteRoute
     }
     '/window/main/_sidebar/today/': {
       id: '/window/main/_sidebar/today/'
@@ -325,9 +378,34 @@ const WindowMainSidebarRouteRouteWithChildren =
     WindowMainSidebarRouteRouteChildren,
   )
 
-const rootRouteChildren: RootRouteChildren = {
+interface WindowMainRouteRouteChildren {
+  WindowMainSidebarRouteRoute: typeof WindowMainSidebarRouteRouteWithChildren
+  WindowMainSplashIndexRoute: typeof WindowMainSplashIndexRoute
+}
+
+const WindowMainRouteRouteChildren: WindowMainRouteRouteChildren = {
   WindowMainSidebarRouteRoute: WindowMainSidebarRouteRouteWithChildren,
   WindowMainSplashIndexRoute: WindowMainSplashIndexRoute,
+}
+
+const WindowMainRouteRouteWithChildren = WindowMainRouteRoute._addFileChildren(
+  WindowMainRouteRouteChildren,
+)
+
+interface WindowOverlayRouteRouteChildren {
+  WindowOverlayBlockingIndexRoute: typeof WindowOverlayBlockingIndexRoute
+}
+
+const WindowOverlayRouteRouteChildren: WindowOverlayRouteRouteChildren = {
+  WindowOverlayBlockingIndexRoute: WindowOverlayBlockingIndexRoute,
+}
+
+const WindowOverlayRouteRouteWithChildren =
+  WindowOverlayRouteRoute._addFileChildren(WindowOverlayRouteRouteChildren)
+
+const rootRouteChildren: RootRouteChildren = {
+  WindowMainRouteRoute: WindowMainRouteRouteWithChildren,
+  WindowOverlayRouteRoute: WindowOverlayRouteRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

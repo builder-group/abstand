@@ -19,10 +19,10 @@ pub async fn start_session(
     start_condition_id: Option<i64>,
     started_at: i64,
 ) -> Result<IntentionSession, SessionTransitionError> {
-    let database = app.state::<DatabaseState>();
+    let database_state = app.state::<DatabaseState>();
 
     let session = IntentionSessionRepository::create_session_if_inactive(
-        &database.pool,
+        &database_state.pool,
         CreateIntentionSessionInput {
             intention_id,
             started_at,
@@ -33,7 +33,7 @@ pub async fn start_session(
     let Some(session) = session else {
         // Reload to distinguish an already-active intention from a missing target
         return IntentionSessionRepository::get_active_session_by_intention_id(
-            &database.pool,
+            &database_state.pool,
             intention_id,
         )
         .await?
@@ -55,17 +55,17 @@ pub async fn complete_session(
     end_condition_id: Option<i64>,
     ended_at: i64,
 ) -> Result<IntentionSession, SessionTransitionError> {
-    let database = app.state::<DatabaseState>();
+    let database_state = app.state::<DatabaseState>();
 
     let active_session = IntentionSessionRepository::get_active_session_by_intention_id(
-        &database.pool,
+        &database_state.pool,
         intention_id,
     )
     .await?
     .ok_or(SessionTransitionError::NoActiveSession(intention_id))?;
 
     let session = IntentionSessionRepository::complete_session(
-        &database.pool,
+        &database_state.pool,
         CompleteIntentionSessionInput {
             session_id: active_session.id,
             ended_at,
@@ -91,17 +91,17 @@ pub async fn stop_session(
     intention_id: i64,
     ended_at: i64,
 ) -> Result<IntentionSession, SessionTransitionError> {
-    let database = app.state::<DatabaseState>();
+    let database_state = app.state::<DatabaseState>();
 
     let active_session = IntentionSessionRepository::get_active_session_by_intention_id(
-        &database.pool,
+        &database_state.pool,
         intention_id,
     )
     .await?
     .ok_or(SessionTransitionError::NoActiveSession(intention_id))?;
 
     let session = IntentionSessionRepository::stop_session(
-        &database.pool,
+        &database_state.pool,
         StopIntentionSessionInput {
             session_id: active_session.id,
             ended_at,

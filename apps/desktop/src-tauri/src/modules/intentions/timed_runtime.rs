@@ -36,19 +36,20 @@ impl TimedRuntime {
         // Serialize reevaluations so older evaluations cannot replace newer wakeups
         let _reevaluate_guard = self.reevaluate_lock.lock().await;
 
-        let database = app.state::<DatabaseState>();
+        let database_state = app.state::<DatabaseState>();
         let mut next_wake_at = None;
 
         // Repeat while due conditions keep changing state, such as start then end-after-start
         for _ in 0..Self::MAX_REEVALUATION_PASSES {
-            let evaluation = match evaluate_timed_conditions(&database.pool, unix_ms_now()).await {
-                Ok(evaluation) => evaluation,
-                Err(error) => {
-                    // Retry in 5s because scheduler wakeups are one-shot and this failure may have consumed the only wakeup
-                    self.schedule_wakeup(app, Some(unix_ms_now() + 5_000));
-                    return Err(error.into());
-                }
-            };
+            let evaluation =
+                match evaluate_timed_conditions(&database_state.pool, unix_ms_now()).await {
+                    Ok(evaluation) => evaluation,
+                    Err(error) => {
+                        // Retry in 5s because scheduler wakeups are one-shot and this failure may have consumed the only wakeup
+                        self.schedule_wakeup(app, Some(unix_ms_now() + 5_000));
+                        return Err(error.into());
+                    }
+                };
             next_wake_at = evaluation.next_wake_at;
             if evaluation.due_conditions.is_empty() {
                 self.schedule_wakeup(app, next_wake_at);
@@ -130,14 +131,14 @@ impl TimedRuntime {
             return;
         };
 
-        let scheduler = app.state::<SchedulerState>();
-        let job_id = scheduler.0.schedule_at_unix_ms(
+        let scheduler_state = app.state::<SchedulerState>();
+        let job_id = scheduler_state.0.schedule_at_unix_ms(
             "intentions:timed-wakeup".to_string(),
             wake_at,
             move |app| {
                 tauri::async_runtime::spawn(async move {
-                    let runtime = app.state::<IntentionRuntimeState>();
-                    if let Err(error) = runtime.reevaluate(&app).await {
+                    let runtime_state = app.state::<IntentionRuntimeState>();
+                    if let Err(error) = runtime_state.reevaluate(&app).await {
                         log::error!(
                             target: LOG_TARGET,
                             "intention reevaluation failed: {}",
@@ -157,8 +158,8 @@ impl TimedRuntime {
             return;
         };
 
-        let scheduler = app.state::<SchedulerState>();
-        scheduler.0.cancel(job_id);
+        let scheduler_state = app.state::<SchedulerState>();
+        scheduler_state.0.cancel(job_id);
     }
 }
 

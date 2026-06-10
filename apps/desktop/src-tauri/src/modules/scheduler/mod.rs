@@ -26,8 +26,8 @@ pub fn schedule_after<F>(
 where
     F: FnOnce(AppHandle) + Send + 'static,
 {
-    let state = app.state::<SchedulerState>();
-    return state.0.schedule_after(label, delay, action);
+    let scheduler_state = app.state::<SchedulerState>();
+    return scheduler_state.0.schedule_after(label, delay, action);
 }
 
 /// Schedules a one-shot callback to run at the provided Unix timestamp in milliseconds.
@@ -41,20 +41,22 @@ pub fn schedule_at_unix_ms<F>(
 where
     F: FnOnce(AppHandle) + Send + 'static,
 {
-    let state = app.state::<SchedulerState>();
-    return state.0.schedule_at_unix_ms(label, unix_ms, action);
+    let scheduler_state = app.state::<SchedulerState>();
+    return scheduler_state
+        .0
+        .schedule_at_unix_ms(label, unix_ms, action);
 }
 
 /// Cancels a scheduled job by id if it has not fired yet.
 #[allow(dead_code)]
 pub fn cancel_job(app: &AppHandle, job_id: ScheduledJobId) -> bool {
-    let state = app.state::<SchedulerState>();
-    return state.0.cancel(job_id);
+    let scheduler_state = app.state::<SchedulerState>();
+    return scheduler_state.0.cancel(job_id);
 }
 
 /// Returns the currently scheduled in-memory jobs ordered by their scheduled time.
 #[allow(dead_code)]
 pub fn list_jobs(app: &AppHandle) -> Vec<ScheduledJobSummary> {
-    let state = app.state::<SchedulerState>();
-    return state.0.list_jobs();
+    let scheduler_state = app.state::<SchedulerState>();
+    return scheduler_state.0.list_jobs();
 }

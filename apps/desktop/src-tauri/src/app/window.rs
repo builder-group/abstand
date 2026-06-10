@@ -176,7 +176,7 @@ impl AppWindow {
                     .always_on_top(true)
                     .visible_on_all_workspaces(true)
                     .skip_taskbar(true)
-                    .focused(false)
+                    .focusable(true)
                     .visible(false)
                     .accept_first_mouse(true)
                     .build()?;

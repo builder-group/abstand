@@ -27,8 +27,10 @@ use tauri_specta::Event;
 
 #[tauri::command]
 #[specta::specta]
-pub async fn get_intentions(state: State<'_, DatabaseState>) -> Result<Vec<Intention>, String> {
-    return IntentionRepository::get_all(&state.pool)
+pub async fn get_intentions(
+    database_state: State<'_, DatabaseState>,
+) -> Result<Vec<Intention>, String> {
+    return IntentionRepository::get_all(&database_state.pool)
         .await
         .map_err(|error| error.to_string());
 }
@@ -36,10 +38,10 @@ pub async fn get_intentions(state: State<'_, DatabaseState>) -> Result<Vec<Inten
 #[tauri::command]
 #[specta::specta]
 pub async fn get_intention(
-    state: State<'_, DatabaseState>,
+    database_state: State<'_, DatabaseState>,
     intention_id: i64,
 ) -> Result<Option<Intention>, String> {
-    return IntentionRepository::get_by_id(&state.pool, intention_id)
+    return IntentionRepository::get_by_id(&database_state.pool, intention_id)
         .await
         .map_err(|error| error.to_string());
 }
@@ -47,9 +49,9 @@ pub async fn get_intention(
 #[tauri::command]
 #[specta::specta]
 pub async fn get_active_intention_sessions(
-    state: State<'_, DatabaseState>,
+    database_state: State<'_, DatabaseState>,
 ) -> Result<Vec<IntentionSession>, String> {
-    return IntentionSessionRepository::get_active_sessions(&state.pool)
+    return IntentionSessionRepository::get_active_sessions(&database_state.pool)
         .await
         .map_err(|error| error.to_string());
 }
@@ -57,11 +59,11 @@ pub async fn get_active_intention_sessions(
 #[tauri::command]
 #[specta::specta]
 pub async fn get_active_intention_session(
-    state: State<'_, DatabaseState>,
+    database_state: State<'_, DatabaseState>,
     intention_id: i64,
 ) -> Result<Option<IntentionSession>, String> {
     return IntentionSessionRepository::get_active_session_by_intention_id(
-        &state.pool,
+        &database_state.pool,
         intention_id,
     )
     .await
@@ -71,15 +73,15 @@ pub async fn get_active_intention_session(
 #[tauri::command]
 #[specta::specta]
 pub async fn get_today_intention_overview(
-    state: State<'_, DatabaseState>,
+    database_state: State<'_, DatabaseState>,
 ) -> Result<TodayIntentionOverviewDto, String> {
-    let active_sessions = IntentionSessionRepository::get_active_sessions(&state.pool)
+    let active_sessions = IntentionSessionRepository::get_active_sessions(&database_state.pool)
         .await
         .map_err(|error| error.to_string())?;
 
     let mut active = Vec::new();
     for session in active_sessions {
-        let intention = IntentionRepository::get_by_id(&state.pool, session.intention_id)
+        let intention = IntentionRepository::get_by_id(&database_state.pool, session.intention_id)
             .await
             .map_err(|error| error.to_string())?
             .ok_or_else(|| format!("Active Intention {} does not exist", session.intention_id))?;
@@ -133,26 +135,30 @@ pub struct TodayEarlierIntentionDto {
 #[tauri::command]
 #[specta::specta]
 pub async fn assess_intention_edit_policy(
-    state: State<'_, DatabaseState>,
+    database_state: State<'_, DatabaseState>,
     params: UpdateIntentionParams,
 ) -> Result<Option<action_policy::IntentionEditPolicyAssessment>, String> {
     let input = build_write_intention_input(params.name, params.behavior, params.conditions)?;
 
-    return action_policy::assess_intention_edit_policy(&state.pool, params.intention_id, &input)
-        .await;
+    return action_policy::assess_intention_edit_policy(
+        &database_state.pool,
+        params.intention_id,
+        &input,
+    )
+    .await;
 }
 
 #[tauri::command]
 #[specta::specta]
 pub async fn create_intention(
     app: AppHandle,
-    state: State<'_, DatabaseState>,
-    runtime: State<'_, IntentionRuntimeState>,
+    database_state: State<'_, DatabaseState>,
+    runtime_state: State<'_, IntentionRuntimeState>,
     params: CreateIntentionParams,
 ) -> Result<Intention, String> {
     let input = build_write_intention_input(params.name, params.behavior, params.conditions)?;
 
-    let intention = IntentionRepository::create(&state.pool, input)
+    let intention = IntentionRepository::create(&database_state.pool, input)
         .await
         .map_err(|error| error.to_string())?;
 
@@ -160,7 +166,7 @@ pub async fn create_intention(
         intention_id: intention.id,
     }
     .emit(&app);
-    if let Err(error) = runtime.reevaluate(&app).await {
+    if let Err(error) = runtime_state.reevaluate(&app).await {
         log::error!(
             target: LOG_TARGET,
             "intention reevaluation after create failed: {}",
@@ -183,16 +189,20 @@ pub struct CreateIntentionParams {
 #[specta::specta]
 pub async fn update_intention(
     app: AppHandle,
-    state: State<'_, DatabaseState>,
-    runtime: State<'_, IntentionRuntimeState>,
+    database_state: State<'_, DatabaseState>,
+    runtime_state: State<'_, IntentionRuntimeState>,
     params: UpdateIntentionParams,
 ) -> Result<Intention, String> {
     let input = build_write_intention_input(params.name, params.behavior, params.conditions)?;
 
-    action_policy::require_intention_update_allowed(&state.pool, params.intention_id, &input)
-        .await?;
+    action_policy::require_intention_update_allowed(
+        &database_state.pool,
+        params.intention_id,
+        &input,
+    )
+    .await?;
 
-    let intention = IntentionRepository::update(&state.pool, params.intention_id, input)
+    let intention = IntentionRepository::update(&database_state.pool, params.intention_id, input)
         .await
         .map_err(|error| error.to_string())?
         .ok_or_else(|| format!("Intention {} does not exist", params.intention_id))?;
@@ -201,7 +211,7 @@ pub async fn update_intention(
         intention_id: intention.id,
     }
     .emit(&app);
-    if let Err(error) = runtime.reevaluate(&app).await {
+    if let Err(error) = runtime_state.reevaluate(&app).await {
         log::error!(
             target: LOG_TARGET,
             "intention reevaluation after update failed: {}",
@@ -225,13 +235,13 @@ pub struct UpdateIntentionParams {
 #[specta::specta]
 pub async fn delete_intention(
     app: AppHandle,
-    state: State<'_, DatabaseState>,
-    runtime: State<'_, IntentionRuntimeState>,
+    database_state: State<'_, DatabaseState>,
+    runtime_state: State<'_, IntentionRuntimeState>,
     intention_id: i64,
 ) -> Result<(), String> {
-    action_policy::require_intention_delete_allowed(&state.pool, intention_id).await?;
+    action_policy::require_intention_delete_allowed(&database_state.pool, intention_id).await?;
 
-    let did_delete = IntentionRepository::delete(&state.pool, intention_id)
+    let did_delete = IntentionRepository::delete(&database_state.pool, intention_id)
         .await
         .map_err(|error| error.to_string())?;
 
@@ -240,7 +250,7 @@ pub async fn delete_intention(
     }
 
     let _ = IntentionDeletedEvent { intention_id }.emit(&app);
-    if let Err(error) = runtime.reevaluate(&app).await {
+    if let Err(error) = runtime_state.reevaluate(&app).await {
         log::error!(
             target: LOG_TARGET,
             "intention reevaluation after delete failed: {}",
@@ -255,10 +265,10 @@ pub async fn delete_intention(
 #[specta::specta]
 pub async fn start_intention(
     app: AppHandle,
-    runtime: State<'_, IntentionRuntimeState>,
+    runtime_state: State<'_, IntentionRuntimeState>,
     intention_id: i64,
 ) -> Result<IntentionSession, String> {
-    return runtime
+    return runtime_state
         .start_intention(&app, intention_id)
         .await
         .map_err(|error| error.to_string());
@@ -268,15 +278,19 @@ pub async fn start_intention(
 #[specta::specta]
 pub async fn complete_intention(
     app: AppHandle,
-    state: State<'_, DatabaseState>,
-    runtime: State<'_, IntentionRuntimeState>,
+    database_state: State<'_, DatabaseState>,
+    runtime_state: State<'_, IntentionRuntimeState>,
     intention_id: i64,
     end_condition_id: Option<i64>,
 ) -> Result<IntentionSession, String> {
-    action_policy::require_intention_complete_allowed(&state.pool, intention_id, end_condition_id)
-        .await?;
+    action_policy::require_intention_complete_allowed(
+        &database_state.pool,
+        intention_id,
+        end_condition_id,
+    )
+    .await?;
 
-    return runtime
+    return runtime_state
         .complete_intention(&app, intention_id, end_condition_id)
         .await
         .map_err(|error| error.to_string());
@@ -286,13 +300,13 @@ pub async fn complete_intention(
 #[specta::specta]
 pub async fn stop_intention(
     app: AppHandle,
-    state: State<'_, DatabaseState>,
-    runtime: State<'_, IntentionRuntimeState>,
+    database_state: State<'_, DatabaseState>,
+    runtime_state: State<'_, IntentionRuntimeState>,
     intention_id: i64,
 ) -> Result<IntentionSession, String> {
-    action_policy::require_intention_stop_allowed(&state.pool, intention_id).await?;
+    action_policy::require_intention_stop_allowed(&database_state.pool, intention_id).await?;
 
-    return runtime
+    return runtime_state
         .stop_intention(&app, intention_id)
         .await
         .map_err(|error| error.to_string());

@@ -17,8 +17,10 @@ pub async fn evaluate_active_target(
     app: &AppHandle,
     target: &ActivityTarget,
 ) -> Result<BlockingDecision, BlockingPolicyError> {
-    let pool = app.state::<DatabaseState>().pool.clone();
-    let active_sessions = IntentionSessionRepository::get_active_sessions(&pool).await?;
+    let database_state = app.state::<DatabaseState>();
+
+    let active_sessions =
+        IntentionSessionRepository::get_active_sessions(&database_state.pool).await?;
     if active_sessions.is_empty() {
         return Ok(BlockingDecision::Allowed);
     }
@@ -27,7 +29,7 @@ pub async fn evaluate_active_target(
         .into_iter()
         .map(|session| session.intention_id)
         .collect::<HashSet<_>>();
-    let intentions = IntentionRepository::get_all(&pool).await?;
+    let intentions = IntentionRepository::get_all(&database_state.pool).await?;
     let active_blocks = intentions
         .into_iter()
         .filter(|intention| active_intention_ids.contains(&intention.id))

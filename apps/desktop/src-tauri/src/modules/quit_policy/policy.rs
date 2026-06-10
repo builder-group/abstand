@@ -94,11 +94,11 @@ fn consume_next_exit_request_approval(app: &AppHandle) -> bool {
 }
 
 async fn assess_quit(app: &AppHandle, mode: QuitAssessmentMode) -> QuitDecision {
-    let Some(db_state) = app.try_state::<DatabaseState>() else {
+    let Some(database_state) = app.try_state::<DatabaseState>() else {
         log::warn!(target: LOG_TARGET, "database state unavailable, allowing quit");
         return QuitDecision::Allowed;
     };
-    let pool = db_state.pool.clone();
+    let pool = database_state.pool.clone();
 
     match IntentionSessionRepository::has_active_block_session_with_enforcement(
         &pool,

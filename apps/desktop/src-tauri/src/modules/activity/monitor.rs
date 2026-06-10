@@ -1,10 +1,7 @@
 use super::types::{ActivityFocus, ActivityFocusSource, ActivityTarget, ActivityWindowBounds};
-use crate::{
-    common::url::extract_hostname,
-    modules::blocking::{runtime::BlockingRuntime, types::BlockingRuntimeState},
-};
+use crate::{common::url::extract_hostname, modules::blocking};
 use mado::{MonitorConfig, WindowEvent, WindowListener, WindowMonitor as MadoWindowMonitor};
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 
 pub fn start_monitoring(app: AppHandle) {
     let tracks_window_changes = !cfg!(feature = "app-store") && mado::is_accessibility_trusted();
@@ -13,16 +10,17 @@ pub fn start_monitoring(app: AppHandle) {
         listener,
         MonitorConfig {
             // Note: mado fails without Accessibility here. If permission is granted later,
-            // window tracking starts after this monitor is rebuilt. Today that means app restart.
+            // window tracking starts after the monitor is rebuilt, which currently
+            // requires app restart.
             track_window_changes: tracks_window_changes,
             include_browser_info: tracks_window_changes,
-            // Note: We only need the hostname, so we extract it from the URL and skip favicon/color work
             include_website_info: false,
             ..Default::default()
         },
     );
 
-    // Note: mado::WindowMonitor::run blocks for the app lifetime, so keep it off the async runtime
+    // Note: mado::WindowMonitor::run blocks for the app lifetime, so keep it
+    // off the async runtime
     if let Err(error) = std::thread::Builder::new()
         .name("activity-window-monitor".to_string())
         .spawn(move || {
@@ -71,8 +69,7 @@ impl ActivityWindowListener {
     fn handle_focus_change(&self, focus: ActivityFocus) {
         let app = self.app.clone();
         tauri::async_runtime::spawn(async move {
-            let blocking_runtime = app.state::<BlockingRuntimeState>();
-            BlockingRuntime::handle_activity_focus(&app, blocking_runtime.inner(), focus).await;
+            blocking::runtime::handle_activity_focus(&app, focus).await;
         });
     }
 }

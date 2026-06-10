@@ -18,9 +18,9 @@ pub fn setup(app: &App) -> Result<(), Box<dyn std::error::Error>> {
     // Note: manage before reevaluate so scheduled callbacks can resolve runtime state
     app.manage(IntentionRuntimeState::init());
 
-    let runtime = app.state::<IntentionRuntimeState>();
+    let runtime_state = app.state::<IntentionRuntimeState>();
     // Note: blocks intentionally so the runtime is fully reevaluated before the app accepts commands
-    tauri::async_runtime::block_on(runtime.reevaluate(app.handle()))?;
+    tauri::async_runtime::block_on(runtime_state.reevaluate(app.handle()))?;
 
     return Ok(());
 }

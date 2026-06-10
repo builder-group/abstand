@@ -5,8 +5,10 @@ use tauri::State;
 
 #[tauri::command]
 #[specta::specta]
-pub fn get_shortcut_configs(state: State<'_, AppSettingsState>) -> Vec<ShortcutActionConfigDto> {
-    let settings = state.lock().unwrap();
+pub fn get_shortcut_configs(
+    settings_state: State<'_, AppSettingsState>,
+) -> Vec<ShortcutActionConfigDto> {
+    let settings = settings_state.lock().unwrap();
 
     return ShortcutAction::all()
         .iter()

@@ -7,15 +7,15 @@ use tauri_specta::Event;
 
 #[tauri::command]
 #[specta::specta]
-pub fn get_settings(state: State<'_, AppSettingsState>) -> AppSettings {
-    return state.lock().unwrap().clone();
+pub fn get_settings(settings_state: State<'_, AppSettingsState>) -> AppSettings {
+    return settings_state.lock().unwrap().clone();
 }
 
 #[tauri::command]
 #[specta::specta]
 pub fn set_settings(
     app: AppHandle,
-    state: State<'_, AppSettingsState>,
+    settings_state: State<'_, AppSettingsState>,
     mut settings: AppSettings,
 ) -> Result<(), String> {
     // Normalize: remove overrides that match the action's default (absent key = use default)
@@ -27,7 +27,7 @@ pub fn set_settings(
         });
 
     persistence::save_settings(&app, &settings)?;
-    *state.lock().unwrap() = settings.clone();
+    *settings_state.lock().unwrap() = settings.clone();
     let _ = AppSettingsChangedEvent(settings).emit(&app);
     return Ok(());
 }
@@ -36,11 +36,11 @@ pub fn set_settings(
 #[specta::specta]
 pub fn reset_settings(
     app: AppHandle,
-    state: State<'_, AppSettingsState>,
+    settings_state: State<'_, AppSettingsState>,
 ) -> Result<AppSettings, String> {
     let settings = AppSettings::default();
     persistence::save_settings(&app, &settings)?;
-    *state.lock().unwrap() = settings.clone();
+    *settings_state.lock().unwrap() = settings.clone();
     let _ = AppSettingsChangedEvent(settings.clone()).emit(&app);
     return Ok(settings);
 }
