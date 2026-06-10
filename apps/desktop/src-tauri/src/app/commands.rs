@@ -87,6 +87,46 @@ pub fn restart_app(app: AppHandle) -> Result<(), String> {
 
 #[tauri::command]
 #[specta::specta]
+pub fn quit_app_by_bundle_id(bundle_id: String) -> Result<QuitAppByBundleIdResult, String> {
+    let bundle_id = bundle_id.trim();
+    if bundle_id.is_empty() {
+        return Err("Bundle id is required".to_string());
+    }
+
+    if bundle_id == AppConfig::bundle_identifier() {
+        return Err("Cannot quit Abstand".to_string());
+    }
+
+    return Ok(abstand_macos::request_app_quit(bundle_id).into());
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, specta::Type)]
+#[serde(rename_all = "camelCase", tag = "status")]
+pub enum QuitAppByBundleIdResult {
+    NotRunning,
+    Requested {
+        #[serde(rename = "processCount")]
+        process_count: u32,
+    },
+    Failed,
+    Unsupported,
+}
+
+impl From<abstand_macos::AppQuitRequestResult> for QuitAppByBundleIdResult {
+    fn from(result: abstand_macos::AppQuitRequestResult) -> Self {
+        return match result {
+            abstand_macos::AppQuitRequestResult::NotRunning => Self::NotRunning,
+            abstand_macos::AppQuitRequestResult::Requested { process_count } => {
+                Self::Requested { process_count }
+            }
+            abstand_macos::AppQuitRequestResult::Failed => Self::Failed,
+            abstand_macos::AppQuitRequestResult::Unsupported => Self::Unsupported,
+        };
+    }
+}
+
+#[tauri::command]
+#[specta::specta]
 pub fn open_data_directory(app: AppHandle) -> Result<(), String> {
     let data_dir = get_app_data_dir(&app)?;
     return app

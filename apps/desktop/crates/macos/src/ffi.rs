@@ -8,3 +8,6 @@ swift!(pub fn abstand_macos_is_app_running(
     bundle_identifier: &SRString,
     excluded_pid: i32
 ) -> Bool);
+swift!(pub fn abstand_macos_request_app_quit(
+    bundle_identifier: &SRString
+) -> i32);

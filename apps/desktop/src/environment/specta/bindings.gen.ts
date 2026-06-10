@@ -9,6 +9,7 @@ export const commands = {
 	getSystemTypography: () => __TAURI_INVOKE<SystemTypographyDto>("get_system_typography"),
 	notifyFrontendReady: () => __TAURI_INVOKE<void>("notify_frontend_ready"),
 	restartApp: () => typedError<null, string>(__TAURI_INVOKE("restart_app")),
+	quitAppByBundleId: (bundleId: string) => typedError<QuitAppByBundleIdResult, string>(__TAURI_INVOKE("quit_app_by_bundle_id", { bundleId })),
 	openDataDirectory: () => typedError<null, string>(__TAURI_INVOKE("open_data_directory")),
 	revealLogFile: () => typedError<null, string>(__TAURI_INVOKE("reveal_log_file")),
 	confirmBalancedQuit: () => typedError<null, string>(__TAURI_INVOKE("confirm_balanced_quit")),
@@ -282,6 +283,8 @@ export type KeyboardShortcut = {
 export type LaunchAtLoginStatus = {
 	isEnabled: boolean,
 };
+
+export type QuitAppByBundleIdResult = { status: "notRunning" } | { status: "requested"; processCount: number } | { status: "failed" } | { status: "unsupported" };
 
 export type QuitPreventedEvent = { reason: "activeBalancedBlock"; durationMs: number } | { reason: "activeStrictBlock" };
 

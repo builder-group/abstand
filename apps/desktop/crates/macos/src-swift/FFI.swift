@@ -34,3 +34,31 @@ public func abstandMacosIsAppRunning(
             app.processIdentifier != pid_t(excludedPid) && !app.isTerminated
         }
 }
+
+@_cdecl("abstand_macos_request_app_quit")
+public func abstandMacosRequestAppQuit(
+    bundleIdentifier: SRString
+) -> Int32 {
+    let bundleIdentifier = bundleIdentifier.toString()
+    let runningApps =
+        NSRunningApplication
+        .runningApplications(withBundleIdentifier: bundleIdentifier)
+        .filter { app in !app.isTerminated }
+
+    if runningApps.isEmpty {
+        return 0
+    }
+
+    var requestedQuitCount: Int32 = 0
+    for app in runningApps {
+        if app.terminate() {
+            requestedQuitCount += 1
+        }
+    }
+
+    if requestedQuitCount == 0 {
+        return -1
+    }
+
+    return requestedQuitCount
+}

@@ -6,7 +6,7 @@ mod ffi;
 use ffi::{
     abstand_macos_apply_window_liquid_glass, abstand_macos_apply_window_transparency,
     abstand_macos_get_small_system_font_size, abstand_macos_get_system_font_size,
-    abstand_macos_is_app_running,
+    abstand_macos_is_app_running, abstand_macos_request_app_quit,
 };
 #[cfg(target_os = "macos")]
 use swift_rs::{Int, SRString};
@@ -70,6 +70,12 @@ pub fn get_system_font_sizes() -> SystemFontSizes {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct SystemFontSizes {
+    pub base: f64,
+    pub small: f64,
+}
+
 /// Returns whether another running app process exists for the bundle identifier.
 pub fn is_app_running(bundle_identifier: &str, excluded_pid: u32) -> bool {
     #[cfg(target_os = "macos")]
@@ -87,8 +93,44 @@ pub fn is_app_running(bundle_identifier: &str, excluded_pid: u32) -> bool {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct SystemFontSizes {
-    pub base: f64,
-    pub small: f64,
+/// Requests normal termination for running app processes with the bundle identifier.
+///
+/// The result reports whether macOS accepted at least one graceful termination request.
+pub fn request_app_quit(bundle_identifier: &str) -> AppQuitRequestResult {
+    let bundle_identifier = bundle_identifier.trim();
+    if bundle_identifier.is_empty() {
+        return AppQuitRequestResult::Failed;
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        let bundle_identifier: SRString = bundle_identifier.into();
+        let result = unsafe { abstand_macos_request_app_quit(&bundle_identifier) };
+
+        if result < 0 {
+            return AppQuitRequestResult::Failed;
+        }
+
+        if result == 0 {
+            return AppQuitRequestResult::NotRunning;
+        }
+
+        return AppQuitRequestResult::Requested {
+            process_count: result as u32,
+        };
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = bundle_identifier;
+        return AppQuitRequestResult::Unsupported;
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AppQuitRequestResult {
+    NotRunning,
+    Requested { process_count: u32 },
+    Failed,
+    Unsupported,
 }
