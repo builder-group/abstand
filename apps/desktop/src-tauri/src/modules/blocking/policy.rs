@@ -1,4 +1,3 @@
-use super::types::{BlockedTarget, BlockingDecision, BlockingViolation};
 use crate::modules::{
     activity::types::ActivityTarget,
     db::types::DatabaseState,
@@ -16,13 +15,13 @@ use tauri::{AppHandle, Manager};
 pub async fn evaluate_active_target(
     app: &AppHandle,
     target: &ActivityTarget,
-) -> Result<BlockingDecision, BlockingPolicyError> {
+) -> Result<BlockingPolicyDecision, BlockingPolicyError> {
     let database_state = app.state::<DatabaseState>();
 
     let active_sessions =
         IntentionSessionRepository::get_active_sessions(&database_state.pool).await?;
     if active_sessions.is_empty() {
-        return Ok(BlockingDecision::Allowed);
+        return Ok(BlockingPolicyDecision::Allowed);
     }
 
     let active_intention_ids = active_sessions
@@ -46,13 +45,33 @@ pub async fn evaluate_active_target(
     return Ok(evaluate_target(target, &active_blocks));
 }
 
-pub fn evaluate_target(
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BlockingPolicyDecision {
+    Allowed,
+    Blocked(BlockingPolicyViolation),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BlockingPolicyViolation {
+    pub intention_id: i64,
+    pub intention_name: String,
+    pub blocked_target: BlockingPolicyTarget,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BlockingPolicyTarget {
+    App { bundle_id: String },
+    Website { hostname: String },
+    Device,
+}
+
+fn evaluate_target(
     target: &ActivityTarget,
     active_blocks: &[ActiveBlockIntention],
-) -> BlockingDecision {
+) -> BlockingPolicyDecision {
     for intention in active_blocks {
         if let Some(blocked_target) = blocked_target_for_block(&intention.block, target) {
-            return BlockingDecision::Blocked(BlockingViolation {
+            return BlockingPolicyDecision::Blocked(BlockingPolicyViolation {
                 intention_id: intention.id,
                 intention_name: intention.name.clone(),
                 blocked_target,
@@ -60,20 +79,20 @@ pub fn evaluate_target(
         }
     }
 
-    return BlockingDecision::Allowed;
+    return BlockingPolicyDecision::Allowed;
 }
 
 #[derive(Debug, Clone)]
-pub struct ActiveBlockIntention {
-    pub id: i64,
-    pub name: String,
-    pub block: IntentionBlock,
+struct ActiveBlockIntention {
+    id: i64,
+    name: String,
+    block: IntentionBlock,
 }
 
 fn blocked_target_for_block(
     block: &IntentionBlock,
     target: &ActivityTarget,
-) -> Option<BlockedTarget> {
+) -> Option<BlockingPolicyTarget> {
     return match block.scope {
         IntentionBlockScope::BlockTargets => {
             matching_app_target(block, target).or_else(|| matching_website_target(block, target))
@@ -86,31 +105,34 @@ fn blocked_target_for_block(
             }
 
             if let Some(hostname) = target.website_hostname.as_deref() {
-                return Some(BlockedTarget::Website {
+                return Some(BlockingPolicyTarget::Website {
                     hostname: hostname.to_string(),
                 });
             }
 
             if let Some(bundle_id) = target.app_bundle_id.as_deref() {
-                return Some(BlockedTarget::App {
+                return Some(BlockingPolicyTarget::App {
                     bundle_id: bundle_id.to_string(),
                 });
             }
 
-            Some(BlockedTarget::Device)
+            Some(BlockingPolicyTarget::Device)
         }
-        IntentionBlockScope::WholeDevice => Some(BlockedTarget::Device),
+        IntentionBlockScope::WholeDevice => Some(BlockingPolicyTarget::Device),
     };
 }
 
-fn matching_app_target(block: &IntentionBlock, target: &ActivityTarget) -> Option<BlockedTarget> {
+fn matching_app_target(
+    block: &IntentionBlock,
+    target: &ActivityTarget,
+) -> Option<BlockingPolicyTarget> {
     let Some(bundle_id) = target.app_bundle_id.as_deref() else {
         return None;
     };
 
     return block.apps.iter().find_map(|app| {
         if app.bundle_id.as_deref() == Some(bundle_id) {
-            return Some(BlockedTarget::App {
+            return Some(BlockingPolicyTarget::App {
                 bundle_id: bundle_id.to_string(),
             });
         }
@@ -121,14 +143,14 @@ fn matching_app_target(block: &IntentionBlock, target: &ActivityTarget) -> Optio
 fn matching_website_target(
     block: &IntentionBlock,
     target: &ActivityTarget,
-) -> Option<BlockedTarget> {
+) -> Option<BlockingPolicyTarget> {
     let Some(hostname) = target.website_hostname.as_deref() else {
         return None;
     };
 
     return block.websites.iter().find_map(|website| {
         if hostname_matches_target(hostname, &website.hostname) {
-            return Some(BlockedTarget::Website {
+            return Some(BlockingPolicyTarget::Website {
                 hostname: hostname.to_string(),
             });
         }
@@ -174,10 +196,12 @@ impl From<IntentionSessionRepositoryError> for BlockingPolicyError {
 
 #[cfg(test)]
 mod tests {
-    use super::{evaluate_target, ActiveBlockIntention, IntentionBlock, IntentionBlockScope};
+    use super::{
+        evaluate_target, ActiveBlockIntention, BlockingPolicyDecision, BlockingPolicyTarget,
+        BlockingPolicyViolation, IntentionBlock, IntentionBlockScope,
+    };
     use crate::modules::{
         activity::types::ActivityTarget,
-        blocking::types::{BlockedTarget, BlockingDecision, BlockingViolation},
         catalog::types::{App, Website},
         intentions::intention::IntentionEnforcementMode,
     };
@@ -186,7 +210,10 @@ mod tests {
     fn allows_when_no_block_intentions_are_active() {
         let target = website_target("example.com");
 
-        assert_eq!(evaluate_target(&target, &[]), BlockingDecision::Allowed);
+        assert_eq!(
+            evaluate_target(&target, &[]),
+            BlockingPolicyDecision::Allowed
+        );
     }
 
     #[test]
@@ -215,7 +242,7 @@ mod tests {
 
         assert_eq!(
             evaluate_target(&website_target("allowed.com"), &[intention]),
-            BlockingDecision::Allowed
+            BlockingPolicyDecision::Allowed
         );
     }
 
@@ -269,7 +296,7 @@ mod tests {
 
         assert_eq!(
             evaluate_target(&website_target("std.docs.rs"), &[intention]),
-            BlockingDecision::Allowed
+            BlockingPolicyDecision::Allowed
         );
     }
 
@@ -283,10 +310,10 @@ mod tests {
 
         assert_eq!(
             evaluate_target(&website_target("example.com"), &[intention]),
-            BlockingDecision::Blocked(BlockingViolation {
+            BlockingPolicyDecision::Blocked(BlockingPolicyViolation {
                 intention_id: 1,
                 intention_name: "Deep Work".to_string(),
-                blocked_target: BlockedTarget::Device,
+                blocked_target: BlockingPolicyTarget::Device,
             })
         );
     }
@@ -326,11 +353,11 @@ mod tests {
         intention_id: i64,
         intention_name: String,
         bundle_id: String,
-    ) -> BlockingDecision {
-        return BlockingDecision::Blocked(BlockingViolation {
+    ) -> BlockingPolicyDecision {
+        return BlockingPolicyDecision::Blocked(BlockingPolicyViolation {
             intention_id,
             intention_name,
-            blocked_target: BlockedTarget::App { bundle_id },
+            blocked_target: BlockingPolicyTarget::App { bundle_id },
         });
     }
 
@@ -338,11 +365,11 @@ mod tests {
         intention_id: i64,
         intention_name: String,
         hostname: String,
-    ) -> BlockingDecision {
-        return BlockingDecision::Blocked(BlockingViolation {
+    ) -> BlockingPolicyDecision {
+        return BlockingPolicyDecision::Blocked(BlockingPolicyViolation {
             intention_id,
             intention_name,
-            blocked_target: BlockedTarget::Website { hostname },
+            blocked_target: BlockingPolicyTarget::Website { hostname },
         });
     }
 

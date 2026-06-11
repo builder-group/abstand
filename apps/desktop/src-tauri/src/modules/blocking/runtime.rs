@@ -1,9 +1,8 @@
 use super::{
+    enrichment::enrich_blocking_violation,
     overlay,
-    policy::evaluate_active_target,
-    types::{
-        BlockingDecision, BlockingRuntimeState, BlockingViolation, BlockingViolationChangedEvent,
-    },
+    policy::{evaluate_active_target, BlockingPolicyDecision},
+    types::{BlockingRuntimeState, BlockingViolation, BlockingViolationChangedEvent},
 };
 use crate::modules::activity::types::ActivityFocus;
 use tauri::{AppHandle, Manager};
@@ -41,17 +40,12 @@ pub async fn handle_activity_focus(app: &AppHandle, focus: ActivityFocus) {
 
     let decision = evaluate_active_target(app, &focus.target).await;
 
-    let runtime_state = app.state::<BlockingRuntimeState>();
-    let mut runtime = runtime_state.lock().unwrap();
-    if !runtime.is_current_focus_generation(focus_generation) {
-        return;
-    }
-
-    match decision {
-        Ok(BlockingDecision::Allowed) => runtime.handle_allowed_focus(app, &focus),
-        Ok(BlockingDecision::Blocked(violation)) => {
-            runtime.handle_blocked_focus(app, &focus, violation);
+    let next_violation = match decision {
+        Ok(BlockingPolicyDecision::Blocked(policy_violation)) => {
+            let violation = enrich_blocking_violation(app, &policy_violation, &focus).await;
+            Some(violation)
         }
+        Ok(BlockingPolicyDecision::Allowed) => None,
         Err(error) => {
             log::error!(
                 target: LOG_TARGET,
@@ -59,7 +53,27 @@ pub async fn handle_activity_focus(app: &AppHandle, focus: ActivityFocus) {
                 focus.summary(),
                 error
             );
+            let runtime_state = app.state::<BlockingRuntimeState>();
+            let mut runtime = runtime_state.lock().unwrap();
+            if !runtime.is_current_focus_generation(focus_generation) {
+                return;
+            }
+
             runtime.clear_active_violation(app);
+            return;
+        }
+    };
+
+    let runtime_state = app.state::<BlockingRuntimeState>();
+    let mut runtime = runtime_state.lock().unwrap();
+    if !runtime.is_current_focus_generation(focus_generation) {
+        return;
+    }
+
+    match next_violation {
+        None => runtime.handle_allowed_focus(app, &focus),
+        Some(violation) => {
+            runtime.handle_blocked_focus(app, &focus, violation);
         }
     }
 }

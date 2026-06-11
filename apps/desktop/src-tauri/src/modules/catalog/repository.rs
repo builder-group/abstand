@@ -149,6 +149,48 @@ impl CatalogRepository {
             .collect());
     }
 
+    pub async fn get_app_by_bundle_id(
+        pool: &Pool<Sqlite>,
+        bundle_id: &str,
+    ) -> Result<Option<App>, CatalogRepositoryError> {
+        let row = sqlx::query_as::<_, AppRow>(
+            "SELECT id, stable_id, bundle_id, name, process_path, icon, color FROM app WHERE bundle_id = ? LIMIT 1",
+        )
+        .bind(bundle_id)
+        .fetch_optional(pool)
+        .await?;
+
+        return Ok(row.map(|row| App {
+            id: row.id,
+            stable_id: row.stable_id,
+            name: row.name,
+            bundle_id: row.bundle_id,
+            process_path: row.process_path,
+            icon: row.icon,
+            color: row.color,
+        }));
+    }
+
+    pub async fn get_website_by_hostname(
+        pool: &Pool<Sqlite>,
+        hostname: &str,
+    ) -> Result<Option<Website>, CatalogRepositoryError> {
+        let row = sqlx::query_as::<_, WebsiteRow>(
+            "SELECT id, hostname, name, icon, color FROM website WHERE hostname = ? LIMIT 1",
+        )
+        .bind(hostname)
+        .fetch_optional(pool)
+        .await?;
+
+        return Ok(row.map(|row| Website {
+            id: row.id,
+            name: row.name,
+            hostname: row.hostname,
+            icon: row.icon,
+            color: row.color,
+        }));
+    }
+
     fn positions_by_id(ids: &[i64]) -> HashMap<i64, usize> {
         return ids
             .iter()

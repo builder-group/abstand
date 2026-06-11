@@ -121,7 +121,7 @@ export type AppearanceSettings = {
 	fontScale: number,
 };
 
-export type BlockedTarget = { type: "app"; bundleId: string } | { type: "website"; hostname: string } | { type: "device" };
+export type BlockedTarget = { type: "app"; bundleId: string; displayName: string; icon: string | null; color: string | null } | { type: "website"; hostname: string; displayName: string; icon: string | null; color: string | null } | { type: "device"; displayName: string };
 
 export type BlockingViolation = {
 	intentionId: number,

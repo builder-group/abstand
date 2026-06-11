@@ -270,7 +270,7 @@ impl AppWindow {
             return;
         };
 
-        if abstand_macos::apply_window_transparency(window_ptr) {
+        if abstand_macos::apply_window_liquid_glass(window_ptr) {
             return;
         }
 

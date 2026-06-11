@@ -86,7 +86,7 @@ fn resolve_bounds_for_violation(
     focus: &ActivityFocus,
     violation: &BlockingViolation,
 ) -> Option<BlockingOverlayBounds> {
-    if matches!(&violation.blocked_target, BlockedTarget::Device) {
+    if matches!(&violation.blocked_target, BlockedTarget::Device { .. }) {
         return resolve_monitor_bounds_for_focus(app, focus);
     }
 

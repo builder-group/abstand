@@ -2,12 +2,6 @@ use super::runtime::BlockingRuntime;
 use serde::{Deserialize, Serialize};
 use std::{ops::Deref, sync::Mutex};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum BlockingDecision {
-    Allowed,
-    Blocked(BlockingViolation),
-}
-
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct BlockingViolation {
@@ -20,11 +14,21 @@ pub struct BlockingViolation {
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum BlockedTarget {
     #[serde(rename = "app", rename_all = "camelCase")]
-    App { bundle_id: String },
+    App {
+        bundle_id: String,
+        display_name: String,
+        icon: Option<String>,
+        color: Option<String>,
+    },
     #[serde(rename = "website", rename_all = "camelCase")]
-    Website { hostname: String },
-    #[serde(rename = "device")]
-    Device,
+    Website {
+        hostname: String,
+        display_name: String,
+        icon: Option<String>,
+        color: Option<String>,
+    },
+    #[serde(rename = "device", rename_all = "camelCase")]
+    Device { display_name: String },
 }
 
 // MARK: - State

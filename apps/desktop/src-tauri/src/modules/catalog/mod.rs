@@ -6,6 +6,7 @@ pub mod commands;
 mod matcher;
 mod predefined;
 pub mod repository;
+pub mod resolver;
 mod search;
 pub mod types;
 
