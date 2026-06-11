@@ -2,6 +2,7 @@ use crate::modules::{
     activity::types::ActivityTarget,
     db::types::DatabaseState,
     intentions::{
+        condition_timing,
         intention::{IntentionBehavior, IntentionBlock, IntentionBlockScope},
         repository::{
             IntentionRepository, IntentionRepositoryError, IntentionSessionRepository,
@@ -9,7 +10,10 @@ use crate::modules::{
         },
     },
 };
-use std::{collections::HashSet, fmt};
+use std::{
+    collections::{HashMap, HashSet},
+    fmt,
+};
 use tauri::{AppHandle, Manager};
 
 pub async fn evaluate_active_target(
@@ -24,21 +28,36 @@ pub async fn evaluate_active_target(
         return Ok(BlockingPolicyDecision::Allowed);
     }
 
-    let active_intention_ids = active_sessions
+    let active_session_by_intention_id = active_sessions
         .into_iter()
-        .map(|session| session.intention_id)
+        .map(|session| (session.intention_id, session))
+        .collect::<HashMap<_, _>>();
+    let active_intention_ids = active_session_by_intention_id
+        .keys()
+        .copied()
         .collect::<HashSet<_>>();
     let intentions = IntentionRepository::get_all(&database_state.pool).await?;
     let active_blocks = intentions
         .into_iter()
         .filter(|intention| active_intention_ids.contains(&intention.id))
-        .filter_map(|intention| match intention.behavior {
-            IntentionBehavior::Block(block) => Some(ActiveBlockIntention {
-                id: intention.id,
-                name: intention.name,
-                block,
-            }),
-            IntentionBehavior::Break => None,
+        .filter_map(|intention| {
+            let session = active_session_by_intention_id.get(&intention.id)?;
+            let session_automatic_end_at = condition_timing::automatic_intention_end_at(
+                &intention.conditions,
+                session.started_at,
+            );
+
+            return match intention.behavior {
+                IntentionBehavior::Block(block) => Some(ActiveBlockIntention {
+                    id: intention.id,
+                    name: intention.name,
+                    session_id: session.id,
+                    session_started_at: session.started_at,
+                    session_automatic_end_at,
+                    block,
+                }),
+                IntentionBehavior::Break => None,
+            };
         })
         .collect::<Vec<_>>();
 
@@ -55,6 +74,9 @@ pub enum BlockingPolicyDecision {
 pub struct BlockingPolicyViolation {
     pub intention_id: i64,
     pub intention_name: String,
+    pub session_id: i64,
+    pub session_started_at: i64,
+    pub session_automatic_end_at: Option<i64>,
     pub blocked_target: BlockingPolicyTarget,
 }
 
@@ -74,6 +96,9 @@ fn evaluate_target(
             return BlockingPolicyDecision::Blocked(BlockingPolicyViolation {
                 intention_id: intention.id,
                 intention_name: intention.name.clone(),
+                session_id: intention.session_id,
+                session_started_at: intention.session_started_at,
+                session_automatic_end_at: intention.session_automatic_end_at,
                 blocked_target,
             });
         }
@@ -86,6 +111,9 @@ fn evaluate_target(
 struct ActiveBlockIntention {
     id: i64,
     name: String,
+    session_id: i64,
+    session_started_at: i64,
+    session_automatic_end_at: Option<i64>,
     block: IntentionBlock,
 }
 
@@ -251,6 +279,9 @@ mod tests {
         let intention = ActiveBlockIntention {
             id: 1,
             name: "Deep Work".to_string(),
+            session_id: TEST_SESSION_ID,
+            session_started_at: TEST_SESSION_STARTED_AT,
+            session_automatic_end_at: TEST_SESSION_AUTOMATIC_END_AT,
             block: block(
                 IntentionBlockScope::AllowTargets,
                 vec![],
@@ -269,6 +300,9 @@ mod tests {
         let intention = ActiveBlockIntention {
             id: 1,
             name: "Deep Work".to_string(),
+            session_id: TEST_SESSION_ID,
+            session_started_at: TEST_SESSION_STARTED_AT,
+            session_automatic_end_at: TEST_SESSION_AUTOMATIC_END_AT,
             block: block(
                 IntentionBlockScope::AllowTargets,
                 vec![app("com.apple.Terminal")],
@@ -287,6 +321,9 @@ mod tests {
         let intention = ActiveBlockIntention {
             id: 1,
             name: "Deep Work".to_string(),
+            session_id: TEST_SESSION_ID,
+            session_started_at: TEST_SESSION_STARTED_AT,
+            session_automatic_end_at: TEST_SESSION_AUTOMATIC_END_AT,
             block: block(
                 IntentionBlockScope::AllowTargets,
                 vec![],
@@ -305,6 +342,9 @@ mod tests {
         let intention = ActiveBlockIntention {
             id: 1,
             name: "Deep Work".to_string(),
+            session_id: TEST_SESSION_ID,
+            session_started_at: TEST_SESSION_STARTED_AT,
+            session_automatic_end_at: TEST_SESSION_AUTOMATIC_END_AT,
             block: block(IntentionBlockScope::WholeDevice, vec![], vec![]),
         };
 
@@ -313,6 +353,9 @@ mod tests {
             BlockingPolicyDecision::Blocked(BlockingPolicyViolation {
                 intention_id: 1,
                 intention_name: "Deep Work".to_string(),
+                session_id: TEST_SESSION_ID,
+                session_started_at: TEST_SESSION_STARTED_AT,
+                session_automatic_end_at: TEST_SESSION_AUTOMATIC_END_AT,
                 blocked_target: BlockingPolicyTarget::Device,
             })
         );
@@ -322,6 +365,9 @@ mod tests {
         return ActiveBlockIntention {
             id: 1,
             name: "Deep Work".to_string(),
+            session_id: TEST_SESSION_ID,
+            session_started_at: TEST_SESSION_STARTED_AT,
+            session_automatic_end_at: TEST_SESSION_AUTOMATIC_END_AT,
             block: block(IntentionBlockScope::BlockTargets, apps, websites),
         };
     }
@@ -357,6 +403,9 @@ mod tests {
         return BlockingPolicyDecision::Blocked(BlockingPolicyViolation {
             intention_id,
             intention_name,
+            session_id: TEST_SESSION_ID,
+            session_started_at: TEST_SESSION_STARTED_AT,
+            session_automatic_end_at: TEST_SESSION_AUTOMATIC_END_AT,
             blocked_target: BlockingPolicyTarget::App { bundle_id },
         });
     }
@@ -369,6 +418,9 @@ mod tests {
         return BlockingPolicyDecision::Blocked(BlockingPolicyViolation {
             intention_id,
             intention_name,
+            session_id: TEST_SESSION_ID,
+            session_started_at: TEST_SESSION_STARTED_AT,
+            session_automatic_end_at: TEST_SESSION_AUTOMATIC_END_AT,
             blocked_target: BlockingPolicyTarget::Website { hostname },
         });
     }
@@ -394,4 +446,8 @@ mod tests {
             color: None,
         };
     }
+
+    const TEST_SESSION_ID: i64 = 10;
+    const TEST_SESSION_STARTED_AT: i64 = 1_700_000_000_000;
+    const TEST_SESSION_AUTOMATIC_END_AT: Option<i64> = Some(1_700_003_600_000);
 }

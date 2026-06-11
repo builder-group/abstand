@@ -7,6 +7,9 @@ use std::{ops::Deref, sync::Mutex};
 pub struct BlockingViolation {
     pub intention_id: i64,
     pub intention_name: String,
+    pub session_id: i64,
+    pub session_started_at: i64,
+    pub session_automatic_end_at: Option<i64>,
     pub blocked_target: BlockedTarget,
 }
 

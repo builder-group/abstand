@@ -26,6 +26,7 @@ pub fn run() {
             commands::get_system_typography,
             commands::notify_frontend_ready,
             commands::restart_app,
+            commands::show_intention_in_main_window,
             commands::quit_app_by_bundle_id,
             commands::open_data_directory,
             commands::reveal_log_file,

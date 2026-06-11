@@ -9,6 +9,7 @@ export const commands = {
 	getSystemTypography: () => __TAURI_INVOKE<SystemTypographyDto>("get_system_typography"),
 	notifyFrontendReady: () => __TAURI_INVOKE<void>("notify_frontend_ready"),
 	restartApp: () => typedError<null, string>(__TAURI_INVOKE("restart_app")),
+	showIntentionInMainWindow: (intentionId: number) => typedError<null, string>(__TAURI_INVOKE("show_intention_in_main_window", { intentionId })),
 	quitAppByBundleId: (bundleId: string) => typedError<QuitAppByBundleIdResult, string>(__TAURI_INVOKE("quit_app_by_bundle_id", { bundleId })),
 	openDataDirectory: () => typedError<null, string>(__TAURI_INVOKE("open_data_directory")),
 	revealLogFile: () => typedError<null, string>(__TAURI_INVOKE("reveal_log_file")),
@@ -29,6 +30,9 @@ export const commands = {
 	getBlockingViolation: () => __TAURI_INVOKE<{
 	intentionId: number,
 	intentionName: string,
+	sessionId: number,
+	sessionStartedAt: number,
+	sessionAutomaticEndAt: number | null,
 	blockedTarget: BlockedTarget,
 } | null>("get_blocking_violation"),
 	getIntentions: () => typedError<Intention[], string>(__TAURI_INVOKE("get_intentions")),
@@ -126,6 +130,9 @@ export type BlockedTarget = { type: "app"; bundleId: string; displayName: string
 export type BlockingViolation = {
 	intentionId: number,
 	intentionName: string,
+	sessionId: number,
+	sessionStartedAt: number,
+	sessionAutomaticEndAt: number | null,
 	blockedTarget: BlockedTarget,
 };
 

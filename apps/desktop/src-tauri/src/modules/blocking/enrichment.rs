@@ -13,6 +13,9 @@ pub async fn enrich_blocking_violation(
     return BlockingViolation {
         intention_id: policy_violation.intention_id,
         intention_name: policy_violation.intention_name.clone(),
+        session_id: policy_violation.session_id,
+        session_started_at: policy_violation.session_started_at,
+        session_automatic_end_at: policy_violation.session_automatic_end_at,
         blocked_target: enrich_blocked_target(app, &policy_violation.blocked_target, focus).await,
     };
 }

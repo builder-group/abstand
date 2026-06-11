@@ -2,7 +2,7 @@
 
 mod action_policy;
 pub mod commands;
-mod condition_timing;
+pub mod condition_timing;
 pub mod intention;
 pub mod repository;
 pub mod runtime;
