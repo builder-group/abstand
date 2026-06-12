@@ -79,6 +79,7 @@ pub fn run() {
             // Settings events
             settings::types::AppSettingsChangedEvent,
             // Blocking events
+            blocking::types::BlockedAppQuitTimedOutEvent,
             blocking::types::BlockingViolationChangedEvent,
             // Intentions events
             intentions::types::IntentionCreatedEvent,

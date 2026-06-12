@@ -75,6 +75,7 @@ export const commands = {
 /** Events */
 export const events = {
 	appSettingsChangedEvent: makeEvent<AppSettingsChangedEvent>("app-settings-changed-event"),
+	blockedAppQuitTimedOutEvent: makeEvent<BlockedAppQuitTimedOutEvent>("blocked-app-quit-timed-out-event"),
 	blockingViolationChangedEvent: makeEvent<BlockingViolationChangedEvent>("blocking-violation-changed-event"),
 	catalogAssetLoadedEvent: makeEvent<CatalogAssetLoadedEvent>("catalog-asset-loaded-event"),
 	intentionCreatedEvent: makeEvent<IntentionCreatedEvent>("intention-created-event"),
@@ -124,6 +125,10 @@ export type AppSettingsChangedEvent = AppSettings;
 export type AppearanceSettings = {
 	theme: Theme,
 	fontScale: number,
+};
+
+export type BlockedAppQuitTimedOutEvent = {
+	bundleId: string,
 };
 
 export type BlockedTarget = { type: "app"; bundleId: string; displayName: string; icon: string | null; color: string | null } | { type: "website"; hostname: string; displayName: string; icon: string | null; color: string | null } | { type: "device"; displayName: string };

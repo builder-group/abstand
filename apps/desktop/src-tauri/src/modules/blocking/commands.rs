@@ -1,11 +1,12 @@
 use super::{
     runtime,
-    types::{BlockingRuntimeState, BlockingViolation},
+    types::{BlockedAppQuitTimedOutEvent, BlockingRuntimeState, BlockingViolation},
 };
 use crate::environment::configs::app::AppConfig;
 use serde::Serialize;
 use std::time::{Duration, Instant};
 use tauri::{AppHandle, Manager};
+use tauri_specta::Event;
 
 #[tauri::command]
 #[specta::specta]
@@ -46,8 +47,8 @@ pub fn quit_blocked_app_by_bundle_id(
         abstand_macos::AppQuitRequestResult::NotRunning
             | abstand_macos::AppQuitRequestResult::Requested { .. }
     ) {
-        // Note: terminate() only confirms the quit request was accepted. Clear
-        // the overlay after the process actually exits.
+        // Note: terminate() only confirms the quit request was accepted.
+        // Clear the overlay after the process actually exits.
         watch_blocked_app_quit(app, bundle_id.to_string());
     }
 
@@ -71,6 +72,7 @@ fn watch_blocked_app_quit(app: AppHandle, bundle_id: String) {
                     "timed out waiting for app quit: {}",
                     bundle_id
                 );
+                let _ = BlockedAppQuitTimedOutEvent { bundle_id }.emit(&app);
                 return;
             }
 
