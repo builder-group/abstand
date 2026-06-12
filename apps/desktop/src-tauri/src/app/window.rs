@@ -65,6 +65,14 @@ impl AppWindow {
         return app.get_webview_window(self.label());
     }
 
+    pub fn is_focused(&self, app: &AppHandle) -> bool {
+        let Some(window) = self.get(app) else {
+            return false;
+        };
+
+        return window.is_focused().unwrap_or(false);
+    }
+
     /// Returns the existing native window or builds it at the default window-local route.
     ///
     /// This preserves the current route when the native window already exists. It does

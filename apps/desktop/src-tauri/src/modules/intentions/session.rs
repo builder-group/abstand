@@ -8,7 +8,11 @@ use super::{
         IntentionSessionCompletedEvent, IntentionSessionStartedEvent, IntentionSessionStoppedEvent,
     },
 };
-use crate::modules::db::types::DatabaseState;
+use crate::modules::{
+    activity::monitor,
+    blocking::{self, types::BlockingRuntimeState},
+    db::types::DatabaseState,
+};
 use std::fmt;
 use tauri::{AppHandle, Manager};
 use tauri_specta::Event;
@@ -45,6 +49,7 @@ pub async fn start_session(
         session_id: session.id,
     }
     .emit(app);
+    refresh_blocking(app).await;
 
     return Ok(session);
 }
@@ -82,6 +87,7 @@ pub async fn complete_session(
         session_id: session.id,
     }
     .emit(app);
+    clear_blocking(app, session.id);
 
     return Ok(session);
 }
@@ -117,8 +123,39 @@ pub async fn stop_session(
         session_id: session.id,
     }
     .emit(app);
+    clear_blocking(app, session.id);
 
     return Ok(session);
+}
+
+fn clear_blocking(app: &AppHandle, session_id: i64) {
+    let runtime_state = app.state::<BlockingRuntimeState>();
+    let mut runtime = runtime_state.lock().unwrap();
+    runtime.next_focus_generation();
+
+    let Some(active_violation) = runtime.active_violation() else {
+        return;
+    };
+    if active_violation.session_id != session_id {
+        return;
+    }
+
+    runtime.clear_active_violation(app);
+}
+
+async fn refresh_blocking(app: &AppHandle) {
+    match monitor::get_current_focus() {
+        Ok(focus) => {
+            blocking::runtime::handle_activity_focus(app, focus).await;
+        }
+        Err(error) => {
+            log::warn!(
+                target: LOG_TARGET,
+                "failed to refresh blocking after session start: {}",
+                error
+            );
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -153,3 +190,5 @@ impl From<IntentionSessionRepositoryError> for SessionTransitionError {
         return Self::SessionRepository(value);
     }
 }
+
+const LOG_TARGET: &str = "modules::intentions::session";

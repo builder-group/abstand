@@ -4,19 +4,16 @@ use super::{
     policy::{evaluate_active_target, BlockingPolicyDecision},
     types::{BlockingRuntimeState, BlockingViolation, BlockingViolationChangedEvent},
 };
-use crate::modules::{
-    activity::{monitor, types::ActivityFocus},
-    scheduler,
+use crate::{
+    app::window::AppWindow,
+    modules::{
+        activity::{monitor, types::ActivityFocus},
+        scheduler,
+    },
 };
 use std::time::{Duration, Instant};
 use tauri::{AppHandle, Manager};
 use tauri_specta::Event;
-
-pub struct BlockingRuntime {
-    active_violation: Option<BlockingViolation>,
-    overlay_paused_until: Option<Instant>,
-    focus_generation: u64,
-}
 
 pub async fn handle_activity_focus(app: &AppHandle, focus: ActivityFocus) {
     // Note: Policy checks can finish after newer focus events. Advance the
@@ -28,9 +25,17 @@ pub async fn handle_activity_focus(app: &AppHandle, focus: ActivityFocus) {
         runtime.next_focus_generation()
     };
 
-    // Note: App-owned windows are not policy targets. Keep the active violation
-    // so returning to the external target can re-apply the overlay.
+    // Note: The main app is the control surface for active blocking. Clear
+    // visible blocking there, but keep overlay focus ignored because it
+    // represents the blocked external target.
     if focus.is_own_process() {
+        if AppWindow::Overlay.is_focused(app) {
+            return;
+        }
+
+        let runtime_state = app.state::<BlockingRuntimeState>();
+        let mut runtime = runtime_state.lock().unwrap();
+        runtime.clear_active_violation(app);
         return;
     }
 
@@ -83,6 +88,12 @@ pub async fn handle_activity_focus(app: &AppHandle, focus: ActivityFocus) {
     }
 }
 
+pub struct BlockingRuntime {
+    active_violation: Option<BlockingViolation>,
+    overlay_paused_until: Option<Instant>,
+    focus_generation: u64,
+}
+
 impl BlockingRuntime {
     pub fn new() -> Self {
         return Self {
@@ -131,7 +142,7 @@ impl BlockingRuntime {
         let _ = BlockingViolationChangedEvent(violation).emit(app);
     }
 
-    fn clear_active_violation(&mut self, app: &AppHandle) {
+    pub fn clear_active_violation(&mut self, app: &AppHandle) {
         self.set_active_violation(app, None);
         overlay::hide(app);
     }
@@ -173,7 +184,7 @@ impl BlockingRuntime {
         return false;
     }
 
-    fn next_focus_generation(&mut self) -> u64 {
+    pub fn next_focus_generation(&mut self) -> u64 {
         self.focus_generation = self.focus_generation.wrapping_add(1);
         return self.focus_generation;
     }
