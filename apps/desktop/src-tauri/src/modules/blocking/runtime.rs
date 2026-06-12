@@ -29,6 +29,10 @@ pub async fn handle_activity_focus(app: &AppHandle, focus: ActivityFocus) {
     // visible blocking there, but keep overlay focus ignored because it
     // represents the blocked external target.
     if focus.is_own_process() {
+        if focus.is_waiting_for_window_details() {
+            return;
+        }
+
         if AppWindow::Overlay.is_focused(app) {
             return;
         }
