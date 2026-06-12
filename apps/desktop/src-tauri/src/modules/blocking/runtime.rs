@@ -29,7 +29,7 @@ pub async fn handle_activity_focus(app: &AppHandle, focus: ActivityFocus) {
     };
 
     // Note: App-owned windows are not policy targets. Keep the active violation
-    // when the main app or overlay receives focus while an external target is blocked.
+    // so returning to the external target can re-apply the overlay.
     if focus.is_own_process() {
         return;
     }

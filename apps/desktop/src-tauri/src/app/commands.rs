@@ -93,12 +93,6 @@ pub fn show_intention_in_main_window(app: AppHandle, intention_id: i64) -> Resul
         .show_at(&app, &format!("/intentions/{}", intention_id))
         .map_err(|error| error.to_string())?;
 
-    if let Some(overlay) = AppWindow::Overlay.get(&app) {
-        if let Err(error) = overlay.hide() {
-            log::warn!("failed to hide overlay after showing intention: {}", error);
-        }
-    }
-
     return Ok(());
 }
 
