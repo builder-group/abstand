@@ -2,7 +2,9 @@ use super::{
     enrichment::enrich_blocking_violation,
     overlay,
     policy::{evaluate_active_target, BlockingPolicyDecision},
-    types::{BlockingRuntimeState, BlockingViolation, BlockingViolationChangedEvent},
+    types::{
+        BlockedTarget, BlockingRuntimeState, BlockingViolation, BlockingViolationChangedEvent,
+    },
 };
 use crate::{
     app::window::AppWindow,
@@ -196,6 +198,28 @@ impl BlockingRuntime {
     fn is_current_focus_generation(&self, focus_generation: u64) -> bool {
         return self.focus_generation == focus_generation;
     }
+}
+
+pub fn clear_app_violation_for_bundle_id(app: &AppHandle, bundle_id: &str) {
+    let runtime_state = app.state::<BlockingRuntimeState>();
+    let mut runtime = runtime_state.lock().unwrap();
+    let Some(active_violation) = runtime.active_violation() else {
+        return;
+    };
+    let BlockedTarget::App {
+        bundle_id: active_bundle_id,
+        ..
+    } = active_violation.blocked_target
+    else {
+        return;
+    };
+
+    if active_bundle_id != bundle_id {
+        return;
+    }
+
+    runtime.next_focus_generation();
+    runtime.clear_active_violation(app);
 }
 
 const LOG_TARGET: &str = "modules::blocking::runtime";

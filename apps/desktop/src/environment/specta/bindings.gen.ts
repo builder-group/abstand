@@ -10,7 +10,6 @@ export const commands = {
 	notifyFrontendReady: () => __TAURI_INVOKE<void>("notify_frontend_ready"),
 	restartApp: () => typedError<null, string>(__TAURI_INVOKE("restart_app")),
 	showIntentionInMainWindow: (intentionId: number) => typedError<null, string>(__TAURI_INVOKE("show_intention_in_main_window", { intentionId })),
-	quitAppByBundleId: (bundleId: string) => typedError<QuitAppByBundleIdResult, string>(__TAURI_INVOKE("quit_app_by_bundle_id", { bundleId })),
 	openDataDirectory: () => typedError<null, string>(__TAURI_INVOKE("open_data_directory")),
 	revealLogFile: () => typedError<null, string>(__TAURI_INVOKE("reveal_log_file")),
 	confirmBalancedQuit: () => typedError<null, string>(__TAURI_INVOKE("confirm_balanced_quit")),
@@ -36,6 +35,7 @@ export const commands = {
 	blockedTarget: BlockedTarget,
 } | null>("get_blocking_violation"),
 	pauseBlockingOverlay: (durationMs: number) => typedError<null, string>(__TAURI_INVOKE("pause_blocking_overlay", { durationMs })),
+	quitBlockedAppByBundleId: (bundleId: string) => typedError<QuitBlockedAppByBundleIdResult, string>(__TAURI_INVOKE("quit_blocked_app_by_bundle_id", { bundleId })),
 	getIntentions: () => typedError<Intention[], string>(__TAURI_INVOKE("get_intentions")),
 	getIntention: (intentionId: number) => typedError<{
 	id: number,
@@ -292,7 +292,7 @@ export type LaunchAtLoginStatus = {
 	isEnabled: boolean,
 };
 
-export type QuitAppByBundleIdResult = { status: "notRunning" } | { status: "requested"; processCount: number } | { status: "failed" } | { status: "unsupported" };
+export type QuitBlockedAppByBundleIdResult = { status: "notRunning" } | { status: "requested"; processCount: number } | { status: "failed" } | { status: "unsupported" };
 
 export type QuitPreventedEvent = { reason: "activeBalancedBlock"; durationMs: number } | { reason: "activeStrictBlock" };
 
