@@ -1,10 +1,7 @@
+import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import React from 'react';
-import { CommandPaletteCxProvider, CommandPaletteModal } from '@/modules/command-palette';
 import { SettingsCxProvider } from '@/modules/settings';
-import { ShortcutsCxProvider } from '@/modules/shortcuts';
-import { UpdaterCxProvider } from '@/modules/updater';
 import { ToastsCxProvider } from '../display';
-import { AppRuntimeBridge } from './AppRuntimeBridge';
 import { ThemeProvider } from './ThemeProvider';
 import { TypographyProvider } from './TypographyProvider';
 
@@ -13,21 +10,25 @@ export const AppProvider: React.FC<TAppProviderProps> = (props) => {
 
 	return (
 		<SettingsCxProvider>
-			<ShortcutsCxProvider>
-				<TypographyProvider>
-					<ThemeProvider>
-						<ToastsCxProvider>
-							<UpdaterCxProvider>
-								<CommandPaletteCxProvider>
-									{children}
-									<CommandPaletteModal />
-									<AppRuntimeBridge />
-								</CommandPaletteCxProvider>
-							</UpdaterCxProvider>
-						</ToastsCxProvider>
-					</ThemeProvider>
-				</TypographyProvider>
-			</ShortcutsCxProvider>
+			<TypographyProvider>
+				<ThemeProvider>
+					<ToastsCxProvider>
+						{children}
+						{import.meta.env.DEV ? (
+							<TanStackRouterDevtools
+								position="bottom-right"
+								toggleButtonProps={{
+									style: {
+										width: '1rem',
+										height: '1rem',
+										overflow: 'hidden'
+									}
+								}}
+							/>
+						) : null}
+					</ToastsCxProvider>
+				</ThemeProvider>
+			</TypographyProvider>
 		</SettingsCxProvider>
 	);
 };

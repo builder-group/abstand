@@ -1,6 +1,5 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router';
-import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
-import { AppProvider } from '@/components';
+import { MainWindowProvider } from '@/components';
 
 export const Route = createFileRoute('/window/main')({
 	component: RouteComponent
@@ -8,20 +7,8 @@ export const Route = createFileRoute('/window/main')({
 
 function RouteComponent() {
 	return (
-		<AppProvider>
+		<MainWindowProvider>
 			<Outlet />
-			{import.meta.env.DEV ? (
-				<TanStackRouterDevtools
-					position="bottom-right"
-					toggleButtonProps={{
-						style: {
-							width: '1rem',
-							height: '1rem',
-							overflow: 'hidden'
-						}
-					}}
-				/>
-			) : null}
-		</AppProvider>
+		</MainWindowProvider>
 	);
 }
