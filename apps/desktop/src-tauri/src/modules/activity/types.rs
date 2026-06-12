@@ -1,3 +1,6 @@
+use crate::common::url::extract_hostname;
+use mado::{WindowBounds, WindowInfo};
+
 /// Describes the best currently available focused activity.
 ///
 /// App activation can arrive before focused window details are available, so window and browser
@@ -35,6 +38,25 @@ impl ActivityFocus {
     }
 }
 
+impl From<WindowInfo> for ActivityFocus {
+    fn from(window: WindowInfo) -> Self {
+        return Self {
+            source: ActivityFocusSource::WindowChanged,
+            pid: window.app.pid,
+            app_name: window.app.name,
+            target: ActivityTarget {
+                app_bundle_id: window.app.bundle_id,
+                website_hostname: window
+                    .browser
+                    .as_ref()
+                    .and_then(|browser| browser.url.as_deref())
+                    .and_then(extract_hostname),
+            },
+            window_bounds: window.bounds.map(ActivityWindowBounds::from),
+        };
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ActivityFocusSource {
     AppActivated { expects_window_update: bool },
@@ -53,4 +75,15 @@ pub struct ActivityWindowBounds {
     pub y: f64,
     pub width: f64,
     pub height: f64,
+}
+
+impl From<WindowBounds> for ActivityWindowBounds {
+    fn from(bounds: WindowBounds) -> Self {
+        return Self {
+            x: bounds.x,
+            y: bounds.y,
+            width: bounds.width,
+            height: bounds.height,
+        };
+    }
 }

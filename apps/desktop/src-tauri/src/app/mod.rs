@@ -51,6 +51,7 @@ pub fn run() {
             settings::commands::reset_settings,
             // Blocking commands
             blocking::commands::get_blocking_violation,
+            blocking::commands::pause_blocking_overlay,
             // Intention commands
             intentions::commands::get_intentions,
             intentions::commands::get_intention,

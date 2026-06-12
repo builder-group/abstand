@@ -4,12 +4,17 @@ use super::{
     policy::{evaluate_active_target, BlockingPolicyDecision},
     types::{BlockingRuntimeState, BlockingViolation, BlockingViolationChangedEvent},
 };
-use crate::modules::activity::types::ActivityFocus;
+use crate::modules::{
+    activity::{monitor, types::ActivityFocus},
+    scheduler,
+};
+use std::time::{Duration, Instant};
 use tauri::{AppHandle, Manager};
 use tauri_specta::Event;
 
 pub struct BlockingRuntime {
     active_violation: Option<BlockingViolation>,
+    overlay_paused_until: Option<Instant>,
     focus_generation: u64,
 }
 
@@ -82,6 +87,7 @@ impl BlockingRuntime {
     pub fn new() -> Self {
         return Self {
             active_violation: None,
+            overlay_paused_until: None,
             focus_generation: 0,
         };
     }
@@ -109,6 +115,10 @@ impl BlockingRuntime {
             violation.intention_name
         );
         self.set_active_violation(app, Some(violation.clone()));
+        if self.is_overlay_paused() {
+            return;
+        }
+
         overlay::show(app, focus, &violation);
     }
 
@@ -124,6 +134,43 @@ impl BlockingRuntime {
     fn clear_active_violation(&mut self, app: &AppHandle) {
         self.set_active_violation(app, None);
         overlay::hide(app);
+    }
+
+    pub fn pause_overlay(&mut self, app: AppHandle, pause_duration: Duration) {
+        self.overlay_paused_until = Some(Instant::now() + pause_duration);
+        overlay::hide(&app);
+
+        scheduler::schedule_after(&app, "blocking overlay pause", pause_duration, move |app| {
+            // Note: Re-check focus after the pause instead of restoring the old overlay
+            // because the blocked window may have moved or focus may have changed
+            match monitor::get_current_focus() {
+                Ok(focus) => {
+                    tauri::async_runtime::spawn(async move {
+                        handle_activity_focus(&app, focus).await;
+                    });
+                }
+                Err(error) => {
+                    log::warn!(
+                        target: LOG_TARGET,
+                        "failed to resolve focus after blocking overlay pause: {}",
+                        error
+                    );
+                }
+            };
+        });
+    }
+
+    fn is_overlay_paused(&mut self) -> bool {
+        let Some(paused_until) = self.overlay_paused_until else {
+            return false;
+        };
+
+        if Instant::now() < paused_until {
+            return true;
+        }
+
+        self.overlay_paused_until = None;
+        return false;
     }
 
     fn next_focus_generation(&mut self) -> u64 {

@@ -1,7 +1,6 @@
 //! Observes focused app, window, and browser activity.
 
-#[cfg(target_os = "macos")]
-mod monitor;
+pub mod monitor;
 pub mod types;
 
 use tauri::App;

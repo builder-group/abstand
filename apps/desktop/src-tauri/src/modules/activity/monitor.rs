@@ -1,6 +1,8 @@
-use super::types::{ActivityFocus, ActivityFocusSource, ActivityTarget, ActivityWindowBounds};
-use crate::{common::url::extract_hostname, modules::blocking};
-use mado::{MonitorConfig, WindowEvent, WindowListener, WindowMonitor as MadoWindowMonitor};
+use super::types::{ActivityFocus, ActivityFocusSource, ActivityTarget};
+use crate::modules::blocking;
+use mado::{
+    MonitorConfig, QueryConfig, WindowEvent, WindowListener, WindowMonitor as MadoWindowMonitor,
+};
 use tauri::AppHandle;
 
 pub fn start_monitoring(app: AppHandle) {
@@ -92,28 +94,19 @@ impl WindowListener for ActivityWindowListener {
                 });
             }
             WindowEvent::WindowChanged { window } => {
-                self.handle_focus_change(ActivityFocus {
-                    source: ActivityFocusSource::WindowChanged,
-                    pid: window.app.pid,
-                    app_name: window.app.name,
-                    target: ActivityTarget {
-                        app_bundle_id: window.app.bundle_id,
-                        website_hostname: window
-                            .browser
-                            .as_ref()
-                            .and_then(|browser| browser.url.as_deref())
-                            .and_then(extract_hostname),
-                    },
-                    window_bounds: window.bounds.map(|bounds| ActivityWindowBounds {
-                        x: bounds.x,
-                        y: bounds.y,
-                        width: bounds.width,
-                        height: bounds.height,
-                    }),
-                });
+                self.handle_focus_change(ActivityFocus::from(window));
             }
         }
     }
+}
+
+pub fn get_current_focus() -> Result<ActivityFocus, mado::Error> {
+    let window = mado::get_active_window_with_config(QueryConfig {
+        include_browser_info: true,
+        ..Default::default()
+    })?;
+
+    return Ok(ActivityFocus::from(window));
 }
 
 const LOG_TARGET: &str = "modules::activity::monitor";

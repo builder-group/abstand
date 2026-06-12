@@ -35,6 +35,7 @@ export const commands = {
 	sessionAutomaticEndAt: number | null,
 	blockedTarget: BlockedTarget,
 } | null>("get_blocking_violation"),
+	pauseBlockingOverlay: (durationMs: number) => typedError<null, string>(__TAURI_INVOKE("pause_blocking_overlay", { durationMs })),
 	getIntentions: () => typedError<Intention[], string>(__TAURI_INVOKE("get_intentions")),
 	getIntention: (intentionId: number) => typedError<{
 	id: number,
