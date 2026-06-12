@@ -11,6 +11,11 @@ public func abstandMacosApplyWindowTransparency(windowPtr: Int) -> Bool {
     return WindowTransparency.apply(windowPtr: windowPtr)
 }
 
+@_cdecl("abstand_macos_apply_window_screen_overlay_behavior")
+public func abstandMacosApplyWindowScreenOverlayBehavior(windowPtr: Int) -> Bool {
+    return WindowOverlay.applyWindowScreenOverlayBehavior(windowPtr: windowPtr)
+}
+
 @_cdecl("abstand_macos_get_system_font_size")
 public func abstandMacosGetSystemFontSize() -> Double {
     return Double(NSFont.systemFontSize)

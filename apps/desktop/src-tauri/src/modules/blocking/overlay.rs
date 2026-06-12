@@ -42,14 +42,6 @@ pub fn show(app: &AppHandle, focus: &ActivityFocus, violation: &BlockingViolatio
                 error
             );
         }
-
-        if let Err(error) = window.set_always_on_top(true) {
-            log::warn!(
-                target: LOG_TARGET,
-                "failed to keep blocking overlay above other windows: {}",
-                error
-            );
-        }
     }) {
         log::error!(
             target: LOG_TARGET,
