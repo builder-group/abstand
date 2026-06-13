@@ -41,7 +41,7 @@ const UpcomingIntentionsSection: React.FC = () => {
 			}
 		>
 			<TodayEmptyRow
-				title="No upcoming intentions today"
+				title="No upcoming Intentions today"
 				description="Intentions scheduled for later today will appear here."
 			/>
 		</TodaySection>
@@ -60,8 +60,8 @@ const EarlierIntentionsSection: React.FC = () => {
 			}
 		>
 			<TodayEmptyRow
-				title="No earlier intentions today"
-				description="Completed and stopped intentions from today will appear here."
+				title="No earlier Intentions today"
+				description="Completed and stopped Intentions from today will appear here."
 			/>
 		</TodaySection>
 	);

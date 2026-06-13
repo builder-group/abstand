@@ -80,7 +80,7 @@ export class CommandPaletteCx {
 			{
 				type: 'action',
 				id: 'toggle-theme',
-				label: 'Toggle Theme',
+				label: 'Toggle theme',
 				group: 'Appearance',
 				keywords: ['theme', 'appearance', 'light', 'dark', 'toggle'],
 				run: () => this.toggleTheme()

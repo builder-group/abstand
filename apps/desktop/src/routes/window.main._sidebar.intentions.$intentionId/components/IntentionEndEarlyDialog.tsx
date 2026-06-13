@@ -30,7 +30,7 @@ const IntentionEndEarlyDialog: React.FC<TIntentionEndEarlyDialogProps> = (props)
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle>End Early</DialogTitle>
+					<DialogTitle>End early</DialogTitle>
 					<DialogDescription>{intention.name}</DialogDescription>
 				</DialogHeader>
 				<DialogBody className="space-y-2">
@@ -106,7 +106,7 @@ interface TDelayedEndEarlyButtonProps {
 
 function getDelayedEndEarlyActionLabel(remainingMs: number): string {
 	if (remainingMs <= 0) {
-		return 'End Early';
+		return 'End early';
 	}
 
 	const remainingSeconds = Math.ceil(remainingMs / 1_000);

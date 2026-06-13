@@ -76,11 +76,11 @@ export const MainSidebarContent: React.FC<TMainSidebarContentProps> = (props) =>
 					) : areIntentionsLoading ? (
 						<div className="text-base-400 flex items-center gap-1 px-2 py-1 text-sm">
 							<Spinner />
-							<span>Loading intentions...</span>
+							<span>Loading Intentions...</span>
 						</div>
 					) : (
 						<p className="text-base-400 px-2 py-1 text-sm">
-							No intentions yet.{' '}
+							No Intentions yet.{' '}
 							<Link
 								to="/window/main/intentions/new"
 								className="text-primary rounded-xs underline-offset-4 hover:underline focus-visible:underline focus-visible:outline-none"

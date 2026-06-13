@@ -764,7 +764,7 @@ function getUpdateView(state: TUpdaterState, appInfo: TUpdateAppInfo): TUpdateVi
 			tone: 'muted',
 			label: 'Updates are not available in development builds.',
 			description: currentAppVersion,
-			actionLabel: 'Check for Updates',
+			actionLabel: 'Check for updates',
 			isActionDisabled: true
 		};
 	}
@@ -776,7 +776,7 @@ function getUpdateView(state: TUpdaterState, appInfo: TUpdateAppInfo): TUpdateVi
 			tone: 'muted',
 			label: 'Updates are managed by the App Store.',
 			description: currentAppVersion,
-			actionLabel: 'Check for Updates',
+			actionLabel: 'Check for updates',
 			isActionDisabled: true
 		};
 	}
@@ -799,7 +799,7 @@ function getUpdateView(state: TUpdaterState, appInfo: TUpdateAppInfo): TUpdateVi
 				tone: 'primary',
 				label: `Abstand ${state.updateInfo.version} is available.`,
 				description: 'Install the update and restart Abstand.',
-				actionLabel: 'Install Update'
+				actionLabel: 'Install update'
 			};
 		case 'upToDate':
 			return {
@@ -808,7 +808,7 @@ function getUpdateView(state: TUpdaterState, appInfo: TUpdateAppInfo): TUpdateVi
 				tone: 'success',
 				label: 'Abstand is up to date.',
 				description: currentAppVersion,
-				actionLabel: 'Check for Updates'
+				actionLabel: 'Check for updates'
 			};
 		case 'unsupported':
 			return {
@@ -817,7 +817,7 @@ function getUpdateView(state: TUpdaterState, appInfo: TUpdateAppInfo): TUpdateVi
 				tone: 'muted',
 				label: 'Updates are not available in this build.',
 				description: 'Use a signed production build to check for updates.',
-				actionLabel: 'Check for Updates',
+				actionLabel: 'Check for updates',
 				isActionDisabled: true
 			};
 		case 'error':
@@ -827,7 +827,7 @@ function getUpdateView(state: TUpdaterState, appInfo: TUpdateAppInfo): TUpdateVi
 				tone: 'error',
 				label: 'Could not check for updates.',
 				description: state.message,
-				actionLabel: 'Try Again'
+				actionLabel: 'Try again'
 			};
 		case 'idle':
 			return {
@@ -836,7 +836,7 @@ function getUpdateView(state: TUpdaterState, appInfo: TUpdateAppInfo): TUpdateVi
 				tone: 'muted',
 				label: 'Automatic update checks are off.',
 				description: currentAppVersion,
-				actionLabel: 'Check for Updates'
+				actionLabel: 'Check for updates'
 			};
 	}
 }

@@ -104,7 +104,7 @@ export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 					disabled={isDisabled || isPending}
 					onClick={handleSessionAction}
 				>
-					{isActive ? (manualEndCondition != null ? 'End' : 'End Early') : 'Begin'}
+					{isActive ? (manualEndCondition != null ? 'End' : 'End early') : 'Begin'}
 				</Button>
 			)}
 			<DropMenu>

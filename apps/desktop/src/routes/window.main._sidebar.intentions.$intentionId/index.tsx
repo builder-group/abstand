@@ -49,10 +49,10 @@ function RouteComponent() {
 
 	if (intention == null && !hasLoaded) {
 		return (
-			<ContentPage title="Loading intention" subtitle={`ID ${intentionId}`} backTo={backTo}>
+			<ContentPage title="Loading Intention" subtitle={`ID ${intentionId}`} backTo={backTo}>
 				<div className="text-base-400 flex items-center gap-2 text-sm">
 					<Spinner />
-					<span>Loading intention...</span>
+					<span>Loading Intention...</span>
 				</div>
 			</ContentPage>
 		);

@@ -32,14 +32,14 @@ function RouteComponent() {
 				case 'createFailed':
 					toastsCx.add({
 						type: 'error',
-						title: 'Could not create intention',
+						title: 'Could not create Intention',
 						description: intentionErr.message
 					});
 					break;
 				case 'startFailed':
 					toastsCx.add({
 						type: 'error',
-						title: 'Created intention, but could not start it',
+						title: 'Created Intention, but could not start it',
 						description: intentionErr.message
 					});
 					void navigate({

@@ -1015,7 +1015,7 @@ const AlertSection: React.FC = () => {
 				<Alert variant="success">
 					<CircleCheckIcon />
 					<AlertTitle>Block completed</AlertTitle>
-					<AlertDescription>The intention was marked complete and archived.</AlertDescription>
+					<AlertDescription>The Intention was marked complete and archived.</AlertDescription>
 				</Alert>
 				<Alert variant="warning">
 					<CircleAlertIcon />
@@ -1027,7 +1027,7 @@ const AlertSection: React.FC = () => {
 				<Alert variant="destructive">
 					<XCircleIcon />
 					<AlertTitle>Sync failed</AlertTitle>
-					<AlertDescription>The latest intention changes could not be uploaded.</AlertDescription>
+					<AlertDescription>The latest Intention changes could not be uploaded.</AlertDescription>
 				</Alert>
 			</PlaygroundRow>
 		</PlaygroundGroup>

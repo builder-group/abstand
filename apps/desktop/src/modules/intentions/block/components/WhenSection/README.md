@@ -2,7 +2,7 @@
 
 ## Start Modes
 
-- `Start now` persists a manual start condition and immediately starts the intention after creation.
+- `Start now` persists a manual start condition and immediately starts the Intention after creation.
 - `At time` creates a one-shot date-time start.
 - `After delay` creates a one-shot date-time start relative to submit time.
 - `Repeats` creates a schedule start with a time and optional weekday mask.

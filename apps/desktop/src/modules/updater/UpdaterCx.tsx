@@ -200,7 +200,7 @@ export const UpdaterCxProvider: React.FC<{ children: React.ReactNode }> = (props
 							})
 						}
 					>
-						Review Update
+						Review update
 					</Button>
 				)
 			}

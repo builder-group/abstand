@@ -32,7 +32,7 @@ export const ActiveIntentionsSection: React.FC<TActiveIntentionsSectionProps> = 
 				contentLayout="placeholder"
 				indicator={<ActiveSectionIndicator isActive={false} />}
 			>
-				<TodayLoadingRow title="Loading active intentions..." />
+				<TodayLoadingRow title="Loading active Intentions..." />
 			</TodaySection>
 		);
 	}
@@ -44,7 +44,7 @@ export const ActiveIntentionsSection: React.FC<TActiveIntentionsSectionProps> = 
 			indicator={<ActiveSectionIndicator isActive={false} />}
 		>
 			<TodayEmptyRow
-				title="No active intentions"
+				title="No active Intentions"
 				description="Intentions will appear here when they start."
 			/>
 		</TodaySection>

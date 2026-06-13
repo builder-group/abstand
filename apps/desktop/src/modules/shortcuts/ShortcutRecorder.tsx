@@ -12,9 +12,9 @@ export const ShortcutRecorder: React.FC<TShortcutRecorderProps> = (props) => {
 	const isEmpty = value == null;
 	const state = recording ? 'recording' : isEmpty ? 'empty' : 'idle';
 	const label = recording
-		? 'Press Shortcut'
+		? 'Press shortcut'
 		: value == null
-			? 'Record Shortcut'
+			? 'Record shortcut'
 			: formatShortcut(value);
 
 	// MARK: - Actions

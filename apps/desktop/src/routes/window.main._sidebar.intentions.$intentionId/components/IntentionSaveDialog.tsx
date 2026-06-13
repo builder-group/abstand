@@ -29,7 +29,7 @@ const IntentionSaveDialog: React.FC<TIntentionSaveDialogProps> = (props) => {
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle>Save Changes</DialogTitle>
+					<DialogTitle>Save changes</DialogTitle>
 					<DialogDescription>{intention.name}</DialogDescription>
 				</DialogHeader>
 				<DialogBody className="space-y-2">
@@ -125,7 +125,7 @@ interface TDelayedSaveButtonProps {
 
 function getDelayedSaveActionLabel(remainingMs: number): string {
 	if (remainingMs <= 0) {
-		return 'Save Changes';
+		return 'Save changes';
 	}
 
 	const remainingSeconds = Math.ceil(remainingMs / 1_000);
