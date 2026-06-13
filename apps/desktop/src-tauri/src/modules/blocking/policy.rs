@@ -92,7 +92,7 @@ fn evaluate_target(
     active_blocks: &[ActiveBlockIntention],
 ) -> BlockingPolicyDecision {
     // Note: Whole-device blocks represent the broadest active boundary, so they take priority
-    // over target-specific app and website blocks.
+    // over target-specific app and website blocks
     if let Some(intention) = active_blocks
         .iter()
         .find(|intention| intention.block.scope == IntentionBlockScope::WholeDevice)
