@@ -4,23 +4,14 @@ import React from 'react';
 import { Badge, ChevronRightIcon, HelpCarousel, HelpPopover, Select } from '@/components';
 import { type specta } from '@/environment';
 import { cn } from '@/lib';
-import {
-	CatalogIconPeek,
-	useCatalogPicker,
-	type CatalogPickerCx,
-	type TCatalogItem
-} from '@/modules/catalog';
+import { CatalogIconPeek, useCatalogPicker, type TCatalogItem } from '@/modules/catalog';
 import { SettingsGroup, SettingsRow } from '@/modules/settings';
 import { type BlockIntentionFormCx } from '../BlockIntentionFormCx';
 
 export const BlockSection: React.FC<TBlockSectionProps> = (props) => {
 	const { formCx, isDisabled = false } = props;
 
-	const {
-		open: openCatalogPicker,
-		dialog: catalogPickerDialog,
-		cx: catalogPickerCx
-	} = useCatalogPicker({
+	const { open: openCatalogPicker, dialog: catalogPickerDialog } = useCatalogPicker({
 		onConfirm: (items: TCatalogItem[]) => {
 			// Note: The picker can already be open when a submit starts, so ignore late confirms
 			if (isDisabled) {
@@ -41,7 +32,6 @@ export const BlockSection: React.FC<TBlockSectionProps> = (props) => {
 					<BlockTargetsRow
 						formCx={formCx}
 						isDisabled={isDisabled}
-						catalogPickerCx={catalogPickerCx}
 						onOpenPicker={openCatalogPicker}
 					/>
 				</SettingsGroup>
@@ -147,7 +137,7 @@ const blockScopeOptions: { value: specta.IntentionBlockScope; label: string }[] 
 ];
 
 const BlockTargetsRow: React.FC<TBlockTargetsRowProps> = (props) => {
-	const { formCx, isDisabled = false, catalogPickerCx, onOpenPicker } = props;
+	const { formCx, isDisabled = false, onOpenPicker } = props;
 	const scope = useFeatureState(formCx.$form.fields.scope);
 	const selectedTargets = useFeatureState(formCx.$form.fields.selectedTargets);
 	const selectedTargetsStatus = useFeatureState(formCx.$form.fields.selectedTargets.status);
@@ -199,7 +189,7 @@ const BlockTargetsRow: React.FC<TBlockTargetsRowProps> = (props) => {
 							: 'text-base-400'
 				)}
 			>
-				<CatalogIconPeek items={selectedTargets} cx={catalogPickerCx} />
+				<CatalogIconPeek items={selectedTargets} />
 				{targetsLabel}
 			</span>
 			<ChevronRightIcon className={targetsError != null ? 'text-red-500' : 'text-base-400'} />
@@ -210,7 +200,6 @@ const BlockTargetsRow: React.FC<TBlockTargetsRowProps> = (props) => {
 interface TBlockTargetsRowProps {
 	formCx: BlockIntentionFormCx;
 	isDisabled?: boolean;
-	catalogPickerCx: CatalogPickerCx;
 	onOpenPicker: (items: TCatalogItem[]) => void;
 }
 

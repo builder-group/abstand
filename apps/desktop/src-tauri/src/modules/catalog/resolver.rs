@@ -1,5 +1,5 @@
 use super::{
-    repository::{CatalogRepository, CatalogRepositoryError, UpsertAppInput},
+    repository::{CatalogRepository, CatalogRepositoryError, UpsertAppInput, UpsertWebsiteInput},
     types::{App, Website},
 };
 use crate::modules::db::types::DatabaseState;
@@ -31,7 +31,9 @@ pub async fn resolve_website_by_hostname(
         if let Some(website) =
             CatalogRepository::get_website_by_hostname(&database_state.pool, candidate).await?
         {
-            return Ok(Some(website));
+            return hydrate_website_asset_if_missing(&database_state, website)
+                .await
+                .map(Some);
         }
     }
 
@@ -96,6 +98,55 @@ async fn hydrate_app_asset_if_missing(
     .await?;
 
     return Ok(App { icon, color, ..app });
+}
+
+async fn hydrate_website_asset_if_missing(
+    database_state: &DatabaseState,
+    website: Website,
+) -> Result<Website, CatalogRepositoryError> {
+    if website.icon.is_some() && website.color.is_some() {
+        return Ok(website);
+    }
+
+    let hostname = website.hostname.clone();
+    let icon_data =
+        match tauri::async_runtime::spawn_blocking(move || mado::get_website_icon(&hostname, true))
+            .await
+        {
+            Ok(icon_data) => icon_data,
+            Err(error) => {
+                log::warn!(
+                    target: LOG_TARGET,
+                    "failed to hydrate website asset for {}: {}",
+                    website.hostname,
+                    error
+                );
+                return Ok(website);
+            }
+        };
+
+    let icon = icon_data.data_url.or_else(|| website.icon.clone());
+    let color = icon_data.color.or_else(|| website.color.clone());
+    if icon == website.icon && color == website.color {
+        return Ok(website);
+    }
+
+    CatalogRepository::upsert_website(
+        &database_state.pool,
+        UpsertWebsiteInput {
+            hostname: website.hostname.clone(),
+            name: website.name.clone(),
+            icon: icon.clone(),
+            color: color.clone(),
+        },
+    )
+    .await?;
+
+    return Ok(Website {
+        icon,
+        color,
+        ..website
+    });
 }
 
 const LOG_TARGET: &str = "modules::catalog::resolver";

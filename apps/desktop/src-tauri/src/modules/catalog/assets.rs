@@ -1,6 +1,5 @@
 use crate::modules::catalog::types::{CatalogAssetLoadedEvent, CatalogAssetsState, CatalogItemId};
-#[cfg(target_os = "macos")]
-use mado::get_app_icon;
+use mado::{get_app_icon, get_website_icon};
 use std::collections::HashMap;
 use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex};
@@ -117,11 +116,10 @@ fn resolve_asset(item_id: &CatalogItemId, include_color: bool) -> Option<Catalog
             let bundle_id = bundle_id.as_deref()?;
             resolve_app_asset(bundle_id, include_color)
         }
-        CatalogItemId::Website { hostname } => resolve_website_asset(hostname),
+        CatalogItemId::Website { hostname } => resolve_website_asset(hostname, include_color),
     };
 }
 
-#[cfg(target_os = "macos")]
 fn resolve_app_asset(bundle_id: &str, include_color: bool) -> Option<CatalogAsset> {
     let icon_data = get_app_icon(bundle_id, 64, include_color);
     if icon_data.data_url.is_none() {
@@ -134,16 +132,14 @@ fn resolve_app_asset(bundle_id: &str, include_color: bool) -> Option<CatalogAsse
     });
 }
 
-#[cfg(not(target_os = "macos"))]
-fn resolve_app_asset(_bundle_id: &str, _include_color: bool) -> Option<CatalogAsset> {
-    return None;
-}
+pub fn resolve_website_asset(hostname: &str, include_color: bool) -> Option<CatalogAsset> {
+    let icon_data = get_website_icon(hostname, include_color);
+    if icon_data.data_url.is_none() {
+        return None;
+    }
 
-fn resolve_website_asset(hostname: &str) -> Option<CatalogAsset> {
     return Some(CatalogAsset {
-        icon: Some(format!(
-            "https://www.google.com/s2/favicons?domain={hostname}&sz=64"
-        )),
-        color: None,
+        icon: icon_data.data_url,
+        color: icon_data.color,
     });
 }

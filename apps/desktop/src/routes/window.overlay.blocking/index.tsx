@@ -190,9 +190,6 @@ const BlockedTargetIcon: React.FC<TBlockedTargetIconProps> = (props) => {
 						target.type === 'app' && 'size-14',
 						target.type === 'website' && 'size-11'
 					)}
-					style={
-						target.type === 'website' ? { backgroundColor: target.color ?? undefined } : undefined
-					}
 				/>
 			) : (
 				<FallbackTargetIcon className="text-base-600 size-7" />

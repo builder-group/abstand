@@ -1,4 +1,4 @@
-import { useCompute, useEventCallback, useFeatureState } from 'feature-react/state';
+import { useEventCallback, useFeatureState } from 'feature-react/state';
 import React from 'react';
 import {
 	Button,
@@ -80,12 +80,10 @@ interface TCatalogPickerDialogProps {
 
 const SelectedItemRow: React.FC<TSelectedItemRowProps> = (props) => {
 	const { item, cx } = props;
-	const key = getCatalogItemKey(item);
-	const icon = useCompute(cx.$iconAssets, (value) => value[key]);
 
 	return (
 		<SettingsRowFrame className="group/selected-item relative gap-1.5" variant="compact">
-			<CatalogItemIcon item={item} icon={icon} />
+			<CatalogItemIcon item={item} />
 			<div className="flex min-w-0 flex-1 flex-col">
 				<span className="text-base-950 truncate text-sm">{getCatalogItemLabel(item)}</span>
 				<span className="text-base-400 truncate text-xs">{getCatalogItemSublabel(item)}</span>

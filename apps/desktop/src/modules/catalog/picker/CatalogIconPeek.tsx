@@ -1,23 +1,16 @@
-import { useFeatureState } from 'feature-react/state';
 import React from 'react';
 import { Tooltip } from '@/components';
 import { cn } from '@/lib';
-import {
-	getCatalogItemKey,
-	getCatalogItemLabel,
-	type CatalogPickerCx,
-	type TCatalogItem
-} from './CatalogPickerCx';
+import { getCatalogItemKey, getCatalogItemLabel, type TCatalogItem } from './CatalogPickerCx';
 
 export const CatalogIconPeek: React.FC<TCatalogIconPeekProps> = (props) => {
-	const { items, cx, limit = 4, className } = props;
-	const iconAssets = useFeatureState(cx.$iconAssets);
+	const { items, limit = 4, className } = props;
 	const previewIcons = React.useMemo(() => {
 		const result: TCatalogPreviewIcon[] = [];
 		const labels = new Set<string>();
 		for (const item of items) {
 			const key = getCatalogItemKey(item);
-			const icon = iconAssets[key] ?? (item.type === 'app' ? item.app.icon : item.website.icon);
+			const icon = item.type === 'app' ? item.app.icon : item.website.icon;
 			if (icon == null) {
 				continue;
 			}
@@ -36,7 +29,7 @@ export const CatalogIconPeek: React.FC<TCatalogIconPeekProps> = (props) => {
 			}
 		}
 		return result;
-	}, [iconAssets, items, limit]);
+	}, [items, limit]);
 
 	// MARK: - UI
 
@@ -67,7 +60,6 @@ export const CatalogIconPeek: React.FC<TCatalogIconPeekProps> = (props) => {
 
 interface TCatalogIconPeekProps {
 	items: TCatalogItem[];
-	cx: CatalogPickerCx;
 	limit?: number;
 	className?: string;
 }
