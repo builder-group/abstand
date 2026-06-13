@@ -34,6 +34,7 @@ export {
 	MonitorIcon,
 	MonitorPauseIcon,
 	MoonIcon,
+	MoveRightIcon,
 	MoreVerticalIcon,
 	PanelLeftCloseIcon,
 	PanelLeftOpenIcon,

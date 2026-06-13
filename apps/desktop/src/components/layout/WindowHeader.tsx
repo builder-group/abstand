@@ -1,12 +1,12 @@
 import { mergeProps } from '@base-ui/react/merge-props';
 import { useRender } from '@base-ui/react/use-render';
-import { useNavigate } from '@tanstack/react-router';
+import { useLocation, useNavigate } from '@tanstack/react-router';
 import { useFeatureState } from 'feature-react/state';
 import React from 'react';
 import { useAppInfo, usePlatform } from '@/hooks';
 import { cn } from '@/lib';
 import { useUpdaterCx } from '@/modules/updater';
-import { Badge } from '../display';
+import { Badge, MoveRightIcon } from '../display';
 
 export const WindowHeader: React.FC<TWindowHeaderProps> = (props) => {
 	const {
@@ -20,14 +20,24 @@ export const WindowHeader: React.FC<TWindowHeaderProps> = (props) => {
 	} = props;
 	const appInfo = useAppInfo();
 	const navigate = useNavigate();
+	const { pathname, hash } = useLocation({
+		select: (location) => ({
+			pathname: location.pathname,
+			hash: location.hash
+		})
+	});
 	const updaterCx = useUpdaterCx();
 	const updateState = useFeatureState(updaterCx.$updateState);
 
-	const showUpdateBadge = showBadges && updateState.type === 'available';
+	const isViewingUpdatesSettings =
+		pathname === '/window/main/settings/general' && hash === 'updates';
+	const hasAvailableUpdate = updateState.type === 'available';
+	const showUpdateBadge = showBadges && !isViewingUpdatesSettings && hasAvailableUpdate;
 	const showDevBadge =
-		showBadges && !showUpdateBadge && !appInfo.isPending && appInfo.stage === 'dev';
+		showBadges && !hasAvailableUpdate && !appInfo.isPending && appInfo.stage === 'dev';
 	const showBetaBadge =
 		showBadges &&
+		!hasAvailableUpdate &&
 		!appInfo.isPending &&
 		appInfo.stage === 'prod' &&
 		appInfo.version.startsWith('v0.') &&
@@ -68,12 +78,16 @@ export const WindowHeader: React.FC<TWindowHeaderProps> = (props) => {
 					)}
 					{showUpdateBadge && (
 						<Badge
-							render={<button type="button" aria-label="Review available update" />}
+							render={<button type="button" aria-label="Open update settings" />}
 							variant="default"
-							className="bg-primary text-primary-content hover:bg-primary/90 font-semibold"
+							className="bg-primary text-primary-content hover:bg-primary/90 group/update-badge gap-0 font-semibold"
 							onClick={handleOpenUpdates}
 						>
 							Update
+							<MoveRightIcon
+								aria-hidden
+								className="ml-0 size-3.5 w-0 opacity-0 transition-[width,margin,opacity] group-hover/update-badge:ml-1 group-hover/update-badge:w-3.5 group-hover/update-badge:opacity-100 group-focus-visible/update-badge:ml-1 group-focus-visible/update-badge:w-3.5 group-focus-visible/update-badge:opacity-100"
+							/>
 						</Badge>
 					)}
 				</div>
