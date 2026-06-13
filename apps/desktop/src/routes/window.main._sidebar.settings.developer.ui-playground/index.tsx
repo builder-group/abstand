@@ -148,6 +148,7 @@ const ButtonSection: React.FC = () => {
 			<PlaygroundRow label="Sizes">
 				<Button>Default (sm)</Button>
 				<Button size="md">Medium (md)</Button>
+				<Button size="lg">Large (lg)</Button>
 			</PlaygroundRow>
 			<PlaygroundRow label="Variants">
 				<Button>Default</Button>
