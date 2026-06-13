@@ -131,6 +131,21 @@ export function formatDisplayTime(date: Date): string {
 	return displayTimeFormatter.format(date);
 }
 
+export function formatActiveTimeRangeLabel(options: TFormatActiveTimeRangeLabelOptions): string {
+	const { startedAt, endsAt } = options;
+
+	if (endsAt != null) {
+		return `Until ${formatDisplayTime(new Date(endsAt))}`;
+	}
+
+	return `Started ${formatDisplayTime(new Date(startedAt))}`;
+}
+
+interface TFormatActiveTimeRangeLabelOptions {
+	startedAt: number;
+	endsAt: number | null;
+}
+
 export function addTimeOfDayMs(timeOfDayMs: specta.TimeOnly, deltaMs: number): specta.TimeOnly {
 	return normalizeTimeOfDayMs(timeOfDayMs + deltaMs);
 }

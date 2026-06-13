@@ -27,6 +27,7 @@ export {
 	GlobeIcon,
 	LibraryBigIcon,
 	LoaderIcon,
+	LogOutIcon,
 	MailIcon,
 	MessageCircleIcon,
 	MinusIcon,

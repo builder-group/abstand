@@ -3,7 +3,7 @@ import { useCompute, useFeatureState } from 'feature-react/state';
 import React from 'react';
 import { MonitorPauseIcon, ShieldIcon } from '@/components';
 import { type specta } from '@/environment';
-import { formatDisplayTime } from '@/lib';
+import { formatActiveTimeRangeLabel } from '@/lib';
 import { type TBlockIntention } from '@/modules/intentions';
 import { SettingsRowFrame } from '@/modules/settings';
 import { type TodayPageCx } from '../lib';
@@ -84,7 +84,7 @@ const ActiveIntentionRow: React.FC<TActiveIntentionRowProps> = (props) => {
 				<span className="text-base-950 truncate text-sm">{intention.name}</span>
 				<span className="text-base-400 truncate text-xs">
 					{[
-						formatActiveHorizon(session.startedAt, automaticEndAt),
+						formatActiveTimeRangeLabel({ startedAt: session.startedAt, endsAt: automaticEndAt }),
 						formatIntentionBehavior(intention)
 					].join(' · ')}
 				</span>
@@ -118,14 +118,6 @@ const IntentionIcon: React.FC<TIntentionIconProps> = (props) => {
 
 interface TIntentionIconProps {
 	intention: specta.Intention;
-}
-
-function formatActiveHorizon(startedAt: number, automaticEndAt: number | null): string {
-	if (automaticEndAt != null) {
-		return `Until ${formatDisplayTime(new Date(automaticEndAt))}`;
-	}
-
-	return `Started ${formatDisplayTime(new Date(startedAt))}`;
 }
 
 function formatIntentionBehavior(intention: specta.Intention): string {
