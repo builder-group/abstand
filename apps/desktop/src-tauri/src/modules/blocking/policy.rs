@@ -91,20 +91,36 @@ fn evaluate_target(
     target: &ActivityTarget,
     active_blocks: &[ActiveBlockIntention],
 ) -> BlockingPolicyDecision {
+    // Note: Whole-device blocks represent the broadest active boundary, so they take priority
+    // over target-specific app and website blocks.
+    if let Some(intention) = active_blocks
+        .iter()
+        .find(|intention| intention.block.scope == IntentionBlockScope::WholeDevice)
+    {
+        return blocked_decision(intention, BlockingPolicyTarget::Device);
+    }
+
     for intention in active_blocks {
         if let Some(blocked_target) = blocked_target_for_block(&intention.block, target) {
-            return BlockingPolicyDecision::Blocked(BlockingPolicyViolation {
-                intention_id: intention.id,
-                intention_name: intention.name.clone(),
-                session_id: intention.session_id,
-                session_started_at: intention.session_started_at,
-                session_automatic_end_at: intention.session_automatic_end_at,
-                blocked_target,
-            });
+            return blocked_decision(intention, blocked_target);
         }
     }
 
     return BlockingPolicyDecision::Allowed;
+}
+
+fn blocked_decision(
+    intention: &ActiveBlockIntention,
+    blocked_target: BlockingPolicyTarget,
+) -> BlockingPolicyDecision {
+    return BlockingPolicyDecision::Blocked(BlockingPolicyViolation {
+        intention_id: intention.id,
+        intention_name: intention.name.clone(),
+        session_id: intention.session_id,
+        session_started_at: intention.session_started_at,
+        session_automatic_end_at: intention.session_automatic_end_at,
+        blocked_target,
+    });
 }
 
 #[derive(Debug, Clone)]
@@ -353,6 +369,34 @@ mod tests {
             BlockingPolicyDecision::Blocked(BlockingPolicyViolation {
                 intention_id: 1,
                 intention_name: "Deep Work".to_string(),
+                session_id: TEST_SESSION_ID,
+                session_started_at: TEST_SESSION_STARTED_AT,
+                session_automatic_end_at: TEST_SESSION_AUTOMATIC_END_AT,
+                blocked_target: BlockingPolicyTarget::Device,
+            })
+        );
+    }
+
+    #[test]
+    fn whole_device_block_takes_priority_over_target_block() {
+        let target_block = block_targets_intention(vec![app("com.figma.Desktop")], vec![]);
+        let whole_device_block = ActiveBlockIntention {
+            id: 2,
+            name: "Sleep".to_string(),
+            session_id: TEST_SESSION_ID,
+            session_started_at: TEST_SESSION_STARTED_AT,
+            session_automatic_end_at: TEST_SESSION_AUTOMATIC_END_AT,
+            block: block(IntentionBlockScope::WholeDevice, vec![], vec![]),
+        };
+
+        assert_eq!(
+            evaluate_target(
+                &app_target("com.figma.Desktop"),
+                &[target_block, whole_device_block]
+            ),
+            BlockingPolicyDecision::Blocked(BlockingPolicyViolation {
+                intention_id: 2,
+                intention_name: "Sleep".to_string(),
                 session_id: TEST_SESSION_ID,
                 session_started_at: TEST_SESSION_STARTED_AT,
                 session_automatic_end_at: TEST_SESSION_AUTOMATIC_END_AT,

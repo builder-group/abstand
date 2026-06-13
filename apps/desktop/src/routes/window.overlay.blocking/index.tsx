@@ -41,6 +41,7 @@ function RouteComponent() {
 const BlockingOverlay: React.FC<TBlockingOverlayProps> = (props) => {
 	const { violation, cx } = props;
 	const target = violation.blockedTarget;
+	const isDeviceBlock = target.type === 'device';
 
 	return (
 		<main className="bg-base-0/55 text-base-950 relative grid h-screen w-screen grid-rows-[auto_1fr_auto] overflow-hidden px-6 py-8 text-center select-none supports-backdrop-filter:backdrop-blur-xl sm:px-12 sm:py-10">
@@ -62,11 +63,13 @@ const BlockingOverlay: React.FC<TBlockingOverlayProps> = (props) => {
 				<BlockedTargetIcon target={target} />
 				<div className="flex max-w-2xl flex-col items-center gap-4">
 					<h1 className="text-base-950 max-w-full text-[34px] leading-[1.08] font-semibold text-balance wrap-break-word sm:text-[40px]">
-						{target.displayName} can wait
+						{isDeviceBlock ? 'Screen time can wait' : `${target.displayName} can wait`}
 					</h1>
 					<p className="text-base-500 max-w-xl text-[15px] leading-6 font-medium text-balance">
-						<IntentionNameLink name={violation.intentionName} cx={cx} /> is active. You asked for
-						distance from {target.displayName}.
+						<IntentionNameLink name={violation.intentionName} cx={cx} /> is active.{' '}
+						{isDeviceBlock
+							? 'You chose to step away from this device.'
+							: `You asked for distance from ${target.displayName}.`}
 					</p>
 				</div>
 			</div>
