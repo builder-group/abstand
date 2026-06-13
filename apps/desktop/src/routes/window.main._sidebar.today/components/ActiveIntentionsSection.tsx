@@ -3,7 +3,7 @@ import { useCompute, useFeatureState } from 'feature-react/state';
 import React from 'react';
 import { MonitorPauseIcon, ShieldIcon } from '@/components';
 import { type specta } from '@/environment';
-import { formatActiveTimeRangeLabel } from '@/lib';
+import { cn, formatActiveTimeRangeLabel } from '@/lib';
 import { type TBlockIntention } from '@/modules/intentions';
 import { SettingsRowFrame } from '@/modules/settings';
 import { type TodayPageCx } from '../lib';
@@ -17,7 +17,7 @@ export const ActiveIntentionsSection: React.FC<TActiveIntentionsSectionProps> = 
 
 	if (activeIntentions.length > 0) {
 		return (
-			<TodaySection title="Active now" indicator={<ActiveSectionIndicator />}>
+			<TodaySection title="Active now" indicator={<ActiveSectionIndicator isActive />}>
 				{activeIntentions.map((activeIntention) => (
 					<ActiveIntentionRow key={activeIntention.session.id} activeIntention={activeIntention} />
 				))}
@@ -30,7 +30,7 @@ export const ActiveIntentionsSection: React.FC<TActiveIntentionsSectionProps> = 
 			<TodaySection
 				title="Active now"
 				contentLayout="placeholder"
-				indicator={<ActiveSectionIndicator />}
+				indicator={<ActiveSectionIndicator isActive={false} />}
 			>
 				<TodayLoadingRow title="Loading active intentions..." />
 			</TodaySection>
@@ -41,7 +41,7 @@ export const ActiveIntentionsSection: React.FC<TActiveIntentionsSectionProps> = 
 		<TodaySection
 			title="Active now"
 			contentLayout="placeholder"
-			indicator={<ActiveSectionIndicator />}
+			indicator={<ActiveSectionIndicator isActive={false} />}
 		>
 			<TodayEmptyRow
 				title="No active intentions"
@@ -55,13 +55,25 @@ interface TActiveIntentionsSectionProps {
 	cx: TodayPageCx;
 }
 
-const ActiveSectionIndicator: React.FC = () => {
+const ActiveSectionIndicator: React.FC<TActiveSectionIndicatorProps> = (props) => {
+	const { isActive } = props;
+
 	return (
-		<SectionIndicator className="bg-success/10 before:bg-success/20 before:absolute before:inset-0 before:animate-ping before:rounded-full before:content-['']">
+		<SectionIndicator
+			className={cn(
+				'bg-success/10',
+				isActive &&
+					"before:bg-success/20 before:absolute before:inset-0 before:animate-ping before:rounded-full before:content-['']"
+			)}
+		>
 			<span className="bg-success size-2 rounded-full" />
 		</SectionIndicator>
 	);
 };
+
+interface TActiveSectionIndicatorProps {
+	isActive: boolean;
+}
 
 const ActiveIntentionRow: React.FC<TActiveIntentionRowProps> = (props) => {
 	const { activeIntention } = props;
