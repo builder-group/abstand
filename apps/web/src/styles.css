@@ -1,1 +1,57 @@
 @import 'tailwindcss';
+
+@theme {
+	/* Apple system colors */
+	--color-apple-blue: rgb(0 136 255);
+	--color-apple-gray: rgb(142 142 147);
+	--color-apple-gray-2: rgb(174 174 178);
+	--color-apple-gray-dark-2: rgb(99 99 102);
+	--color-apple-gray-3: rgb(199 199 204);
+	--color-apple-gray-dark-3: rgb(72 72 74);
+	--color-apple-gray-4: rgb(209 209 214);
+	--color-apple-gray-dark-4: rgb(58 58 60);
+	--color-apple-gray-5: rgb(229 229 234);
+	--color-apple-gray-dark-5: rgb(44 44 46);
+	--color-apple-gray-6: rgb(242 242 247);
+	--color-apple-gray-dark-6: rgb(28 28 30);
+
+	/* Colors */
+	--color-base-0: #ffffff;
+	--color-base-50: var(--color-apple-gray-6);
+	--color-base-100: var(--color-apple-gray-5);
+	--color-base-200: var(--color-apple-gray-4);
+	--color-base-300: var(--color-apple-gray-3);
+	--color-base-400: var(--color-apple-gray-2);
+	--color-base-500: var(--color-apple-gray);
+	--color-base-600: var(--color-apple-gray-dark-2);
+	--color-base-700: var(--color-apple-gray-dark-3);
+	--color-base-800: var(--color-apple-gray-dark-4);
+	--color-base-900: var(--color-apple-gray-dark-5);
+	--color-base-950: var(--color-apple-gray-dark-6);
+
+	--color-primary: var(--color-apple-blue);
+	--color-primary-content: #ffffff;
+
+	/* Animations */
+	--animate-fade-in: fade-in 0.8s ease-out forwards;
+	--animate-fade-in-delay: fade-in 0.8s ease-out 0.2s forwards;
+}
+
+@layer base {
+	body {
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+		text-rendering: optimizeLegibility;
+	}
+}
+
+@keyframes fade-in {
+	from {
+		transform: translateY(12px);
+		opacity: 0;
+	}
+	to {
+		transform: translateY(0);
+		opacity: 1;
+	}
+}

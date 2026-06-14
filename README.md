@@ -12,9 +12,9 @@
 <h3 align="center">Abstand <i>by <a href="https://builder.group/">builder.group</a></i></h3>
 
 <p align="center">
-  Intentional distance for focused work.
+  Block apps and websites before they pull you off track.
   <br />
-  A macOS app for holding the boundaries around your attention.
+  Open-source macOS app and website blocker for focus, wind-down, and digital detox.
   <br />
   <a href="https://abstand.app/"><strong>Download for macOS »</strong></a>
 </p>
@@ -46,11 +46,11 @@
 
 ## Introduction
 
-Abstand is an open-source macOS app and website blocker for creating intentional distance from digital distractions.
+Abstand is an open-source macOS app and website blocker for focus, wind-down, and digital detox.
 
-Your attention is like a river. Concentrated, it moves with power. Branched across tabs, apps, and notifications, it spreads thin. You feel busy. Nothing moves.
+Your attention is like a river. Concentrated, it moves with power. Branched across tabs, apps, notifications, and quick checks, it spreads thin. You feel busy. Nothing moves.
 
-**Abstand** is a macOS app that builds the banks. You define your boundaries in advance, when you are clear-headed. The app holds them when it matters, so you do not have to make the hard decision again in the moment of temptation.
+**Abstand** does not fight the water. It helps you build the banks ahead of time. You define your boundaries in advance, when you are clear-headed. The app holds them when it matters, so you do not have to make the hard decision again later.
 
 The word is German for distance. That is exactly what it creates.
 
@@ -62,11 +62,10 @@ The word is German for distance. That is exactly what it creates.
 
 ## Features
 
-- Schedule focused blocking sessions in advance
-- Block distracting apps and websites on macOS
-- Use Strict Enforcement when a commitment needs to hold
-- Start and monitor active Abstands from the menu bar
-- Keep your data local on your device
+- Schedule blocks in advance
+- Block apps, websites, or the whole Mac
+- Choose casual, balanced, or strict enforcement
+- Keep schedules and settings on your device
 - Open source under AGPL v3
 
 ## How it works

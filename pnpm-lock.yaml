@@ -129,6 +129,12 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      feature-fetch:
+        specifier: ^0.1.0
+        version: 0.1.0
+      lucide-react:
+        specifier: ^1.17.0
+        version: 1.17.0(react@19.2.7)
       react:
         specifier: ^19.2.7
         version: 19.2.7
@@ -165,6 +171,14 @@ importers:
         version: 4.3.0
 
 packages:
+
+  '@0no-co/graphql.web@1.3.1':
+    resolution: {integrity: sha512-QBAMryUITHqs9MC0aMPy/YFxXYzaiOv9Ttqf/Ch+rLqZpMyFxZmJQcqzSRdR/sNsnxrlvii+mRe+BAOAki0+dw==}
+    peerDependencies:
+      graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
+    peerDependenciesMeta:
+      graphql:
+        optional: true
 
   '@babel/code-frame@7.27.1':
     resolution: {integrity: sha512-cjQ7ZlQ0Mv3b47hABuTevyTuYN4i+loJKGeV9flcCgIK37cCXRh+L1bd3iBHlynerhQ7BhCkn2BPbQUL+rGqFg==}
@@ -1505,6 +1519,9 @@ packages:
   feature-core@0.0.2:
     resolution: {integrity: sha512-1HRPj1lYzcoiJlBo4HVnMiBGOXREvCB12C6wjG22YKN3YHzNFB9PiSxknPncJTP03KV/p6ZUQ7PAd7TWSXOn7A==}
 
+  feature-fetch@0.1.0:
+    resolution: {integrity: sha512-7eNBWIddV35GLK0JE0CB7IV3Ta5Ea6vACkXvEOncWwPzx1jRxctNdhBb+gGHlvr0ahk0kxZvJ8ww9ZT9tL5IKg==}
+
   feature-form@0.1.0:
     resolution: {integrity: sha512-UsoMrutQzPFI8yHMWy8Vk0Ju5u17c61O+qdTgrygUSPwW89hb37oSx1w+we3sKbnOQNxzOwOgyVd+FtlBE7fOg==}
 
@@ -1879,6 +1896,9 @@ packages:
 
   once@1.4.0:
     resolution: {integrity: sha512-lNaJgI+2Q5URQBkccEKHTQOPaXdUxnZZElQTZY0MFUAuaEqe1E+Nyvgdz/aIyNi6Z9MzO5dv1H8n58/GELp3+w==}
+
+  openapi-typescript-helpers@0.1.0:
+    resolution: {integrity: sha512-OKTGPthhivLw/fHz6c3OPtg72vi86qaMlqbJuVJ23qOvQ+53uw1n7HdmkJFibloF7QEjDrDkzJiOJuockM/ljw==}
 
   optionator@0.9.4:
     resolution: {integrity: sha512-6IpQ7mKUxRcZNLIObR0hz7lxsapSSIYNZJwXPGeF0mTVqGKFIXj1DQcMoT22S3ROcLyY/rz0PWaWZ9ayWmad9g==}
@@ -2467,6 +2487,8 @@ packages:
     resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
 
 snapshots:
+
+  '@0no-co/graphql.web@1.3.1': {}
 
   '@babel/code-frame@7.27.1':
     dependencies:
@@ -3996,6 +4018,15 @@ snapshots:
 
   feature-core@0.0.2: {}
 
+  feature-fetch@0.1.0:
+    dependencies:
+      '@0no-co/graphql.web': 1.3.1
+      feature-core: 0.0.2
+      openapi-typescript-helpers: 0.1.0
+      tuple-result: 0.1.0
+    transitivePeerDependencies:
+      - graphql
+
   feature-form@0.1.0:
     dependencies:
       '@standard-schema/spec': 1.1.0
@@ -4307,6 +4338,8 @@ snapshots:
   once@1.4.0:
     dependencies:
       wrappy: 1.0.2
+
+  openapi-typescript-helpers@0.1.0: {}
 
   optionator@0.9.4:
     dependencies:

@@ -29,7 +29,7 @@ function ShellComponent(props: { children: React.ReactNode }) {
 			<head>
 				<HeadContent />
 			</head>
-			<body className="bg-[#f2f2f7] font-sans text-black antialiased">
+			<body className="bg-base-50 text-base-950 font-sans antialiased">
 				{children}
 				{import.meta.env.DEV ? <TanStackRouterDevtools position="bottom-right" /> : null}
 				<Scripts />
