@@ -42,7 +42,7 @@ export const ToggleGroup: React.FC<TToggleGroupProps> = (props) => {
 			data-spacing={spacing}
 			orientation={orientation}
 			style={getToggleGroupStyle(style, spacing)}
-			className={cn(toggleGroupVariants({ orientation, variant }), className)}
+			className={cn(toggleGroupVariants({ orientation }), className)}
 			{...rest}
 		>
 			<ToggleGroupContext value={{ variant, size, spacing, orientation }}>
@@ -60,18 +60,12 @@ export interface TToggleGroupProps extends ToggleGroupPrimitive.Props {
 
 const toggleGroupVariants = cva('group/toggle-group inline-flex w-fit items-center rounded-lg', {
 	variants: {
-		variant: {
-			default: '',
-			ghost: '',
-			outline: 'data-[spacing=0]:bg-base-0'
-		},
 		orientation: {
 			horizontal: 'flex-row',
 			vertical: 'flex-col items-stretch'
 		}
 	},
 	defaultVariants: {
-		variant: 'default',
 		orientation: 'horizontal'
 	}
 });
