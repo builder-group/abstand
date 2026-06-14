@@ -50,12 +50,14 @@ const unknownPlatformInfo: TPlatformInfo = { platform: null };
 
 function detectOS(): TPlatformInfo['platform'] {
 	const userAgent = navigator.userAgent;
-	const isDesktopMac = userAgent.includes('Mac') && navigator.maxTouchPoints <= 1;
 
+	const isDesktopMac = userAgent.includes('Mac') && navigator.maxTouchPoints <= 1;
 	if (isDesktopMac) {
 		return 'macos';
 	}
-	if (userAgent.includes('iPhone') || userAgent.includes('iPad') || userAgent.includes('iPod')) {
+	const isIOS =
+		userAgent.includes('iPhone') || userAgent.includes('iPad') || userAgent.includes('iPod');
+	if (isIOS) {
 		return 'ios';
 	}
 	if (userAgent.includes('Android')) {
