@@ -9,6 +9,7 @@ use super::{
         IntentionRepository, IntentionSessionRepository, WriteIntentionBehaviorInput,
         WriteIntentionBlockInput, WriteIntentionConditionInput, WriteIntentionInput,
     },
+    timed_evaluator::{TimedConditionActivation, TimedConditionTransition},
     types::{
         IntentionCreatedEvent, IntentionDeletedEvent, IntentionRuntimeState, IntentionUpdatedEvent,
     },
@@ -25,6 +26,7 @@ use crate::{
 };
 use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Sqlite};
+use std::collections::HashMap;
 use tauri::{AppHandle, State};
 use tauri_specta::Event;
 
@@ -78,12 +80,14 @@ pub async fn get_active_intention_session(
 pub async fn get_today_intention_overview(
     database_state: State<'_, DatabaseState>,
 ) -> Result<TodayIntentionOverviewDto, String> {
+    let now = unix_ms_now();
     let active = get_today_active_intentions(&database_state.pool).await?;
-    let earlier_today = get_earlier_today_intentions(&database_state.pool).await?;
+    let upcoming_today = get_upcoming_today_intentions(&database_state.pool, now).await?;
+    let earlier_today = get_earlier_today_intentions(&database_state.pool, now).await?;
 
     return Ok(TodayIntentionOverviewDto {
         active,
-        upcoming_today: Vec::new(),
+        upcoming_today,
         earlier_today,
     });
 }
@@ -114,10 +118,67 @@ async fn get_today_active_intentions(
     return Ok(active);
 }
 
+async fn get_upcoming_today_intentions(
+    pool: &Pool<Sqlite>,
+    now: i64,
+) -> Result<Vec<TodayUpcomingIntentionDto>, String> {
+    let today_bounds = local_day_bounds_containing(now)
+        .ok_or_else(|| "Could not resolve local day bounds".to_string())?;
+    let timed_conditions = IntentionRepository::get_timed_conditions(pool)
+        .await
+        .map_err(|error| error.to_string())?;
+
+    let mut earliest_trigger_at_by_intention_id = HashMap::<i64, i64>::new();
+    for condition in timed_conditions {
+        if condition.transition != TimedConditionTransition::Start {
+            continue;
+        }
+
+        let activation = condition
+            .evaluate_activation(pool, now)
+            .await
+            .map_err(|error| error.to_string())?;
+        let trigger_at = match activation {
+            TimedConditionActivation::Future { trigger_at }
+                if trigger_at > now && trigger_at < today_bounds.end_at =>
+            {
+                trigger_at
+            }
+            _ => continue,
+        };
+
+        earliest_trigger_at_by_intention_id
+            .entry(condition.intention_id)
+            .and_modify(|current| *current = (*current).min(trigger_at))
+            .or_insert(trigger_at);
+    }
+
+    let mut intention_triggers = earliest_trigger_at_by_intention_id
+        .into_iter()
+        .collect::<Vec<_>>();
+    intention_triggers.sort_by_key(|(intention_id, trigger_at)| (*trigger_at, *intention_id));
+
+    let mut upcoming_today = Vec::new();
+    for (intention_id, trigger_at) in intention_triggers {
+        let intention = IntentionRepository::get_by_id(pool, intention_id)
+            .await
+            .map_err(|error| error.to_string())?
+            .ok_or_else(|| format!("Upcoming Intention {} does not exist", intention_id))?;
+
+        upcoming_today.push(TodayUpcomingIntentionDto {
+            intention,
+            trigger_at,
+        });
+    }
+
+    return Ok(upcoming_today);
+}
+
 async fn get_earlier_today_intentions(
     pool: &Pool<Sqlite>,
+    now: i64,
 ) -> Result<Vec<TodayEarlierIntentionDto>, String> {
-    let today_bounds = local_day_bounds_containing(unix_ms_now())
+    let today_bounds = local_day_bounds_containing(now)
         .ok_or_else(|| "Could not resolve local day bounds".to_string())?;
     let earlier_sessions = IntentionSessionRepository::get_finished_sessions_ended_in_range(
         pool,

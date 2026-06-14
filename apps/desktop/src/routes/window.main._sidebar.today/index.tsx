@@ -1,12 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
 import React from 'react';
-import { ClockIcon, ContentPage } from '@/components';
+import { ContentPage } from '@/components';
 import {
 	ActiveIntentionsSection,
 	EarlierIntentionsSection,
-	SectionIndicator,
-	TodayEmptyRow,
-	TodaySection
+	UpcomingIntentionsSection
 } from './components';
 import { useTodayHeader } from './hooks';
 import { useCreateTodayPageCx } from './lib';
@@ -23,28 +21,9 @@ function RouteComponent() {
 		<ContentPage title={todayHeader.todayLabel} subtitle={todayHeader.greeting}>
 			<div className="space-y-5">
 				<ActiveIntentionsSection cx={cx} />
-				<UpcomingIntentionsSection />
+				<UpcomingIntentionsSection cx={cx} />
 				<EarlierIntentionsSection cx={cx} />
 			</div>
 		</ContentPage>
 	);
 }
-
-const UpcomingIntentionsSection: React.FC = () => {
-	return (
-		<TodaySection
-			title="Upcoming today"
-			contentLayout="placeholder"
-			indicator={
-				<SectionIndicator className="bg-warning/10 text-warning">
-					<ClockIcon />
-				</SectionIndicator>
-			}
-		>
-			<TodayEmptyRow
-				title="Nothing scheduled later today"
-				description="Intentions scheduled for later today will appear here."
-			/>
-		</TodaySection>
-	);
-};
