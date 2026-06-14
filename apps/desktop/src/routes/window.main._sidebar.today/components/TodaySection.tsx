@@ -1,5 +1,4 @@
 import React from 'react';
-import { Spinner } from '@/components';
 import { cn } from '@/lib';
 import { SettingsGroup } from '@/modules/settings';
 
@@ -66,19 +65,4 @@ export const TodayEmptyRow: React.FC<TTodayEmptyRowProps> = (props) => {
 interface TTodayEmptyRowProps {
 	title: string;
 	description: string;
-}
-
-export const TodayLoadingRow: React.FC<TTodayLoadingRowProps> = (props) => {
-	const { title } = props;
-
-	return (
-		<div className="text-base-500 flex max-w-sm items-center justify-center gap-1.5 px-2.5 py-3 text-sm">
-			<Spinner />
-			<span>{title}</span>
-		</div>
-	);
-};
-
-interface TTodayLoadingRowProps {
-	title: string;
 }

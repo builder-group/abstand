@@ -1,50 +1,37 @@
-import { useCompute, useFeatureState } from 'feature-react/state';
+import { useFeatureState } from 'feature-react/state';
 import React from 'react';
 import { type specta } from '@/environment';
 import { cn, formatActiveTimeRangeLabel } from '@/lib';
 import { formatIntentionBehavior } from '@/modules/intentions';
 import { type TodayPageCx } from '../lib';
 import { TodayIntentionRow } from './TodayIntentionRow';
-import { SectionIndicator, TodayEmptyRow, TodayLoadingRow, TodaySection } from './TodaySection';
+import { SectionIndicator, TodayEmptyRow, TodaySection } from './TodaySection';
 
 export const ActiveIntentionsSection: React.FC<TActiveIntentionsSectionProps> = (props) => {
 	const { cx } = props;
 	const todayOverview = useFeatureState(cx.$todayOverview);
-	const isTodayOverviewLoading = useCompute(cx.$hasLoaded, (value) => !value);
 	const activeIntentions = todayOverview?.active ?? [];
 
-	if (activeIntentions.length > 0) {
-		return (
-			<TodaySection title="Active now" indicator={<ActiveSectionIndicator isActive />}>
-				{activeIntentions.map((activeIntention) => (
-					<ActiveIntentionRow key={activeIntention.session.id} activeIntention={activeIntention} />
-				))}
-			</TodaySection>
-		);
-	}
-
-	if (isTodayOverviewLoading) {
+	if (!activeIntentions.length) {
 		return (
 			<TodaySection
 				title="Active now"
 				contentLayout="placeholder"
 				indicator={<ActiveSectionIndicator isActive={false} />}
 			>
-				<TodayLoadingRow title="Loading active Intentions..." />
+				<TodayEmptyRow
+					title="No active Intention"
+					description="Start an Intention or schedule one for later today."
+				/>
 			</TodaySection>
 		);
 	}
 
 	return (
-		<TodaySection
-			title="Active now"
-			contentLayout="placeholder"
-			indicator={<ActiveSectionIndicator isActive={false} />}
-		>
-			<TodayEmptyRow
-				title="No active Intentions"
-				description="Start an Intention or wait for the next scheduled one."
-			/>
+		<TodaySection title="Active now" indicator={<ActiveSectionIndicator isActive />}>
+			{activeIntentions.map((activeIntention) => (
+				<ActiveIntentionRow key={activeIntention.session.id} activeIntention={activeIntention} />
+			))}
 		</TodaySection>
 	);
 };

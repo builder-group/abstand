@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { useFeatureState } from 'feature-react/state';
 import React from 'react';
-import { ContentPage } from '@/components';
+import { ContentPage, Spinner } from '@/components';
 import {
 	ActiveIntentionsSection,
 	EarlierIntentionsSection,
@@ -16,6 +17,21 @@ export const Route = createFileRoute('/window/main/_sidebar/today/')({
 function RouteComponent() {
 	const todayHeader = useTodayHeader();
 	const cx = useCreateTodayPageCx();
+	const hasTodayOverviewLoaded = useFeatureState(cx.$hasLoaded);
+
+	if (!hasTodayOverviewLoaded) {
+		return (
+			<ContentPage
+				title={todayHeader.todayLabel}
+				subtitle={todayHeader.greeting}
+				contentClassName="flex h-full flex-col"
+			>
+				<div className="flex flex-1 items-center justify-center">
+					<Spinner size="md" />
+				</div>
+			</ContentPage>
+		);
+	}
 
 	return (
 		<ContentPage title={todayHeader.todayLabel} subtitle={todayHeader.greeting}>
