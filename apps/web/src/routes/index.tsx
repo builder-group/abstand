@@ -59,9 +59,6 @@ function RouteComponent() {
 	const platformInfo = useDetectPlatform();
 	const macArchitecture = platformInfo.platform === 'macos' ? platformInfo.macArchitecture : null;
 
-	// Note: Keeps the unknown SSR snapshot neutral until client platform detection runs
-	const isKnownNonMac = platformInfo.platform != null && platformInfo.platform !== 'macos';
-
 	const directMacDownloadUrl =
 		macArchitecture != null
 			? macArchitecture === 'intel'
@@ -94,7 +91,7 @@ function RouteComponent() {
 					</h1>
 					<p className="text-base-600 mt-6 max-w-2xl text-lg leading-8 sm:text-xl">
 						Abstand is an open-source app and website blocker for focus, wind-down, and digital
-						detox. Schedule blocks for apps, websites, or your whole Mac, choose how firm they
+						detox. Schedule blocks for apps, websites, or your whole Mac. Choose how firm they
 						should be, and let Abstand hold the boundary.
 					</p>
 
@@ -108,7 +105,7 @@ function RouteComponent() {
 									: { target: '_blank', rel: 'noopener noreferrer' })}
 								className="bg-base-950 text-base-0 inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-base font-medium transition-opacity hover:opacity-90"
 							>
-								{isKnownNonMac ? 'View macOS downloads' : 'Download for macOS'}
+								{directMacDownloadUrl != null ? 'Download for macOS' : 'View downloads'}
 							</a>
 							<a
 								href={github}
@@ -120,7 +117,7 @@ function RouteComponent() {
 							</a>
 						</div>
 						<p className="text-base-600 mt-4 text-sm">
-							{isKnownNonMac && (
+							{platformInfo.platform != null && platformInfo.platform !== 'macos' && (
 								<>
 									macOS only for now
 									<span className="text-base-400"> · </span>
@@ -145,15 +142,19 @@ function RouteComponent() {
 									</a>
 								</>
 							)}
-							<span className="text-base-400"> · </span>
-							<a
-								href={githubReleases}
-								target="_blank"
-								rel="noopener noreferrer"
-								className="underline transition-opacity hover:opacity-80"
-							>
-								All downloads
-							</a>
+							{directMacDownloadUrl != null && (
+								<>
+									<span className="text-base-400"> · </span>
+									<a
+										href={githubReleases}
+										target="_blank"
+										rel="noopener noreferrer"
+										className="underline transition-opacity hover:opacity-80"
+									>
+										All downloads
+									</a>
+								</>
+							)}
 						</p>
 					</div>
 				</div>
@@ -175,10 +176,11 @@ function RouteComponent() {
 						<div className="lg:col-span-2">
 							<h2 className="text-primary text-base leading-7 font-semibold">What Abstand does</h2>
 							<p className="text-base-950 mt-2 font-serif text-3xl leading-tight font-medium tracking-normal text-pretty sm:text-4xl">
-								Set the boundary once. Let your Mac hold it.
+								Set boundaries before distractions take over.
 							</p>
 							<p className="text-base-700 mt-6 text-base leading-7">
-								Create scheduled blocks for apps, websites, or whole-device lockouts.
+								Pick what should be out of reach, when blocks should run, and how firmly Abstand
+								should hold them.
 							</p>
 						</div>
 						<dl className="text-base-600 grid grid-cols-1 gap-x-8 gap-y-10 text-base leading-7 sm:grid-cols-2 lg:col-span-3 lg:gap-y-12">
@@ -199,14 +201,14 @@ function RouteComponent() {
 					className={cn(fadeInDelayClassName, 'mt-24 w-full max-w-4xl text-center sm:mt-32')}
 				>
 					<h2 className="text-base-950 font-serif text-3xl leading-tight font-medium sm:text-4xl">
-						Your attention is not the problem. <br className="hidden sm:block" />
-						The branches are.
+						Your attention is not broken. <br className="hidden sm:block" />
+						It is branching.
 					</h2>
 					<p className="text-base-700 mt-6 text-lg leading-8">
 						Attention is like a river. Concentrated, it moves with power. Branched across tabs,
 						apps, notifications, and quick checks, it spreads thin: you feel busy, but nothing
-						moves. Abstand does not fight the water. It builds the banks ahead of time, then keeps
-						them in place when it matters.
+						moves. Abstand does not fight the water. It helps you build the banks ahead of time,
+						then keeps them in place when it matters.
 					</p>
 				</section>
 
@@ -240,15 +242,15 @@ const features = [
 	{
 		name: 'Block apps, websites, or the whole Mac',
 		description:
-			'Keep selected distractions out of reach, or lock the whole device behind a full-screen overlay.'
+			'Keep selected distractions out of reach, or lock your whole Mac behind a full-screen overlay.'
 	},
 	{
-		name: 'Make blocks as firm as they need to be',
+		name: 'Choose how firm each block should be',
 		description: 'Use casual, balanced, or strict mode based on how hard it should be to end early.'
 	},
 	{
 		name: 'Keep it local',
-		description: 'Blocks run on your Mac. Your schedules and settings stay on your device.'
+		description: 'Your Abstand data stays on your device, not in a cloud account.'
 	}
 ] satisfies TFeature[];
 

@@ -65,7 +65,7 @@ The word is German for distance. That is exactly what it creates.
 - Schedule blocks in advance
 - Block apps, websites, or the whole Mac
 - Choose casual, balanced, or strict enforcement
-- Keep schedules and settings on your device
+- Keep Abstand data on your device
 - Open source under AGPL v3
 
 ## How it works
@@ -79,7 +79,7 @@ The word is German for distance. That is exactly what it creates.
 
 - **Deep work:** block distracting apps and websites every weekday from 6:00 AM to 10:00 AM
 - **Writing or study:** allow only your editor, notes, or research tools for a focused sprint
-- **Evening wind-down:** block the whole device from 8:00 PM so the workday actually ends
+- **Evening wind-down:** block your whole Mac from 8:00 PM so the workday actually ends
 - **Digital detox:** block social media apps and websites every day for 30 days
 - **Journaling:** allow only Notion for a 10-minute manual session
 
