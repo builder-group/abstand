@@ -1,1 +1,1 @@
-# `@template/web-tanstack`
+# `@repo/web`

@@ -1,15 +1,15 @@
 {
-	"short_name": "Web TanStack",
-	"name": "Web TanStack Template",
+	"short_name": "Abstand",
+	"name": "Abstand",
 	"icons": [
 		{
 			"src": "favicon.ico",
-			"sizes": "64x64 32x32 24x24 16x16",
+			"sizes": "48x48 32x32 16x16",
 			"type": "image/x-icon"
 		}
 	],
 	"start_url": ".",
 	"display": "standalone",
-	"theme_color": "#f8fafc",
-	"background_color": "#f8fafc"
+	"theme_color": "#f2f2f7",
+	"background_color": "#f2f2f7"
 }

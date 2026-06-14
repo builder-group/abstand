@@ -1,7 +1,9 @@
-import { createFileRoute, redirect } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/')({
-	beforeLoad: () => {
-		throw redirect({ to: '/home' });
-	}
+	component: RouteComponent
 });
+
+function RouteComponent() {
+	return <main className="min-h-screen">Hello Abstand</main>;
+}

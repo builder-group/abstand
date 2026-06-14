@@ -1,17 +1,7 @@
-const email = 'support@builder.group';
-
 export const appConfig = {
-	name: 'Web TanStack',
-	website: 'https://builder.group',
-	help: {
-		email,
-		mailto: (subject?: string) => {
-			const fullSubject = subject ? `[Web TanStack] ${subject}` : '[Web TanStack] Support';
-			return `mailto:${email}?subject=${encodeURIComponent(fullSubject)}`;
-		},
-		discord: 'https://discord.com/invite/w4xE3bSjhQ'
-	},
+	name: 'Abstand',
+	website: 'https://abstand.app',
 	distribution: {
-		github: 'https://github.com/builder-group/community'
+		github: 'https://github.com/builder-group/abstand'
 	}
 } as const;
