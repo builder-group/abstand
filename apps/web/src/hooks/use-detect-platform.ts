@@ -26,7 +26,7 @@ export interface TMacosPlatformInfo {
 }
 
 interface TOtherPlatformInfo {
-	platform: 'windows' | 'linux' | null;
+	platform: 'windows' | 'linux' | 'ios' | 'android' | null;
 }
 
 export type TMacArchitecture = 'apple-silicon' | 'intel' | null;
@@ -54,6 +54,12 @@ function detectOS(): TPlatformInfo['platform'] {
 
 	if (isDesktopMac) {
 		return 'macos';
+	}
+	if (userAgent.includes('iPhone') || userAgent.includes('iPad') || userAgent.includes('iPod')) {
+		return 'ios';
+	}
+	if (userAgent.includes('Android')) {
+		return 'android';
 	}
 	if (userAgent.includes('Windows')) {
 		return 'windows';
