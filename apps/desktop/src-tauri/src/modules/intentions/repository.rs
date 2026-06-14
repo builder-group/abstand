@@ -940,6 +940,31 @@ impl IntentionSessionRepository {
             .collect::<Result<Vec<_>, _>>();
     }
 
+    pub async fn get_finished_sessions_ended_in_range(
+        pool: &Pool<Sqlite>,
+        start_at: i64,
+        end_at: i64,
+    ) -> Result<Vec<IntentionSession>, IntentionSessionRepositoryError> {
+        let rows = sqlx::query_as::<_, IntentionSessionRow>(
+            "SELECT id, intention_id, status, started_at, start_condition_id, ended_at, end_condition_id, updated_at, created_at
+            FROM intention_session
+            WHERE status IN ('completed', 'stopped')
+                AND ended_at IS NOT NULL
+                AND ended_at >= ?
+                AND ended_at < ?
+            ORDER BY ended_at DESC, id DESC",
+        )
+        .bind(start_at)
+        .bind(end_at)
+        .fetch_all(pool)
+        .await?;
+
+        return rows
+            .into_iter()
+            .map(Self::build_session)
+            .collect::<Result<Vec<_>, _>>();
+    }
+
     pub async fn has_active_block_session_with_enforcement(
         pool: &Pool<Sqlite>,
         enforcement_mode: IntentionEnforcementMode,

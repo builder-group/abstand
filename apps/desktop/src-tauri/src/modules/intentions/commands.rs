@@ -14,7 +14,9 @@ use super::{
     },
 };
 use crate::{
-    common::time::{to_local_datetime, DateOnly, TimeOnly},
+    common::time::{
+        local_day_bounds_containing, to_local_datetime, unix_ms_now, DateOnly, TimeOnly,
+    },
     common::url::extract_hostname,
     modules::{
         catalog::repository::{UpsertAppInput, UpsertWebsiteInput},
@@ -22,6 +24,7 @@ use crate::{
     },
 };
 use serde::{Deserialize, Serialize};
+use sqlx::{Pool, Sqlite};
 use tauri::{AppHandle, State};
 use tauri_specta::Event;
 
@@ -75,13 +78,26 @@ pub async fn get_active_intention_session(
 pub async fn get_today_intention_overview(
     database_state: State<'_, DatabaseState>,
 ) -> Result<TodayIntentionOverviewDto, String> {
-    let active_sessions = IntentionSessionRepository::get_active_sessions(&database_state.pool)
+    let active = get_today_active_intentions(&database_state.pool).await?;
+    let earlier_today = get_earlier_today_intentions(&database_state.pool).await?;
+
+    return Ok(TodayIntentionOverviewDto {
+        active,
+        upcoming_today: Vec::new(),
+        earlier_today,
+    });
+}
+
+async fn get_today_active_intentions(
+    pool: &Pool<Sqlite>,
+) -> Result<Vec<TodayActiveIntentionDto>, String> {
+    let active_sessions = IntentionSessionRepository::get_active_sessions(pool)
         .await
         .map_err(|error| error.to_string())?;
 
     let mut active = Vec::new();
     for session in active_sessions {
-        let intention = IntentionRepository::get_by_id(&database_state.pool, session.intention_id)
+        let intention = IntentionRepository::get_by_id(pool, session.intention_id)
             .await
             .map_err(|error| error.to_string())?
             .ok_or_else(|| format!("Active Intention {} does not exist", session.intention_id))?;
@@ -95,11 +111,33 @@ pub async fn get_today_intention_overview(
         });
     }
 
-    return Ok(TodayIntentionOverviewDto {
-        active,
-        upcoming_today: Vec::new(),
-        earlier_today: Vec::new(),
-    });
+    return Ok(active);
+}
+
+async fn get_earlier_today_intentions(
+    pool: &Pool<Sqlite>,
+) -> Result<Vec<TodayEarlierIntentionDto>, String> {
+    let today_bounds = local_day_bounds_containing(unix_ms_now())
+        .ok_or_else(|| "Could not resolve local day bounds".to_string())?;
+    let earlier_sessions = IntentionSessionRepository::get_finished_sessions_ended_in_range(
+        pool,
+        today_bounds.start_at,
+        today_bounds.end_at,
+    )
+    .await
+    .map_err(|error| error.to_string())?;
+
+    let mut earlier_today = Vec::new();
+    for session in earlier_sessions {
+        let intention = IntentionRepository::get_by_id(pool, session.intention_id)
+            .await
+            .map_err(|error| error.to_string())?
+            .ok_or_else(|| format!("Earlier Intention {} does not exist", session.intention_id))?;
+
+        earlier_today.push(TodayEarlierIntentionDto { intention, session });
+    }
+
+    return Ok(earlier_today);
 }
 
 #[derive(Debug, Clone, Serialize, specta::Type)]

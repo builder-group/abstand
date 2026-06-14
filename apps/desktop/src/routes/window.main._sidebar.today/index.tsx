@@ -1,8 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import React from 'react';
-import { CircleCheckIcon, ClockIcon, ContentPage } from '@/components';
+import { ClockIcon, ContentPage } from '@/components';
 import {
 	ActiveIntentionsSection,
+	EarlierIntentionsSection,
 	SectionIndicator,
 	TodayEmptyRow,
 	TodaySection
@@ -23,7 +24,7 @@ function RouteComponent() {
 			<div className="space-y-5">
 				<ActiveIntentionsSection cx={cx} />
 				<UpcomingIntentionsSection />
-				<EarlierIntentionsSection />
+				<EarlierIntentionsSection cx={cx} />
 			</div>
 		</ContentPage>
 	);
@@ -43,25 +44,6 @@ const UpcomingIntentionsSection: React.FC = () => {
 			<TodayEmptyRow
 				title="No upcoming Intentions today"
 				description="Intentions scheduled for later today will appear here."
-			/>
-		</TodaySection>
-	);
-};
-
-const EarlierIntentionsSection: React.FC = () => {
-	return (
-		<TodaySection
-			title="Earlier today"
-			contentLayout="placeholder"
-			indicator={
-				<SectionIndicator className="bg-secondary/10 text-secondary">
-					<CircleCheckIcon />
-				</SectionIndicator>
-			}
-		>
-			<TodayEmptyRow
-				title="No earlier Intentions today"
-				description="Completed and stopped Intentions from today will appear here."
 			/>
 		</TodaySection>
 	);

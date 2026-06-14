@@ -150,6 +150,26 @@ pub fn local_unix_ms_from_date_and_time(date: NaiveDate, time: &TimeOnly) -> Opt
     };
 }
 
+/// Returns the local calendar-day bounds containing `unix_ms`.
+///
+/// `start_at` is inclusive and `end_at` is exclusive.
+pub fn local_day_bounds_containing(unix_ms: i64) -> Option<LocalDayBounds> {
+    let date = local_datetime_from_unix_ms(unix_ms)?.date_naive();
+    let next_date = date.succ_opt()?;
+    let midnight = TimeOnly::from_millis_since_midnight(0).ok()?;
+
+    let start_at = local_unix_ms_from_date_and_time(date, &midnight)?;
+    let end_at = local_unix_ms_from_date_and_time(next_date, &midnight)?;
+
+    return Some(LocalDayBounds { start_at, end_at });
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LocalDayBounds {
+    pub start_at: i64,
+    pub end_at: i64,
+}
+
 pub fn unix_ms_now() -> i64 {
     let duration = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -170,7 +190,7 @@ const WEEKDAY_MASK_MAX: i32 = 0b111_1111;
 
 #[cfg(test)]
 mod tests {
-    use super::{to_local_datetime, DateOnly, TimeOnly, WeekdayMask};
+    use super::{local_day_bounds_containing, to_local_datetime, DateOnly, TimeOnly, WeekdayMask};
     use chrono::Weekday;
 
     #[test]
@@ -245,6 +265,29 @@ mod tests {
 
         assert_eq!(datetime.format("%Y-%m-%d").to_string(), "2026-05-08");
         assert_eq!(datetime.format("%H:%M").to_string(), "09:30");
+    }
+
+    #[test]
+    fn local_day_bounds_containing_returns_local_midnight_range() {
+        let date = DateOnly::from_epoch_days(20581).unwrap();
+        let time = TimeOnly::from_millis_since_midnight(34_200_000).unwrap();
+        let datetime = to_local_datetime(&date, &time).unwrap();
+        let bounds = local_day_bounds_containing(datetime.timestamp_millis()).unwrap();
+
+        assert_eq!(
+            super::local_datetime_from_unix_ms(bounds.start_at)
+                .unwrap()
+                .format("%Y-%m-%d %H:%M")
+                .to_string(),
+            "2026-05-08 00:00"
+        );
+        assert_eq!(
+            super::local_datetime_from_unix_ms(bounds.end_at)
+                .unwrap()
+                .format("%Y-%m-%d %H:%M")
+                .to_string(),
+            "2026-05-09 00:00"
+        );
     }
 
     #[test]
