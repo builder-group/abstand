@@ -46,7 +46,7 @@ export const EarlierIntentionsSection: React.FC<TEarlierIntentionsSectionProps> 
 		>
 			<TodayEmptyRow
 				title="No earlier Intentions today"
-				description="Completed and stopped Intentions from today will appear here."
+				description="Intentions you complete or end early will appear here."
 			/>
 		</TodaySection>
 	);

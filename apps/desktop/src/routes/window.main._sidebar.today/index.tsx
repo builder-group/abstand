@@ -42,7 +42,7 @@ const UpcomingIntentionsSection: React.FC = () => {
 			}
 		>
 			<TodayEmptyRow
-				title="No upcoming Intentions today"
+				title="Nothing scheduled later today"
 				description="Intentions scheduled for later today will appear here."
 			/>
 		</TodaySection>

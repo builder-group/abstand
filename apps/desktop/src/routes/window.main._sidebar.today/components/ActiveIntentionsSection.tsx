@@ -43,7 +43,7 @@ export const ActiveIntentionsSection: React.FC<TActiveIntentionsSectionProps> = 
 		>
 			<TodayEmptyRow
 				title="No active Intentions"
-				description="Intentions will appear here when they start."
+				description="Start an Intention or wait for the next scheduled one."
 			/>
 		</TodaySection>
 	);
