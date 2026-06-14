@@ -44,8 +44,6 @@
   >
 </p>
 
-<br />
-
 ## Introduction
 
 Abstand is an open-source macOS app and website blocker for creating intentional distance from digital distractions.
