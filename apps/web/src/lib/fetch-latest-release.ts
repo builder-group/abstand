@@ -1,13 +1,35 @@
 import { appConfig, fetchClient } from '@/environment';
 
 export async function fetchLatestRelease(): Promise<TReleaseInfo> {
-	const [isReleaseOk, , release] = await fetchClient.get<TGitHubRelease>(
+	const [isLatestReleaseOk, , latestRelease] = await fetchClient.get<TGitHubRelease>(
 		`${appConfig.githubApi}/releases/latest`,
 		{
 			headers: { Accept: 'application/vnd.github.v3+json' }
 		}
 	);
-	if (!isReleaseOk) {
+	if (isLatestReleaseOk) {
+		return {
+			version: latestRelease.tag_name,
+			downloadLinks: getMacDownloadLinks(latestRelease.assets ?? [])
+		};
+	}
+
+	// Note: /releases/latest can 504 while the /releases list still works
+	const [areReleasesOk, , releases] = await fetchClient.get<TGitHubRelease[]>(
+		`${appConfig.githubApi}/releases?per_page=10`,
+		{
+			headers: { Accept: 'application/vnd.github.v3+json' }
+		}
+	);
+	if (!areReleasesOk) {
+		return {
+			version: null,
+			downloadLinks: {}
+		};
+	}
+
+	const release = releases.find(({ draft, prerelease }) => !draft && !prerelease);
+	if (release == null) {
 		return {
 			version: null,
 			downloadLinks: {}
@@ -32,6 +54,8 @@ interface TMacDownloadLinks {
 
 interface TGitHubRelease {
 	tag_name: string;
+	draft: boolean;
+	prerelease: boolean;
 	assets: { name: string; browser_download_url: string }[];
 }
 
