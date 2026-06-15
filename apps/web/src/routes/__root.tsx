@@ -1,5 +1,6 @@
 import { createRootRoute, HeadContent, Scripts } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
+import { Analytics } from '@vercel/analytics/react';
 import React from 'react';
 import { appConfig } from '@/environment';
 import styles from '../styles.css?url';
@@ -32,6 +33,7 @@ function ShellComponent(props: { children: React.ReactNode }) {
 			<body className="bg-base-50 text-base-950 font-sans antialiased">
 				{children}
 				{import.meta.env.DEV ? <TanStackRouterDevtools position="bottom-right" /> : null}
+				<Analytics />
 				<Scripts />
 			</body>
 		</html>
