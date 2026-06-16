@@ -19,6 +19,7 @@
 		"build:prod": "tauri build --config src-tauri/tauri.prod.conf.json",
 		"clean": "shx rm -rf target && shx rm -rf dist && shx rm -rf .tanstack && shx rm -rf .turbo && shx rm -rf node_modules",
 		"db:check": "node scripts/db-schema.mjs check",
+		"db:hash": "node scripts/db-schema.mjs hash",
 		"db:inspect": "node scripts/db-schema.mjs inspect -w",
 		"db:migrate": "node scripts/db-schema.mjs migrate",
 		"install:clean": "pnpm run clean && pnpm install",

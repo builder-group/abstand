@@ -44,6 +44,9 @@ function dispatchCommand(command, args) {
 		case 'check':
 			checkCommand(args);
 			return;
+		case 'hash':
+			hashCommand(args);
+			return;
 		case 'inspect':
 			inspectCommand(args);
 			return;
@@ -61,6 +64,7 @@ function printUsage() {
 			'Commands:',
 			'  migrate <name>  Generate an Atlas migration and append trigger changes',
 			'  check           Verify migrations match schema.sql',
+			'  hash            Refresh Atlas migration checksums',
 			'  inspect [args]  Inspect the Atlas-managed schema objects'
 		].join('\n')
 	);
@@ -264,6 +268,17 @@ function formatTriggerChanges(changes) {
 			}
 		})
 		.join('\n');
+}
+
+// MARK: - Hash Command
+
+function hashCommand(args = []) {
+	if (args.length > 0) {
+		throw new Error('Usage: pnpm db:hash');
+	}
+
+	ensureMigrationDir();
+	run('atlas', ['migrate', 'hash', '--dir', fileUrl(migrationsDir)], { cwd: tauriDir });
 }
 
 // MARK: - Inspect Command
