@@ -79,7 +79,6 @@ export const WindowHeader: React.FC<TWindowHeaderProps> = (props) => {
 					{showUpdateBadge && (
 						<Badge
 							render={<button type="button" aria-label="Open update settings" />}
-							variant="default"
 							className="bg-primary text-primary-content hover:bg-primary/90 group/update-badge gap-0 font-semibold"
 							onClick={handleOpenUpdates}
 						>

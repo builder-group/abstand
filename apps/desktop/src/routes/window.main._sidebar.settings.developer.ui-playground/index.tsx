@@ -972,6 +972,7 @@ const BadgeSection: React.FC = () => {
 			</PlaygroundRow>
 			<PlaygroundRow label="Variants">
 				<Badge>Default</Badge>
+				<Badge variant="primary">Primary</Badge>
 				<Badge variant="secondary">Secondary</Badge>
 				<Badge variant="success">Success</Badge>
 				<Badge variant="warning">Warning</Badge>

@@ -38,6 +38,8 @@ export {
 	MoreVerticalIcon,
 	PanelLeftCloseIcon,
 	PanelLeftOpenIcon,
+	PauseIcon,
+	PlayIcon,
 	PlusIcon,
 	RefreshCwIcon,
 	SearchIcon,

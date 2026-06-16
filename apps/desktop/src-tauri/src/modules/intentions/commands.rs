@@ -321,6 +321,82 @@ pub async fn update_intention(
     return Ok(intention);
 }
 
+#[tauri::command]
+#[specta::specta]
+pub async fn pause_intention(
+    app: AppHandle,
+    database_state: State<'_, DatabaseState>,
+    runtime_state: State<'_, IntentionRuntimeState>,
+    intention_id: i64,
+) -> Result<Intention, String> {
+    let current = IntentionRepository::get_by_id(&database_state.pool, intention_id)
+        .await
+        .map_err(|error| error.to_string())?
+        .ok_or_else(|| format!("Intention {} does not exist", intention_id))?;
+    if current.paused_at.is_some() {
+        return Ok(current);
+    }
+
+    let intention = IntentionRepository::set_pause_state(
+        &database_state.pool,
+        intention_id,
+        Some(unix_ms_now()),
+        None,
+    )
+    .await
+    .map_err(|error| error.to_string())?
+    .ok_or_else(|| format!("Intention {} does not exist", intention_id))?;
+
+    let _ = IntentionUpdatedEvent { intention_id }.emit(&app);
+    if let Err(error) = runtime_state.reevaluate(&app).await {
+        log::error!(
+            target: LOG_TARGET,
+            "intention reevaluation after pause failed: {}",
+            error
+        );
+    }
+
+    return Ok(intention);
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn resume_intention(
+    app: AppHandle,
+    database_state: State<'_, DatabaseState>,
+    runtime_state: State<'_, IntentionRuntimeState>,
+    intention_id: i64,
+) -> Result<Intention, String> {
+    let current = IntentionRepository::get_by_id(&database_state.pool, intention_id)
+        .await
+        .map_err(|error| error.to_string())?
+        .ok_or_else(|| format!("Intention {} does not exist", intention_id))?;
+    if current.paused_at.is_none() {
+        return Ok(current);
+    }
+
+    let intention = IntentionRepository::set_pause_state(
+        &database_state.pool,
+        intention_id,
+        None,
+        Some(unix_ms_now()),
+    )
+    .await
+    .map_err(|error| error.to_string())?
+    .ok_or_else(|| format!("Intention {} does not exist", intention_id))?;
+
+    let _ = IntentionUpdatedEvent { intention_id }.emit(&app);
+    if let Err(error) = runtime_state.reevaluate(&app).await {
+        log::error!(
+            target: LOG_TARGET,
+            "intention reevaluation after resume failed: {}",
+            error
+        );
+    }
+
+    return Ok(intention);
+}
+
 #[derive(Debug, Clone, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateIntentionParams {

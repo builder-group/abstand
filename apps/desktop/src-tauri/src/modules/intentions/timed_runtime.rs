@@ -115,6 +115,7 @@ impl TimedRuntime {
         if matches!(
             &result,
             Err(SessionTransitionError::IntentionNotFound(_))
+                | Err(SessionTransitionError::IntentionPaused(_))
                 | Err(SessionTransitionError::NoActiveSession(_))
         ) {
             return Ok(false);

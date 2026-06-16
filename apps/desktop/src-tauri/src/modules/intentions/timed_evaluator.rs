@@ -62,6 +62,7 @@ pub struct TimedCondition {
     pub transition: TimedConditionTransition,
     pub rule: TimedConditionRule,
     pub created_at: i64,
+    pub resumed_at: Option<i64>,
 }
 
 impl TimedCondition {
@@ -103,6 +104,13 @@ impl TimedCondition {
             }
         };
     }
+
+    fn minimum_start_at(&self) -> i64 {
+        // Note: Resuming skips start triggers that happened while the Intention was paused
+        return self
+            .created_at
+            .max(self.resumed_at.unwrap_or(self.created_at));
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -133,7 +141,7 @@ impl TimedDateTimeRule {
     ) -> Result<TimedConditionActivation, TimedEvaluationError> {
         match condition.transition {
             TimedConditionTransition::Start => {
-                if self.trigger_at < condition.created_at {
+                if self.trigger_at < condition.minimum_start_at() {
                     return Ok(TimedConditionActivation::Inactive);
                 }
 
@@ -235,21 +243,19 @@ impl TimedScheduleRule {
                 time_of_day_ms: &self.time_of_day_ms,
                 weekdays_mask: self.weekdays_mask.as_ref(),
                 search_from: now,
-                minimum_trigger_at: minimum_start_trigger_at(
-                    condition.created_at,
-                    latest_started_at,
-                ),
+                minimum_trigger_at: minimum_start_trigger_at(condition, latest_started_at),
             },
         ));
     }
 }
 
-fn minimum_start_trigger_at(condition_created_at: i64, latest_started_at: Option<i64>) -> i64 {
+fn minimum_start_trigger_at(condition: &TimedCondition, latest_started_at: Option<i64>) -> i64 {
+    let minimum_start_at = condition.minimum_start_at();
     let Some(latest_started_at) = latest_started_at else {
-        return condition_created_at;
+        return minimum_start_at;
     };
 
-    return condition_created_at.max(
+    return minimum_start_at.max(
         // Note: A scheduled start consumes its exact trigger time, so the next search must start 1 ms later
         latest_started_at.saturating_add(1),
     );
@@ -289,6 +295,10 @@ impl TimedAfterTransitionRule {
 
         // Skip already-consumed start triggers while still allowing later anchors to fire
         if condition.transition == TimedConditionTransition::Start {
+            if trigger_at < condition.minimum_start_at() {
+                return Ok(TimedConditionActivation::Inactive);
+            }
+
             let latest_started_at =
                 IntentionSessionRepository::get_latest_started_at_by_start_condition_id(
                     pool,

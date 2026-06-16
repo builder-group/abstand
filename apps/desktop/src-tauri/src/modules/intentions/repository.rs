@@ -31,7 +31,7 @@ pub struct IntentionRepository;
 impl IntentionRepository {
     pub async fn get_all(pool: &Pool<Sqlite>) -> Result<Vec<Intention>, IntentionRepositoryError> {
         let bases = sqlx::query_as::<_, IntentionRow>(
-            "SELECT id, name, behavior_type, updated_at, created_at FROM intention ORDER BY created_at ASC, id ASC",
+            "SELECT id, name, behavior_type, paused_at, resumed_at, updated_at, created_at FROM intention ORDER BY created_at ASC, id ASC",
         )
         .fetch_all(pool)
         .await?;
@@ -44,7 +44,7 @@ impl IntentionRepository {
         intention_id: i64,
     ) -> Result<Option<Intention>, IntentionRepositoryError> {
         let base = sqlx::query_as::<_, IntentionRow>(
-            "SELECT id, name, behavior_type, updated_at, created_at FROM intention WHERE id = ?",
+            "SELECT id, name, behavior_type, paused_at, resumed_at, updated_at, created_at FROM intention WHERE id = ?",
         )
         .bind(intention_id)
         .fetch_optional(pool)
@@ -68,12 +68,15 @@ impl IntentionRepository {
                 c.transition,
                 c.rule_type,
                 c.created_at,
+                i.resumed_at,
                 date_time.trigger_at,
                 schedule.time_of_day_ms,
                 schedule.weekdays_mask,
                 after_transition.anchor_transition,
                 after_transition.offset_ms
             FROM intention_condition c
+            INNER JOIN intention i
+                ON i.id = c.intention_id
             LEFT JOIN intention_condition_date_time date_time
                 ON date_time.condition_id = c.id
                     AND c.rule_type = 'date_time'
@@ -84,6 +87,8 @@ impl IntentionRepository {
                 ON after_transition.condition_id = c.id
                     AND c.rule_type = 'after_transition'
             WHERE c.rule_type IN ('date_time', 'schedule', 'after_transition')
+                -- Note: Paused Intentions skip future starts, while active runs keep their timed ends
+                AND (c.transition != 'start' OR i.paused_at IS NULL)
             ORDER BY c.intention_id ASC, c.id ASC",
         )
         .fetch_all(pool)
@@ -183,6 +188,32 @@ impl IntentionRepository {
         let intention = Self::get_by_id(pool, intention_id).await?.ok_or_else(|| {
             IntentionRepositoryError::InvalidData(format!(
                 "Updated intention {} could not be reloaded",
+                intention_id
+            ))
+        })?;
+        return Ok(Some(intention));
+    }
+
+    pub async fn set_pause_state(
+        pool: &Pool<Sqlite>,
+        intention_id: i64,
+        paused_at: Option<i64>,
+        resumed_at: Option<i64>,
+    ) -> Result<Option<Intention>, IntentionRepositoryError> {
+        let result = sqlx::query("UPDATE intention SET paused_at = ?, resumed_at = ? WHERE id = ?")
+            .bind(paused_at)
+            .bind(resumed_at)
+            .bind(intention_id)
+            .execute(pool)
+            .await?;
+
+        if result.rows_affected() == 0 {
+            return Ok(None);
+        }
+
+        let intention = Self::get_by_id(pool, intention_id).await?.ok_or_else(|| {
+            IntentionRepositoryError::InvalidData(format!(
+                "Paused intention {} could not be reloaded",
                 intention_id
             ))
         })?;
@@ -441,6 +472,8 @@ impl IntentionRepository {
                 name: base.name,
                 behavior,
                 conditions,
+                paused_at: base.paused_at,
+                resumed_at: base.resumed_at,
                 updated_at: base.updated_at,
                 created_at: base.created_at,
             });
@@ -783,6 +816,7 @@ impl IntentionRepository {
             transition,
             rule,
             created_at: row.created_at,
+            resumed_at: row.resumed_at,
         });
     }
 }
@@ -792,6 +826,8 @@ struct IntentionRow {
     id: i64,
     name: String,
     behavior_type: String,
+    paused_at: Option<i64>,
+    resumed_at: Option<i64>,
     updated_at: i64,
     created_at: i64,
 }
@@ -854,6 +890,7 @@ struct TimedConditionRow {
     transition: String,
     rule_type: String,
     created_at: i64,
+    resumed_at: Option<i64>,
     trigger_at: Option<i64>,
     time_of_day_ms: Option<i32>,
     weekdays_mask: Option<i32>,
@@ -1092,6 +1129,7 @@ impl IntentionSessionRepository {
             SELECT id, 'active', ?, ?
             FROM intention
             WHERE id = ?
+                AND paused_at IS NULL
             ON CONFLICT DO NOTHING
             RETURNING id, intention_id, status, started_at, start_condition_id, ended_at, end_condition_id, updated_at, created_at",
         )

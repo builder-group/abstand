@@ -43,6 +43,7 @@ export const BlockIntentionPage: React.FC<TBlockIntentionPageProps> = (props) =>
 	});
 	const isPending = isSubmitting || isSaving;
 	const shouldShowEditActions = isDirty || isPending;
+	const isPaused = intention.pausedAt != null;
 
 	// MARK: - Actions
 
@@ -66,7 +67,9 @@ export const BlockIntentionPage: React.FC<TBlockIntentionPageProps> = (props) =>
 	return (
 		<>
 			<ContentPage
-				title={<BlockIntentionTitle name={intention.name} isActive={isActive} />}
+				title={
+					<BlockIntentionTitle name={intention.name} isActive={isActive} isPaused={isPaused} />
+				}
 				subtitle="Block Intention"
 				backTo={backTo}
 				trailing={
@@ -126,7 +129,7 @@ interface TBlockIntentionPageProps {
 }
 
 const BlockIntentionTitle: React.FC<TBlockIntentionTitleProps> = (props) => {
-	const { name, isActive } = props;
+	const { name, isActive, isPaused } = props;
 
 	return (
 		<span className="inline-flex min-w-0 items-center gap-2">
@@ -136,6 +139,7 @@ const BlockIntentionTitle: React.FC<TBlockIntentionTitleProps> = (props) => {
 					Active
 				</Badge>
 			)}
+			{isPaused && <Badge size="sm">Paused</Badge>}
 		</span>
 	);
 };
@@ -143,4 +147,5 @@ const BlockIntentionTitle: React.FC<TBlockIntentionTitleProps> = (props) => {
 interface TBlockIntentionTitleProps {
 	name: string;
 	isActive: boolean;
+	isPaused: boolean;
 }

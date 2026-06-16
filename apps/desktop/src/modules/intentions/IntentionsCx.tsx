@@ -154,6 +154,24 @@ export class IntentionsCx {
 		return result;
 	}
 
+	public async pause(intentionId: number): Promise<TResult<specta.Intention, string>> {
+		const result = toTuple(await specta.commands.pauseIntention(intentionId));
+		const [isOk, , intention] = result;
+		if (isOk) {
+			this._upsertIntention(intention);
+		}
+		return result;
+	}
+
+	public async resume(intentionId: number): Promise<TResult<specta.Intention, string>> {
+		const result = toTuple(await specta.commands.resumeIntention(intentionId));
+		const [isOk, , intention] = result;
+		if (isOk) {
+			this._upsertIntention(intention);
+		}
+		return result;
+	}
+
 	public async assessEditPolicy(
 		params: specta.UpdateIntentionParams
 	): Promise<TResult<specta.IntentionEditPolicyAssessment | null, string>> {

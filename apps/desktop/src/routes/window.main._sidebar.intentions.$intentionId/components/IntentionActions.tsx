@@ -6,6 +6,8 @@ import {
 	DropMenuItem,
 	DropMenuTrigger,
 	MoreVerticalIcon,
+	PauseIcon,
+	PlayIcon,
 	Trash2Icon,
 	useToastsCx
 } from '@/components';
@@ -25,6 +27,8 @@ export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 		(condition) => condition.transition === 'end' && condition.rule.type === 'manual'
 	);
 
+	const isPaused = cx.intention.pausedAt != null;
+
 	const {
 		dialog: deleteDialog,
 		isPending: isDeletePending,
@@ -38,8 +42,16 @@ export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 
 	const [pendingSessionAction, setPendingSessionAction] =
 		React.useState<TPendingSessionAction | null>(null);
-	const isPending = pendingSessionAction != null || isDeletePending || isEndEarlyPending;
-	const shouldShowSessionAction = isActive || (manualStartCondition != null && !hasUnsavedChanges);
+	const [pendingPauseAction, setPendingPauseAction] = React.useState<TPendingPauseAction | null>(
+		null
+	);
+	const isPending =
+		pendingSessionAction != null ||
+		pendingPauseAction != null ||
+		isDeletePending ||
+		isEndEarlyPending;
+	const shouldShowSessionAction =
+		isActive || (!isPaused && manualStartCondition != null && !hasUnsavedChanges);
 
 	// MARK: - Actions
 
@@ -92,6 +104,30 @@ export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 		toastsCx
 	]);
 
+	const handlePauseAction = React.useCallback(async () => {
+		const nextAction = isPaused ? 'resume' : 'pause';
+		setPendingPauseAction(nextAction);
+		const [isIntentionOk, intentionErr] =
+			nextAction === 'pause'
+				? await intentionsCx.pause(cx.intention.id)
+				: await intentionsCx.resume(cx.intention.id);
+		setPendingPauseAction(null);
+
+		if (!isIntentionOk) {
+			toastsCx.add({
+				type: 'error',
+				title: nextAction === 'pause' ? 'Could not pause Intention' : 'Could not resume Intention',
+				description: intentionErr
+			});
+			return;
+		}
+
+		toastsCx.add({
+			type: 'success',
+			title: getPauseSuccessTitle(nextAction, isActive)
+		});
+	}, [cx.intention.id, intentionsCx, isActive, isPaused, toastsCx]);
+
 	// MARK: - UI
 
 	return (
@@ -123,6 +159,13 @@ export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 				/>
 				<DropMenuContent side="bottom" align="end" className="w-48">
 					<DropMenuItem
+						disabled={isDisabled || isPending || hasUnsavedChanges}
+						onClick={handlePauseAction}
+					>
+						{isPaused ? <PlayIcon /> : <PauseIcon />}
+						<span>{getPauseActionLabel({ isActive, isPaused })}</span>
+					</DropMenuItem>
+					<DropMenuItem
 						variant="destructive"
 						disabled={isDisabled || isPending}
 						onClick={openDeleteDialog}
@@ -147,3 +190,25 @@ interface TIntentionActionsProps {
 }
 
 type TPendingSessionAction = 'start' | 'end';
+type TPendingPauseAction = 'pause' | 'resume';
+
+function getPauseActionLabel(options: { isActive: boolean; isPaused: boolean }): string {
+	const { isActive, isPaused } = options;
+	if (isPaused) {
+		return 'Resume Intention';
+	}
+	if (isActive) {
+		return 'Pause After This Run';
+	}
+	return 'Pause Intention';
+}
+
+function getPauseSuccessTitle(action: TPendingPauseAction, isActive: boolean): string {
+	if (action === 'resume') {
+		return 'Resumed Intention';
+	}
+	if (isActive) {
+		return 'Will pause after this run';
+	}
+	return 'Paused Intention';
+}

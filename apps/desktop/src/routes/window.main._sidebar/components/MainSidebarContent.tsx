@@ -3,6 +3,7 @@ import { useCompute, useFeatureState } from 'feature-react/state';
 import React from 'react';
 import {
 	Button,
+	PauseIcon,
 	PlusIcon,
 	SearchIcon,
 	SettingsIcon,
@@ -118,6 +119,7 @@ const IntentionListItem: React.FC<TIntentionListItemProps> = (props) => {
 		intentionsCx.getActiveSessionState(id),
 		(activeSession) => activeSession?.status === 'active'
 	);
+	const isPaused = intention?.pausedAt != null;
 
 	if (intention == null) {
 		return null;
@@ -127,7 +129,7 @@ const IntentionListItem: React.FC<TIntentionListItemProps> = (props) => {
 		<SidebarItem
 			icon={<IntentionBehaviorIcon behavior={intention.behavior} />}
 			label={intention.name}
-			trailing={isActive ? <ActiveIntentionIndicator /> : undefined}
+			trailing={<IntentionStatusIndicators isPaused={isPaused} isActive={isActive} />}
 			render={<Link to="/window/main/intentions/$intentionId" params={{ intentionId: id }} />}
 		/>
 	);
@@ -137,13 +139,38 @@ interface TIntentionListItemProps {
 	id: number;
 }
 
-const ActiveIntentionIndicator: React.FC = () => {
+const IntentionStatusIndicators: React.FC<TIntentionStatusIndicatorsProps> = (props) => {
+	const { isPaused, isActive } = props;
+
+	if (!isPaused && !isActive) {
+		return null;
+	}
+
 	return (
-		<span className="bg-success size-2 shrink-0 rounded-full" title="Active Abstand">
-			<span className="sr-only">Active Abstand</span>
+		<span className="flex shrink-0 items-center gap-0.5">
+			{isPaused && (
+				<span
+					className="text-base-400 flex size-4 items-center justify-center"
+					title="Paused Intention"
+				>
+					<PauseIcon className="size-3" />
+					<span className="sr-only">Paused Intention</span>
+				</span>
+			)}
+			{isActive && (
+				<span className="flex size-4 items-center justify-center" title="Active Abstand">
+					<span className="bg-success size-2 rounded-full" />
+					<span className="sr-only">Active Abstand</span>
+				</span>
+			)}
 		</span>
 	);
 };
+
+interface TIntentionStatusIndicatorsProps {
+	isPaused: boolean;
+	isActive: boolean;
+}
 
 const IntentionBehaviorIcon: React.FC<TIntentionBehaviorIconProps> = (props) => {
 	const { behavior } = props;

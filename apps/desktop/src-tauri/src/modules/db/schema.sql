@@ -44,6 +44,8 @@ CREATE TABLE intention (
     -- Discriminator for behavior payload tables
     -- Note: Break is a product concept, but its persistence shape is not defined yet
     behavior_type TEXT NOT NULL CHECK (behavior_type IN ('block')),
+    paused_at INTEGER,
+    resumed_at INTEGER,
     updated_at INTEGER NOT NULL DEFAULT (CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)),
     created_at INTEGER NOT NULL DEFAULT (CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER))
 );

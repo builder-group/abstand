@@ -12,6 +12,8 @@ pub struct Intention {
     pub name: String,
     pub behavior: IntentionBehavior,
     pub conditions: Vec<IntentionCondition>,
+    pub paused_at: Option<i64>,
+    pub resumed_at: Option<i64>,
     pub updated_at: i64,
     pub created_at: i64,
 }

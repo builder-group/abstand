@@ -61,6 +61,8 @@ pub fn run() {
             intentions::commands::assess_intention_edit_policy,
             intentions::commands::create_intention,
             intentions::commands::update_intention,
+            intentions::commands::pause_intention,
+            intentions::commands::resume_intention,
             intentions::commands::delete_intention,
             intentions::commands::start_intention,
             intentions::commands::complete_intention,
@@ -137,8 +139,8 @@ pub fn run() {
             quit_policy::setup(app);
             scheduler::setup(app);
             catalog::setup(app);
-            intentions::setup(app)?;
             blocking::setup(app);
+            intentions::setup(app)?;
             activity::setup(app);
             settings::setup(app);
 
