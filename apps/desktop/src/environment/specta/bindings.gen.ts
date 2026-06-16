@@ -206,11 +206,19 @@ export type IntentionBehavior = {
 export type IntentionBlock = {
 	enforcementMode: IntentionEnforcementMode,
 	scope: IntentionBlockScope,
-	apps: App[],
-	websites: Website[],
+	appTargets: IntentionBlockAppTarget[],
+	websiteTargets: IntentionBlockWebsiteTarget[],
+};
+
+export type IntentionBlockAppTarget = {
+	app: App,
 };
 
 export type IntentionBlockScope = "blockTargets" | "allowTargets" | "wholeDevice";
+
+export type IntentionBlockWebsiteTarget = {
+	website: Website,
+};
 
 export type IntentionCondition = {
 	id: number,

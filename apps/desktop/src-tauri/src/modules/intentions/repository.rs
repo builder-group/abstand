@@ -1,9 +1,10 @@
 use super::{
     intention::{
-        Intention, IntentionBehavior, IntentionBlock, IntentionBlockScope, IntentionCondition,
-        IntentionConditionAfterTransitionRule, IntentionConditionDateTimeRule,
-        IntentionConditionRule, IntentionConditionScheduleRule, IntentionConditionTransition,
-        IntentionEnforcementMode, IntentionSession, IntentionSessionStatus,
+        Intention, IntentionBehavior, IntentionBlock, IntentionBlockAppTarget, IntentionBlockScope,
+        IntentionBlockWebsiteTarget, IntentionCondition, IntentionConditionAfterTransitionRule,
+        IntentionConditionDateTimeRule, IntentionConditionRule, IntentionConditionScheduleRule,
+        IntentionConditionTransition, IntentionEnforcementMode, IntentionSession,
+        IntentionSessionStatus,
     },
     timed_evaluator::{
         TimedAfterTransitionRule, TimedCondition, TimedConditionRule, TimedConditionTransition,
@@ -13,11 +14,8 @@ use super::{
 };
 use crate::{
     common::time::{DateOnly, TimeOnly, WeekdayMask},
-    modules::catalog::{
-        repository::{
-            CatalogRepository, CatalogRepositoryError, UpsertAppInput, UpsertWebsiteInput,
-        },
-        types::{App, Website},
+    modules::catalog::repository::{
+        CatalogRepository, CatalogRepositoryError, UpsertAppInput, UpsertWebsiteInput,
     },
 };
 use sqlx::{FromRow, Pool, QueryBuilder, Sqlite};
@@ -435,16 +433,30 @@ impl IntentionRepository {
                         .remove(&base.id)
                         .unwrap_or_default();
 
-                    let apps = app_ids
+                    let app_targets = app_ids
                         .into_iter()
-                        .filter_map(|app_id| apps_by_id.get(&app_id).cloned())
+                        .filter_map(|app_id| {
+                            apps_by_id
+                                .get(&app_id)
+                                .cloned()
+                                .map(|app| IntentionBlockAppTarget { app })
+                        })
                         .collect::<Vec<_>>();
-                    let websites = website_ids
+                    let website_targets = website_ids
                         .into_iter()
-                        .filter_map(|website_id| websites_by_id.get(&website_id).cloned())
+                        .filter_map(|website_id| {
+                            websites_by_id
+                                .get(&website_id)
+                                .cloned()
+                                .map(|website| IntentionBlockWebsiteTarget { website })
+                        })
                         .collect::<Vec<_>>();
 
-                    IntentionBehavior::Block(Self::build_block(block_row, apps, websites)?)
+                    IntentionBehavior::Block(Self::build_block(
+                        block_row,
+                        app_targets,
+                        website_targets,
+                    )?)
                 }
                 IntentionBehaviorType::Break => IntentionBehavior::Break,
             };
@@ -652,16 +664,16 @@ impl IntentionRepository {
 
     fn build_block(
         row: IntentionBlockRow,
-        apps: Vec<App>,
-        websites: Vec<Website>,
+        app_targets: Vec<IntentionBlockAppTarget>,
+        website_targets: Vec<IntentionBlockWebsiteTarget>,
     ) -> Result<IntentionBlock, IntentionRepositoryError> {
         return Ok(IntentionBlock {
             enforcement_mode: IntentionEnforcementMode::from_str(&row.enforcement_mode)
                 .map_err(IntentionRepositoryError::InvalidData)?,
             scope: IntentionBlockScope::from_str(&row.scope)
                 .map_err(IntentionRepositoryError::InvalidData)?,
-            apps,
-            websites,
+            app_targets,
+            website_targets,
         });
     }
 

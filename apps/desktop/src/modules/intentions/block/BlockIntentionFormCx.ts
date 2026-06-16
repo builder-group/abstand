@@ -386,27 +386,27 @@ function getFormDataFromIntention(intention: specta.Intention): TBlockIntentionF
 		name: intention.name,
 		scope: intention.behavior.scope,
 		selectedTargets: [
-			...intention.behavior.apps.map(
-				(app): TCatalogItem => ({
+			...intention.behavior.appTargets.map(
+				(target): TCatalogItem => ({
 					type: 'app',
 					app: {
-						stableId: app.stableId,
-						name: app.name,
-						bundleId: app.bundleId,
-						processPath: app.processPath,
-						icon: app.icon,
-						color: app.color
+						stableId: target.app.stableId,
+						name: target.app.name,
+						bundleId: target.app.bundleId,
+						processPath: target.app.processPath,
+						icon: target.app.icon,
+						color: target.app.color
 					}
 				})
 			),
-			...intention.behavior.websites.map(
-				(website): TCatalogItem => ({
+			...intention.behavior.websiteTargets.map(
+				(target): TCatalogItem => ({
 					type: 'website',
 					website: {
-						hostname: website.hostname,
-						name: website.name,
-						icon: website.icon,
-						color: website.color
+						hostname: target.website.hostname,
+						name: target.website.name,
+						icon: target.website.icon,
+						color: target.website.color
 					}
 				})
 			)

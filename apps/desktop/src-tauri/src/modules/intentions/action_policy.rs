@@ -341,14 +341,14 @@ fn weakens_block(current: &IntentionBlock, proposed: &WriteIntentionBlockInput) 
 
 fn target_set_from_block(block: &IntentionBlock) -> BTreeSet<TargetKey> {
     return block
-        .apps
+        .app_targets
         .iter()
-        .map(|app| TargetKey::App(app.stable_id.clone()))
+        .map(|target| TargetKey::App(target.app.stable_id.clone()))
         .chain(
             block
-                .websites
+                .website_targets
                 .iter()
-                .map(|website| TargetKey::Website(website.hostname.clone())),
+                .map(|target| TargetKey::Website(target.website.hostname.clone())),
         )
         .collect();
 }

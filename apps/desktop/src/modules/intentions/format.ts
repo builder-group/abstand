@@ -15,7 +15,7 @@ function formatBlockScope(block: TBlockIntention['behavior']): string {
 		return 'Whole device';
 	}
 
-	const targetLabel = formatTargetCounts(block.apps.length, block.websites.length);
+	const targetLabel = formatTargetCounts(block.appTargets.length, block.websiteTargets.length);
 	if (block.scope === 'allowTargets') {
 		return `Allows ${targetLabel}`;
 	}

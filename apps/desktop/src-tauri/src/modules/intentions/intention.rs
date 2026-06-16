@@ -48,8 +48,20 @@ impl From<IntentionBehavior> for IntentionBehaviorType {
 pub struct IntentionBlock {
     pub enforcement_mode: IntentionEnforcementMode,
     pub scope: IntentionBlockScope,
-    pub apps: Vec<App>,
-    pub websites: Vec<Website>,
+    pub app_targets: Vec<IntentionBlockAppTarget>,
+    pub website_targets: Vec<IntentionBlockWebsiteTarget>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct IntentionBlockAppTarget {
+    pub app: App,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct IntentionBlockWebsiteTarget {
+    pub website: Website,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]

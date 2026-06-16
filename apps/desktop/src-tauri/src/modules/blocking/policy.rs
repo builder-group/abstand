@@ -174,8 +174,8 @@ fn matching_app_target(
         return None;
     };
 
-    return block.apps.iter().find_map(|app| {
-        if app.bundle_id.as_deref() == Some(bundle_id) {
+    return block.app_targets.iter().find_map(|target| {
+        if target.app.bundle_id.as_deref() == Some(bundle_id) {
             return Some(BlockingPolicyTarget::App {
                 bundle_id: bundle_id.to_string(),
             });
@@ -192,8 +192,8 @@ fn matching_website_target(
         return None;
     };
 
-    return block.websites.iter().find_map(|website| {
-        if hostname_matches_target(hostname, &website.hostname) {
+    return block.website_targets.iter().find_map(|target| {
+        if hostname_matches_target(hostname, &target.website.hostname) {
             return Some(BlockingPolicyTarget::Website {
                 hostname: hostname.to_string(),
             });
@@ -247,7 +247,9 @@ mod tests {
     use crate::modules::{
         activity::types::ActivityTarget,
         catalog::types::{App, Website},
-        intentions::intention::IntentionEnforcementMode,
+        intentions::intention::{
+            IntentionBlockAppTarget, IntentionBlockWebsiteTarget, IntentionEnforcementMode,
+        },
     };
 
     #[test]
@@ -301,7 +303,7 @@ mod tests {
             block: block(
                 IntentionBlockScope::AllowTargets,
                 vec![],
-                vec![website("docs.rs")],
+                vec![website_target_rule(website("docs.rs"))],
             ),
         };
 
@@ -321,7 +323,7 @@ mod tests {
             session_automatic_end_at: TEST_SESSION_AUTOMATIC_END_AT,
             block: block(
                 IntentionBlockScope::AllowTargets,
-                vec![app("com.apple.Terminal")],
+                vec![app_target_rule(app("com.apple.Terminal"))],
                 vec![],
             ),
         };
@@ -343,7 +345,7 @@ mod tests {
             block: block(
                 IntentionBlockScope::AllowTargets,
                 vec![],
-                vec![website("docs.rs")],
+                vec![website_target_rule(website("docs.rs"))],
             ),
         };
 
@@ -412,17 +414,38 @@ mod tests {
             session_id: TEST_SESSION_ID,
             session_started_at: TEST_SESSION_STARTED_AT,
             session_automatic_end_at: TEST_SESSION_AUTOMATIC_END_AT,
-            block: block(IntentionBlockScope::BlockTargets, apps, websites),
+            block: block(
+                IntentionBlockScope::BlockTargets,
+                apps.into_iter()
+                    .map(|app| IntentionBlockAppTarget { app })
+                    .collect(),
+                websites
+                    .into_iter()
+                    .map(|website| IntentionBlockWebsiteTarget { website })
+                    .collect(),
+            ),
         };
     }
 
-    fn block(scope: IntentionBlockScope, apps: Vec<App>, websites: Vec<Website>) -> IntentionBlock {
+    fn block(
+        scope: IntentionBlockScope,
+        app_targets: Vec<IntentionBlockAppTarget>,
+        website_targets: Vec<IntentionBlockWebsiteTarget>,
+    ) -> IntentionBlock {
         return IntentionBlock {
             enforcement_mode: IntentionEnforcementMode::Balanced,
             scope,
-            apps,
-            websites,
+            app_targets,
+            website_targets,
         };
+    }
+
+    fn app_target_rule(app: App) -> IntentionBlockAppTarget {
+        return IntentionBlockAppTarget { app };
+    }
+
+    fn website_target_rule(website: Website) -> IntentionBlockWebsiteTarget {
+        return IntentionBlockWebsiteTarget { website };
     }
 
     fn website_target(hostname: &str) -> ActivityTarget {
