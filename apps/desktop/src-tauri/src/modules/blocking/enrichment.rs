@@ -1,8 +1,11 @@
 use super::{
-    policy::{BlockingPolicyTarget, BlockingPolicyViolation},
+    policy::BlockingPolicyViolation,
     types::{BlockedTarget, BlockingViolation},
 };
-use crate::modules::{activity::types::ActivityFocus, catalog::resolver};
+use crate::modules::{
+    activity::types::ActivityFocus, catalog::resolver,
+    intentions::block_policy_target::BlockPolicyTarget,
+};
 use tauri::AppHandle;
 
 pub async fn enrich_blocking_violation(
@@ -22,11 +25,11 @@ pub async fn enrich_blocking_violation(
 
 async fn enrich_blocked_target(
     app: &AppHandle,
-    target: &BlockingPolicyTarget,
+    target: &BlockPolicyTarget,
     focus: &ActivityFocus,
 ) -> BlockedTarget {
     return match target {
-        BlockingPolicyTarget::App { bundle_id } => {
+        BlockPolicyTarget::App { bundle_id } => {
             let catalog_app = match resolver::resolve_app_by_bundle_id(app, bundle_id).await {
                 Ok(app) => app,
                 Err(error) => {
@@ -56,7 +59,7 @@ async fn enrich_blocked_target(
                 color: catalog_app.and_then(|app| app.color),
             }
         }
-        BlockingPolicyTarget::Website { hostname } => {
+        BlockPolicyTarget::Website { hostname } => {
             let catalog_website = match resolver::resolve_website_by_hostname(app, hostname).await {
                 Ok(website) => website,
                 Err(error) => {
@@ -84,7 +87,7 @@ async fn enrich_blocked_target(
                 color: catalog_website.and_then(|website| website.color),
             }
         }
-        BlockingPolicyTarget::Device => BlockedTarget::Device {
+        BlockPolicyTarget::Device => BlockedTarget::Device {
             display_name: "This device".to_string(),
         },
     };

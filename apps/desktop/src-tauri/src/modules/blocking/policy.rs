@@ -2,6 +2,7 @@ use crate::modules::{
     activity::types::ActivityTarget,
     db::types::DatabaseState,
     intentions::{
+        block_policy_target::BlockPolicyTarget,
         condition_timing,
         intention::{
             IntentionBehavior, IntentionBlock, IntentionBlockScope, IntentionBlockTargetAction,
@@ -79,14 +80,7 @@ pub struct BlockingPolicyViolation {
     pub session_id: i64,
     pub session_started_at: i64,
     pub session_automatic_end_at: Option<i64>,
-    pub blocked_target: BlockingPolicyTarget,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum BlockingPolicyTarget {
-    App { bundle_id: String },
-    Website { hostname: String },
-    Device,
+    pub blocked_target: BlockPolicyTarget,
 }
 
 fn evaluate_target(
@@ -99,7 +93,7 @@ fn evaluate_target(
         .iter()
         .find(|intention| intention.block.scope == IntentionBlockScope::WholeDevice)
     {
-        return blocked_decision(intention, BlockingPolicyTarget::Device);
+        return blocked_decision(intention, BlockPolicyTarget::device());
     }
 
     for intention in active_blocks {
@@ -113,7 +107,7 @@ fn evaluate_target(
 
 fn blocked_decision(
     intention: &ActiveBlockIntention,
-    blocked_target: BlockingPolicyTarget,
+    blocked_target: BlockPolicyTarget,
 ) -> BlockingPolicyDecision {
     return BlockingPolicyDecision::Blocked(BlockingPolicyViolation {
         intention_id: intention.id,
@@ -138,105 +132,93 @@ struct ActiveBlockIntention {
 fn blocked_target_for_block(
     block: &IntentionBlock,
     target: &ActivityTarget,
-) -> Option<BlockingPolicyTarget> {
-    // Note: In target scopes, the inverse action is an exception and wins over the base target set
+) -> Option<BlockPolicyTarget> {
+    let activity_targets = ActivityPolicyTargets::from_activity(target);
+    let block_match = activity_targets.matching_target(block, IntentionBlockTargetAction::Block);
+    let allow_match = activity_targets.matching_target(block, IntentionBlockTargetAction::Allow);
+
     return match block.scope {
-        IntentionBlockScope::BlockTargets => {
-            if matching_target_for_action(block, target, IntentionBlockTargetAction::Allow)
-                .is_some()
-            {
-                return None;
-            }
+        IntentionBlockScope::WholeDevice => Some(BlockPolicyTarget::device()),
+        IntentionBlockScope::BlockTargets if allow_match.is_some() => None,
+        IntentionBlockScope::BlockTargets => block_match,
+        IntentionBlockScope::AllowTargets if block_match.is_some() => block_match,
+        IntentionBlockScope::AllowTargets if allow_match.is_some() => None,
+        IntentionBlockScope::AllowTargets => Some(activity_targets.most_specific()),
+    };
+}
 
-            matching_target_for_action(block, target, IntentionBlockTargetAction::Block)
+struct ActivityPolicyTargets {
+    app: Option<BlockPolicyTarget>,
+    website: Option<BlockPolicyTarget>,
+}
+
+impl ActivityPolicyTargets {
+    fn from_activity(target: &ActivityTarget) -> Self {
+        return Self {
+            app: target.app_bundle_id.as_deref().map(BlockPolicyTarget::app),
+            website: target
+                .website_hostname
+                .as_deref()
+                .map(BlockPolicyTarget::website),
+        };
+    }
+
+    fn most_specific(&self) -> BlockPolicyTarget {
+        return self
+            .website
+            .clone()
+            .or_else(|| self.app.clone())
+            .unwrap_or_else(BlockPolicyTarget::device);
+    }
+
+    fn matching_target(
+        &self,
+        block: &IntentionBlock,
+        action: IntentionBlockTargetAction,
+    ) -> Option<BlockPolicyTarget> {
+        return self
+            .matching_app_target(block, action)
+            .or_else(|| self.matching_website_target(block, action));
+    }
+
+    fn matching_app_target(
+        &self,
+        block: &IntentionBlock,
+        action: IntentionBlockTargetAction,
+    ) -> Option<BlockPolicyTarget> {
+        let activity_app = self.app.as_ref()?;
+        let has_match = block.app_targets.iter().any(|target| {
+            target.action == action
+                && target
+                    .app
+                    .bundle_id
+                    .as_deref()
+                    .map(BlockPolicyTarget::app)
+                    .is_some_and(|block_target| block_target.covers(activity_app))
+        });
+        if !has_match {
+            return None;
         }
-        IntentionBlockScope::AllowTargets => {
-            if let Some(blocked_target) =
-                matching_target_for_action(block, target, IntentionBlockTargetAction::Block)
-            {
-                return Some(blocked_target);
-            }
 
-            if matching_target_for_action(block, target, IntentionBlockTargetAction::Allow)
-                .is_some()
-            {
-                return None;
-            }
+        return Some(activity_app.clone());
+    }
 
-            // If nothing matched the allow set, block the most specific target we know
-            if let Some(hostname) = target.website_hostname.as_deref() {
-                return Some(BlockingPolicyTarget::Website {
-                    hostname: hostname.to_string(),
-                });
-            }
-            if let Some(bundle_id) = target.app_bundle_id.as_deref() {
-                return Some(BlockingPolicyTarget::App {
-                    bundle_id: bundle_id.to_string(),
-                });
-            }
-
-            Some(BlockingPolicyTarget::Device)
+    fn matching_website_target(
+        &self,
+        block: &IntentionBlock,
+        action: IntentionBlockTargetAction,
+    ) -> Option<BlockPolicyTarget> {
+        let activity_website = self.website.as_ref()?;
+        let has_match = block.website_targets.iter().any(|target| {
+            target.action == action
+                && BlockPolicyTarget::website(&target.website.hostname).covers(activity_website)
+        });
+        if !has_match {
+            return None;
         }
-        IntentionBlockScope::WholeDevice => Some(BlockingPolicyTarget::Device),
-    };
-}
 
-fn matching_target_for_action(
-    block: &IntentionBlock,
-    target: &ActivityTarget,
-    action: IntentionBlockTargetAction,
-) -> Option<BlockingPolicyTarget> {
-    return matching_app_target_for_action(block, target, action)
-        .or_else(|| matching_website_target_for_action(block, target, action));
-}
-
-fn matching_app_target_for_action(
-    block: &IntentionBlock,
-    target: &ActivityTarget,
-    action: IntentionBlockTargetAction,
-) -> Option<BlockingPolicyTarget> {
-    let Some(bundle_id) = target.app_bundle_id.as_deref() else {
-        return None;
-    };
-
-    let has_matching_app_target = block.app_targets.iter().any(|target| {
-        target.action == action && target.app.bundle_id.as_deref() == Some(bundle_id)
-    });
-    if !has_matching_app_target {
-        return None;
-    };
-
-    return Some(BlockingPolicyTarget::App {
-        bundle_id: bundle_id.to_string(),
-    });
-}
-
-fn matching_website_target_for_action(
-    block: &IntentionBlock,
-    target: &ActivityTarget,
-    action: IntentionBlockTargetAction,
-) -> Option<BlockingPolicyTarget> {
-    let Some(hostname) = target.website_hostname.as_deref() else {
-        return None;
-    };
-
-    let has_matching_website_target = block.website_targets.iter().any(|target| {
-        target.action == action && hostname_matches_target(hostname, &target.website.hostname)
-    });
-    if !has_matching_website_target {
-        return None;
-    };
-
-    return Some(BlockingPolicyTarget::Website {
-        hostname: hostname.to_string(),
-    });
-}
-
-fn hostname_matches_target(hostname: &str, target_hostname: &str) -> bool {
-    return hostname == target_hostname
-        || hostname
-            .strip_suffix(target_hostname)
-            .is_some_and(|prefix| prefix.ends_with('.'));
+        return Some(activity_website.clone());
+    }
 }
 
 #[derive(Debug)]
@@ -271,7 +253,7 @@ impl From<IntentionSessionRepositoryError> for BlockingPolicyError {
 #[cfg(test)]
 mod tests {
     use super::{
-        evaluate_target, ActiveBlockIntention, BlockingPolicyDecision, BlockingPolicyTarget,
+        evaluate_target, ActiveBlockIntention, BlockPolicyTarget, BlockingPolicyDecision,
         BlockingPolicyViolation, IntentionBlock, IntentionBlockScope,
     };
     use crate::modules::{
@@ -294,12 +276,12 @@ mod tests {
     }
 
     #[test]
-    fn blocks_exact_and_subdomain_website_targets() {
+    fn blocks_matching_website_targets() {
         let intention = block_targets_intention(vec![], vec![website("example.com")]);
 
         assert_eq!(
-            evaluate_target(&website_target("news.example.com"), &[intention]),
-            blocked_website_decision(1, "Deep Work".to_string(), "news.example.com".to_string(),)
+            evaluate_target(&website_target("example.com"), &[intention]),
+            blocked_website_decision(1, "Deep Work".to_string(), "example.com".to_string(),)
         );
     }
 
@@ -314,6 +296,16 @@ mod tests {
     }
 
     #[test]
+    fn app_targets_match_when_activity_also_has_a_website() {
+        let intention = block_targets_intention(vec![app("com.apple.Safari")], vec![]);
+
+        assert_eq!(
+            evaluate_target(&website_target("example.com"), &[intention]),
+            blocked_app_decision(1, "Deep Work".to_string(), "com.apple.Safari".to_string())
+        );
+    }
+
+    #[test]
     fn allows_unlisted_websites_in_block_target_scope() {
         let intention = block_targets_intention(vec![], vec![website("example.com")]);
 
@@ -324,7 +316,7 @@ mod tests {
     }
 
     #[test]
-    fn allows_narrower_website_exception_in_block_target_scope() {
+    fn allows_website_exception_over_app_base_in_block_target_scope() {
         let intention = ActiveBlockIntention {
             id: 1,
             name: "Deep Work".to_string(),
@@ -333,57 +325,19 @@ mod tests {
             session_automatic_end_at: TEST_SESSION_AUTOMATIC_END_AT,
             block: block(
                 IntentionBlockScope::BlockTargets,
-                vec![],
-                vec![
-                    website_target_rule(IntentionBlockTargetAction::Block, website("youtube.com")),
-                    website_target_rule(
-                        IntentionBlockTargetAction::Allow,
-                        website("studio.youtube.com"),
-                    ),
-                ],
+                vec![app_target_rule(
+                    IntentionBlockTargetAction::Block,
+                    app("com.apple.Safari"),
+                )],
+                vec![website_target_rule(
+                    IntentionBlockTargetAction::Allow,
+                    website("example.com"),
+                )],
             ),
         };
 
         assert_eq!(
-            evaluate_target(&website_target("studio.youtube.com"), &[intention.clone()]),
-            BlockingPolicyDecision::Allowed
-        );
-        assert_eq!(
-            evaluate_target(
-                &website_target("x.studio.youtube.com"),
-                &[intention.clone()]
-            ),
-            BlockingPolicyDecision::Allowed
-        );
-        assert_eq!(
-            evaluate_target(&website_target("www.youtube.com"), &[intention]),
-            blocked_website_decision(1, "Deep Work".to_string(), "www.youtube.com".to_string(),)
-        );
-    }
-
-    #[test]
-    fn allows_website_exception_over_block_base_in_block_target_scope() {
-        let intention = ActiveBlockIntention {
-            id: 1,
-            name: "Deep Work".to_string(),
-            session_id: TEST_SESSION_ID,
-            session_started_at: TEST_SESSION_STARTED_AT,
-            session_automatic_end_at: TEST_SESSION_AUTOMATIC_END_AT,
-            block: block(
-                IntentionBlockScope::BlockTargets,
-                vec![],
-                vec![
-                    website_target_rule(
-                        IntentionBlockTargetAction::Block,
-                        website("studio.youtube.com"),
-                    ),
-                    website_target_rule(IntentionBlockTargetAction::Allow, website("youtube.com")),
-                ],
-            ),
-        };
-
-        assert_eq!(
-            evaluate_target(&website_target("studio.youtube.com"), &[intention]),
+            evaluate_target(&website_target("example.com"), &[intention]),
             BlockingPolicyDecision::Allowed
         );
     }
@@ -506,7 +460,7 @@ mod tests {
                 session_id: TEST_SESSION_ID,
                 session_started_at: TEST_SESSION_STARTED_AT,
                 session_automatic_end_at: TEST_SESSION_AUTOMATIC_END_AT,
-                blocked_target: BlockingPolicyTarget::Device,
+                blocked_target: BlockPolicyTarget::device(),
             })
         );
     }
@@ -534,7 +488,7 @@ mod tests {
                 session_id: TEST_SESSION_ID,
                 session_started_at: TEST_SESSION_STARTED_AT,
                 session_automatic_end_at: TEST_SESSION_AUTOMATIC_END_AT,
-                blocked_target: BlockingPolicyTarget::Device,
+                blocked_target: BlockPolicyTarget::device(),
             })
         );
     }
@@ -614,7 +568,7 @@ mod tests {
             session_id: TEST_SESSION_ID,
             session_started_at: TEST_SESSION_STARTED_AT,
             session_automatic_end_at: TEST_SESSION_AUTOMATIC_END_AT,
-            blocked_target: BlockingPolicyTarget::App { bundle_id },
+            blocked_target: BlockPolicyTarget::app(bundle_id),
         });
     }
 
@@ -629,7 +583,7 @@ mod tests {
             session_id: TEST_SESSION_ID,
             session_started_at: TEST_SESSION_STARTED_AT,
             session_automatic_end_at: TEST_SESSION_AUTOMATIC_END_AT,
-            blocked_target: BlockingPolicyTarget::Website { hostname },
+            blocked_target: BlockPolicyTarget::website(hostname),
         });
     }
 

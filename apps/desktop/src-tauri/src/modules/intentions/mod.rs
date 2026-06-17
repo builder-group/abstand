@@ -1,5 +1,6 @@
 //! Manages intentions persistence, commands, and runtime activation.
 
+pub mod block_policy_target;
 pub mod commands;
 pub mod condition_timing;
 mod edit_policy;
