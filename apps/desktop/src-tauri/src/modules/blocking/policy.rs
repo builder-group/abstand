@@ -187,15 +187,13 @@ impl ActivityPolicyTargets {
         action: IntentionBlockTargetAction,
     ) -> Option<BlockPolicyTarget> {
         let activity_app = self.app.as_ref()?;
-        let has_match = block.app_targets.iter().any(|target| {
-            target.action == action
-                && target
-                    .app
-                    .bundle_id
-                    .as_deref()
-                    .map(BlockPolicyTarget::app)
-                    .is_some_and(|block_target| block_target.covers(activity_app))
-        });
+        let has_match = block
+            .app_targets
+            .iter()
+            .filter(|target| target.action == action)
+            .filter_map(|target| target.app.bundle_id.as_deref())
+            .map(BlockPolicyTarget::app)
+            .any(|target| target.covers(activity_app));
         if !has_match {
             return None;
         }
@@ -209,10 +207,12 @@ impl ActivityPolicyTargets {
         action: IntentionBlockTargetAction,
     ) -> Option<BlockPolicyTarget> {
         let activity_website = self.website.as_ref()?;
-        let has_match = block.website_targets.iter().any(|target| {
-            target.action == action
-                && BlockPolicyTarget::website(&target.website.hostname).covers(activity_website)
-        });
+        let has_match = block
+            .website_targets
+            .iter()
+            .filter(|target| target.action == action)
+            .map(|target| BlockPolicyTarget::website(&target.website.hostname))
+            .any(|target| target.covers(activity_website));
         if !has_match {
             return None;
         }

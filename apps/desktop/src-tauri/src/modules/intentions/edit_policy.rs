@@ -337,7 +337,6 @@ fn weakens_block(current: &IntentionBlock, proposed: &WriteIntentionBlockInput) 
                 .chain(proposed_allow_targets.iter())
                 .collect::<BTreeSet<_>>();
 
-            // Compare effective access for each explicit target touched by either policy
             candidate_targets.iter().any(|target| {
                 target.is_blocked_by(
                     current.scope,
