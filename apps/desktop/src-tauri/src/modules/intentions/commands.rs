@@ -1,5 +1,5 @@
 use super::{
-    action_policy, condition_timing,
+    condition_timing, edit_policy,
     intention::{
         Intention, IntentionBlockScope, IntentionBlockTargetAction,
         IntentionConditionAfterTransitionRule, IntentionConditionDateTimeRule,
@@ -238,10 +238,10 @@ pub struct TodayEarlierIntentionDto {
 pub async fn assess_intention_edit_policy(
     database_state: State<'_, DatabaseState>,
     params: UpdateIntentionParams,
-) -> Result<Option<action_policy::IntentionEditPolicyAssessment>, String> {
+) -> Result<Option<edit_policy::IntentionEditPolicyAssessment>, String> {
     let input = build_write_intention_input(params.name, params.behavior, params.conditions)?;
 
-    return action_policy::assess_intention_edit_policy(
+    return edit_policy::assess_intention_edit_policy(
         &database_state.pool,
         params.intention_id,
         &input,
@@ -296,7 +296,7 @@ pub async fn update_intention(
 ) -> Result<Intention, String> {
     let input = build_write_intention_input(params.name, params.behavior, params.conditions)?;
 
-    action_policy::require_intention_update_allowed(
+    edit_policy::require_intention_update_allowed(
         &database_state.pool,
         params.intention_id,
         &input,
@@ -416,7 +416,7 @@ pub async fn delete_intention(
     runtime_state: State<'_, IntentionRuntimeState>,
     intention_id: i64,
 ) -> Result<(), String> {
-    action_policy::require_intention_delete_allowed(&database_state.pool, intention_id).await?;
+    edit_policy::require_intention_delete_allowed(&database_state.pool, intention_id).await?;
 
     let did_delete = IntentionRepository::delete(&database_state.pool, intention_id)
         .await
@@ -460,7 +460,7 @@ pub async fn complete_intention(
     intention_id: i64,
     end_condition_id: Option<i64>,
 ) -> Result<IntentionSession, String> {
-    action_policy::require_intention_complete_allowed(
+    edit_policy::require_intention_complete_allowed(
         &database_state.pool,
         intention_id,
         end_condition_id,
@@ -481,7 +481,7 @@ pub async fn stop_intention(
     runtime_state: State<'_, IntentionRuntimeState>,
     intention_id: i64,
 ) -> Result<IntentionSession, String> {
-    action_policy::require_intention_stop_allowed(&database_state.pool, intention_id).await?;
+    edit_policy::require_intention_stop_allowed(&database_state.pool, intention_id).await?;
 
     return runtime_state
         .stop_intention(&app, intention_id)
