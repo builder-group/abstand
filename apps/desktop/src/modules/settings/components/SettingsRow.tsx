@@ -72,6 +72,7 @@ const descriptionVariants = cva('', {
 	variants: {
 		variant: {
 			default: 'text-base-500',
+			warning: 'text-warning',
 			error: 'text-error'
 		},
 		size: {

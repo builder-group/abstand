@@ -18,12 +18,13 @@ import {
 	getCatalogItemKey,
 	getCatalogItemLabel,
 	getCatalogItemSublabel,
-	type TCatalogItem
+	type TCatalogItem,
+	type TCatalogPickerItemDisabledStateFn
 } from './CatalogPickerCx';
 import { CatalogSearch } from './CatalogSearch';
 
 const CatalogPickerDialog: React.FC<TCatalogPickerDialogProps> = (props) => {
-	const { cx, title } = props;
+	const { cx, title, getItemDisabledState } = props;
 	const isOpen = useFeatureState(cx.$isOpen);
 	const selectedItems = useFeatureState(cx.$selectedItems);
 	const selectedKeys = React.useMemo(
@@ -47,7 +48,11 @@ const CatalogPickerDialog: React.FC<TCatalogPickerDialogProps> = (props) => {
 				</DialogHeader>
 
 				<DialogBody className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
-					<CatalogSearch selectedKeys={selectedKeys} cx={cx} />
+					<CatalogSearch
+						cx={cx}
+						selectedKeys={selectedKeys}
+						getItemDisabledState={getItemDisabledState}
+					/>
 
 					<SettingsGroup title="Selected" contentClassName="h-77 overflow-y-auto">
 						{selectedItems.length > 0 ? (
@@ -76,6 +81,7 @@ const CatalogPickerDialog: React.FC<TCatalogPickerDialogProps> = (props) => {
 interface TCatalogPickerDialogProps {
 	cx: CatalogPickerCx;
 	title: string;
+	getItemDisabledState?: TCatalogPickerItemDisabledStateFn;
 }
 
 const SelectedItemRow: React.FC<TSelectedItemRowProps> = (props) => {
@@ -112,7 +118,7 @@ interface TSelectedItemRowProps {
 // MARK: - Hook
 
 export function useCatalogPicker(options: TUseCatalogPickerOptions): TCatalogPickerHandle {
-	const { onConfirm, title = 'Select Apps & Websites' } = options;
+	const { onConfirm, title = 'Select Apps & Websites', getItemDisabledState } = options;
 
 	const handleConfirm = useEventCallback(onConfirm);
 	const cx = React.useMemo(() => new CatalogPickerCx(handleConfirm), [handleConfirm]);
@@ -123,7 +129,9 @@ export function useCatalogPicker(options: TUseCatalogPickerOptions): TCatalogPic
 
 	return {
 		open: React.useCallback((items: TCatalogItem[]) => cx.open(items), [cx]),
-		dialog: <CatalogPickerDialog cx={cx} title={title} />,
+		dialog: (
+			<CatalogPickerDialog cx={cx} title={title} getItemDisabledState={getItemDisabledState} />
+		),
 		cx
 	};
 }
@@ -131,6 +139,7 @@ export function useCatalogPicker(options: TUseCatalogPickerOptions): TCatalogPic
 export interface TUseCatalogPickerOptions {
 	onConfirm: (items: TCatalogItem[]) => void;
 	title?: string;
+	getItemDisabledState?: TCatalogPickerItemDisabledStateFn;
 }
 
 export interface TCatalogPickerHandle {

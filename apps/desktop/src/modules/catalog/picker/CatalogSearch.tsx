@@ -21,11 +21,13 @@ import {
 	getCatalogItemLabel,
 	getCatalogItemSublabel,
 	type CatalogPickerCx,
-	type TCatalogItem
+	type TCatalogItem,
+	type TCatalogPickerItemDisabledState,
+	type TCatalogPickerItemDisabledStateFn
 } from './CatalogPickerCx';
 
 export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
-	const { selectedKeys, cx } = props;
+	const { cx, selectedKeys, getItemDisabledState } = props;
 	const anchorRef = useComboboxAnchor();
 
 	const searchQuery = useFeatureState(cx.$searchQuery);
@@ -67,12 +69,15 @@ export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
 					<ComboboxList>
 						{resultItems.map((item) => {
 							const key = getCatalogItemKey(item);
+							const isSelected = selectedKeys.has(key);
+							const disabledState = isSelected ? null : (getItemDisabledState?.(item) ?? null);
 							return (
 								<CatalogSearchItem
 									key={key}
 									item={item}
 									cx={cx}
-									isSelected={selectedKeys.has(key)}
+									isSelected={isSelected}
+									disabledState={disabledState}
 								/>
 							);
 						})}
@@ -86,16 +91,18 @@ export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
 };
 
 interface TCatalogSearchProps {
-	selectedKeys: Set<string>;
 	cx: CatalogPickerCx;
+	selectedKeys: Set<string>;
+	getItemDisabledState?: TCatalogPickerItemDisabledStateFn;
 }
 
 const CatalogSearchItem: React.FC<TCatalogSearchItemProps> = (props) => {
-	const { item, cx, isSelected } = props;
+	const { item, cx, isSelected, disabledState } = props;
 	const key = getCatalogItemKey(item);
+	const isDisabled = disabledState != null;
 
 	return (
-		<ComboboxItem key={key} value={item} onClick={() => cx.toggle(item)}>
+		<ComboboxItem key={key} value={item} disabled={isDisabled} onClick={() => cx.toggle(item)}>
 			<CatalogItemIcon item={item} isSelected={isSelected} />
 			<div className="flex min-w-0 flex-1 flex-col">
 				<span className="truncate">{getCatalogItemLabel(item)}</span>
@@ -107,6 +114,7 @@ const CatalogSearchItem: React.FC<TCatalogSearchItemProps> = (props) => {
 					added
 				</Badge>
 			)}
+			{disabledState != null && <Badge>{disabledState.message}</Badge>}
 			<CatalogItemTypeBadge item={item} />
 		</ComboboxItem>
 	);
@@ -116,4 +124,5 @@ interface TCatalogSearchItemProps {
 	item: TCatalogItem;
 	cx: CatalogPickerCx;
 	isSelected: boolean;
+	disabledState: TCatalogPickerItemDisabledState | null;
 }

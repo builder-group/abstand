@@ -4,14 +4,22 @@ import React from 'react';
 import { Badge, ChevronRightIcon, HelpCarousel, HelpPopover, Select } from '@/components';
 import { type specta } from '@/environment';
 import { cn } from '@/lib';
-import { CatalogIconPeek, useCatalogPicker, type TCatalogItem } from '@/modules/catalog';
+import {
+	CatalogIconPeek,
+	getCatalogItemKey,
+	useCatalogPicker,
+	type TCatalogItem,
+	type TCatalogPickerItemDisabledState
+} from '@/modules/catalog';
 import { SettingsGroup, SettingsRow } from '@/modules/settings';
 import { type BlockIntentionFormCx } from '../BlockIntentionFormCx';
 
 export const BlockSection: React.FC<TBlockSectionProps> = (props) => {
 	const { formCx, isDisabled = false } = props;
 
-	const { open: openCatalogPicker, dialog: catalogPickerDialog } = useCatalogPicker({
+	const { open: openBaseTargetPicker, dialog: baseTargetPickerDialog } = useCatalogPicker({
+		title: 'Select Apps & Websites',
+		getItemDisabledState: (item) => getBaseTargetPickerDisabledState(formCx, item),
 		onConfirm: (items: TCatalogItem[]) => {
 			// Note: The picker can already be open when a submit starts, so ignore late confirms
 			if (isDisabled) {
@@ -21,6 +29,20 @@ export const BlockSection: React.FC<TBlockSectionProps> = (props) => {
 			formCx.$form.fields.baseTargets.set(items);
 		}
 	});
+	const { open: openExceptionTargetPicker, dialog: exceptionTargetPickerDialog } = useCatalogPicker(
+		{
+			title: 'Select Exceptions',
+			getItemDisabledState: (item) => getExceptionTargetPickerDisabledState(formCx, item),
+			onConfirm: (items: TCatalogItem[]) => {
+				// Note: The picker can already be open when a submit starts, so ignore late confirms
+				if (isDisabled) {
+					return;
+				}
+
+				formCx.$form.fields.exceptionTargets.set(items);
+			}
+		}
+	);
 
 	// MARK: - UI
 
@@ -29,17 +51,19 @@ export const BlockSection: React.FC<TBlockSectionProps> = (props) => {
 			<div className="space-y-2.5">
 				<SettingsGroup title="Block">
 					<BlockScopeRow formCx={formCx} isDisabled={isDisabled} />
-					<BlockTargetsRow
+					<BlockTargetRows
 						formCx={formCx}
 						isDisabled={isDisabled}
-						onOpenPicker={openCatalogPicker}
+						onOpenBaseTargetPicker={openBaseTargetPicker}
+						onOpenExceptionTargetPicker={openExceptionTargetPicker}
 					/>
 				</SettingsGroup>
 				<SettingsGroup>
 					<EnforcementModeRow formCx={formCx} isDisabled={isDisabled} />
 				</SettingsGroup>
 			</div>
-			{catalogPickerDialog}
+			{baseTargetPickerDialog}
+			{exceptionTargetPickerDialog}
 		</>
 	);
 };
@@ -47,6 +71,38 @@ export const BlockSection: React.FC<TBlockSectionProps> = (props) => {
 interface TBlockSectionProps {
 	formCx: BlockIntentionFormCx;
 	isDisabled?: boolean;
+}
+
+function getBaseTargetPickerDisabledState(
+	formCx: BlockIntentionFormCx,
+	item: TCatalogItem
+): TCatalogPickerItemDisabledState | null {
+	const exceptionTargets = formCx.$form.fields.exceptionTargets.get() ?? [];
+	if (containsCatalogItemKey(exceptionTargets, item)) {
+		return { message: 'already an exception' };
+	}
+
+	return null;
+}
+
+function getExceptionTargetPickerDisabledState(
+	formCx: BlockIntentionFormCx,
+	item: TCatalogItem
+): TCatalogPickerItemDisabledState | null {
+	const baseTargets = formCx.$form.fields.baseTargets.get() ?? [];
+	if (!containsCatalogItemKey(baseTargets, item)) {
+		return null;
+	}
+
+	return {
+		message:
+			formCx.$form.fields.scope.get() === 'allowTargets' ? 'already allowed' : 'already blocked'
+	};
+}
+
+function containsCatalogItemKey(items: TCatalogItem[], item: TCatalogItem): boolean {
+	const itemKey = getCatalogItemKey(item);
+	return items.some((candidate) => getCatalogItemKey(candidate) === itemKey);
 }
 
 const BlockScopeRow: React.FC<TBlockScopeRowProps> = (props) => {
@@ -136,87 +192,95 @@ const blockScopeOptions: { value: specta.IntentionBlockScope; label: string }[] 
 	{ value: 'wholeDevice', label: 'Whole device' }
 ];
 
-const BlockTargetsRow: React.FC<TBlockTargetsRowProps> = (props) => {
-	const { formCx, isDisabled = false, onOpenPicker } = props;
+const BlockTargetRows: React.FC<TBlockTargetRowsProps> = (props) => {
+	const { formCx, isDisabled = false, onOpenBaseTargetPicker, onOpenExceptionTargetPicker } = props;
 	const scope = useFeatureState(formCx.$form.fields.scope);
+
 	const baseTargets = useFeatureState(formCx.$form.fields.baseTargets);
 	const baseTargetsStatus = useFeatureState(formCx.$form.fields.baseTargets.status);
+	const exceptionTargets = useFeatureState(formCx.$form.fields.exceptionTargets);
+	const exceptionTargetsStatus = useFeatureState(formCx.$form.fields.exceptionTargets.status);
 
 	const isTargetsSelectable = scope !== 'wholeDevice';
 	const hasBaseTargets = baseTargets.length > 0;
-	const targetsLabel = getTargetsLabel(scope, baseTargets);
-	const targetsDescription = getTargetsDescription(scope);
-	const targetsError =
+	const baseTargetsError =
 		isTargetsSelectable && baseTargetsStatus.type === 'invalid'
 			? baseTargetsStatus.errors[0]?.message
 			: undefined;
-
-	// MARK: - Actions
-
-	const handleOpenTargets = React.useCallback(() => {
-		if (isDisabled) {
-			return;
-		}
-
-		onOpenPicker(baseTargets);
-	}, [baseTargets, isDisabled, onOpenPicker]);
+	const exceptionTargetsError =
+		isTargetsSelectable && exceptionTargetsStatus.type === 'invalid'
+			? exceptionTargetsStatus.errors[0]?.message
+			: undefined;
 
 	// MARK: - UI
 
 	if (!isTargetsSelectable) {
 		return (
-			<SettingsRow label="Apps & websites" description={targetsDescription}>
-				<span className="text-base-500 text-sm">{targetsLabel}</span>
+			<SettingsRow label="Apps & websites">
+				<span className="text-base-500 text-sm">{getTargetsLabel(scope, baseTargets)}</span>
 			</SettingsRow>
 		);
 	}
 
 	return (
-		<SettingsRow
-			label="Apps & websites"
-			description={targetsError ?? targetsDescription}
-			descriptionVariant={targetsError != null ? 'error' : 'default'}
-			interactive={!isDisabled}
-			render={<button type="button" disabled={isDisabled} onClick={handleOpenTargets} />}
-		>
-			<span
-				className={cn(
-					'inline-flex items-center gap-1.5 text-sm',
-					targetsError != null
-						? 'text-red-500'
-						: hasBaseTargets
-							? 'text-base-500'
-							: 'text-base-400'
-				)}
-			>
-				<CatalogIconPeek items={baseTargets} />
-				{targetsLabel}
-			</span>
-			<ChevronRightIcon className={targetsError != null ? 'text-red-500' : 'text-base-400'} />
-		</SettingsRow>
+		<>
+			<CatalogTargetRow
+				label={getBaseTargetsLabel(scope)}
+				description={baseTargetsError ?? getBaseTargetsDescription(scope)}
+				descriptionVariant={baseTargetsError != null ? 'error' : 'default'}
+				targets={baseTargets}
+				error={baseTargetsError}
+				isDisabled={isDisabled}
+				onOpenPicker={onOpenBaseTargetPicker}
+			/>
+			{hasBaseTargets && (
+				<CatalogTargetRow
+					label="Exceptions"
+					description={exceptionTargetsError ?? getExceptionTargetsDescription(scope)}
+					descriptionVariant={exceptionTargetsError != null ? 'error' : 'default'}
+					targets={exceptionTargets}
+					error={exceptionTargetsError}
+					isDisabled={isDisabled}
+					onOpenPicker={onOpenExceptionTargetPicker}
+				/>
+			)}
+		</>
 	);
 };
 
-interface TBlockTargetsRowProps {
+interface TBlockTargetRowsProps {
 	formCx: BlockIntentionFormCx;
 	isDisabled?: boolean;
-	onOpenPicker: (items: TCatalogItem[]) => void;
+	onOpenBaseTargetPicker: (items: TCatalogItem[]) => void;
+	onOpenExceptionTargetPicker: (items: TCatalogItem[]) => void;
 }
 
-function getTargetsLabel(
-	scope: specta.IntentionBlockScope,
-	targets: TCatalogItem[]
-): string {
+function getTargetsLabel(scope: specta.IntentionBlockScope, targets: TCatalogItem[]): string {
 	if (scope === 'wholeDevice') {
 		return 'Whole device';
 	}
+	return getTargetCountLabel(targets);
+}
+
+function getTargetCountLabel(targets: TCatalogItem[]): string {
 	if (targets.length > 0) {
 		return `${targets.length} selected`;
 	}
 	return 'None';
 }
 
-function getTargetsDescription(scope: specta.IntentionBlockScope): string | undefined {
+function getBaseTargetsLabel(scope: specta.IntentionBlockScope): string {
+	switch (scope) {
+		case 'blockTargets':
+			return 'Blocked apps & websites';
+		case 'allowTargets':
+			return 'Allowed apps & websites';
+		case 'wholeDevice':
+			return 'Apps & websites';
+	}
+}
+
+function getBaseTargetsDescription(scope: specta.IntentionBlockScope): string | undefined {
 	switch (scope) {
 		case 'blockTargets':
 			return 'Choose which apps and websites to block.';
@@ -227,11 +291,79 @@ function getTargetsDescription(scope: specta.IntentionBlockScope): string | unde
 	}
 }
 
+function getExceptionTargetsDescription(scope: specta.IntentionBlockScope): string | undefined {
+	switch (scope) {
+		case 'blockTargets':
+			return 'Keep these available even when covered by the blocked selection.';
+		case 'allowTargets':
+			return 'Block these even when covered by the allowed selection.';
+		case 'wholeDevice':
+			return undefined;
+	}
+}
+
+const CatalogTargetRow: React.FC<TCatalogTargetRowProps> = (props) => {
+	const {
+		label,
+		description,
+		descriptionVariant,
+		targets,
+		error,
+		isDisabled = false,
+		onOpenPicker
+	} = props;
+	const hasTargets = targets.length > 0;
+
+	// MARK: - Actions
+
+	const handleOpenPicker = React.useCallback(() => {
+		if (isDisabled) {
+			return;
+		}
+
+		onOpenPicker(targets);
+	}, [isDisabled, onOpenPicker, targets]);
+
+	// MARK: - UI
+
+	return (
+		<SettingsRow
+			label={label}
+			description={description}
+			descriptionVariant={descriptionVariant}
+			interactive={!isDisabled}
+			render={<button type="button" disabled={isDisabled} onClick={handleOpenPicker} />}
+		>
+			<span
+				className={cn(
+					'inline-flex items-center gap-1.5 text-sm',
+					error != null ? 'text-red-500' : hasTargets ? 'text-base-500' : 'text-base-400'
+				)}
+			>
+				<CatalogIconPeek items={targets} />
+				{getTargetCountLabel(targets)}
+			</span>
+			<ChevronRightIcon className={error != null ? 'text-red-500' : 'text-base-400'} />
+		</SettingsRow>
+	);
+};
+
+interface TCatalogTargetRowProps {
+	label: string;
+	description: string | undefined;
+	descriptionVariant: 'default' | 'error';
+	targets: TCatalogItem[];
+	error?: string;
+	isDisabled?: boolean;
+	onOpenPicker: (items: TCatalogItem[]) => void;
+}
+
 const EnforcementModeRow: React.FC<TEnforcementModeRowProps> = (props) => {
 	const { formCx, isDisabled = false } = props;
 	const enforcementModeField = useFormField(formCx.$form, 'enforcementMode', {
 		controlled: true
 	});
+	const isStrict = enforcementModeField.value === 'strict';
 
 	const carouselItems = React.useMemo(
 		() => [
@@ -281,12 +413,18 @@ const EnforcementModeRow: React.FC<TEnforcementModeRowProps> = (props) => {
 	return (
 		<SettingsRow
 			label="Enforcement"
+			description={
+				isStrict
+					? 'Once this Intention starts, Strict cannot be ended or weakened until the end condition is met. Abstand may also be harder to quit.'
+					: undefined
+			}
+			descriptionVariant={isStrict ? 'warning' : 'default'}
 			labelAccessory={
 				<HelpPopover ariaLabel="About enforcement levels">
 					<HelpCarousel items={carouselItems} />
 				</HelpPopover>
 			}
-			variant="compact"
+			variant={isStrict ? 'default' : 'compact'}
 		>
 			<Select
 				variant="ghost"

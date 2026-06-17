@@ -161,6 +161,14 @@ export type TCatalogItem =
 	| { type: 'app'; app: specta.CatalogAppSearchResultDto }
 	| { type: 'website'; website: specta.CatalogWebsiteSearchResultDto };
 
+export interface TCatalogPickerItemDisabledState {
+	message: string;
+}
+
+export type TCatalogPickerItemDisabledStateFn = (
+	item: TCatalogItem
+) => TCatalogPickerItemDisabledState | null;
+
 export function getCatalogItemKey(item: TCatalogItem): string {
 	return item.type === 'app' ? `app:${item.app.stableId}` : `website:${item.website.hostname}`;
 }
