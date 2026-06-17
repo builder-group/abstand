@@ -2,7 +2,7 @@ use crate::modules::{
     activity::types::ActivityTarget,
     db::types::DatabaseState,
     intentions::{
-        block_policy_target::BlockPolicyTarget,
+        block_policy::{BlockPolicySubject, BlockPolicyTarget},
         condition_timing,
         intention::{
             IntentionBehavior, IntentionBlock, IntentionBlockScope, IntentionBlockTargetAction,
@@ -14,7 +14,7 @@ use crate::modules::{
     },
 };
 use std::{
-    collections::{HashMap, HashSet},
+    collections::{BTreeSet, HashMap, HashSet},
     fmt,
 };
 use tauri::{AppHandle, Manager};
@@ -133,92 +133,44 @@ fn blocked_target_for_block(
     block: &IntentionBlock,
     target: &ActivityTarget,
 ) -> Option<BlockPolicyTarget> {
-    let activity_targets = ActivityPolicyTargets::from_activity(target);
-    let block_match = activity_targets.matching_target(block, IntentionBlockTargetAction::Block);
-    let allow_match = activity_targets.matching_target(block, IntentionBlockTargetAction::Allow);
+    let subject = subject_from_activity(target);
+    let block_targets = target_set_from_block(block, IntentionBlockTargetAction::Block);
+    let allow_targets = target_set_from_block(block, IntentionBlockTargetAction::Allow);
 
-    return match block.scope {
-        IntentionBlockScope::WholeDevice => Some(BlockPolicyTarget::device()),
-        IntentionBlockScope::BlockTargets if allow_match.is_some() => None,
-        IntentionBlockScope::BlockTargets => block_match,
-        IntentionBlockScope::AllowTargets if block_match.is_some() => block_match,
-        IntentionBlockScope::AllowTargets if allow_match.is_some() => None,
-        IntentionBlockScope::AllowTargets => Some(activity_targets.most_specific()),
+    return subject.blocked_target(block.scope, &block_targets, &allow_targets);
+}
+
+fn subject_from_activity(target: &ActivityTarget) -> BlockPolicySubject {
+    return match (
+        target.app_bundle_id.as_deref(),
+        target.website_hostname.as_deref(),
+    ) {
+        (Some(bundle_id), Some(hostname)) => {
+            BlockPolicySubject::app_and_website(bundle_id, hostname)
+        }
+        (Some(bundle_id), None) => BlockPolicySubject::app(bundle_id),
+        (None, Some(hostname)) => BlockPolicySubject::website(hostname),
+        (None, None) => BlockPolicySubject::device(),
     };
 }
 
-struct ActivityPolicyTargets {
-    app: Option<BlockPolicyTarget>,
-    website: Option<BlockPolicyTarget>,
-}
-
-impl ActivityPolicyTargets {
-    fn from_activity(target: &ActivityTarget) -> Self {
-        return Self {
-            app: target.app_bundle_id.as_deref().map(BlockPolicyTarget::app),
-            website: target
-                .website_hostname
-                .as_deref()
-                .map(BlockPolicyTarget::website),
-        };
-    }
-
-    fn most_specific(&self) -> BlockPolicyTarget {
-        return self
-            .website
-            .clone()
-            .or_else(|| self.app.clone())
-            .unwrap_or_else(BlockPolicyTarget::device);
-    }
-
-    fn matching_target(
-        &self,
-        block: &IntentionBlock,
-        action: IntentionBlockTargetAction,
-    ) -> Option<BlockPolicyTarget> {
-        return self
-            .matching_app_target(block, action)
-            .or_else(|| self.matching_website_target(block, action));
-    }
-
-    fn matching_app_target(
-        &self,
-        block: &IntentionBlock,
-        action: IntentionBlockTargetAction,
-    ) -> Option<BlockPolicyTarget> {
-        let activity_app = self.app.as_ref()?;
-        let has_match = block
-            .app_targets
-            .iter()
-            .filter(|target| target.action == action)
-            .filter_map(|target| target.app.bundle_id.as_deref())
-            .map(BlockPolicyTarget::app)
-            .any(|target| target.covers(activity_app));
-        if !has_match {
-            return None;
-        }
-
-        return Some(activity_app.clone());
-    }
-
-    fn matching_website_target(
-        &self,
-        block: &IntentionBlock,
-        action: IntentionBlockTargetAction,
-    ) -> Option<BlockPolicyTarget> {
-        let activity_website = self.website.as_ref()?;
-        let has_match = block
-            .website_targets
-            .iter()
-            .filter(|target| target.action == action)
-            .map(|target| BlockPolicyTarget::website(&target.website.hostname))
-            .any(|target| target.covers(activity_website));
-        if !has_match {
-            return None;
-        }
-
-        return Some(activity_website.clone());
-    }
+fn target_set_from_block(
+    block: &IntentionBlock,
+    action: IntentionBlockTargetAction,
+) -> BTreeSet<BlockPolicyTarget> {
+    return block
+        .app_targets
+        .iter()
+        .filter(|target| target.action == action)
+        .filter_map(|target| target.app.bundle_id.as_deref().map(BlockPolicyTarget::app))
+        .chain(
+            block
+                .website_targets
+                .iter()
+                .filter(|target| target.action == action)
+                .map(|target| BlockPolicyTarget::website(target.website.hostname.clone())),
+        )
+        .collect();
 }
 
 #[derive(Debug)]

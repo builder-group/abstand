@@ -1,5 +1,5 @@
 use super::{
-    block_policy_target, condition_timing,
+    block_policy, condition_timing,
     intention::{
         Intention, IntentionBehavior, IntentionBlock, IntentionBlockScope,
         IntentionBlockTargetAction, IntentionCondition, IntentionConditionRule,
@@ -10,7 +10,7 @@ use super::{
         WriteIntentionBlockInput, WriteIntentionConditionInput, WriteIntentionInput,
     },
 };
-use block_policy_target::BlockPolicyTarget;
+use block_policy::{BlockPolicySubject, BlockPolicyTarget};
 use serde::Serialize;
 use sqlx::{Pool, Sqlite};
 use std::collections::BTreeSet;
@@ -336,13 +336,14 @@ fn weakens_block(current: &IntentionBlock, proposed: &WriteIntentionBlockInput) 
                 .chain(proposed_block_targets.iter())
                 .chain(proposed_allow_targets.iter())
                 .collect::<BTreeSet<_>>();
+            let candidate_subjects = candidate_subjects_from_targets(candidate_targets);
 
-            candidate_targets.iter().any(|target| {
-                target.is_blocked_by(
+            candidate_subjects.iter().any(|subject| {
+                subject.is_blocked_by(
                     current.scope,
                     &current_block_targets,
                     &current_allow_targets,
-                ) && !target.is_blocked_by(
+                ) && !subject.is_blocked_by(
                     proposed.scope,
                     &proposed_block_targets,
                     &proposed_allow_targets,
@@ -390,14 +391,56 @@ fn target_set_from_write_block(
         .collect();
 }
 
+fn candidate_subjects_from_targets(
+    targets: BTreeSet<&BlockPolicyTarget>,
+) -> Vec<BlockPolicySubject> {
+    let apps = targets
+        .iter()
+        .filter(|target| matches!(target, BlockPolicyTarget::App { .. }))
+        .map(|target| (*target).clone())
+        .collect::<Vec<_>>();
+    let websites = targets
+        .iter()
+        .filter(|target| matches!(target, BlockPolicyTarget::Website { .. }))
+        .map(|target| (*target).clone())
+        .collect::<Vec<_>>();
+
+    let mut subjects = targets
+        .iter()
+        .map(|target| BlockPolicySubject::from_target((*target).clone()))
+        .collect::<Vec<_>>();
+    // Note: Edit policy cannot know which apps can host website focus, so compare all app/website pairs
+    for app in &apps {
+        for website in &websites {
+            let (BlockPolicyTarget::App { bundle_id }, BlockPolicyTarget::Website { hostname }) =
+                (app, website)
+            else {
+                continue;
+            };
+
+            subjects.push(BlockPolicySubject::app_and_website(
+                bundle_id.clone(),
+                hostname.clone(),
+            ));
+        }
+    }
+
+    return subjects;
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::modules::{
-        catalog::{repository::UpsertWebsiteInput, types::Website},
+        catalog::{
+            repository::{UpsertAppInput, UpsertWebsiteInput},
+            types::{App, Website},
+        },
         intentions::{
-            intention::IntentionBlockWebsiteTarget,
-            repository::WriteIntentionBlockWebsiteTargetInput,
+            intention::{IntentionBlockAppTarget, IntentionBlockWebsiteTarget},
+            repository::{
+                WriteIntentionBlockAppTargetInput, WriteIntentionBlockWebsiteTargetInput,
+            },
         },
     };
 
@@ -416,6 +459,31 @@ mod tests {
                 write_website_target(IntentionBlockTargetAction::Block, "studio.youtube.com"),
                 write_website_target(IntentionBlockTargetAction::Allow, "youtube.com"),
             ],
+        );
+
+        assert!(weakens_block(&current, &proposed));
+    }
+
+    #[test]
+    fn adding_website_allow_exception_over_app_base_weakens_block_target_scope() {
+        let current = block_with_targets(
+            IntentionBlockScope::BlockTargets,
+            vec![app_target(
+                IntentionBlockTargetAction::Block,
+                "com.apple.Safari",
+            )],
+            vec![],
+        );
+        let proposed = write_block_with_targets(
+            IntentionBlockScope::BlockTargets,
+            vec![write_app_target(
+                IntentionBlockTargetAction::Block,
+                "com.apple.Safari",
+            )],
+            vec![write_website_target(
+                IntentionBlockTargetAction::Allow,
+                "example.com",
+            )],
         );
 
         assert!(weakens_block(&current, &proposed));
@@ -525,11 +593,34 @@ mod tests {
         scope: IntentionBlockScope,
         website_targets: Vec<IntentionBlockWebsiteTarget>,
     ) -> IntentionBlock {
+        return block_with_targets(scope, Vec::new(), website_targets);
+    }
+
+    fn block_with_targets(
+        scope: IntentionBlockScope,
+        app_targets: Vec<IntentionBlockAppTarget>,
+        website_targets: Vec<IntentionBlockWebsiteTarget>,
+    ) -> IntentionBlock {
         return IntentionBlock {
             enforcement_mode: IntentionEnforcementMode::Balanced,
             scope,
-            app_targets: Vec::new(),
+            app_targets,
             website_targets,
+        };
+    }
+
+    fn app_target(action: IntentionBlockTargetAction, bundle_id: &str) -> IntentionBlockAppTarget {
+        return IntentionBlockAppTarget {
+            action,
+            app: App {
+                id: 1,
+                stable_id: bundle_id.to_string(),
+                name: None,
+                bundle_id: Some(bundle_id.to_string()),
+                process_path: None,
+                icon: None,
+                color: None,
+            },
         };
     }
 
@@ -553,11 +644,36 @@ mod tests {
         scope: IntentionBlockScope,
         website_targets: Vec<WriteIntentionBlockWebsiteTargetInput>,
     ) -> WriteIntentionBlockInput {
+        return write_block_with_targets(scope, Vec::new(), website_targets);
+    }
+
+    fn write_block_with_targets(
+        scope: IntentionBlockScope,
+        app_targets: Vec<WriteIntentionBlockAppTargetInput>,
+        website_targets: Vec<WriteIntentionBlockWebsiteTargetInput>,
+    ) -> WriteIntentionBlockInput {
         return WriteIntentionBlockInput {
             enforcement_mode: IntentionEnforcementMode::Balanced,
             scope,
-            app_targets: Vec::new(),
+            app_targets,
             website_targets,
+        };
+    }
+
+    fn write_app_target(
+        action: IntentionBlockTargetAction,
+        bundle_id: &str,
+    ) -> WriteIntentionBlockAppTargetInput {
+        return WriteIntentionBlockAppTargetInput {
+            action,
+            app: UpsertAppInput {
+                stable_id: bundle_id.to_string(),
+                name: None,
+                bundle_id: Some(bundle_id.to_string()),
+                process_path: None,
+                icon: None,
+                color: None,
+            },
         };
     }
 
