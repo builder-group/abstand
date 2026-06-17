@@ -20,7 +20,7 @@ import {
 	weekdayMaskFromWeekdays,
 	type TWeekday
 } from '@/lib';
-import { type TCatalogItem } from '@/modules/catalog';
+import { getCatalogItemKey, type TCatalogItem } from '@/modules/catalog';
 
 export class BlockIntentionFormCx {
 	public readonly mode: TBlockIntentionFormMode;
@@ -737,8 +737,9 @@ const blockIntentionFormValidator = {
 			}
 
 			const duplicateException = formData.exceptionTargets.find((exceptionTarget) => {
-				return formData.baseTargets.some((baseTarget) =>
-					haveSameCatalogItemIdentity(baseTarget, exceptionTarget)
+				const exceptionTargetKey = getCatalogItemKey(exceptionTarget);
+				return formData.baseTargets.some(
+					(baseTarget) => getCatalogItemKey(baseTarget) === exceptionTargetKey
 				);
 			});
 			if (duplicateException != null) {
@@ -756,20 +757,6 @@ const blockIntentionFormValidator = {
 		}
 	}
 } satisfies TFormValidator<TBlockIntentionFormData>;
-
-function haveSameCatalogItemIdentity(a: TCatalogItem, b: TCatalogItem): boolean {
-	if (a.type !== b.type) {
-		return false;
-	}
-	if (a.type === 'app' && b.type === 'app') {
-		return a.app.stableId === b.app.stableId;
-	}
-	if (a.type === 'website' && b.type === 'website') {
-		return a.website.hostname === b.website.hostname;
-	}
-
-	return false;
-}
 
 // MARK: - Config
 

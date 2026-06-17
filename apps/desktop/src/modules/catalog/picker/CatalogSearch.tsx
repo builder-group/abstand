@@ -98,11 +98,10 @@ interface TCatalogSearchProps {
 
 const CatalogSearchItem: React.FC<TCatalogSearchItemProps> = (props) => {
 	const { item, cx, isSelected, disabledState } = props;
-	const key = getCatalogItemKey(item);
 	const isDisabled = disabledState != null;
 
 	return (
-		<ComboboxItem key={key} value={item} disabled={isDisabled} onClick={() => cx.toggle(item)}>
+		<ComboboxItem value={item} disabled={isDisabled} onClick={() => cx.toggle(item)}>
 			<CatalogItemIcon item={item} isSelected={isSelected} />
 			<div className="flex min-w-0 flex-1 flex-col">
 				<span className="truncate">{getCatalogItemLabel(item)}</span>

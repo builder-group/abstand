@@ -201,33 +201,30 @@ const BlockTargetRows: React.FC<TBlockTargetRowsProps> = (props) => {
 	const exceptionTargets = useFeatureState(formCx.$form.fields.exceptionTargets);
 	const exceptionTargetsStatus = useFeatureState(formCx.$form.fields.exceptionTargets.status);
 
-	const isTargetsSelectable = scope !== 'wholeDevice';
 	const hasBaseTargets = baseTargets.length > 0;
-	const baseTargetsError =
-		isTargetsSelectable && baseTargetsStatus.type === 'invalid'
-			? baseTargetsStatus.errors[0]?.message
-			: undefined;
-	const exceptionTargetsError =
-		isTargetsSelectable && exceptionTargetsStatus.type === 'invalid'
-			? exceptionTargetsStatus.errors[0]?.message
-			: undefined;
 
 	// MARK: - UI
 
-	if (!isTargetsSelectable) {
+	if (scope === 'wholeDevice') {
 		return (
 			<SettingsRow label="Apps & websites">
-				<span className="text-base-500 text-sm">{getTargetsLabel(scope, baseTargets)}</span>
+				<span className="text-base-500 text-sm">Whole device</span>
 			</SettingsRow>
 		);
 	}
+
+	const baseTargetsError =
+		baseTargetsStatus.type === 'invalid' ? baseTargetsStatus.errors[0]?.message : undefined;
+	const exceptionTargetsError =
+		exceptionTargetsStatus.type === 'invalid'
+			? exceptionTargetsStatus.errors[0]?.message
+			: undefined;
 
 	return (
 		<>
 			<CatalogTargetRow
 				label={getBaseTargetsLabel(scope)}
 				description={baseTargetsError ?? getBaseTargetsDescription(scope)}
-				descriptionVariant={baseTargetsError != null ? 'error' : 'default'}
 				targets={baseTargets}
 				error={baseTargetsError}
 				isDisabled={isDisabled}
@@ -237,7 +234,6 @@ const BlockTargetRows: React.FC<TBlockTargetRowsProps> = (props) => {
 				<CatalogTargetRow
 					label="Exceptions"
 					description={exceptionTargetsError ?? getExceptionTargetsDescription(scope)}
-					descriptionVariant={exceptionTargetsError != null ? 'error' : 'default'}
 					targets={exceptionTargets}
 					error={exceptionTargetsError}
 					isDisabled={isDisabled}
@@ -255,64 +251,39 @@ interface TBlockTargetRowsProps {
 	onOpenExceptionTargetPicker: (items: TCatalogItem[]) => void;
 }
 
-function getTargetsLabel(scope: specta.IntentionBlockScope, targets: TCatalogItem[]): string {
-	if (scope === 'wholeDevice') {
-		return 'Whole device';
-	}
-	return getTargetCountLabel(targets);
-}
-
-function getTargetCountLabel(targets: TCatalogItem[]): string {
-	if (targets.length > 0) {
-		return `${targets.length} selected`;
-	}
-	return 'None';
-}
-
-function getBaseTargetsLabel(scope: specta.IntentionBlockScope): string {
+function getBaseTargetsLabel(scope: TSelectableBlockScope): string {
 	switch (scope) {
 		case 'blockTargets':
 			return 'Blocked apps & websites';
 		case 'allowTargets':
 			return 'Allowed apps & websites';
-		case 'wholeDevice':
-			return 'Apps & websites';
 	}
 }
 
-function getBaseTargetsDescription(scope: specta.IntentionBlockScope): string | undefined {
+function getBaseTargetsDescription(scope: TSelectableBlockScope): string {
 	switch (scope) {
 		case 'blockTargets':
 			return 'Choose which apps and websites to block.';
 		case 'allowTargets':
 			return 'Choose what stays available while everything else is blocked.';
-		case 'wholeDevice':
-			return undefined;
 	}
 }
 
-function getExceptionTargetsDescription(scope: specta.IntentionBlockScope): string | undefined {
+function getExceptionTargetsDescription(scope: TSelectableBlockScope): string {
 	switch (scope) {
 		case 'blockTargets':
 			return 'Keep these available even when covered by the blocked selection.';
 		case 'allowTargets':
 			return 'Block these even when covered by the allowed selection.';
-		case 'wholeDevice':
-			return undefined;
 	}
 }
 
+type TSelectableBlockScope = Exclude<specta.IntentionBlockScope, 'wholeDevice'>;
+
 const CatalogTargetRow: React.FC<TCatalogTargetRowProps> = (props) => {
-	const {
-		label,
-		description,
-		descriptionVariant,
-		targets,
-		error,
-		isDisabled = false,
-		onOpenPicker
-	} = props;
+	const { label, description, targets, error, isDisabled = false, onOpenPicker } = props;
 	const hasTargets = targets.length > 0;
+	const hasError = error != null;
 
 	// MARK: - Actions
 
@@ -330,20 +301,20 @@ const CatalogTargetRow: React.FC<TCatalogTargetRowProps> = (props) => {
 		<SettingsRow
 			label={label}
 			description={description}
-			descriptionVariant={descriptionVariant}
+			descriptionVariant={hasError ? 'error' : 'default'}
 			interactive={!isDisabled}
 			render={<button type="button" disabled={isDisabled} onClick={handleOpenPicker} />}
 		>
 			<span
 				className={cn(
 					'inline-flex items-center gap-1.5 text-sm',
-					error != null ? 'text-red-500' : hasTargets ? 'text-base-500' : 'text-base-400'
+					hasError ? 'text-red-500' : hasTargets ? 'text-base-500' : 'text-base-400'
 				)}
 			>
 				<CatalogIconPeek items={targets} />
 				{getTargetCountLabel(targets)}
 			</span>
-			<ChevronRightIcon className={error != null ? 'text-red-500' : 'text-base-400'} />
+			<ChevronRightIcon className={hasError ? 'text-red-500' : 'text-base-400'} />
 		</SettingsRow>
 	);
 };
@@ -351,11 +322,17 @@ const CatalogTargetRow: React.FC<TCatalogTargetRowProps> = (props) => {
 interface TCatalogTargetRowProps {
 	label: string;
 	description: string | undefined;
-	descriptionVariant: 'default' | 'error';
 	targets: TCatalogItem[];
 	error?: string;
 	isDisabled?: boolean;
 	onOpenPicker: (items: TCatalogItem[]) => void;
+}
+
+function getTargetCountLabel(targets: TCatalogItem[]): string {
+	if (targets.length > 0) {
+		return `${targets.length} selected`;
+	}
+	return 'None';
 }
 
 const EnforcementModeRow: React.FC<TEnforcementModeRowProps> = (props) => {
