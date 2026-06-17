@@ -49,8 +49,12 @@ export class BlockIntentionFormCx {
 					defaultValue: initialData.scope,
 					validator: z.enum(['blockTargets', 'allowTargets', 'wholeDevice'])
 				},
-				selectedTargets: {
-					defaultValue: [...initialData.selectedTargets],
+				baseTargets: {
+					defaultValue: [...initialData.baseTargets],
+					validator: z.array(z.custom<TCatalogItem>())
+				},
+				exceptionTargets: {
+					defaultValue: [...initialData.exceptionTargets],
 					validator: z.array(z.custom<TCatalogItem>())
 				},
 				enforcementMode: {
@@ -92,7 +96,8 @@ export class BlockIntentionFormCx {
 
 		this.$form.fields.name.defaultValue = formData.name;
 		this.$form.fields.scope.defaultValue = formData.scope;
-		this.$form.fields.selectedTargets.defaultValue = [...formData.selectedTargets];
+		this.$form.fields.baseTargets.defaultValue = [...formData.baseTargets];
+		this.$form.fields.exceptionTargets.defaultValue = [...formData.exceptionTargets];
 		this.$form.fields.enforcementMode.defaultValue = formData.enforcementMode;
 		this.$form.fields.conditions.defaultValue = formData.conditions.map((condition) => ({
 			...condition
@@ -216,34 +221,24 @@ export class BlockIntentionFormCx {
 
 		const startCondition =
 			formData.conditions.find((condition) => condition.transition === 'start') ?? null;
+		const targetActions = getTargetActionsForScope(formData.scope);
 		return {
 			name: formData.name.trim(),
 			behavior: {
 				type: 'block',
 				scope: formData.scope,
 				enforcementMode: formData.enforcementMode,
-				targets: formData.selectedTargets.map((item): specta.WriteIntentionBlockTargetParams => {
-					switch (item.type) {
-						case 'app':
-							return {
-								type: 'app',
-								stableId: item.app.stableId,
-								name: item.app.name,
-								bundleId: item.app.bundleId,
-								processPath: item.app.processPath,
-								icon: item.app.icon,
-								color: item.app.color
-							};
-						case 'website':
-							return {
-								type: 'website',
-								hostname: item.website.hostname,
-								name: item.website.name,
-								icon: item.website.icon,
-								color: item.website.color
-							};
-					}
-				})
+				targets:
+					targetActions != null
+						? [
+								...formData.baseTargets.map((item) =>
+									getWritableTargetParam(item, targetActions.base)
+								),
+								...formData.exceptionTargets.map((item) =>
+									getWritableTargetParam(item, targetActions.exception)
+								)
+							]
+						: []
 			},
 			conditions: formData.conditions.map((condition): specta.WriteIntentionConditionParams => {
 				switch (condition.mode) {
@@ -350,7 +345,8 @@ interface TBlockIntentionFormValidationContext {
 export interface TBlockIntentionFormData {
 	name: string;
 	scope: specta.IntentionBlockScope;
-	selectedTargets: TCatalogItem[];
+	baseTargets: TCatalogItem[];
+	exceptionTargets: TCatalogItem[];
 	enforcementMode: specta.IntentionEnforcementMode;
 	conditions: TBlockIntentionConditionFormData[];
 }
@@ -382,36 +378,15 @@ function getFormDataFromIntention(intention: specta.Intention): TBlockIntentionF
 		return null;
 	}
 
+	const block = intention.behavior;
+	const targetActions = getTargetActionsForScope(block.scope);
 	return {
 		name: intention.name,
-		scope: intention.behavior.scope,
-		selectedTargets: [
-			...intention.behavior.appTargets.map(
-				(target): TCatalogItem => ({
-					type: 'app',
-					app: {
-						stableId: target.app.stableId,
-						name: target.app.name,
-						bundleId: target.app.bundleId,
-						processPath: target.app.processPath,
-						icon: target.app.icon,
-						color: target.app.color
-					}
-				})
-			),
-			...intention.behavior.websiteTargets.map(
-				(target): TCatalogItem => ({
-					type: 'website',
-					website: {
-						hostname: target.website.hostname,
-						name: target.website.name,
-						icon: target.website.icon,
-						color: target.website.color
-					}
-				})
-			)
-		],
-		enforcementMode: intention.behavior.enforcementMode,
+		scope: block.scope,
+		baseTargets: targetActions == null ? [] : getCatalogItemsForAction(block, targetActions.base),
+		exceptionTargets:
+			targetActions == null ? [] : getCatalogItemsForAction(block, targetActions.exception),
+		enforcementMode: block.enforcementMode,
 		conditions: (['start', 'end'] as const).map((transition) => {
 			const condition =
 				intention.conditions.find((candidate) => candidate.transition === transition) ?? null;
@@ -451,11 +426,92 @@ function getFormDataFromIntention(intention: specta.Intention): TBlockIntentionF
 	};
 }
 
+function getCatalogItemsForAction(
+	block: Extract<specta.IntentionBehavior, { type: 'block' }>,
+	action: specta.IntentionBlockTargetAction
+): TCatalogItem[] {
+	return [
+		...block.appTargets
+			.filter((target) => target.action === action)
+			.map(
+				(target): TCatalogItem => ({
+					type: 'app',
+					app: {
+						stableId: target.app.stableId,
+						name: target.app.name,
+						bundleId: target.app.bundleId,
+						processPath: target.app.processPath,
+						icon: target.app.icon,
+						color: target.app.color
+					}
+				})
+			),
+		...block.websiteTargets
+			.filter((target) => target.action === action)
+			.map(
+				(target): TCatalogItem => ({
+					type: 'website',
+					website: {
+						hostname: target.website.hostname,
+						name: target.website.name,
+						icon: target.website.icon,
+						color: target.website.color
+					}
+				})
+			)
+	];
+}
+
+function getWritableTargetParam(
+	item: TCatalogItem,
+	action: specta.IntentionBlockTargetAction
+): specta.WriteIntentionBlockTargetParams {
+	switch (item.type) {
+		case 'app':
+			return {
+				type: 'app',
+				action,
+				stableId: item.app.stableId,
+				name: item.app.name,
+				bundleId: item.app.bundleId,
+				processPath: item.app.processPath,
+				icon: item.app.icon,
+				color: item.app.color
+			};
+		case 'website':
+			return {
+				type: 'website',
+				action,
+				hostname: item.website.hostname,
+				name: item.website.name,
+				icon: item.website.icon,
+				color: item.website.color
+			};
+	}
+}
+
+function getTargetActionsForScope(scope: specta.IntentionBlockScope): TBlockTargetActions | null {
+	switch (scope) {
+		case 'blockTargets':
+			return { base: 'block', exception: 'allow' };
+		case 'allowTargets':
+			return { base: 'allow', exception: 'block' };
+		case 'wholeDevice':
+			return null;
+	}
+}
+
+interface TBlockTargetActions {
+	base: specta.IntentionBlockTargetAction;
+	exception: specta.IntentionBlockTargetAction;
+}
+
 export function createDefaultBlockIntentionFormData(): TBlockIntentionFormData {
 	return {
 		name: '',
 		scope: 'blockTargets',
-		selectedTargets: [],
+		baseTargets: [],
+		exceptionTargets: [],
 		enforcementMode: 'balanced',
 		conditions: [
 			createDefaultBlockIntentionCondition('start'),
@@ -650,28 +706,6 @@ function getBaselineDateTimeConditionAt(
 	return condition.rule.triggerAt;
 }
 
-const blockIntentionFormValidator = {
-	'~standard': {
-		version: 1,
-		vendor: 'abstand',
-		validate(value) {
-			const formData = value as TBlockIntentionFormData;
-			if (formData.scope === 'wholeDevice' || formData.selectedTargets.length > 0) {
-				return { value: formData };
-			}
-
-			return {
-				issues: [
-					{
-						path: ['selectedTargets'],
-						message: 'Choose at least one app or website'
-					}
-				]
-			};
-		}
-	}
-} satisfies TFormValidator<TBlockIntentionFormData>;
-
 function resolveValidationContext(
 	input: TBlockIntentionFormValidationContextInput
 ): TBlockIntentionFormValidationContext {
@@ -680,6 +714,61 @@ function resolveValidationContext(
 	}
 
 	return input ?? {};
+}
+
+const blockIntentionFormValidator = {
+	'~standard': {
+		version: 1,
+		vendor: 'abstand',
+		validate(value) {
+			const formData = value as TBlockIntentionFormData;
+			if (formData.scope === 'wholeDevice') {
+				return { value: formData };
+			}
+			if (formData.baseTargets.length === 0) {
+				return {
+					issues: [
+						{
+							path: ['baseTargets'],
+							message: 'Choose at least one app or website'
+						}
+					]
+				};
+			}
+
+			const duplicateException = formData.exceptionTargets.find((exceptionTarget) => {
+				return formData.baseTargets.some((baseTarget) =>
+					haveSameCatalogItemIdentity(baseTarget, exceptionTarget)
+				);
+			});
+			if (duplicateException != null) {
+				return {
+					issues: [
+						{
+							path: ['exceptionTargets'],
+							message: 'A target cannot be both a base target and an exception'
+						}
+					]
+				};
+			}
+
+			return { value: formData };
+		}
+	}
+} satisfies TFormValidator<TBlockIntentionFormData>;
+
+function haveSameCatalogItemIdentity(a: TCatalogItem, b: TCatalogItem): boolean {
+	if (a.type !== b.type) {
+		return false;
+	}
+	if (a.type === 'app' && b.type === 'app') {
+		return a.app.stableId === b.app.stableId;
+	}
+	if (a.type === 'website' && b.type === 'website') {
+		return a.website.hostname === b.website.hostname;
+	}
+
+	return false;
 }
 
 // MARK: - Config

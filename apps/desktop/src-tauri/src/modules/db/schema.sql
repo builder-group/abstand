@@ -69,6 +69,7 @@ CREATE TABLE intention_block (
 CREATE TABLE intention_block_app_target (
     intention_id INTEGER NOT NULL REFERENCES intention_block (intention_id) ON DELETE CASCADE,
     app_id INTEGER NOT NULL REFERENCES app (id) ON DELETE CASCADE,
+    action TEXT NOT NULL DEFAULT 'block' CHECK (action IN ('block', 'allow')),
     created_at INTEGER NOT NULL DEFAULT (CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)),
     PRIMARY KEY (intention_id, app_id)
 );
@@ -81,6 +82,7 @@ CREATE INDEX idx_intention_block_app_target_app_id ON intention_block_app_target
 CREATE TABLE intention_block_website_target (
     intention_id INTEGER NOT NULL REFERENCES intention_block (intention_id) ON DELETE CASCADE,
     website_id INTEGER NOT NULL REFERENCES website (id) ON DELETE CASCADE,
+    action TEXT NOT NULL DEFAULT 'block' CHECK (action IN ('block', 'allow')),
     created_at INTEGER NOT NULL DEFAULT (CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)),
     PRIMARY KEY (intention_id, website_id)
 );

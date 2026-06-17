@@ -1,10 +1,10 @@
 use super::{
     intention::{
         Intention, IntentionBehavior, IntentionBlock, IntentionBlockAppTarget, IntentionBlockScope,
-        IntentionBlockWebsiteTarget, IntentionCondition, IntentionConditionAfterTransitionRule,
-        IntentionConditionDateTimeRule, IntentionConditionRule, IntentionConditionScheduleRule,
-        IntentionConditionTransition, IntentionEnforcementMode, IntentionSession,
-        IntentionSessionStatus,
+        IntentionBlockTargetAction, IntentionBlockWebsiteTarget, IntentionCondition,
+        IntentionConditionAfterTransitionRule, IntentionConditionDateTimeRule,
+        IntentionConditionRule, IntentionConditionScheduleRule, IntentionConditionTransition,
+        IntentionEnforcementMode, IntentionSession, IntentionSessionStatus,
     },
     timed_evaluator::{
         TimedAfterTransitionRule, TimedCondition, TimedConditionRule, TimedConditionTransition,
@@ -244,24 +244,27 @@ impl IntentionRepository {
         .execute(&mut **transaction)
         .await?;
 
-        for app in block_input.apps {
-            let app_id = CatalogRepository::upsert_app(&mut **transaction, app).await?;
+        for target in block_input.app_targets {
+            let app_id = CatalogRepository::upsert_app(&mut **transaction, target.app).await?;
             sqlx::query(
-                "INSERT INTO intention_block_app_target (intention_id, app_id) VALUES (?, ?)",
+                "INSERT INTO intention_block_app_target (intention_id, app_id, action) VALUES (?, ?, ?)",
             )
             .bind(intention_id)
             .bind(app_id)
+            .bind(target.action.as_str())
             .execute(&mut **transaction)
             .await?;
         }
 
-        for website in block_input.websites {
-            let website_id = CatalogRepository::upsert_website(&mut **transaction, website).await?;
+        for target in block_input.website_targets {
+            let website_id =
+                CatalogRepository::upsert_website(&mut **transaction, target.website).await?;
             sqlx::query(
-                "INSERT INTO intention_block_website_target (intention_id, website_id) VALUES (?, ?)",
+                "INSERT INTO intention_block_website_target (intention_id, website_id, action) VALUES (?, ?, ?)",
             )
             .bind(intention_id)
             .bind(website_id)
+            .bind(target.action.as_str())
             .execute(&mut **transaction)
             .await?;
         }
@@ -395,20 +398,41 @@ impl IntentionRepository {
             .map(|row| (row.intention_id, row))
             .collect::<HashMap<_, _>>();
 
-        let mut block_app_ids_by_intention_id = HashMap::<i64, Vec<i64>>::new();
+        let mut block_app_targets_by_intention_id =
+            HashMap::<i64, Vec<IntentionBlockAppTarget>>::new();
         for row in block_app_rows {
-            block_app_ids_by_intention_id
+            let action = IntentionBlockTargetAction::from_str(&row.action)
+                .map_err(IntentionRepositoryError::InvalidData)?;
+            let app = apps_by_id.get(&row.app_id).cloned().ok_or_else(|| {
+                IntentionRepositoryError::InvalidData(format!(
+                    "Missing app {} for block target",
+                    row.app_id
+                ))
+            })?;
+            block_app_targets_by_intention_id
                 .entry(row.intention_id)
                 .or_default()
-                .push(row.app_id);
+                .push(IntentionBlockAppTarget { action, app });
         }
 
-        let mut block_website_ids_by_intention_id = HashMap::<i64, Vec<i64>>::new();
+        let mut block_website_targets_by_intention_id =
+            HashMap::<i64, Vec<IntentionBlockWebsiteTarget>>::new();
         for row in block_website_rows {
-            block_website_ids_by_intention_id
+            let action = IntentionBlockTargetAction::from_str(&row.action)
+                .map_err(IntentionRepositoryError::InvalidData)?;
+            let website = websites_by_id
+                .get(&row.website_id)
+                .cloned()
+                .ok_or_else(|| {
+                    IntentionRepositoryError::InvalidData(format!(
+                        "Missing website {} for block target",
+                        row.website_id
+                    ))
+                })?;
+            block_website_targets_by_intention_id
                 .entry(row.intention_id)
                 .or_default()
-                .push(row.website_id);
+                .push(IntentionBlockWebsiteTarget { action, website });
         }
 
         let mut intentions = Vec::with_capacity(bases.len());
@@ -426,31 +450,12 @@ impl IntentionRepository {
                             ))
                         })?;
 
-                    let app_ids = block_app_ids_by_intention_id
+                    let app_targets = block_app_targets_by_intention_id
                         .remove(&base.id)
                         .unwrap_or_default();
-                    let website_ids = block_website_ids_by_intention_id
+                    let website_targets = block_website_targets_by_intention_id
                         .remove(&base.id)
                         .unwrap_or_default();
-
-                    let app_targets = app_ids
-                        .into_iter()
-                        .filter_map(|app_id| {
-                            apps_by_id
-                                .get(&app_id)
-                                .cloned()
-                                .map(|app| IntentionBlockAppTarget { app })
-                        })
-                        .collect::<Vec<_>>();
-                    let website_targets = website_ids
-                        .into_iter()
-                        .filter_map(|website_id| {
-                            websites_by_id
-                                .get(&website_id)
-                                .cloned()
-                                .map(|website| IntentionBlockWebsiteTarget { website })
-                        })
-                        .collect::<Vec<_>>();
 
                     IntentionBehavior::Block(Self::build_block(
                         block_row,
@@ -623,7 +628,7 @@ impl IntentionRepository {
         }
 
         let mut query_builder = QueryBuilder::<Sqlite>::new(
-            "SELECT intention_id, app_id FROM intention_block_app_target WHERE intention_id IN (",
+            "SELECT intention_id, app_id, action FROM intention_block_app_target WHERE intention_id IN (",
         );
         let mut separated = query_builder.separated(", ");
         for intention_id in intention_ids {
@@ -647,7 +652,7 @@ impl IntentionRepository {
         }
 
         let mut query_builder = QueryBuilder::<Sqlite>::new(
-            "SELECT intention_id, website_id FROM intention_block_website_target WHERE intention_id IN (",
+            "SELECT intention_id, website_id, action FROM intention_block_website_target WHERE intention_id IN (",
         );
         let mut separated = query_builder.separated(", ");
         for intention_id in intention_ids {
@@ -855,12 +860,14 @@ struct IntentionBlockRow {
 struct IntentionBlockAppRow {
     intention_id: i64,
     app_id: i64,
+    action: String,
 }
 
 #[derive(Debug, Clone, FromRow)]
 struct IntentionBlockWebsiteRow {
     intention_id: i64,
     website_id: i64,
+    action: String,
 }
 
 #[derive(Debug, Clone, FromRow)]
@@ -931,8 +938,18 @@ impl From<&WriteIntentionBehaviorInput> for IntentionBehaviorType {
 pub struct WriteIntentionBlockInput {
     pub enforcement_mode: IntentionEnforcementMode,
     pub scope: IntentionBlockScope,
-    pub apps: Vec<UpsertAppInput>,
-    pub websites: Vec<UpsertWebsiteInput>,
+    pub app_targets: Vec<WriteIntentionBlockAppTargetInput>,
+    pub website_targets: Vec<WriteIntentionBlockWebsiteTargetInput>,
+}
+
+pub struct WriteIntentionBlockAppTargetInput {
+    pub action: IntentionBlockTargetAction,
+    pub app: UpsertAppInput,
+}
+
+pub struct WriteIntentionBlockWebsiteTargetInput {
+    pub action: IntentionBlockTargetAction,
+    pub website: UpsertWebsiteInput,
 }
 
 pub struct WriteIntentionConditionInput {

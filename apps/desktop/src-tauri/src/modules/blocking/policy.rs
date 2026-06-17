@@ -3,7 +3,9 @@ use crate::modules::{
     db::types::DatabaseState,
     intentions::{
         condition_timing,
-        intention::{IntentionBehavior, IntentionBlock, IntentionBlockScope},
+        intention::{
+            IntentionBehavior, IntentionBlock, IntentionBlockScope, IntentionBlockTargetAction,
+        },
         repository::{
             IntentionRepository, IntentionRepositoryError, IntentionSessionRepository,
             IntentionSessionRepositoryError,
@@ -137,23 +139,36 @@ fn blocked_target_for_block(
     block: &IntentionBlock,
     target: &ActivityTarget,
 ) -> Option<BlockingPolicyTarget> {
+    // Note: In target scopes, the inverse action is an exception and wins over the base target set
     return match block.scope {
         IntentionBlockScope::BlockTargets => {
-            matching_app_target(block, target).or_else(|| matching_website_target(block, target))
-        }
-        IntentionBlockScope::AllowTargets => {
-            if matching_app_target(block, target).is_some()
-                || matching_website_target(block, target).is_some()
+            if matching_target_for_action(block, target, IntentionBlockTargetAction::Allow)
+                .is_some()
             {
                 return None;
             }
 
+            matching_target_for_action(block, target, IntentionBlockTargetAction::Block)
+        }
+        IntentionBlockScope::AllowTargets => {
+            if let Some(blocked_target) =
+                matching_target_for_action(block, target, IntentionBlockTargetAction::Block)
+            {
+                return Some(blocked_target);
+            }
+
+            if matching_target_for_action(block, target, IntentionBlockTargetAction::Allow)
+                .is_some()
+            {
+                return None;
+            }
+
+            // If nothing matched the allow set, block the most specific target we know
             if let Some(hostname) = target.website_hostname.as_deref() {
                 return Some(BlockingPolicyTarget::Website {
                     hostname: hostname.to_string(),
                 });
             }
-
             if let Some(bundle_id) = target.app_bundle_id.as_deref() {
                 return Some(BlockingPolicyTarget::App {
                     bundle_id: bundle_id.to_string(),
@@ -166,39 +181,54 @@ fn blocked_target_for_block(
     };
 }
 
-fn matching_app_target(
+fn matching_target_for_action(
     block: &IntentionBlock,
     target: &ActivityTarget,
+    action: IntentionBlockTargetAction,
+) -> Option<BlockingPolicyTarget> {
+    return matching_app_target_for_action(block, target, action)
+        .or_else(|| matching_website_target_for_action(block, target, action));
+}
+
+fn matching_app_target_for_action(
+    block: &IntentionBlock,
+    target: &ActivityTarget,
+    action: IntentionBlockTargetAction,
 ) -> Option<BlockingPolicyTarget> {
     let Some(bundle_id) = target.app_bundle_id.as_deref() else {
         return None;
     };
 
-    return block.app_targets.iter().find_map(|target| {
-        if target.app.bundle_id.as_deref() == Some(bundle_id) {
-            return Some(BlockingPolicyTarget::App {
-                bundle_id: bundle_id.to_string(),
-            });
-        }
+    let has_matching_app_target = block.app_targets.iter().any(|target| {
+        target.action == action && target.app.bundle_id.as_deref() == Some(bundle_id)
+    });
+    if !has_matching_app_target {
         return None;
+    };
+
+    return Some(BlockingPolicyTarget::App {
+        bundle_id: bundle_id.to_string(),
     });
 }
 
-fn matching_website_target(
+fn matching_website_target_for_action(
     block: &IntentionBlock,
     target: &ActivityTarget,
+    action: IntentionBlockTargetAction,
 ) -> Option<BlockingPolicyTarget> {
     let Some(hostname) = target.website_hostname.as_deref() else {
         return None;
     };
 
-    return block.website_targets.iter().find_map(|target| {
-        if hostname_matches_target(hostname, &target.website.hostname) {
-            return Some(BlockingPolicyTarget::Website {
-                hostname: hostname.to_string(),
-            });
-        }
+    let has_matching_website_target = block.website_targets.iter().any(|target| {
+        target.action == action && hostname_matches_target(hostname, &target.website.hostname)
+    });
+    if !has_matching_website_target {
         return None;
+    };
+
+    return Some(BlockingPolicyTarget::Website {
+        hostname: hostname.to_string(),
     });
 }
 
@@ -248,7 +278,8 @@ mod tests {
         activity::types::ActivityTarget,
         catalog::types::{App, Website},
         intentions::intention::{
-            IntentionBlockAppTarget, IntentionBlockWebsiteTarget, IntentionEnforcementMode,
+            IntentionBlockAppTarget, IntentionBlockTargetAction, IntentionBlockWebsiteTarget,
+            IntentionEnforcementMode,
         },
     };
 
@@ -293,6 +324,71 @@ mod tests {
     }
 
     #[test]
+    fn allows_narrower_website_exception_in_block_target_scope() {
+        let intention = ActiveBlockIntention {
+            id: 1,
+            name: "Deep Work".to_string(),
+            session_id: TEST_SESSION_ID,
+            session_started_at: TEST_SESSION_STARTED_AT,
+            session_automatic_end_at: TEST_SESSION_AUTOMATIC_END_AT,
+            block: block(
+                IntentionBlockScope::BlockTargets,
+                vec![],
+                vec![
+                    website_target_rule(IntentionBlockTargetAction::Block, website("youtube.com")),
+                    website_target_rule(
+                        IntentionBlockTargetAction::Allow,
+                        website("studio.youtube.com"),
+                    ),
+                ],
+            ),
+        };
+
+        assert_eq!(
+            evaluate_target(&website_target("studio.youtube.com"), &[intention.clone()]),
+            BlockingPolicyDecision::Allowed
+        );
+        assert_eq!(
+            evaluate_target(
+                &website_target("x.studio.youtube.com"),
+                &[intention.clone()]
+            ),
+            BlockingPolicyDecision::Allowed
+        );
+        assert_eq!(
+            evaluate_target(&website_target("www.youtube.com"), &[intention]),
+            blocked_website_decision(1, "Deep Work".to_string(), "www.youtube.com".to_string(),)
+        );
+    }
+
+    #[test]
+    fn allows_website_exception_over_block_base_in_block_target_scope() {
+        let intention = ActiveBlockIntention {
+            id: 1,
+            name: "Deep Work".to_string(),
+            session_id: TEST_SESSION_ID,
+            session_started_at: TEST_SESSION_STARTED_AT,
+            session_automatic_end_at: TEST_SESSION_AUTOMATIC_END_AT,
+            block: block(
+                IntentionBlockScope::BlockTargets,
+                vec![],
+                vec![
+                    website_target_rule(
+                        IntentionBlockTargetAction::Block,
+                        website("studio.youtube.com"),
+                    ),
+                    website_target_rule(IntentionBlockTargetAction::Allow, website("youtube.com")),
+                ],
+            ),
+        };
+
+        assert_eq!(
+            evaluate_target(&website_target("studio.youtube.com"), &[intention]),
+            BlockingPolicyDecision::Allowed
+        );
+    }
+
+    #[test]
     fn blocks_unlisted_websites_in_allow_target_scope() {
         let intention = ActiveBlockIntention {
             id: 1,
@@ -303,7 +399,10 @@ mod tests {
             block: block(
                 IntentionBlockScope::AllowTargets,
                 vec![],
-                vec![website_target_rule(website("docs.rs"))],
+                vec![website_target_rule(
+                    IntentionBlockTargetAction::Allow,
+                    website("docs.rs"),
+                )],
             ),
         };
 
@@ -323,7 +422,10 @@ mod tests {
             session_automatic_end_at: TEST_SESSION_AUTOMATIC_END_AT,
             block: block(
                 IntentionBlockScope::AllowTargets,
-                vec![app_target_rule(app("com.apple.Terminal"))],
+                vec![app_target_rule(
+                    IntentionBlockTargetAction::Allow,
+                    app("com.apple.Terminal"),
+                )],
                 vec![],
             ),
         };
@@ -345,13 +447,43 @@ mod tests {
             block: block(
                 IntentionBlockScope::AllowTargets,
                 vec![],
-                vec![website_target_rule(website("docs.rs"))],
+                vec![website_target_rule(
+                    IntentionBlockTargetAction::Allow,
+                    website("docs.rs"),
+                )],
             ),
         };
 
         assert_eq!(
             evaluate_target(&website_target("std.docs.rs"), &[intention]),
             BlockingPolicyDecision::Allowed
+        );
+    }
+
+    #[test]
+    fn blocks_website_exception_over_allow_base_in_allow_target_scope() {
+        let intention = ActiveBlockIntention {
+            id: 1,
+            name: "Deep Work".to_string(),
+            session_id: TEST_SESSION_ID,
+            session_started_at: TEST_SESSION_STARTED_AT,
+            session_automatic_end_at: TEST_SESSION_AUTOMATIC_END_AT,
+            block: block(
+                IntentionBlockScope::AllowTargets,
+                vec![],
+                vec![
+                    website_target_rule(
+                        IntentionBlockTargetAction::Allow,
+                        website("studio.youtube.com"),
+                    ),
+                    website_target_rule(IntentionBlockTargetAction::Block, website("youtube.com")),
+                ],
+            ),
+        };
+
+        assert_eq!(
+            evaluate_target(&website_target("studio.youtube.com"), &[intention]),
+            blocked_website_decision(1, "Deep Work".to_string(), "studio.youtube.com".to_string(),)
         );
     }
 
@@ -417,11 +549,17 @@ mod tests {
             block: block(
                 IntentionBlockScope::BlockTargets,
                 apps.into_iter()
-                    .map(|app| IntentionBlockAppTarget { app })
+                    .map(|app| IntentionBlockAppTarget {
+                        action: IntentionBlockTargetAction::Block,
+                        app,
+                    })
                     .collect(),
                 websites
                     .into_iter()
-                    .map(|website| IntentionBlockWebsiteTarget { website })
+                    .map(|website| IntentionBlockWebsiteTarget {
+                        action: IntentionBlockTargetAction::Block,
+                        website,
+                    })
                     .collect(),
             ),
         };
@@ -440,12 +578,15 @@ mod tests {
         };
     }
 
-    fn app_target_rule(app: App) -> IntentionBlockAppTarget {
-        return IntentionBlockAppTarget { app };
+    fn app_target_rule(action: IntentionBlockTargetAction, app: App) -> IntentionBlockAppTarget {
+        return IntentionBlockAppTarget { action, app };
     }
 
-    fn website_target_rule(website: Website) -> IntentionBlockWebsiteTarget {
-        return IntentionBlockWebsiteTarget { website };
+    fn website_target_rule(
+        action: IntentionBlockTargetAction,
+        website: Website,
+    ) -> IntentionBlockWebsiteTarget {
+        return IntentionBlockWebsiteTarget { action, website };
     }
 
     fn website_target(hostname: &str) -> ActivityTarget {

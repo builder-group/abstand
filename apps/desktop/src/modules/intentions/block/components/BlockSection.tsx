@@ -18,7 +18,7 @@ export const BlockSection: React.FC<TBlockSectionProps> = (props) => {
 				return;
 			}
 
-			formCx.$form.fields.selectedTargets.set(items);
+			formCx.$form.fields.baseTargets.set(items);
 		}
 	});
 
@@ -139,16 +139,16 @@ const blockScopeOptions: { value: specta.IntentionBlockScope; label: string }[] 
 const BlockTargetsRow: React.FC<TBlockTargetsRowProps> = (props) => {
 	const { formCx, isDisabled = false, onOpenPicker } = props;
 	const scope = useFeatureState(formCx.$form.fields.scope);
-	const selectedTargets = useFeatureState(formCx.$form.fields.selectedTargets);
-	const selectedTargetsStatus = useFeatureState(formCx.$form.fields.selectedTargets.status);
+	const baseTargets = useFeatureState(formCx.$form.fields.baseTargets);
+	const baseTargetsStatus = useFeatureState(formCx.$form.fields.baseTargets.status);
 
 	const isTargetsSelectable = scope !== 'wholeDevice';
-	const hasSelectedTargets = selectedTargets.length > 0;
-	const targetsLabel = getTargetsLabel(scope, selectedTargets);
+	const hasBaseTargets = baseTargets.length > 0;
+	const targetsLabel = getTargetsLabel(scope, baseTargets);
 	const targetsDescription = getTargetsDescription(scope);
 	const targetsError =
-		isTargetsSelectable && selectedTargetsStatus.type === 'invalid'
-			? selectedTargetsStatus.errors[0]?.message
+		isTargetsSelectable && baseTargetsStatus.type === 'invalid'
+			? baseTargetsStatus.errors[0]?.message
 			: undefined;
 
 	// MARK: - Actions
@@ -158,8 +158,8 @@ const BlockTargetsRow: React.FC<TBlockTargetsRowProps> = (props) => {
 			return;
 		}
 
-		onOpenPicker(selectedTargets);
-	}, [isDisabled, onOpenPicker, selectedTargets]);
+		onOpenPicker(baseTargets);
+	}, [baseTargets, isDisabled, onOpenPicker]);
 
 	// MARK: - UI
 
@@ -184,12 +184,12 @@ const BlockTargetsRow: React.FC<TBlockTargetsRowProps> = (props) => {
 					'inline-flex items-center gap-1.5 text-sm',
 					targetsError != null
 						? 'text-red-500'
-						: hasSelectedTargets
+						: hasBaseTargets
 							? 'text-base-500'
 							: 'text-base-400'
 				)}
 			>
-				<CatalogIconPeek items={selectedTargets} />
+				<CatalogIconPeek items={baseTargets} />
 				{targetsLabel}
 			</span>
 			<ChevronRightIcon className={targetsError != null ? 'text-red-500' : 'text-base-400'} />
@@ -205,13 +205,13 @@ interface TBlockTargetsRowProps {
 
 function getTargetsLabel(
 	scope: specta.IntentionBlockScope,
-	selectedTargets: TCatalogItem[]
+	targets: TCatalogItem[]
 ): string {
 	if (scope === 'wholeDevice') {
 		return 'Whole device';
 	}
-	if (selectedTargets.length > 0) {
-		return `${selectedTargets.length} selected`;
+	if (targets.length > 0) {
+		return `${targets.length} selected`;
 	}
 	return 'None';
 }

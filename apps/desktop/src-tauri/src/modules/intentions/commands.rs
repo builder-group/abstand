@@ -1,13 +1,15 @@
 use super::{
     action_policy, condition_timing,
     intention::{
-        Intention, IntentionBlockScope, IntentionConditionAfterTransitionRule,
-        IntentionConditionDateTimeRule, IntentionConditionRule, IntentionConditionScheduleRule,
-        IntentionConditionTransition, IntentionEnforcementMode, IntentionSession,
+        Intention, IntentionBlockScope, IntentionBlockTargetAction,
+        IntentionConditionAfterTransitionRule, IntentionConditionDateTimeRule,
+        IntentionConditionRule, IntentionConditionScheduleRule, IntentionConditionTransition,
+        IntentionEnforcementMode, IntentionSession,
     },
     repository::{
         IntentionRepository, IntentionSessionRepository, WriteIntentionBehaviorInput,
-        WriteIntentionBlockInput, WriteIntentionConditionInput, WriteIntentionInput,
+        WriteIntentionBlockAppTargetInput, WriteIntentionBlockInput,
+        WriteIntentionBlockWebsiteTargetInput, WriteIntentionConditionInput, WriteIntentionInput,
     },
     timed_evaluator::{TimedConditionActivation, TimedConditionTransition},
     types::{
@@ -26,7 +28,7 @@ use crate::{
 };
 use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Sqlite};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use tauri::{AppHandle, State};
 use tauri_specta::Event;
 
@@ -494,13 +496,14 @@ fn build_write_intention_input(
 ) -> Result<WriteIntentionInput, String> {
     let behavior = match behavior {
         WriteIntentionBehaviorParams::Block(block_params) => {
-            let (apps, websites) = build_block_targets(block_params.scope, block_params.targets)?;
+            let (app_targets, website_targets) =
+                build_block_targets(block_params.scope, block_params.targets)?;
 
             WriteIntentionBehaviorInput::Block(WriteIntentionBlockInput {
                 enforcement_mode: block_params.enforcement_mode,
                 scope: block_params.scope,
-                apps,
-                websites,
+                app_targets,
+                website_targets,
             })
         }
         WriteIntentionBehaviorParams::Break => {
@@ -521,7 +524,13 @@ fn build_write_intention_input(
 fn build_block_targets(
     scope: IntentionBlockScope,
     targets: Vec<WriteIntentionBlockTargetParams>,
-) -> Result<(Vec<UpsertAppInput>, Vec<UpsertWebsiteInput>), String> {
+) -> Result<
+    (
+        Vec<WriteIntentionBlockAppTargetInput>,
+        Vec<WriteIntentionBlockWebsiteTargetInput>,
+    ),
+    String,
+> {
     if scope == IntentionBlockScope::WholeDevice {
         return Ok((Vec::new(), Vec::new()));
     }
@@ -530,8 +539,13 @@ fn build_block_targets(
         return Err("Choose at least one app or website".to_string());
     }
 
-    let mut apps = Vec::new();
-    let mut websites = Vec::new();
+    let mut app_targets = Vec::new();
+    let mut website_targets = Vec::new();
+    // Note: Do not save the same normalized target twice. If one row says block and the
+    // other says allow, the saved intention is contradictory even though runtime
+    // precedence could pick a winner.
+    let mut seen_apps = HashSet::<String>::new();
+    let mut seen_websites = HashSet::<String>::new();
 
     for target in targets {
         match target {
@@ -541,30 +555,72 @@ fn build_block_targets(
                     return Err("App target is missing a stable ID".to_string());
                 }
 
-                apps.push(UpsertAppInput {
-                    stable_id,
-                    name: app.name,
-                    bundle_id: app.bundle_id,
-                    process_path: app.process_path,
-                    icon: app.icon,
-                    color: app.color,
+                if !seen_apps.insert(stable_id.clone()) {
+                    return Err(format!("Duplicate app target: {}", stable_id));
+                }
+
+                app_targets.push(WriteIntentionBlockAppTargetInput {
+                    action: app.action,
+                    app: UpsertAppInput {
+                        stable_id,
+                        name: app.name,
+                        bundle_id: app.bundle_id,
+                        process_path: app.process_path,
+                        icon: app.icon,
+                        color: app.color,
+                    },
                 });
             }
             WriteIntentionBlockTargetParams::Website(website) => {
                 let hostname = extract_hostname(&website.hostname)
                     .ok_or_else(|| format!("Invalid website hostname: {}", website.hostname))?;
 
-                websites.push(UpsertWebsiteInput {
-                    hostname,
-                    name: website.name,
-                    icon: website.icon,
-                    color: website.color,
+                if !seen_websites.insert(hostname.clone()) {
+                    return Err(format!("Duplicate website target: {}", hostname));
+                }
+
+                website_targets.push(WriteIntentionBlockWebsiteTargetInput {
+                    action: website.action,
+                    website: UpsertWebsiteInput {
+                        hostname,
+                        name: website.name,
+                        icon: website.icon,
+                        color: website.color,
+                    },
                 });
             }
         }
     }
 
-    return Ok((apps, websites));
+    // Check that the payload includes at least one base target. Exception targets
+    // only make sense when there is a base set for them to override.
+    let has_base_target = match scope {
+        IntentionBlockScope::BlockTargets => has_target_action(
+            &app_targets,
+            &website_targets,
+            IntentionBlockTargetAction::Block,
+        ),
+        IntentionBlockScope::AllowTargets => has_target_action(
+            &app_targets,
+            &website_targets,
+            IntentionBlockTargetAction::Allow,
+        ),
+        IntentionBlockScope::WholeDevice => true,
+    };
+    if !has_base_target {
+        return Err("Choose at least one app or website".to_string());
+    }
+
+    return Ok((app_targets, website_targets));
+}
+
+fn has_target_action(
+    app_targets: &[WriteIntentionBlockAppTargetInput],
+    website_targets: &[WriteIntentionBlockWebsiteTargetInput],
+    action: IntentionBlockTargetAction,
+) -> bool {
+    return app_targets.iter().any(|target| target.action == action)
+        || website_targets.iter().any(|target| target.action == action);
 }
 
 fn build_conditions(
@@ -649,6 +705,7 @@ pub enum WriteIntentionBlockTargetParams {
 #[derive(Debug, Clone, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct WriteIntentionBlockAppTargetParams {
+    pub action: IntentionBlockTargetAction,
     pub stable_id: String,
     pub name: Option<String>,
     pub bundle_id: Option<String>,
@@ -660,6 +717,7 @@ pub struct WriteIntentionBlockAppTargetParams {
 #[derive(Debug, Clone, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct WriteIntentionBlockWebsiteTargetParams {
+    pub action: IntentionBlockTargetAction,
     pub hostname: String,
     pub name: Option<String>,
     pub icon: Option<String>,

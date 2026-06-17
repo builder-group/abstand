@@ -55,13 +55,39 @@ pub struct IntentionBlock {
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct IntentionBlockAppTarget {
+    pub action: IntentionBlockTargetAction,
     pub app: App,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct IntentionBlockWebsiteTarget {
+    pub action: IntentionBlockTargetAction,
     pub website: Website,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub enum IntentionBlockTargetAction {
+    Block,
+    Allow,
+}
+
+impl IntentionBlockTargetAction {
+    pub fn as_str(&self) -> &'static str {
+        return match self {
+            Self::Block => "block",
+            Self::Allow => "allow",
+        };
+    }
+
+    pub fn from_str(value: &str) -> Result<Self, String> {
+        return match value {
+            "block" => Ok(Self::Block),
+            "allow" => Ok(Self::Allow),
+            _ => Err(format!("Unknown intention block target action: {}", value)),
+        };
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]

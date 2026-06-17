@@ -16,6 +16,16 @@ Manual activation does not go through timed scheduling. Frontend commands call `
 
 ## Design decisions
 
+### How do block target actions work?
+
+Block intentions store absolute target actions: `block` or `allow`. The selected scope decides which action is the base set and which action is the exception set:
+
+- `block_targets`: base targets are blocked, exceptions are allowed
+- `allow_targets`: base targets are allowed, exceptions are blocked
+- `whole_device`: target rows are ignored
+
+Policy evaluation checks exceptions before the base set. The scope default applies only when no saved target matches. Target identities stay unique across both sets: a saved target has one action within an Intention. Broader and narrower target overlaps are allowed, and exception precedence resolves them.
+
 ### Why does the runtime reevaluate from the database instead of trusting scheduled jobs?
 
 Scheduled jobs are process-local and can become stale after edits, deletes, app restarts, or session changes. Reevaluate-from-DB keeps the runtime aligned with persisted state and makes stale wakeups harmless.

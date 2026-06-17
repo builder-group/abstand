@@ -1,8 +1,9 @@
 use super::{
     condition_timing,
     intention::{
-        Intention, IntentionBehavior, IntentionBlock, IntentionBlockScope, IntentionCondition,
-        IntentionConditionRule, IntentionConditionTransition, IntentionEnforcementMode,
+        Intention, IntentionBehavior, IntentionBlock, IntentionBlockScope,
+        IntentionBlockTargetAction, IntentionCondition, IntentionConditionRule,
+        IntentionConditionTransition, IntentionEnforcementMode,
     },
     repository::{
         IntentionRepository, IntentionSessionRepository, WriteIntentionBehaviorInput,
@@ -312,63 +313,359 @@ fn enforcement_rank(mode: IntentionEnforcementMode) -> u8 {
 
 // MARK: - Assess Block Strength
 
+// Note: Weakening means access that is currently blocked would become available
 fn weakens_block(current: &IntentionBlock, proposed: &WriteIntentionBlockInput) -> bool {
-    let current_targets = target_set_from_block(current);
-    let proposed_targets = target_set_from_write_block(proposed);
-
-    // Weakening means access that is currently blocked would become available
     return match (current.scope, proposed.scope) {
         (IntentionBlockScope::WholeDevice, IntentionBlockScope::WholeDevice) => false,
         (IntentionBlockScope::WholeDevice, _) => true,
         (_, IntentionBlockScope::WholeDevice) => false,
-        (IntentionBlockScope::BlockTargets, IntentionBlockScope::BlockTargets) => {
-            let removes_blocked_targets = !current_targets.is_subset(&proposed_targets);
-            removes_blocked_targets
-        }
-        (IntentionBlockScope::AllowTargets, IntentionBlockScope::AllowTargets) => {
-            let expands_allowed_targets = !proposed_targets.is_subset(&current_targets);
-            expands_allowed_targets
-        }
-        (IntentionBlockScope::BlockTargets, IntentionBlockScope::AllowTargets) => {
-            let allows_currently_blocked_target = current_targets
-                .iter()
-                .any(|target| proposed_targets.contains(target));
-            allows_currently_blocked_target
-        }
         (IntentionBlockScope::AllowTargets, IntentionBlockScope::BlockTargets) => true,
+        _ => {
+            let current_block_targets =
+                target_set_from_block(current, IntentionBlockTargetAction::Block);
+            let current_allow_targets =
+                target_set_from_block(current, IntentionBlockTargetAction::Allow);
+            let proposed_block_targets =
+                target_set_from_write_block(proposed, IntentionBlockTargetAction::Block);
+            let proposed_allow_targets =
+                target_set_from_write_block(proposed, IntentionBlockTargetAction::Allow);
+            let candidate_targets = current_block_targets
+                .iter()
+                .chain(current_allow_targets.iter())
+                .chain(proposed_block_targets.iter())
+                .chain(proposed_allow_targets.iter())
+                .collect::<BTreeSet<_>>();
+
+            // Compare effective access for each explicit target touched by either policy
+            candidate_targets.iter().any(|target| {
+                target_is_blocked_by_policy(
+                    *target,
+                    current.scope,
+                    &current_block_targets,
+                    &current_allow_targets,
+                ) && !target_is_blocked_by_policy(
+                    *target,
+                    proposed.scope,
+                    &proposed_block_targets,
+                    &proposed_allow_targets,
+                )
+            })
+        }
     };
 }
 
-fn target_set_from_block(block: &IntentionBlock) -> BTreeSet<TargetKey> {
+fn target_set_from_block(
+    block: &IntentionBlock,
+    action: IntentionBlockTargetAction,
+) -> BTreeSet<TargetKey> {
     return block
         .app_targets
         .iter()
+        .filter(|target| target.action == action)
         .map(|target| TargetKey::App(target.app.stable_id.clone()))
         .chain(
             block
                 .website_targets
                 .iter()
+                .filter(|target| target.action == action)
                 .map(|target| TargetKey::Website(target.website.hostname.clone())),
         )
         .collect();
 }
 
-fn target_set_from_write_block(block: &WriteIntentionBlockInput) -> BTreeSet<TargetKey> {
+fn target_set_from_write_block(
+    block: &WriteIntentionBlockInput,
+    action: IntentionBlockTargetAction,
+) -> BTreeSet<TargetKey> {
     return block
-        .apps
+        .app_targets
         .iter()
-        .map(|app| TargetKey::App(app.stable_id.clone()))
+        .filter(|target| target.action == action)
+        .map(|target| TargetKey::App(target.app.stable_id.clone()))
         .chain(
             block
-                .websites
+                .website_targets
                 .iter()
-                .map(|website| TargetKey::Website(website.hostname.clone())),
+                .filter(|target| target.action == action)
+                .map(|target| TargetKey::Website(target.website.hostname.clone())),
         )
         .collect();
+}
+
+fn target_is_blocked_by_policy(
+    target: &TargetKey,
+    scope: IntentionBlockScope,
+    block_targets: &BTreeSet<TargetKey>,
+    allow_targets: &BTreeSet<TargetKey>,
+) -> bool {
+    return match scope {
+        IntentionBlockScope::BlockTargets => {
+            !target_is_covered_by_set(target, allow_targets)
+                && target_is_covered_by_set(target, block_targets)
+        }
+        IntentionBlockScope::AllowTargets => {
+            target_is_covered_by_set(target, block_targets)
+                || !target_is_covered_by_set(target, allow_targets)
+        }
+        IntentionBlockScope::WholeDevice => true,
+    };
+}
+
+fn target_is_covered_by_set(target: &TargetKey, covering_targets: &BTreeSet<TargetKey>) -> bool {
+    return covering_targets
+        .iter()
+        .any(|covering_target| covering_target.covers(target));
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 enum TargetKey {
     App(String),
     Website(String),
+}
+
+impl TargetKey {
+    // Note: A target covers itself. Website coverage also flows from parent domains to subdomains.
+    fn covers(&self, target: &TargetKey) -> bool {
+        return match (self, target) {
+            (Self::App(covering), Self::App(candidate)) => covering == candidate,
+            (Self::Website(covering), Self::Website(candidate)) => {
+                hostname_matches_target(candidate, covering)
+            }
+            _ => false,
+        };
+    }
+}
+
+fn hostname_matches_target(hostname: &str, target_hostname: &str) -> bool {
+    return hostname == target_hostname
+        || hostname
+            .strip_suffix(target_hostname)
+            .is_some_and(|prefix| prefix.ends_with('.'));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::modules::{
+        catalog::{repository::UpsertWebsiteInput, types::Website},
+        intentions::{
+            intention::IntentionBlockWebsiteTarget,
+            repository::WriteIntentionBlockWebsiteTargetInput,
+        },
+    };
+
+    #[test]
+    fn adding_allow_exception_weakens_block_target_scope() {
+        let current = block(
+            IntentionBlockScope::BlockTargets,
+            vec![website_target(
+                IntentionBlockTargetAction::Block,
+                "studio.youtube.com",
+            )],
+        );
+        let proposed = write_block(
+            IntentionBlockScope::BlockTargets,
+            vec![
+                write_website_target(IntentionBlockTargetAction::Block, "studio.youtube.com"),
+                write_website_target(IntentionBlockTargetAction::Allow, "youtube.com"),
+            ],
+        );
+
+        assert!(weakens_block(&current, &proposed));
+    }
+
+    #[test]
+    fn adding_unrelated_allow_exception_does_not_weaken_block_target_scope() {
+        let current = block(
+            IntentionBlockScope::BlockTargets,
+            vec![website_target(
+                IntentionBlockTargetAction::Block,
+                "youtube.com",
+            )],
+        );
+        let proposed = write_block(
+            IntentionBlockScope::BlockTargets,
+            vec![
+                write_website_target(IntentionBlockTargetAction::Block, "youtube.com"),
+                write_website_target(IntentionBlockTargetAction::Allow, "google.com"),
+            ],
+        );
+
+        assert!(!weakens_block(&current, &proposed));
+    }
+
+    #[test]
+    fn adding_covered_block_target_does_not_weaken_block_target_scope() {
+        let current = block(
+            IntentionBlockScope::BlockTargets,
+            vec![website_target(
+                IntentionBlockTargetAction::Block,
+                "youtube.com",
+            )],
+        );
+        let proposed = write_block(
+            IntentionBlockScope::BlockTargets,
+            vec![
+                write_website_target(IntentionBlockTargetAction::Block, "youtube.com"),
+                write_website_target(IntentionBlockTargetAction::Block, "studio.youtube.com"),
+            ],
+        );
+
+        assert!(!weakens_block(&current, &proposed));
+    }
+
+    #[test]
+    fn removing_covered_block_target_does_not_weaken_block_target_scope() {
+        let current = block(
+            IntentionBlockScope::BlockTargets,
+            vec![
+                website_target(IntentionBlockTargetAction::Block, "youtube.com"),
+                website_target(IntentionBlockTargetAction::Block, "studio.youtube.com"),
+            ],
+        );
+        let proposed = write_block(
+            IntentionBlockScope::BlockTargets,
+            vec![write_website_target(
+                IntentionBlockTargetAction::Block,
+                "youtube.com",
+            )],
+        );
+
+        assert!(!weakens_block(&current, &proposed));
+    }
+
+    #[test]
+    fn broader_allow_target_weakens_when_switching_from_block_to_allow_scope() {
+        let current = block(
+            IntentionBlockScope::BlockTargets,
+            vec![website_target(
+                IntentionBlockTargetAction::Block,
+                "studio.youtube.com",
+            )],
+        );
+        let proposed = write_block(
+            IntentionBlockScope::AllowTargets,
+            vec![write_website_target(
+                IntentionBlockTargetAction::Allow,
+                "youtube.com",
+            )],
+        );
+
+        assert!(weakens_block(&current, &proposed));
+    }
+
+    #[test]
+    fn adding_block_exception_does_not_weaken_allow_target_scope() {
+        let current = block(
+            IntentionBlockScope::AllowTargets,
+            vec![website_target(
+                IntentionBlockTargetAction::Allow,
+                "youtube.com",
+            )],
+        );
+        let proposed = write_block(
+            IntentionBlockScope::AllowTargets,
+            vec![
+                write_website_target(IntentionBlockTargetAction::Allow, "youtube.com"),
+                write_website_target(IntentionBlockTargetAction::Block, "studio.youtube.com"),
+            ],
+        );
+
+        assert!(!weakens_block(&current, &proposed));
+    }
+
+    #[test]
+    fn removing_unrelated_block_exception_does_not_weaken_allow_target_scope() {
+        let current = block(
+            IntentionBlockScope::AllowTargets,
+            vec![
+                website_target(IntentionBlockTargetAction::Allow, "youtube.com"),
+                website_target(IntentionBlockTargetAction::Block, "google.com"),
+            ],
+        );
+        let proposed = write_block(
+            IntentionBlockScope::AllowTargets,
+            vec![write_website_target(
+                IntentionBlockTargetAction::Allow,
+                "youtube.com",
+            )],
+        );
+
+        assert!(!weakens_block(&current, &proposed));
+    }
+
+    #[test]
+    fn removing_block_exception_weakens_allow_target_scope() {
+        let current = block(
+            IntentionBlockScope::AllowTargets,
+            vec![
+                website_target(IntentionBlockTargetAction::Allow, "studio.youtube.com"),
+                website_target(IntentionBlockTargetAction::Block, "youtube.com"),
+            ],
+        );
+        let proposed = write_block(
+            IntentionBlockScope::AllowTargets,
+            vec![write_website_target(
+                IntentionBlockTargetAction::Allow,
+                "studio.youtube.com",
+            )],
+        );
+
+        assert!(weakens_block(&current, &proposed));
+    }
+
+    fn block(
+        scope: IntentionBlockScope,
+        website_targets: Vec<IntentionBlockWebsiteTarget>,
+    ) -> IntentionBlock {
+        return IntentionBlock {
+            enforcement_mode: IntentionEnforcementMode::Balanced,
+            scope,
+            app_targets: Vec::new(),
+            website_targets,
+        };
+    }
+
+    fn website_target(
+        action: IntentionBlockTargetAction,
+        hostname: &str,
+    ) -> IntentionBlockWebsiteTarget {
+        return IntentionBlockWebsiteTarget {
+            action,
+            website: Website {
+                id: 1,
+                hostname: hostname.to_string(),
+                name: None,
+                icon: None,
+                color: None,
+            },
+        };
+    }
+
+    fn write_block(
+        scope: IntentionBlockScope,
+        website_targets: Vec<WriteIntentionBlockWebsiteTargetInput>,
+    ) -> WriteIntentionBlockInput {
+        return WriteIntentionBlockInput {
+            enforcement_mode: IntentionEnforcementMode::Balanced,
+            scope,
+            app_targets: Vec::new(),
+            website_targets,
+        };
+    }
+
+    fn write_website_target(
+        action: IntentionBlockTargetAction,
+        hostname: &str,
+    ) -> WriteIntentionBlockWebsiteTargetInput {
+        return WriteIntentionBlockWebsiteTargetInput {
+            action,
+            website: UpsertWebsiteInput {
+                hostname: hostname.to_string(),
+                name: None,
+                icon: None,
+                color: None,
+            },
+        };
+    }
 }

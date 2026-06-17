@@ -211,12 +211,16 @@ export type IntentionBlock = {
 };
 
 export type IntentionBlockAppTarget = {
+	action: IntentionBlockTargetAction,
 	app: App,
 };
 
 export type IntentionBlockScope = "blockTargets" | "allowTargets" | "wholeDevice";
 
+export type IntentionBlockTargetAction = "block" | "allow";
+
 export type IntentionBlockWebsiteTarget = {
+	action: IntentionBlockTargetAction,
 	website: Website,
 };
 
@@ -415,6 +419,7 @@ export type WriteIntentionBehaviorParams = {
 } & WriteIntentionBlockParams | { type: "break" };
 
 export type WriteIntentionBlockAppTargetParams = {
+	action: IntentionBlockTargetAction,
 	stableId: string,
 	name: string | null,
 	bundleId: string | null,
@@ -436,6 +441,7 @@ export type WriteIntentionBlockTargetParams = {
 } & WriteIntentionBlockWebsiteTargetParams;
 
 export type WriteIntentionBlockWebsiteTargetParams = {
+	action: IntentionBlockTargetAction,
 	hostname: string,
 	name: string | null,
 	icon: string | null,

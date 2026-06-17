@@ -15,12 +15,26 @@ function formatBlockScope(block: TBlockIntention['behavior']): string {
 		return 'Whole device';
 	}
 
-	const targetLabel = formatTargetCounts(block.appTargets.length, block.websiteTargets.length);
 	if (block.scope === 'allowTargets') {
+		const targetLabel = formatTargetCounts(
+			countTargets(block.appTargets, 'allow'),
+			countTargets(block.websiteTargets, 'allow')
+		);
 		return `Allows ${targetLabel}`;
 	}
 
+	const targetLabel = formatTargetCounts(
+		countTargets(block.appTargets, 'block'),
+		countTargets(block.websiteTargets, 'block')
+	);
 	return `Blocks ${targetLabel}`;
+}
+
+function countTargets<TTarget extends { action: specta.IntentionBlockTargetAction }>(
+	targets: TTarget[],
+	action: specta.IntentionBlockTargetAction
+): number {
+	return targets.filter((target) => target.action === action).length;
 }
 
 function formatTargetCounts(appCount: number, websiteCount: number): string {
