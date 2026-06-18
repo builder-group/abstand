@@ -74,15 +74,11 @@ pub enum QuitPreventedEvent {
 }
 
 impl QuitPreventedEvent {
-    pub fn active_balanced_block() -> Self {
-        return Self::ActiveBalancedBlock {
-            duration_ms: BALANCED_QUIT_DELAY_MS,
-        };
+    pub fn active_balanced_block(duration_ms: i64) -> Self {
+        return Self::ActiveBalancedBlock { duration_ms };
     }
 
     pub fn active_strict_block() -> Self {
         return Self::ActiveStrictBlock;
     }
 }
-
-const BALANCED_QUIT_DELAY_MS: i64 = 15_000;

@@ -60,6 +60,7 @@ CREATE TABLE intention_block (
     -- Discriminator for the composite FK to intention
     behavior_type TEXT NOT NULL DEFAULT 'block' CHECK (behavior_type = 'block'),
     enforcement_mode TEXT NOT NULL DEFAULT 'balanced' CHECK (enforcement_mode IN ('casual', 'balanced', 'strict')),
+    balanced_delay_ms INTEGER NOT NULL DEFAULT 15000 CHECK (balanced_delay_ms > 0),
     scope TEXT NOT NULL DEFAULT 'block_targets' CHECK (scope IN ('block_targets', 'allow_targets', 'whole_device')),
     FOREIGN KEY (intention_id, behavior_type) REFERENCES intention (id, behavior_type) ON DELETE CASCADE
 );

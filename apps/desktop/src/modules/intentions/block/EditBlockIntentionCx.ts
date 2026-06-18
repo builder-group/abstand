@@ -91,7 +91,7 @@ export class EditBlockIntentionCx {
 			case 'casual':
 				return { type: 'available' };
 			case 'balanced':
-				return { type: 'delayed', durationMs: 15_000 };
+				return { type: 'delayed', durationMs: this.intention.behavior.balancedDelayMs };
 			case 'strict':
 				return { type: 'blocked' };
 		}

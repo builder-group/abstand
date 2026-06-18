@@ -205,6 +205,7 @@ export type IntentionBehavior = {
 
 export type IntentionBlock = {
 	enforcementMode: IntentionEnforcementMode,
+	balancedDelayMs: number,
 	scope: IntentionBlockScope,
 	appTargets: IntentionBlockAppTarget[],
 	websiteTargets: IntentionBlockWebsiteTarget[],
@@ -303,7 +304,7 @@ export type IntentionUpdatedEvent = {
 	intentionId: number,
 };
 
-export type IntentionWeakeningReason = "shortensEnd" | "removesAutomaticEnd" | "lowersEnforcement" | "weakensBlock";
+export type IntentionWeakeningReason = "shortensEnd" | "removesAutomaticEnd" | "lowersEnforcement" | "lowersBalancedDelay" | "weakensBlock";
 
 export type KeyboardShortcut = {
 	modifiers: ShortcutModifier[],
@@ -430,6 +431,7 @@ export type WriteIntentionBlockAppTargetParams = {
 
 export type WriteIntentionBlockParams = {
 	enforcementMode: IntentionEnforcementMode,
+	balancedDelayMs: number,
 	scope: IntentionBlockScope,
 	targets: WriteIntentionBlockTargetParams[],
 };

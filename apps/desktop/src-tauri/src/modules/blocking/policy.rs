@@ -478,6 +478,7 @@ mod tests {
     ) -> IntentionBlock {
         return IntentionBlock {
             enforcement_mode: IntentionEnforcementMode::Balanced,
+            balanced_delay_ms: 15_000,
             scope,
             app_targets,
             website_targets,

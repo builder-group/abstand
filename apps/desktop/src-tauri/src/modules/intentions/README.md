@@ -44,6 +44,6 @@ Applying one due condition can make another condition evaluable. For example, a 
 
 ### Why does the frontend own Balanced action delays?
 
-Balanced action delays are UI friction, not backend enforcement. The backend assesses weakening actions and returns `durationMs`, while the frontend owns the countdown and confirmation UI.
+Balanced action delays are UI friction, not backend enforcement. The backend assesses weakening actions and returns the saved Balanced pause as `durationMs`, while the frontend owns the countdown and confirmation UI.
 
 Strict remains backend-enforced. Commands that mutate active Strict block sessions still reject weakening actions.

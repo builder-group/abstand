@@ -31,7 +31,7 @@ pub async fn require_intention_update_allowed(
         IntentionEditPolicyAssessment::Delayed { .. } => {}
         IntentionEditPolicyAssessment::Blocked { reasons } => {
             return Err(format!(
-                "Strict Enforcement prevents weakening this active Intention: {}",
+                "Strict Enforcement blocks weakening this active Intention: {}",
                 reasons
                     .iter()
                     .map(IntentionWeakeningReason::message)
@@ -56,7 +56,7 @@ pub async fn require_intention_delete_allowed(
         return Ok(());
     }
 
-    return Err("Strict Enforcement prevents deleting this active Intention".to_string());
+    return Err("Strict Enforcement blocks deleting this active Intention".to_string());
 }
 
 pub async fn require_intention_stop_allowed(
@@ -71,7 +71,7 @@ pub async fn require_intention_stop_allowed(
         return Ok(());
     }
 
-    return Err("Strict Enforcement prevents ending this Intention early".to_string());
+    return Err("Strict Enforcement blocks ending this Intention early".to_string());
 }
 
 pub async fn require_intention_complete_allowed(
@@ -190,14 +190,12 @@ fn assess_active_edit_policy(
     return match current_block.enforcement_mode {
         IntentionEnforcementMode::Casual => IntentionEditPolicyAssessment::Available,
         IntentionEnforcementMode::Balanced => IntentionEditPolicyAssessment::Delayed {
-            duration_ms: BALANCED_EDIT_DELAY_MS,
+            duration_ms: current_block.balanced_delay_ms,
             reasons,
         },
         IntentionEnforcementMode::Strict => IntentionEditPolicyAssessment::Blocked { reasons },
     };
 }
-
-const BALANCED_EDIT_DELAY_MS: i64 = 15_000;
 
 fn collect_weakening_reasons(
     current: &Intention,
@@ -218,6 +216,9 @@ fn collect_weakening_reasons(
         proposed_block.enforcement_mode,
     ) {
         reasons.push(IntentionWeakeningReason::LowersEnforcement);
+    }
+    if lowers_balanced_delay(current_block, proposed_block) {
+        reasons.push(IntentionWeakeningReason::LowersBalancedDelay);
     }
     if weakens_block(current_block, proposed_block) {
         reasons.push(IntentionWeakeningReason::WeakensBlock);
@@ -246,6 +247,7 @@ pub enum IntentionWeakeningReason {
     ShortensEnd,
     RemovesAutomaticEnd,
     LowersEnforcement,
+    LowersBalancedDelay,
     WeakensBlock,
 }
 
@@ -255,6 +257,7 @@ impl IntentionWeakeningReason {
             Self::ShortensEnd => "shortens the end time",
             Self::RemovesAutomaticEnd => "removes the automatic end",
             Self::LowersEnforcement => "lowers enforcement",
+            Self::LowersBalancedDelay => "lowers the Balanced pause",
             Self::WeakensBlock => "weakens the block",
         };
     }
@@ -310,6 +313,17 @@ fn enforcement_rank(mode: IntentionEnforcementMode) -> u8 {
         IntentionEnforcementMode::Balanced => 1,
         IntentionEnforcementMode::Strict => 2,
     };
+}
+
+fn lowers_balanced_delay(current: &IntentionBlock, proposed: &WriteIntentionBlockInput) -> bool {
+    if current.enforcement_mode != IntentionEnforcementMode::Balanced {
+        return false;
+    }
+    if proposed.enforcement_mode != IntentionEnforcementMode::Balanced {
+        return false;
+    }
+
+    return proposed.balanced_delay_ms < current.balanced_delay_ms;
 }
 
 // MARK: - Assess Block Strength
@@ -603,6 +617,7 @@ mod tests {
     ) -> IntentionBlock {
         return IntentionBlock {
             enforcement_mode: IntentionEnforcementMode::Balanced,
+            balanced_delay_ms: 15_000,
             scope,
             app_targets,
             website_targets,
@@ -654,6 +669,7 @@ mod tests {
     ) -> WriteIntentionBlockInput {
         return WriteIntentionBlockInput {
             enforcement_mode: IntentionEnforcementMode::Balanced,
+            balanced_delay_ms: 15_000,
             scope,
             app_targets,
             website_targets,

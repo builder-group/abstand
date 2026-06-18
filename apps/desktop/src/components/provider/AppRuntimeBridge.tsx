@@ -19,15 +19,14 @@ export const AppRuntimeBridge: React.FC = () => {
 							toastsCx.add({
 								type: 'warning',
 								title: 'Quit prevented',
-								description: 'Strict Enforcement blocks quitting, so Abstand stays open.'
+								description: 'Strict Enforcement blocks quitting while it is running.'
 							});
 							break;
 						case 'activeBalancedBlock':
 							toastsCx.add({
 								type: 'warning',
 								title: 'Quit delayed',
-								description:
-									'Balanced Enforcement delays quitting briefly so it stays intentional.',
+								description: 'Balanced Enforcement requires a pause before quitting.',
 								timeout: payload.durationMs + 5_000,
 								data: {
 									action: <DelayedQuitAction durationMs={payload.durationMs} toastsCx={toastsCx} />

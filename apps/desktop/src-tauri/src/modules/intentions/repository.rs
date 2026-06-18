@@ -236,10 +236,11 @@ impl IntentionRepository {
         block_input: WriteIntentionBlockInput,
     ) -> Result<(), IntentionRepositoryError> {
         sqlx::query(
-            "INSERT INTO intention_block (intention_id, enforcement_mode, scope) VALUES (?, ?, ?)",
+            "INSERT INTO intention_block (intention_id, enforcement_mode, balanced_delay_ms, scope) VALUES (?, ?, ?, ?)",
         )
         .bind(intention_id)
         .bind(block_input.enforcement_mode.as_str())
+        .bind(block_input.balanced_delay_ms)
         .bind(block_input.scope.as_str())
         .execute(&mut **transaction)
         .await?;
@@ -604,7 +605,7 @@ impl IntentionRepository {
         }
 
         let mut query_builder = QueryBuilder::<Sqlite>::new(
-            "SELECT intention_id, enforcement_mode, scope FROM intention_block WHERE intention_id IN (",
+            "SELECT intention_id, enforcement_mode, balanced_delay_ms, scope FROM intention_block WHERE intention_id IN (",
         );
         let mut separated = query_builder.separated(", ");
         for intention_id in intention_ids {
@@ -675,6 +676,7 @@ impl IntentionRepository {
         return Ok(IntentionBlock {
             enforcement_mode: IntentionEnforcementMode::from_str(&row.enforcement_mode)
                 .map_err(IntentionRepositoryError::InvalidData)?,
+            balanced_delay_ms: row.balanced_delay_ms,
             scope: IntentionBlockScope::from_str(&row.scope)
                 .map_err(IntentionRepositoryError::InvalidData)?,
             app_targets,
@@ -853,6 +855,7 @@ struct IntentionRow {
 struct IntentionBlockRow {
     intention_id: i64,
     enforcement_mode: String,
+    balanced_delay_ms: i64,
     scope: String,
 }
 
@@ -937,6 +940,7 @@ impl From<&WriteIntentionBehaviorInput> for IntentionBehaviorType {
 
 pub struct WriteIntentionBlockInput {
     pub enforcement_mode: IntentionEnforcementMode,
+    pub balanced_delay_ms: i64,
     pub scope: IntentionBlockScope,
     pub app_targets: Vec<WriteIntentionBlockAppTargetInput>,
     pub website_targets: Vec<WriteIntentionBlockWebsiteTargetInput>,
@@ -1051,6 +1055,22 @@ impl IntentionSessionRepository {
         .await?;
 
         return Ok(exists != 0);
+    }
+
+    pub async fn get_max_active_balanced_block_delay_ms(
+        pool: &Pool<Sqlite>,
+    ) -> Result<Option<i64>, IntentionSessionRepositoryError> {
+        return sqlx::query_scalar::<_, Option<i64>>(
+            "SELECT MAX(block.balanced_delay_ms)
+            FROM intention_session session
+            INNER JOIN intention_block block
+                ON block.intention_id = session.intention_id
+            WHERE session.status = 'active'
+                AND block.enforcement_mode = 'balanced'",
+        )
+        .fetch_one(pool)
+        .await
+        .map_err(IntentionSessionRepositoryError::from);
     }
 
     pub async fn get_active_session_by_intention_id(

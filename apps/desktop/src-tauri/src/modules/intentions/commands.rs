@@ -501,6 +501,7 @@ fn build_write_intention_input(
 
             WriteIntentionBehaviorInput::Block(WriteIntentionBlockInput {
                 enforcement_mode: block_params.enforcement_mode,
+                balanced_delay_ms: block_params.balanced_delay_ms,
                 scope: block_params.scope,
                 app_targets,
                 website_targets,
@@ -677,6 +678,11 @@ fn validate_write_intention_input(input: &WriteIntentionInput) -> Result<(), Str
         return Err("Please add an end condition".to_string());
     }
 
+    let WriteIntentionBehaviorInput::Block(block) = &input.behavior;
+    if block.balanced_delay_ms <= 0 {
+        return Err("Balanced pause must be greater than 0".to_string());
+    }
+
     return Ok(());
 }
 
@@ -691,6 +697,7 @@ pub enum WriteIntentionBehaviorParams {
 #[serde(rename_all = "camelCase")]
 pub struct WriteIntentionBlockParams {
     pub enforcement_mode: IntentionEnforcementMode,
+    pub balanced_delay_ms: i64,
     pub scope: IntentionBlockScope,
     pub targets: Vec<WriteIntentionBlockTargetParams>,
 }

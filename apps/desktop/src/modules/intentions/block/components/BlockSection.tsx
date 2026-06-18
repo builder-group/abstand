@@ -1,9 +1,19 @@
 import { useFormField } from 'feature-react/form';
 import { useFeatureState } from 'feature-react/state';
 import React from 'react';
-import { Badge, ChevronRightIcon, HelpCarousel, HelpPopover, Select } from '@/components';
+import {
+	Badge,
+	ChevronRightIcon,
+	HelpCarousel,
+	HelpPopover,
+	InputGroup,
+	InputGroupAddon,
+	InputGroupInput,
+	InputGroupStepper,
+	Select
+} from '@/components';
 import { type specta } from '@/environment';
-import { cn } from '@/lib';
+import { clampNumber, cn } from '@/lib';
 import {
 	CatalogIconPeek,
 	getCatalogItemKey,
@@ -12,7 +22,7 @@ import {
 	type TCatalogPickerItemDisabledState
 } from '@/modules/catalog';
 import { SettingsGroup, SettingsRow } from '@/modules/settings';
-import { type BlockIntentionFormCx } from '../BlockIntentionFormCx';
+import { blockIntentionFormConfig, type BlockIntentionFormCx } from '../BlockIntentionFormCx';
 
 export const BlockSection: React.FC<TBlockSectionProps> = (props) => {
 	const { formCx, isDisabled = false } = props;
@@ -340,18 +350,19 @@ const EnforcementModeRow: React.FC<TEnforcementModeRowProps> = (props) => {
 	const enforcementModeField = useFormField(formCx.$form, 'enforcementMode', {
 		controlled: true
 	});
+	const isBalanced = enforcementModeField.value === 'balanced';
 	const isStrict = enforcementModeField.value === 'strict';
 
 	const carouselItems = React.useMemo(
 		() => [
 			{
 				title: 'Enforcement',
-				description: 'Choose how hard this Intention holds while it is running.'
+				description: 'Choose how firmly this Intention holds while it is running.'
 			},
 			{
 				title: 'Casual',
 				titlePrefix: 'Enforcement',
-				description: 'End or weaken it anytime. Good for light accountability.',
+				description: 'End or weaken anytime. Good for light accountability.',
 				titleSuffix:
 					enforcementModeField.value === 'casual' ? (
 						<Badge variant="success" size="xs">
@@ -363,7 +374,7 @@ const EnforcementModeRow: React.FC<TEnforcementModeRowProps> = (props) => {
 				title: 'Balanced',
 				titlePrefix: 'Enforcement',
 				description:
-					'A brief pause before ending or weakening it. Good for regular focus sessions.',
+					'Requires a configurable pause before ending, weakening, or quitting. Good for regular focus sessions.',
 				titleSuffix:
 					enforcementModeField.value === 'balanced' ? (
 						<Badge variant="success" size="xs">
@@ -375,7 +386,7 @@ const EnforcementModeRow: React.FC<TEnforcementModeRowProps> = (props) => {
 				title: 'Strict',
 				titlePrefix: 'Enforcement',
 				description:
-					'Cannot be ended or weakened while running. Best for commitments you want held until the end condition is met.',
+					'Blocks ending or weakening while running. Best for commitments that should hold until their end condition.',
 				titleSuffix:
 					enforcementModeField.value === 'strict' ? (
 						<Badge variant="success" size="xs">
@@ -388,36 +399,39 @@ const EnforcementModeRow: React.FC<TEnforcementModeRowProps> = (props) => {
 	);
 
 	return (
-		<SettingsRow
-			label="Enforcement"
-			description={
-				isStrict
-					? 'Once this Intention starts, Strict cannot be ended or weakened until the end condition is met. Abstand may also be harder to quit.'
-					: undefined
-			}
-			descriptionVariant={isStrict ? 'warning' : 'default'}
-			labelAccessory={
-				<HelpPopover ariaLabel="About enforcement levels">
-					<HelpCarousel items={carouselItems} />
-				</HelpPopover>
-			}
-			variant={isStrict ? 'default' : 'compact'}
-		>
-			<Select
-				variant="ghost"
-				{...enforcementModeField.input({
-					format: (value) => value,
-					parse: (value) => value as specta.IntentionEnforcementMode
-				})}
-				disabled={isDisabled}
+		<>
+			<SettingsRow
+				label="Enforcement"
+				description={
+					isStrict
+						? 'Strict blocks ending or weakening while running. Abstand may also be harder to quit.'
+						: undefined
+				}
+				descriptionVariant={isStrict ? 'warning' : 'default'}
+				labelAccessory={
+					<HelpPopover ariaLabel="About enforcement levels">
+						<HelpCarousel items={carouselItems} />
+					</HelpPopover>
+				}
+				variant={isStrict ? 'default' : 'compact'}
 			>
-				{enforcementModeOptions.map((mode) => (
-					<option key={mode.value} value={mode.value}>
-						{mode.label}
-					</option>
-				))}
-			</Select>
-		</SettingsRow>
+				<Select
+					variant="ghost"
+					{...enforcementModeField.input({
+						format: (value) => value,
+						parse: (value) => value as specta.IntentionEnforcementMode
+					})}
+					disabled={isDisabled}
+				>
+					{enforcementModeOptions.map((mode) => (
+						<option key={mode.value} value={mode.value}>
+							{mode.label}
+						</option>
+					))}
+				</Select>
+			</SettingsRow>
+			{isBalanced && <BalancedDelayRow formCx={formCx} isDisabled={isDisabled} />}
+		</>
 	);
 };
 
@@ -431,3 +445,91 @@ const enforcementModeOptions: { value: specta.IntentionEnforcementMode; label: s
 	{ value: 'balanced', label: 'Balanced' },
 	{ value: 'strict', label: 'Strict' }
 ];
+
+const BalancedDelayRow: React.FC<TBalancedDelayRowProps> = (props) => {
+	const { formCx, isDisabled = false } = props;
+	const delayField = useFormField(formCx.$form, 'balancedDelayMs', {
+		controlled: true
+	});
+	const delayError =
+		delayField.status.type === 'invalid' ? delayField.status.errors[0]?.message : undefined;
+	const delaySeconds = Math.floor(delayField.value / 1_000);
+
+	const delayConfig = blockIntentionFormConfig.balancedDelay;
+	const minSeconds = delayConfig.minMs / 1_000;
+	const maxSeconds = delayConfig.maxMs / 1_000;
+	const stepSeconds = delayConfig.stepMs / 1_000;
+
+	// MARK: - Actions
+
+	const handleSecondsChange = React.useCallback(
+		(event: React.ChangeEvent<HTMLInputElement>) => {
+			const nextSeconds = Number(event.target.value);
+			if (!Number.isFinite(nextSeconds)) {
+				return;
+			}
+
+			formCx.$form.fields.balancedDelayMs.set(clampDelaySeconds(nextSeconds) * 1_000);
+		},
+		[formCx]
+	);
+
+	const handleStep = React.useCallback(
+		(deltaSeconds: number) => {
+			formCx.$form.fields.balancedDelayMs.set(
+				clampDelaySeconds(delaySeconds + deltaSeconds) * 1_000
+			);
+		},
+		[formCx, delaySeconds]
+	);
+
+	// MARK: - UI
+
+	return (
+		<SettingsRow
+			label="Balanced pause"
+			description={
+				delayError ??
+				'Required before ending, weakening, or quitting while this Intention is running.'
+			}
+			descriptionVariant={delayError != null ? 'error' : 'default'}
+			contentClassName="min-w-0 shrink justify-end"
+		>
+			<InputGroup className="w-20">
+				<InputGroupInput
+					type="number"
+					min={minSeconds}
+					max={maxSeconds}
+					step={stepSeconds}
+					value={delaySeconds}
+					disabled={isDisabled}
+					onChange={handleSecondsChange}
+					aria-label="Balanced pause seconds"
+					aria-invalid={delayError != null}
+				/>
+				<InputGroupAddon align="inline-end" className="pr-2 text-xs">
+					sec
+				</InputGroupAddon>
+				<InputGroupStepper
+					onIncrement={() => handleStep(stepSeconds)}
+					onDecrement={() => handleStep(-stepSeconds)}
+					incrementDisabled={isDisabled || delaySeconds >= maxSeconds}
+					decrementDisabled={isDisabled || delaySeconds <= minSeconds}
+					incrementLabel="Increase Balanced pause"
+					decrementLabel="Decrease Balanced pause"
+				/>
+			</InputGroup>
+		</SettingsRow>
+	);
+};
+
+interface TBalancedDelayRowProps {
+	formCx: BlockIntentionFormCx;
+	isDisabled?: boolean;
+}
+
+function clampDelaySeconds(seconds: number): number {
+	const delayConfig = blockIntentionFormConfig.balancedDelay;
+
+	return clampNumber(Math.trunc(seconds), delayConfig.minMs / 1_000, delayConfig.maxMs / 1_000);
+}

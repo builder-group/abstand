@@ -37,14 +37,14 @@ const IntentionEndEarlyDialog: React.FC<TIntentionEndEarlyDialogProps> = (props)
 					<p>End this running Intention early?</p>
 					{policy.type === 'delayed' && (
 						<p className="text-base-500 text-sm">
-							Balanced Enforcement delays this action briefly so it stays intentional.
+							Balanced Enforcement requires a pause before ending early.
 						</p>
 					)}
 					{policy.type === 'blocked' && (
 						<Alert role="note" variant="warning">
 							<ShieldIcon />
 							<AlertDescription>
-								Strict Enforcement blocks ending this Intention early.
+								Strict Enforcement blocks ending early while this Intention is running.
 							</AlertDescription>
 						</Alert>
 					)}

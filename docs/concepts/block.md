@@ -23,10 +23,10 @@ The goal is to remove access to known distractions before the moment of temptati
 
 ## Enforcement
 
-Enforcement controls whether the Abstand can be ended early or weakened. Weakening means reducing the enforcement level while the Intention keeps running.
+Enforcement controls whether the Abstand can be ended early or weakened, and how quitting behaves while it is running. Weakening means reducing the enforcement level while the Intention keeps running.
 
 - `casual`: end or weaken anytime
-- `balanced`: end or weaken after a deliberate pause
+- `balanced`: end or weaken after a configurable deliberate pause
 - `strict`: cannot be ended or weakened until the end condition is met
 
 The right level depends on the Intention. Overnight blocks usually fit `strict`. Morning focus windows usually fit `balanced`.

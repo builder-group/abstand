@@ -8,7 +8,7 @@ It handles graceful quit paths only. It can prevent quits from the app menu, tra
 
 Strict Enforcement blocks quitting immediately.
 
-Balanced Enforcement delays quitting. The backend emits a `QuitPreventedEvent::ActiveBalancedBlock` event with `durationMs`, and the frontend owns the countdown UI. After the frontend delay, it calls `confirmBalancedQuit`.
+Balanced Enforcement delays quitting. The backend emits a `QuitPreventedEvent::ActiveBalancedBlock` event with the largest active Balanced pause as `durationMs`, and the frontend owns the countdown UI. After the frontend delay, it calls `confirmBalancedQuit`.
 
 ## Design Decisions
 

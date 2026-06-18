@@ -47,6 +47,7 @@ impl From<IntentionBehavior> for IntentionBehaviorType {
 #[serde(rename_all = "camelCase")]
 pub struct IntentionBlock {
     pub enforcement_mode: IntentionEnforcementMode,
+    pub balanced_delay_ms: i64,
     pub scope: IntentionBlockScope,
     pub app_targets: Vec<IntentionBlockAppTarget>,
     pub website_targets: Vec<IntentionBlockWebsiteTarget>,

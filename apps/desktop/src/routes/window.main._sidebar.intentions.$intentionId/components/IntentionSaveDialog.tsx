@@ -36,7 +36,7 @@ const IntentionSaveDialog: React.FC<TIntentionSaveDialogProps> = (props) => {
 					<p>Save these changes to the running Intention?</p>
 					{policy.status === 'delayed' && (
 						<p className="text-base-500 text-sm">
-							Balanced Enforcement delays this action briefly so it stays intentional.
+							Balanced Enforcement requires a pause before weakening a running Intention.
 						</p>
 					)}
 					{policy.status === 'blocked' && (
@@ -75,7 +75,7 @@ interface TIntentionSaveDialogProps {
 
 function getBlockedSaveDescription(reasons: specta.IntentionWeakeningReason[]): string {
 	if (!reasons.length) {
-		return 'Strict Enforcement blocks changes that would weaken this running Intention.';
+		return 'Strict Enforcement blocks weakening this running Intention.';
 	}
 
 	const reasonLabels = reasons
@@ -87,12 +87,14 @@ function getBlockedSaveDescription(reasons: specta.IntentionWeakeningReason[]): 
 					return 'removed automatic end';
 				case 'lowersEnforcement':
 					return 'lower enforcement';
+				case 'lowersBalancedDelay':
+					return 'shorter Balanced pause';
 				case 'weakensBlock':
 					return 'weaker block';
 			}
 		})
 		.join(', ');
-	return `Strict Enforcement blocks changes that would weaken this running Intention: ${reasonLabels}.`;
+	return `Strict Enforcement blocks weakening this running Intention: ${reasonLabels}.`;
 }
 
 const DelayedSaveButton: React.FC<TDelayedSaveButtonProps> = (props) => {

@@ -118,21 +118,16 @@ async fn assess_quit(app: &AppHandle, mode: QuitAssessmentMode) -> QuitDecision 
         }
     };
 
-    match IntentionSessionRepository::has_active_block_session_with_enforcement(
-        &pool,
-        IntentionEnforcementMode::Balanced,
-    )
-    .await
-    {
-        Ok(true) => {
+    match IntentionSessionRepository::get_max_active_balanced_block_delay_ms(&pool).await {
+        Ok(Some(duration_ms)) => {
             return match mode {
                 QuitAssessmentMode::ConfirmedBalanced => QuitDecision::Allowed,
                 QuitAssessmentMode::Unconfirmed => QuitDecision::Denied {
-                    reason: QuitPreventedReason::ActiveBalancedBlock,
+                    reason: QuitPreventedReason::ActiveBalancedBlock { duration_ms },
                 },
             };
         }
-        Ok(false) => {}
+        Ok(None) => {}
         Err(error) => {
             log::error!(target: LOG_TARGET, "failed to assess quit policy: {}", error);
             return QuitDecision::Allowed;
@@ -156,21 +151,23 @@ enum QuitDecision {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum QuitPreventedReason {
-    ActiveBalancedBlock,
+    ActiveBalancedBlock { duration_ms: i64 },
     ActiveStrictBlock,
 }
 
 impl QuitPreventedReason {
     fn message(&self) -> &'static str {
         return match self {
-            Self::ActiveBalancedBlock => "Balanced Enforcement is active",
+            Self::ActiveBalancedBlock { .. } => "Balanced Enforcement is active",
             Self::ActiveStrictBlock => "Strict Enforcement is active",
         };
     }
 
     fn to_event(&self) -> QuitPreventedEvent {
         return match self {
-            Self::ActiveBalancedBlock => QuitPreventedEvent::active_balanced_block(),
+            Self::ActiveBalancedBlock { duration_ms } => {
+                QuitPreventedEvent::active_balanced_block(*duration_ms)
+            }
             Self::ActiveStrictBlock => QuitPreventedEvent::active_strict_block(),
         };
     }

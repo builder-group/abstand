@@ -8,6 +8,7 @@ import {
 } from '@/components';
 import { clampNumber } from '@/lib';
 import { SettingsRow } from '@/modules/settings';
+import { blockIntentionFormConfig } from '../../BlockIntentionFormCx';
 import { type TConditionRowsProps } from './types';
 
 export const DurationRows: React.FC<TConditionRowsProps> = (props) => {
@@ -103,6 +104,13 @@ const customDurationValue = 'custom';
 const CustomDurationInputs: React.FC<TCustomDurationInputsProps> = (props) => {
 	const { offsetMs, onOffsetMinutesChange, isInvalid = false, isDisabled = false } = props;
 	const offsetMinutes = Math.floor(offsetMs / 60_000);
+
+	const durationConfig = blockIntentionFormConfig.conditionDuration;
+	const minMinutes = durationConfig.minMs / 60_000;
+	const maxMinutes = durationConfig.maxMs / 60_000;
+	const stepMinutes = durationConfig.stepMs / 60_000;
+	const maxHours = maxMinutes / 60;
+
 	const hours = Math.floor(offsetMinutes / 60);
 	const minutes = offsetMinutes % 60;
 
@@ -123,15 +131,15 @@ const CustomDurationInputs: React.FC<TCustomDurationInputsProps> = (props) => {
 	);
 
 	const handleHoursStep = React.useCallback(
-		(delta: number) => {
-			onOffsetMinutesChange(getDurationMinutes(hours + delta, minutes));
+		(deltaHours: number) => {
+			onOffsetMinutesChange(getDurationMinutes(hours + deltaHours, minutes));
 		},
 		[hours, minutes, onOffsetMinutesChange]
 	);
 
 	const handleMinutesStep = React.useCallback(
-		(delta: number) => {
-			onOffsetMinutesChange(getDurationMinutes(hours, minutes + delta));
+		(deltaMinutes: number) => {
+			onOffsetMinutesChange(getDurationMinutes(hours, minutes + deltaMinutes));
 		},
 		[hours, minutes, onOffsetMinutesChange]
 	);
@@ -143,7 +151,8 @@ const CustomDurationInputs: React.FC<TCustomDurationInputsProps> = (props) => {
 			<DurationNumberInput
 				unit="hours"
 				min={0}
-				max={maxDurationHours}
+				max={maxHours}
+				step={1}
 				value={hours}
 				onValueChange={handleHoursChange}
 				onStep={handleHoursStep}
@@ -153,8 +162,9 @@ const CustomDurationInputs: React.FC<TCustomDurationInputsProps> = (props) => {
 			/>
 			<DurationNumberInput
 				unit="minutes"
-				min={hours === 0 ? minDurationMinutes : 0}
-				max={hours >= maxDurationHours ? 0 : 59}
+				min={hours === 0 ? minMinutes : 0}
+				max={hours >= maxHours ? 0 : 59}
+				step={stepMinutes}
 				value={minutes}
 				onValueChange={handleMinutesChange}
 				onStep={handleMinutesStep}
@@ -178,6 +188,7 @@ const DurationNumberInput: React.FC<TDurationNumberInputProps> = (props) => {
 		unit,
 		min,
 		max,
+		step,
 		value,
 		onValueChange,
 		onStep,
@@ -204,6 +215,7 @@ const DurationNumberInput: React.FC<TDurationNumberInputProps> = (props) => {
 				type="number"
 				min={min}
 				max={max}
+				step={step}
 				value={value}
 				disabled={isDisabled}
 				onChange={handleChange}
@@ -214,8 +226,8 @@ const DurationNumberInput: React.FC<TDurationNumberInputProps> = (props) => {
 				{unit === 'hours' ? 'H' : 'M'}
 			</InputGroupAddon>
 			<InputGroupStepper
-				onIncrement={() => onStep(1)}
-				onDecrement={() => onStep(-1)}
+				onIncrement={() => onStep(step)}
+				onDecrement={() => onStep(-step)}
 				incrementDisabled={isDisabled || value >= max}
 				decrementDisabled={isDisabled || value <= min}
 				incrementLabel={`Increase ${unit}`}
@@ -229,6 +241,7 @@ interface TDurationNumberInputProps {
 	unit: TDurationInputUnit;
 	min: number;
 	max: number;
+	step: number;
 	value: number;
 	onValueChange: (value: number) => void;
 	onStep: (delta: number) => void;
@@ -248,8 +261,11 @@ function durationMinutesToMs(minutes: number): number {
 }
 
 function clampOffsetMinutes(offsetMinutes: number): number {
-	return clampNumber(Math.trunc(offsetMinutes), minDurationMinutes, maxDurationHours * 60);
-}
+	const durationConfig = blockIntentionFormConfig.conditionDuration;
 
-const minDurationMinutes = 1;
-const maxDurationHours = 24;
+	return clampNumber(
+		Math.trunc(offsetMinutes),
+		durationConfig.minMs / 60_000,
+		durationConfig.maxMs / 60_000
+	);
+}

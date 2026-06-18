@@ -61,6 +61,24 @@ export class BlockIntentionFormCx {
 					defaultValue: initialData.enforcementMode,
 					validator: z.enum(['casual', 'balanced', 'strict'])
 				},
+				balancedDelayMs: {
+					defaultValue: initialData.balancedDelayMs,
+					validator: z
+						.number()
+						.int()
+						.min(
+							blockIntentionFormConfig.balancedDelay.minMs,
+							`Balanced pause must be at least ${formatBalancedDelayMs(
+								blockIntentionFormConfig.balancedDelay.minMs
+							)}`
+						)
+						.max(
+							blockIntentionFormConfig.balancedDelay.maxMs,
+							`Balanced pause must be ${formatBalancedDelayMs(
+								blockIntentionFormConfig.balancedDelay.maxMs
+							)} or less`
+						)
+				},
 				conditions: {
 					defaultValue: initialData.conditions.map((condition) => ({ ...condition })),
 					validator: createConditionsValidator(mode, validationContextInput)
@@ -99,6 +117,7 @@ export class BlockIntentionFormCx {
 		this.$form.fields.baseTargets.defaultValue = [...formData.baseTargets];
 		this.$form.fields.exceptionTargets.defaultValue = [...formData.exceptionTargets];
 		this.$form.fields.enforcementMode.defaultValue = formData.enforcementMode;
+		this.$form.fields.balancedDelayMs.defaultValue = formData.balancedDelayMs;
 		this.$form.fields.conditions.defaultValue = formData.conditions.map((condition) => ({
 			...condition
 		}));
@@ -228,6 +247,7 @@ export class BlockIntentionFormCx {
 				type: 'block',
 				scope: formData.scope,
 				enforcementMode: formData.enforcementMode,
+				balancedDelayMs: formData.balancedDelayMs,
 				targets:
 					targetActions != null
 						? [
@@ -348,6 +368,7 @@ export interface TBlockIntentionFormData {
 	baseTargets: TCatalogItem[];
 	exceptionTargets: TCatalogItem[];
 	enforcementMode: specta.IntentionEnforcementMode;
+	balancedDelayMs: number;
 	conditions: TBlockIntentionConditionFormData[];
 }
 
@@ -387,6 +408,7 @@ function getFormDataFromIntention(intention: specta.Intention): TBlockIntentionF
 		exceptionTargets:
 			targetActions == null ? [] : getCatalogItemsForAction(block, targetActions.exception),
 		enforcementMode: block.enforcementMode,
+		balancedDelayMs: block.balancedDelayMs,
 		conditions: (['start', 'end'] as const).map((transition) => {
 			const condition =
 				intention.conditions.find((candidate) => candidate.transition === transition) ?? null;
@@ -513,6 +535,7 @@ export function createDefaultBlockIntentionFormData(): TBlockIntentionFormData {
 		baseTargets: [],
 		exceptionTargets: [],
 		enforcementMode: 'balanced',
+		balancedDelayMs: blockIntentionFormConfig.balancedDelay.defaultMs,
 		conditions: [
 			createDefaultBlockIntentionCondition('start'),
 			createDefaultBlockIntentionCondition('end')
@@ -572,7 +595,11 @@ function createConditionsValidator(
 					(value) => typeof value === 'number' && isTimeOfDayMs(value),
 					'Enter a valid time'
 				),
-				offsetMs: z.number().int().min(60_000).max(86_400_000),
+				offsetMs: z
+					.number()
+					.int()
+					.min(blockIntentionFormConfig.conditionDuration.minMs)
+					.max(blockIntentionFormConfig.conditionDuration.maxMs),
 				weekdaysMask: z
 					.custom<specta.WeekdayMask>(
 						(value) => typeof value === 'number' && isWeekdayMask(value),
@@ -626,7 +653,10 @@ function createConditionsValidator(
 					message: 'Choose a future time'
 				});
 			}
-			if (startCondition.mode === 'afterDelay' && startCondition.offsetMs % 60_000 !== 0) {
+			if (
+				startCondition.mode === 'afterDelay' &&
+				startCondition.offsetMs % blockIntentionFormConfig.conditionDuration.stepMs !== 0
+			) {
 				ctx.addIssue({
 					code: 'custom',
 					path: [startConditionIndex, 'offsetMs'],
@@ -634,7 +664,10 @@ function createConditionsValidator(
 				});
 			}
 
-			if (endCondition.mode === 'afterDuration' && endCondition.offsetMs % 60_000 !== 0) {
+			if (
+				endCondition.mode === 'afterDuration' &&
+				endCondition.offsetMs % blockIntentionFormConfig.conditionDuration.stepMs !== 0
+			) {
 				ctx.addIssue({
 					code: 'custom',
 					path: [endConditionIndex, 'offsetMs'],
@@ -761,6 +794,17 @@ const blockIntentionFormValidator = {
 // MARK: - Config
 
 export const blockIntentionFormConfig = {
+	balancedDelay: {
+		defaultMs: 15_000,
+		minMs: 5_000,
+		maxMs: 120_000,
+		stepMs: 5_000
+	},
+	conditionDuration: {
+		minMs: 60_000,
+		maxMs: 24 * 60 * 60_000,
+		stepMs: 60_000
+	},
 	weekdayOptions: [
 		{ value: 'mon', shortLabel: 'M', label: 'Monday' },
 		{ value: 'tue', shortLabel: 'T', label: 'Tuesday' },
@@ -810,3 +854,8 @@ const conditionModeOptionsByFormMode = {
 	TBlockIntentionFormMode,
 	Record<specta.IntentionConditionTransition, readonly TBlockIntentionConditionModeOption[]>
 >;
+
+function formatBalancedDelayMs(delayMs: number): string {
+	const seconds = delayMs / 1_000;
+	return `${seconds} ${seconds === 1 ? 'second' : 'seconds'}`;
+}
