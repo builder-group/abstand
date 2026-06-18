@@ -20,7 +20,7 @@ import {
 	weekdayMaskFromWeekdays,
 	type TWeekday
 } from '@/lib';
-import { getCatalogItemKey, type TCatalogItem } from '@/modules/catalog';
+import { getCatalogItemKey, isWebsiteCatalogItem, type TCatalogItem } from '@/modules/catalog';
 
 export class BlockIntentionFormCx {
 	public readonly mode: TBlockIntentionFormMode;
@@ -254,9 +254,9 @@ export class BlockIntentionFormCx {
 								...formData.baseTargets.map((item) =>
 									getWritableTargetParam(item, targetActions.base)
 								),
-								...formData.exceptionTargets.map((item) =>
-									getWritableTargetParam(item, targetActions.exception)
-								)
+								...formData.exceptionTargets
+									.filter(isWebsiteCatalogItem)
+									.map((item) => getWritableTargetParam(item, targetActions.exception))
 							]
 						: []
 			},
@@ -769,12 +769,14 @@ const blockIntentionFormValidator = {
 				};
 			}
 
-			const duplicateException = formData.exceptionTargets.find((exceptionTarget) => {
-				const exceptionTargetKey = getCatalogItemKey(exceptionTarget);
-				return formData.baseTargets.some(
-					(baseTarget) => getCatalogItemKey(baseTarget) === exceptionTargetKey
-				);
-			});
+			const duplicateException = formData.exceptionTargets
+				.filter(isWebsiteCatalogItem)
+				.find((exceptionTarget) => {
+					const exceptionTargetKey = getCatalogItemKey(exceptionTarget);
+					return formData.baseTargets.some(
+						(baseTarget) => getCatalogItemKey(baseTarget) === exceptionTargetKey
+					);
+				});
 			if (duplicateException != null) {
 				return {
 					issues: [

@@ -161,16 +161,22 @@ export type TCatalogItem =
 	| { type: 'app'; app: specta.CatalogAppSearchResultDto }
 	| { type: 'website'; website: specta.CatalogWebsiteSearchResultDto };
 
-export interface TCatalogPickerItemDisabledState {
-	message: string;
-}
+export type TCatalogPickerItemVisibleFn = (item: TCatalogItem) => boolean;
 
 export type TCatalogPickerItemDisabledStateFn = (
 	item: TCatalogItem
 ) => TCatalogPickerItemDisabledState | null;
 
+export interface TCatalogPickerItemDisabledState {
+	message: string;
+}
+
 export function getCatalogItemKey(item: TCatalogItem): string {
 	return item.type === 'app' ? `app:${item.app.stableId}` : `website:${item.website.hostname}`;
+}
+
+export function isWebsiteCatalogItem(item: TCatalogItem): boolean {
+	return item.type === 'website';
 }
 
 export function catalogItemIdToKey(itemId: specta.CatalogItemId): string {

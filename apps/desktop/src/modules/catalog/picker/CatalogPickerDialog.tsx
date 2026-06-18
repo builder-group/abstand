@@ -19,12 +19,13 @@ import {
 	getCatalogItemLabel,
 	getCatalogItemSublabel,
 	type TCatalogItem,
-	type TCatalogPickerItemDisabledStateFn
+	type TCatalogPickerItemDisabledStateFn,
+	type TCatalogPickerItemVisibleFn
 } from './CatalogPickerCx';
 import { CatalogSearch } from './CatalogSearch';
 
 const CatalogPickerDialog: React.FC<TCatalogPickerDialogProps> = (props) => {
-	const { cx, title, getItemDisabledState } = props;
+	const { cx, title, searchPlaceholder, searchStatus, isItemVisible, getItemDisabledState } = props;
 	const isOpen = useFeatureState(cx.$isOpen);
 	const selectedItems = useFeatureState(cx.$selectedItems);
 	const selectedKeys = React.useMemo(
@@ -50,7 +51,10 @@ const CatalogPickerDialog: React.FC<TCatalogPickerDialogProps> = (props) => {
 				<DialogBody className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
 					<CatalogSearch
 						cx={cx}
+						placeholder={searchPlaceholder}
+						status={searchStatus}
 						selectedKeys={selectedKeys}
+						isItemVisible={isItemVisible}
 						getItemDisabledState={getItemDisabledState}
 					/>
 
@@ -81,6 +85,9 @@ const CatalogPickerDialog: React.FC<TCatalogPickerDialogProps> = (props) => {
 interface TCatalogPickerDialogProps {
 	cx: CatalogPickerCx;
 	title: string;
+	searchPlaceholder: string;
+	searchStatus: string;
+	isItemVisible?: TCatalogPickerItemVisibleFn;
 	getItemDisabledState?: TCatalogPickerItemDisabledStateFn;
 }
 
@@ -118,7 +125,14 @@ interface TSelectedItemRowProps {
 // MARK: - Hook
 
 export function useCatalogPicker(options: TUseCatalogPickerOptions): TCatalogPickerHandle {
-	const { onConfirm, title = 'Select Apps & Websites', getItemDisabledState } = options;
+	const {
+		onConfirm,
+		title = 'Select Apps & Websites',
+		searchPlaceholder = 'Search apps and websites…',
+		searchStatus = 'Select apps & websites',
+		isItemVisible,
+		getItemDisabledState
+	} = options;
 
 	const handleConfirm = useEventCallback(onConfirm);
 	const cx = React.useMemo(() => new CatalogPickerCx(handleConfirm), [handleConfirm]);
@@ -130,7 +144,14 @@ export function useCatalogPicker(options: TUseCatalogPickerOptions): TCatalogPic
 	return {
 		open: React.useCallback((items: TCatalogItem[]) => cx.open(items), [cx]),
 		dialog: (
-			<CatalogPickerDialog cx={cx} title={title} getItemDisabledState={getItemDisabledState} />
+			<CatalogPickerDialog
+				cx={cx}
+				title={title}
+				searchPlaceholder={searchPlaceholder}
+				searchStatus={searchStatus}
+				isItemVisible={isItemVisible}
+				getItemDisabledState={getItemDisabledState}
+			/>
 		),
 		cx
 	};
@@ -139,6 +160,9 @@ export function useCatalogPicker(options: TUseCatalogPickerOptions): TCatalogPic
 export interface TUseCatalogPickerOptions {
 	onConfirm: (items: TCatalogItem[]) => void;
 	title?: string;
+	searchPlaceholder?: string;
+	searchStatus?: string;
+	isItemVisible?: TCatalogPickerItemVisibleFn;
 	getItemDisabledState?: TCatalogPickerItemDisabledStateFn;
 }
 

@@ -1,4 +1,4 @@
-import { useFeatureState } from 'feature-react/state';
+import { useCompute, useFeatureState } from 'feature-react/state';
 import React from 'react';
 import {
 	Badge,
@@ -23,16 +23,21 @@ import {
 	type CatalogPickerCx,
 	type TCatalogItem,
 	type TCatalogPickerItemDisabledState,
-	type TCatalogPickerItemDisabledStateFn
+	type TCatalogPickerItemDisabledStateFn,
+	type TCatalogPickerItemVisibleFn
 } from './CatalogPickerCx';
 
 export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
-	const { cx, selectedKeys, getItemDisabledState } = props;
+	const { cx, placeholder, status, selectedKeys, isItemVisible, getItemDisabledState } = props;
 	const anchorRef = useComboboxAnchor();
 
 	const searchQuery = useFeatureState(cx.$searchQuery);
 	const trimmedSearchQuery = searchQuery.trim();
-	const resultItems = useFeatureState(cx.$searchResults);
+	const resultItems = useCompute(
+		cx.$searchResults,
+		(resultItems) => (isItemVisible == null ? resultItems : resultItems.filter(isItemVisible)),
+		[isItemVisible]
+	);
 	const isSearching = useFeatureState(cx.$isSearching);
 	const isSearchingVisible = useDelayedValue(isSearching, (nextValue) => (nextValue ? 200 : 0));
 
@@ -54,7 +59,7 @@ export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
 				autoFocus
 				showTrigger={false}
 				leading={<SearchIcon className="text-base-400" />}
-				placeholder="Search apps and websites…"
+				placeholder={placeholder}
 			/>
 
 			{trimmedSearchQuery.length > 0 && (
@@ -62,9 +67,7 @@ export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
 					anchor={anchorRef}
 					className="w-(--anchor-width) max-w-(--anchor-width) min-w-0"
 				>
-					<ComboboxStatus>
-						{isSearchingVisible ? 'Searching…' : 'Select apps & websites'}
-					</ComboboxStatus>
+					<ComboboxStatus>{isSearchingVisible ? 'Searching…' : status}</ComboboxStatus>
 
 					<ComboboxList>
 						{resultItems.map((item) => {
@@ -92,7 +95,10 @@ export const CatalogSearch: React.FC<TCatalogSearchProps> = (props) => {
 
 interface TCatalogSearchProps {
 	cx: CatalogPickerCx;
+	placeholder: string;
+	status: string;
 	selectedKeys: Set<string>;
+	isItemVisible?: TCatalogPickerItemVisibleFn;
 	getItemDisabledState?: TCatalogPickerItemDisabledStateFn;
 }
 

@@ -1,5 +1,5 @@
 import { useFormField } from 'feature-react/form';
-import { useFeatureState } from 'feature-react/state';
+import { useCompute, useFeatureState } from 'feature-react/state';
 import React from 'react';
 import {
 	Badge,
@@ -17,6 +17,7 @@ import { clampNumber, cn } from '@/lib';
 import {
 	CatalogIconPeek,
 	getCatalogItemKey,
+	isWebsiteCatalogItem,
 	useCatalogPicker,
 	type TCatalogItem,
 	type TCatalogPickerItemDisabledState
@@ -37,11 +38,18 @@ export const BlockSection: React.FC<TBlockSectionProps> = (props) => {
 			}
 
 			formCx.$form.fields.baseTargets.set(items);
+			const hasWebsiteBaseTargets = items.some(isWebsiteCatalogItem);
+			if (!hasWebsiteBaseTargets) {
+				formCx.$form.fields.exceptionTargets.set([]);
+			}
 		}
 	});
 	const { open: openExceptionTargetPicker, dialog: exceptionTargetPickerDialog } = useCatalogPicker(
 		{
-			title: 'Select Exceptions',
+			title: 'Select Website Exceptions',
+			searchPlaceholder: 'Search websites…',
+			searchStatus: 'Select websites',
+			isItemVisible: isWebsiteCatalogItem,
 			getItemDisabledState: (item) => getExceptionTargetPickerDisabledState(formCx, item),
 			onConfirm: (items: TCatalogItem[]) => {
 				// Note: The picker can already be open when a submit starts, so ignore late confirms
@@ -49,7 +57,7 @@ export const BlockSection: React.FC<TBlockSectionProps> = (props) => {
 					return;
 				}
 
-				formCx.$form.fields.exceptionTargets.set(items);
+				formCx.$form.fields.exceptionTargets.set(items.filter(isWebsiteCatalogItem));
 			}
 		}
 	);
@@ -208,10 +216,12 @@ const BlockTargetRows: React.FC<TBlockTargetRowsProps> = (props) => {
 
 	const baseTargets = useFeatureState(formCx.$form.fields.baseTargets);
 	const baseTargetsStatus = useFeatureState(formCx.$form.fields.baseTargets.status);
-	const exceptionTargets = useFeatureState(formCx.$form.fields.exceptionTargets);
+	const exceptionTargets = useCompute(formCx.$form.fields.exceptionTargets, (targets) =>
+		targets.filter(isWebsiteCatalogItem)
+	);
 	const exceptionTargetsStatus = useFeatureState(formCx.$form.fields.exceptionTargets.status);
 
-	const hasBaseTargets = baseTargets.length > 0;
+	const hasBaseWebsiteTargets = baseTargets.some(isWebsiteCatalogItem);
 
 	// MARK: - UI
 
@@ -240,9 +250,9 @@ const BlockTargetRows: React.FC<TBlockTargetRowsProps> = (props) => {
 				isDisabled={isDisabled}
 				onOpenPicker={onOpenBaseTargetPicker}
 			/>
-			{hasBaseTargets && (
+			{hasBaseWebsiteTargets && (
 				<CatalogTargetRow
-					label="Exceptions"
+					label="Website exceptions"
 					description={exceptionTargetsError ?? getExceptionTargetsDescription(scope)}
 					targets={exceptionTargets}
 					error={exceptionTargetsError}
