@@ -12,6 +12,8 @@ pnpm db:migrate <name>
 
 Pass one descriptive name. The wrapper normalizes it for the migration filename.
 
+Before creating, editing, or testing a migration, stop any running local app process. The app applies pending migrations on startup, so a running dev build can upgrade the local database before the migration has been reviewed.
+
 Useful checks:
 
 ```sh
