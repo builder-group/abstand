@@ -13,7 +13,7 @@ export const TodaySection: React.FC<TTodaySectionProps> = (props) => {
 			</div>
 			<SettingsGroup
 				contentClassName={cn(
-					contentLayout === 'placeholder' && 'flex min-h-32 items-center justify-center',
+					contentLayout === 'placeholder' && 'flex items-center justify-center',
 					contentClassName
 				)}
 			>
