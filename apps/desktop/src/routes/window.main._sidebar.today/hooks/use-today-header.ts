@@ -1,22 +1,23 @@
 import React from 'react';
 
 export function useTodayHeader(): TTodayHeader {
-	const [header, setHeader] = React.useState(() => createTodayHeader(new Date()));
+	const [header, setHeader] = React.useState(() => createTodayHeaderContent(new Date()));
 
 	React.useEffect(() => {
 		const intervalId = window.setInterval(() => {
 			setHeader((currentHeader) => {
-				const nextHeader = createTodayHeader(new Date());
+				const nextHeader = createTodayHeaderContent(new Date());
 				if (
-					currentHeader.todayLabel === nextHeader.todayLabel &&
-					currentHeader.greeting === nextHeader.greeting
+					currentHeader.title === nextHeader.title &&
+					currentHeader.subtitle === nextHeader.subtitle &&
+					currentHeader.collapsedTitle === nextHeader.collapsedTitle
 				) {
 					return currentHeader;
 				}
 
 				return nextHeader;
 			});
-		}, todayHeaderRefreshMs);
+		}, todayHeaderRefreshIntervalMs);
 
 		return () => {
 			window.clearInterval(intervalId);
@@ -26,33 +27,24 @@ export function useTodayHeader(): TTodayHeader {
 	return header;
 }
 
-const todayHeaderRefreshMs = 5 * 60_000;
+const todayHeaderRefreshIntervalMs = 5 * 60_000;
 
 interface TTodayHeader {
-	todayLabel: string;
-	greeting: string;
+	title: string;
+	subtitle: string;
+	collapsedTitle: string;
 }
 
-function createTodayHeader(date: Date): TTodayHeader {
+function createTodayHeaderContent(date: Date): TTodayHeader {
+	const dateLabel = new Intl.DateTimeFormat('en-US', {
+		weekday: 'long',
+		month: 'long',
+		day: 'numeric'
+	}).format(date);
+
 	return {
-		todayLabel: new Intl.DateTimeFormat('en-US', {
-			weekday: 'long',
-			month: 'long',
-			day: 'numeric'
-		}).format(date),
-		greeting: getTimeOfDayGreeting(date)
+		title: 'Welcome back.',
+		subtitle: `It's ${dateLabel}.`,
+		collapsedTitle: dateLabel
 	};
-}
-
-function getTimeOfDayGreeting(date: Date): string {
-	const hour = date.getHours();
-
-	if (hour < 12) {
-		return 'Good morning.';
-	}
-	if (hour < 18) {
-		return 'Good afternoon.';
-	}
-
-	return 'Good evening.';
 }

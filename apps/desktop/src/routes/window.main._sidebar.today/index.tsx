@@ -19,11 +19,18 @@ function RouteComponent() {
 	const cx = useCreateTodayPageCx();
 	const hasTodayOverviewLoaded = useFeatureState(cx.$hasLoaded);
 
+	const collapsedHeader = (
+		<span className="text-base-950 block truncate text-sm font-semibold">
+			{todayHeader.collapsedTitle}
+		</span>
+	);
+
 	if (!hasTodayOverviewLoaded) {
 		return (
 			<ContentPage
-				title={todayHeader.todayLabel}
-				subtitle={todayHeader.greeting}
+				title={todayHeader.title}
+				subtitle={todayHeader.subtitle}
+				collapsedHeader={collapsedHeader}
 				contentClassName="flex h-full flex-col"
 			>
 				<div className="flex flex-1 items-center justify-center">
@@ -34,7 +41,11 @@ function RouteComponent() {
 	}
 
 	return (
-		<ContentPage title={todayHeader.todayLabel} subtitle={todayHeader.greeting}>
+		<ContentPage
+			title={todayHeader.title}
+			subtitle={todayHeader.subtitle}
+			collapsedHeader={collapsedHeader}
+		>
 			<div className="space-y-5">
 				<ActiveIntentionsSection cx={cx} />
 				<UpcomingIntentionsSection cx={cx} />
