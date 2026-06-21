@@ -25,13 +25,13 @@
 	},
 	"devDependencies": {
 		"@blgc/config": "^0.1.0",
-		"eslint": "^10.4.1",
-		"prettier": "^3.8.3",
+		"eslint": "^10.5.0",
+		"prettier": "^3.8.4",
 		"shx": "^0.4.0",
-		"turbo": "^2.9.16",
+		"turbo": "^2.9.18",
 		"typescript": "^6.0.3",
 		"vite": "^8.0.16",
-		"vitest": "^4.1.8"
+		"vitest": "^4.1.9"
 	},
 	"packageManager": "pnpm@11.3.0",
 	"engines": {
