@@ -22,18 +22,18 @@ export const DurationRows: React.FC<TConditionRowsProps> = (props) => {
 	} = props;
 	const [isCustomDurationSelected, setIsCustomDurationSelected] = React.useState(false);
 
-	const selectedDurationValue = isCustomDurationSelected
-		? customDurationValue
-		: (durationOptions
-				.find((o) => durationMinutesToMs(o.minutes) === offsetMs)
-				?.minutes.toString() ?? customDurationValue);
+	const selectedDurationOption = durationOptions.find((option) => option.valueMs === offsetMs);
+	const selectedDurationValue =
+		isCustomDurationSelected || selectedDurationOption == null
+			? customDurationValue
+			: selectedDurationOption.valueMs.toString();
 
 	// MARK: - Actions
 
-	const handleOffsetMinutesChange = React.useCallback(
-		(offsetMinutes: number) => {
+	const handleOffsetMsChange = React.useCallback(
+		(offsetMs: number) => {
 			formCx.updateCondition(transition, {
-				offsetMs: durationMinutesToMs(clampOffsetMinutes(offsetMinutes))
+				offsetMs: clampOffsetMs(offsetMs)
 			});
 		},
 		[transition, formCx]
@@ -46,15 +46,15 @@ export const DurationRows: React.FC<TConditionRowsProps> = (props) => {
 				return;
 			}
 
-			const offsetMinutes = Number(event.target.value);
-			if (!Number.isFinite(offsetMinutes)) {
+			const offsetMs = Number(event.target.value);
+			if (!Number.isFinite(offsetMs)) {
 				return;
 			}
 
 			setIsCustomDurationSelected(false);
-			handleOffsetMinutesChange(offsetMinutes);
+			handleOffsetMsChange(offsetMs);
 		},
-		[handleOffsetMinutesChange]
+		[handleOffsetMsChange]
 	);
 
 	// MARK: - UI
@@ -75,7 +75,7 @@ export const DurationRows: React.FC<TConditionRowsProps> = (props) => {
 				aria-invalid={offsetError != null}
 			>
 				{durationOptions.map((option) => (
-					<option key={option.minutes} value={option.minutes}>
+					<option key={option.valueMs} value={option.valueMs}>
 						{option.label}
 					</option>
 				))}
@@ -84,7 +84,7 @@ export const DurationRows: React.FC<TConditionRowsProps> = (props) => {
 			{selectedDurationValue === customDurationValue && (
 				<CustomDurationInputs
 					offsetMs={offsetMs}
-					onOffsetMinutesChange={handleOffsetMinutesChange}
+					onOffsetMsChange={handleOffsetMsChange}
 					isInvalid={offsetError != null}
 					isDisabled={isDisabled}
 				/>
@@ -94,54 +94,72 @@ export const DurationRows: React.FC<TConditionRowsProps> = (props) => {
 };
 
 const durationOptions = [
-	{ minutes: 20, label: '20 minutes' },
-	{ minutes: 30, label: '30 minutes' },
-	{ minutes: 45, label: '45 minutes' },
-	{ minutes: 60, label: '1 hour' }
+	{ valueMs: durationMinutesToMs(20), label: '20 minutes' },
+	{ valueMs: durationMinutesToMs(30), label: '30 minutes' },
+	{ valueMs: durationMinutesToMs(45), label: '45 minutes' },
+	{ valueMs: durationMinutesToMs(60), label: '1 hour' },
+	{ valueMs: durationMinutesToMs(24 * 60), label: '1 day' },
+	{ valueMs: durationMinutesToMs(7 * 24 * 60), label: '7 days' },
+	{ valueMs: durationMinutesToMs(30 * 24 * 60), label: '30 days' }
 ] as const;
 const customDurationValue = 'custom';
 
 const CustomDurationInputs: React.FC<TCustomDurationInputsProps> = (props) => {
-	const { offsetMs, onOffsetMinutesChange, isInvalid = false, isDisabled = false } = props;
+	const { offsetMs, onOffsetMsChange, isInvalid = false, isDisabled = false } = props;
 	const offsetMinutes = Math.floor(offsetMs / 60_000);
 
 	const durationConfig = blockIntentionFormConfig.conditionDuration;
 	const minMinutes = durationConfig.minMs / 60_000;
 	const maxMinutes = durationConfig.maxMs / 60_000;
 	const stepMinutes = durationConfig.stepMs / 60_000;
-	const maxHours = maxMinutes / 60;
+	const maxDays = maxMinutes / minutesPerDay;
 
-	const hours = Math.floor(offsetMinutes / 60);
+	const days = Math.floor(offsetMinutes / minutesPerDay);
+	const hours = Math.floor((offsetMinutes % minutesPerDay) / 60);
 	const minutes = offsetMinutes % 60;
 
 	// MARK: - Actions
 
+	const handleDaysChange = React.useCallback(
+		(nextDays: number) => {
+			onOffsetMsChange(getDurationMs(nextDays, hours, minutes));
+		},
+		[hours, minutes, onOffsetMsChange]
+	);
+
+	const handleDaysStep = React.useCallback(
+		(deltaDays: number) => {
+			onOffsetMsChange(getDurationMs(days + deltaDays, hours, minutes));
+		},
+		[days, hours, minutes, onOffsetMsChange]
+	);
+
 	const handleHoursChange = React.useCallback(
 		(nextHours: number) => {
-			onOffsetMinutesChange(getDurationMinutes(nextHours, minutes));
+			onOffsetMsChange(getDurationMs(days, nextHours, minutes));
 		},
-		[minutes, onOffsetMinutesChange]
+		[days, minutes, onOffsetMsChange]
 	);
 
 	const handleMinutesChange = React.useCallback(
 		(nextMinutes: number) => {
-			onOffsetMinutesChange(getDurationMinutes(hours, nextMinutes));
+			onOffsetMsChange(getDurationMs(days, hours, nextMinutes));
 		},
-		[hours, onOffsetMinutesChange]
+		[days, hours, onOffsetMsChange]
 	);
 
 	const handleHoursStep = React.useCallback(
 		(deltaHours: number) => {
-			onOffsetMinutesChange(getDurationMinutes(hours + deltaHours, minutes));
+			onOffsetMsChange(getDurationMs(days, hours + deltaHours, minutes));
 		},
-		[hours, minutes, onOffsetMinutesChange]
+		[days, hours, minutes, onOffsetMsChange]
 	);
 
 	const handleMinutesStep = React.useCallback(
 		(deltaMinutes: number) => {
-			onOffsetMinutesChange(getDurationMinutes(hours, minutes + deltaMinutes));
+			onOffsetMsChange(getDurationMs(days, hours, minutes + deltaMinutes));
 		},
-		[hours, minutes, onOffsetMinutesChange]
+		[days, hours, minutes, onOffsetMsChange]
 	);
 
 	// MARK: - UI
@@ -149,9 +167,21 @@ const CustomDurationInputs: React.FC<TCustomDurationInputsProps> = (props) => {
 	return (
 		<>
 			<DurationNumberInput
+				unit="days"
+				min={0}
+				max={maxDays}
+				step={1}
+				value={days}
+				onValueChange={handleDaysChange}
+				onStep={handleDaysStep}
+				ariaLabel="Custom duration days"
+				isInvalid={isInvalid}
+				isDisabled={isDisabled}
+			/>
+			<DurationNumberInput
 				unit="hours"
 				min={0}
-				max={maxHours}
+				max={days >= maxDays ? 0 : 23}
 				step={1}
 				value={hours}
 				onValueChange={handleHoursChange}
@@ -162,8 +192,8 @@ const CustomDurationInputs: React.FC<TCustomDurationInputsProps> = (props) => {
 			/>
 			<DurationNumberInput
 				unit="minutes"
-				min={hours === 0 ? minMinutes : 0}
-				max={hours >= maxHours ? 0 : 59}
+				min={days === 0 && hours === 0 ? minMinutes : 0}
+				max={days >= maxDays ? 0 : 59}
 				step={stepMinutes}
 				value={minutes}
 				onValueChange={handleMinutesChange}
@@ -176,9 +206,11 @@ const CustomDurationInputs: React.FC<TCustomDurationInputsProps> = (props) => {
 	);
 };
 
+const minutesPerDay = 24 * 60;
+
 interface TCustomDurationInputsProps {
 	offsetMs: number;
-	onOffsetMinutesChange: (offsetMinutes: number) => void;
+	onOffsetMsChange: (offsetMs: number) => void;
 	isInvalid?: boolean;
 	isDisabled?: boolean;
 }
@@ -204,9 +236,9 @@ const DurationNumberInput: React.FC<TDurationNumberInputProps> = (props) => {
 				return;
 			}
 
-			onValueChange(nextValue);
+			onValueChange(clampNumber(nextValue, min, max));
 		},
-		[onValueChange]
+		[min, max, onValueChange]
 	);
 
 	return (
@@ -223,7 +255,7 @@ const DurationNumberInput: React.FC<TDurationNumberInputProps> = (props) => {
 				aria-invalid={isInvalid}
 			/>
 			<InputGroupAddon align="inline-end" className="pr-2 text-xs">
-				{unit === 'hours' ? 'H' : 'M'}
+				{getDurationInputUnitLabel(unit)}
 			</InputGroupAddon>
 			<InputGroupStepper
 				onIncrement={() => onStep(step)}
@@ -250,22 +282,29 @@ interface TDurationNumberInputProps {
 	isDisabled?: boolean;
 }
 
-type TDurationInputUnit = 'hours' | 'minutes';
+type TDurationInputUnit = 'days' | 'hours' | 'minutes';
 
-function getDurationMinutes(hours: number, minutes: number): number {
-	return hours * 60 + minutes;
+function getDurationInputUnitLabel(unit: TDurationInputUnit): string {
+	switch (unit) {
+		case 'days':
+			return 'D';
+		case 'hours':
+			return 'H';
+		case 'minutes':
+			return 'M';
+	}
+}
+
+function getDurationMs(days: number, hours: number, minutes: number): number {
+	return durationMinutesToMs(days * minutesPerDay + hours * 60 + minutes);
 }
 
 function durationMinutesToMs(minutes: number): number {
 	return minutes * 60_000;
 }
 
-function clampOffsetMinutes(offsetMinutes: number): number {
+function clampOffsetMs(offsetMs: number): number {
 	const durationConfig = blockIntentionFormConfig.conditionDuration;
-
-	return clampNumber(
-		Math.trunc(offsetMinutes),
-		durationConfig.minMs / 60_000,
-		durationConfig.maxMs / 60_000
-	);
+	const steppedOffsetMs = Math.trunc(offsetMs / durationConfig.stepMs) * durationConfig.stepMs;
+	return clampNumber(steppedOffsetMs, durationConfig.minMs, durationConfig.maxMs);
 }

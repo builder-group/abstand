@@ -1,14 +1,9 @@
 import React from 'react';
-import { Select } from '@/components';
+import { Input, Select } from '@/components';
 import { specta } from '@/environment';
-import {
-	formatDateInput,
-	getLocalDateEpochDays,
-	getLocalDateTime,
-	parseDateInput,
-	timeOnlyFromMs
-} from '@/lib';
+import { formatDateInput, getLocalDateEpochDays, parseDateInput } from '@/lib';
 import { SettingsRow } from '@/modules/settings';
+import { blockIntentionFormConfig } from '../../BlockIntentionFormCx';
 import { TimeOfDayRow } from './TimeOfDayRow';
 import { type TConditionRowsProps } from './types';
 
@@ -21,20 +16,40 @@ export const AtTimeRows: React.FC<TConditionRowsProps> = (props) => {
 		formCx,
 		isDisabled = false
 	} = props;
-	const dateOptions = getDateOptions(dateEpochDays);
+	const [isCustomDateSelected, setIsCustomDateSelected] = React.useState(false);
+
+	const dateOptions = getDateOptions();
+	const selectedDateOption = dateOptions.find((option) => option.valueEpochDays === dateEpochDays);
+	const selectedDateValue =
+		isCustomDateSelected || selectedDateOption == null
+			? customDateValue
+			: formatDateInput(selectedDateOption.valueEpochDays);
 
 	// MARK: - Actions
 
+	const handleDateEpochDaysChange = React.useCallback(
+		(dateEpochDays: specta.DateOnly) => {
+			formCx.updateCondition(transition, { dateEpochDays });
+		},
+		[transition, formCx]
+	);
+
 	const handleDateChange = React.useCallback(
 		(event: React.ChangeEvent<HTMLSelectElement>) => {
+			if (event.target.value === customDateValue) {
+				setIsCustomDateSelected(true);
+				return;
+			}
+
 			const dateEpochDays = parseDateInput(event.target.value);
 			if (dateEpochDays == null) {
 				return;
 			}
 
-			formCx.updateCondition(transition, { dateEpochDays });
+			setIsCustomDateSelected(false);
+			handleDateEpochDaysChange(dateEpochDays);
 		},
-		[transition, formCx]
+		[handleDateEpochDaysChange]
 	);
 
 	// MARK: - UI
@@ -49,67 +64,67 @@ export const AtTimeRows: React.FC<TConditionRowsProps> = (props) => {
 			>
 				<Select
 					variant="ghost"
-					value={formatDateInput(dateEpochDays)}
+					value={selectedDateValue}
 					disabled={isDisabled}
 					onChange={handleDateChange}
 					aria-invalid={dateError != null}
 				>
 					{dateOptions.map((option) => (
-						<option key={option.value} value={formatDateInput(option.value)}>
+						<option
+							key={option.valueEpochDays}
+							value={formatDateInput(option.valueEpochDays)}
+						>
 							{option.label}
 						</option>
 					))}
+					<option value={customDateValue}>Custom</option>
 				</Select>
+				{selectedDateValue === customDateValue && (
+					<CustomDateInput
+						dateEpochDays={dateEpochDays}
+						onDateEpochDaysChange={handleDateEpochDaysChange}
+						isInvalid={dateError != null}
+						isDisabled={isDisabled}
+					/>
+				)}
 			</SettingsRow>
 			<TimeOfDayRow {...props} ariaLabel="Condition time" />
 		</>
 	);
 };
 
-function getDateOptions(selectedDateEpochDays: specta.DateOnly): TDateOption[] {
-	const options = Array.from({ length: 7 }, (_, offset) => getDateOption(offset));
-	if (options.some((option) => option.value === selectedDateEpochDays)) {
-		return options;
-	}
+const customDateValue = 'custom';
 
-	// Note: If an edited date is outside the next seven days, keep it selectable
-	return [
-		{
-			value: selectedDateEpochDays,
-			label: dateOptionLabelFormatter.format(
-				getLocalDateTime(selectedDateEpochDays, timeOnlyFromMs(0))
-			)
-		},
-		...options
-	];
+function getDateOptions(): TDateOption[] {
+	return Array.from({ length: 7 }, (_, offset) => getDateOption(offset));
 }
 
 function getDateOption(offset: number): TDateOption {
 	const date = new Date();
 	date.setDate(date.getDate() + offset);
-	const value = getLocalDateEpochDays(date);
+	const valueEpochDays = getLocalDateEpochDays(date);
 
 	if (offset === 0) {
 		return {
-			value,
+			valueEpochDays,
 			label: 'Today'
 		};
 	}
 	if (offset === 1) {
 		return {
-			value,
+			valueEpochDays,
 			label: 'Tomorrow'
 		};
 	}
 
 	return {
-		value,
+		valueEpochDays,
 		label: dateOptionLabelFormatter.format(date)
 	};
 }
 
 interface TDateOption {
-	value: specta.DateOnly;
+	valueEpochDays: specta.DateOnly;
 	label: string;
 }
 
@@ -118,3 +133,50 @@ const dateOptionLabelFormatter = new Intl.DateTimeFormat('en-US', {
 	month: 'short',
 	day: 'numeric'
 });
+
+const CustomDateInput: React.FC<TCustomDateInputProps> = (props) => {
+	const {
+		dateEpochDays,
+		onDateEpochDaysChange,
+		isInvalid = false,
+		isDisabled = false
+	} = props;
+
+	const handleChange = React.useCallback(
+		(event: React.ChangeEvent<HTMLInputElement>) => {
+			const dateEpochDays = parseDateInput(event.target.value);
+			if (dateEpochDays == null) {
+				return;
+			}
+
+			onDateEpochDaysChange(dateEpochDays);
+		},
+		[onDateEpochDaysChange]
+	);
+
+	return (
+		<Input
+			type="date"
+			size="sm"
+			value={formatDateInput(dateEpochDays)}
+			min={formatDateInput(getDateOption(0).valueEpochDays)}
+			max={formatDateInput(getMaxDateEpochDays())}
+			disabled={isDisabled}
+			onChange={handleChange}
+			aria-label="Custom condition date"
+			aria-invalid={isInvalid}
+		/>
+	);
+};
+
+interface TCustomDateInputProps {
+	dateEpochDays: specta.DateOnly;
+	onDateEpochDaysChange: (dateEpochDays: specta.DateOnly) => void;
+	isInvalid?: boolean;
+	isDisabled?: boolean;
+}
+
+function getMaxDateEpochDays(): specta.DateOnly {
+	const maxDate = new Date(Date.now() + blockIntentionFormConfig.conditionDuration.maxMs);
+	return getLocalDateEpochDays(maxDate);
+}

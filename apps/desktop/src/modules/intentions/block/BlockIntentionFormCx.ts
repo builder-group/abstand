@@ -587,10 +587,19 @@ function createConditionsValidator(
 			z.object({
 				transition: z.enum(['start', 'end']),
 				mode: z.enum(['now', 'atTime', 'afterDelay', 'afterDuration', 'repeats', 'manual']),
-				dateEpochDays: z.custom<specta.DateOnly>(
-					(value) => typeof value === 'number' && isDateEpochDays(value),
-					'Enter a valid date'
-				),
+				dateEpochDays: z
+					.custom<specta.DateOnly>(
+						(value) => typeof value === 'number' && isDateEpochDays(value),
+						'Enter a valid date'
+					)
+					.refine(
+						(dateEpochDays) =>
+							dateEpochDays <=
+							getLocalDateEpochDays(
+								new Date(Date.now() + blockIntentionFormConfig.conditionDuration.maxMs)
+							),
+						'Choose a date within 5 years'
+					),
 				timeOfDayMs: z.custom<specta.TimeOnly>(
 					(value) => typeof value === 'number' && isTimeOfDayMs(value),
 					'Enter a valid time'
@@ -599,7 +608,11 @@ function createConditionsValidator(
 					.number()
 					.int()
 					.min(blockIntentionFormConfig.conditionDuration.minMs)
-					.max(blockIntentionFormConfig.conditionDuration.maxMs),
+					.max(blockIntentionFormConfig.conditionDuration.maxMs, 'Choose a duration up to 5 years')
+					.refine(
+						(offsetMs) => offsetMs % blockIntentionFormConfig.conditionDuration.stepMs === 0,
+						'Duration must use whole minutes'
+					),
 				weekdaysMask: z
 					.custom<specta.WeekdayMask>(
 						(value) => typeof value === 'number' && isWeekdayMask(value),
@@ -653,28 +666,6 @@ function createConditionsValidator(
 					message: 'Choose a future time'
 				});
 			}
-			if (
-				startCondition.mode === 'afterDelay' &&
-				startCondition.offsetMs % blockIntentionFormConfig.conditionDuration.stepMs !== 0
-			) {
-				ctx.addIssue({
-					code: 'custom',
-					path: [startConditionIndex, 'offsetMs'],
-					message: 'Duration must use whole minutes'
-				});
-			}
-
-			if (
-				endCondition.mode === 'afterDuration' &&
-				endCondition.offsetMs % blockIntentionFormConfig.conditionDuration.stepMs !== 0
-			) {
-				ctx.addIssue({
-					code: 'custom',
-					path: [endConditionIndex, 'offsetMs'],
-					message: 'Duration must use whole minutes'
-				});
-			}
-
 			if (endCondition.mode !== 'atTime') {
 				return;
 			}
@@ -804,7 +795,7 @@ export const blockIntentionFormConfig = {
 	},
 	conditionDuration: {
 		minMs: 60_000,
-		maxMs: 24 * 60 * 60_000,
+		maxMs: 5 * 365 * 24 * 60 * 60_000,
 		stepMs: 60_000
 	},
 	weekdayOptions: [
