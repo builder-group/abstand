@@ -16,9 +16,19 @@ import { useIntentionDeleteDialog } from './IntentionDeleteDialog';
 import { useIntentionEndEarlyDialog } from './IntentionEndEarlyDialog';
 
 export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
-	const { cx, isActive, hasUnsavedChanges = false, isDisabled = false, editActions } = props;
+	const {
+		cx,
+		isActive,
+		autoRunAction,
+		onAutoRunActionConsumed,
+		hasUnsavedChanges = false,
+		isDisabled = false,
+		editActions
+	} = props;
 	const intentionsCx = useIntentionsCx();
 	const toastsCx = useToastsCx();
+
+	const consumedAutoRunActionRef = React.useRef<string | null>(null);
 
 	const manualStartCondition = cx.intention.conditions.find(
 		(condition) => condition.transition === 'start' && condition.rule.type === 'manual'
@@ -128,6 +138,46 @@ export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 		});
 	}, [cx.intention.id, intentionsCx, isActive, isPaused, toastsCx]);
 
+	// MARK: - Effects
+
+	React.useEffect(() => {
+		if (autoRunAction == null) {
+			consumedAutoRunActionRef.current = null;
+			return;
+		}
+
+		if (!isActive || isDisabled || isPending) {
+			return;
+		}
+
+		const autoRunActionKey = `${cx.intention.id}:${autoRunAction}`;
+		if (consumedAutoRunActionRef.current === autoRunActionKey) {
+			return;
+		}
+
+		consumedAutoRunActionRef.current = autoRunActionKey;
+		// Clear the URL action before running so it stays one-shot even if the action opens a dialog or fails
+		onAutoRunActionConsumed?.(autoRunAction);
+
+		queueMicrotask(() => {
+			switch (autoRunAction) {
+				case 'end':
+					void handleSessionAction();
+					break;
+				default:
+				// do nothing
+			}
+		});
+	}, [
+		autoRunAction,
+		cx.intention.id,
+		handleSessionAction,
+		isActive,
+		isDisabled,
+		isPending,
+		onAutoRunActionConsumed
+	]);
+
 	// MARK: - UI
 
 	return (
@@ -184,11 +234,14 @@ export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 interface TIntentionActionsProps {
 	cx: EditBlockIntentionCx;
 	isActive: boolean;
+	autoRunAction?: TIntentionAutoRunAction;
+	onAutoRunActionConsumed?: (action: TIntentionAutoRunAction) => void;
 	hasUnsavedChanges?: boolean;
 	isDisabled?: boolean;
 	editActions?: React.ReactNode;
 }
 
+export type TIntentionAutoRunAction = 'end';
 type TPendingSessionAction = 'start' | 'end';
 type TPendingPauseAction = 'pause' | 'resume';
 

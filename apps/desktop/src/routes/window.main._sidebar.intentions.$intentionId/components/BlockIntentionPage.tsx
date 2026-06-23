@@ -17,11 +17,11 @@ import {
 	WhenSection,
 	type TBlockIntention
 } from '@/modules/intentions';
-import { IntentionActions } from './IntentionActions';
+import { IntentionActions, TIntentionAutoRunAction } from './IntentionActions';
 import { useIntentionSaveDialog } from './IntentionSaveDialog';
 
 export const BlockIntentionPage: React.FC<TBlockIntentionPageProps> = (props) => {
-	const { intention, isActive, backTo } = props;
+	const { intention, isActive, backTo, autoRunAction, onAutoRunActionConsumed } = props;
 	const intentionsCx = useIntentionsCx();
 	const formId = React.useId();
 	const cx = React.useMemo(
@@ -76,6 +76,8 @@ export const BlockIntentionPage: React.FC<TBlockIntentionPageProps> = (props) =>
 					<IntentionActions
 						cx={cx}
 						isActive={isActive}
+						autoRunAction={autoRunAction}
+						onAutoRunActionConsumed={onAutoRunActionConsumed}
 						hasUnsavedChanges={isDirty}
 						isDisabled={isPending}
 						editActions={
@@ -126,6 +128,8 @@ interface TBlockIntentionPageProps {
 	intention: TBlockIntention;
 	isActive: boolean;
 	backTo?: TContentPageProps['backTo'];
+	autoRunAction?: TIntentionAutoRunAction;
+	onAutoRunActionConsumed?: (action: TIntentionAutoRunAction) => void;
 }
 
 const BlockIntentionTitle: React.FC<TBlockIntentionTitleProps> = (props) => {

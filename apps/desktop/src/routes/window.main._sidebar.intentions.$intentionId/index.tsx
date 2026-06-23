@@ -1,9 +1,10 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useCompute, useFeatureState } from 'feature-react/state';
+import React from 'react';
 import * as z from 'zod';
 import { ContentPage, Spinner } from '@/components';
 import { useIntentionsCx, type TBlockIntention } from '@/modules/intentions';
-import { BlockIntentionPage } from './components';
+import { BlockIntentionPage, TIntentionAutoRunAction } from './components';
 
 export const Route = createFileRoute('/window/main/_sidebar/intentions/$intentionId/')({
 	params: {
@@ -31,18 +32,38 @@ const SIntentionRouteParams = z.object({
 });
 
 const SIntentionRouteSearch = z.object({
-	backTo: z.enum(['/window/main/today']).optional()
+	backTo: z.enum(['/window/main/today']).optional(),
+	action: z.enum(['end']).optional()
 });
 
 function RouteComponent() {
+	const navigate = useNavigate({ from: Route.fullPath });
 	const { intentionId } = Route.useParams();
-	const { backTo } = Route.useSearch();
+	const { backTo, action } = Route.useSearch();
 	const intentionsCx = useIntentionsCx();
 	const hasLoaded = useFeatureState(intentionsCx.$hasLoaded);
 	const intention = useFeatureState(intentionsCx.getIntentionState(intentionId));
 	const isActive = useCompute(
 		intentionsCx.getActiveSessionState(intentionId),
 		(activeSession) => activeSession?.status === 'active'
+	);
+
+	// MARK: - Actions
+
+	const handleAutoRunActionConsumed = React.useCallback(
+		(action: TIntentionAutoRunAction) => {
+			switch (action) {
+				case 'end':
+					void navigate({
+						search: ({ backTo }) => ({ backTo }),
+						replace: true
+					});
+					break;
+				default:
+				// do nothing
+			}
+		},
+		[navigate]
 	);
 
 	// MARK: - UI
@@ -65,6 +86,8 @@ function RouteComponent() {
 					intention={intention as TBlockIntention}
 					isActive={isActive}
 					backTo={backTo}
+					autoRunAction={action}
+					onAutoRunActionConsumed={handleAutoRunActionConsumed}
 				/>
 			);
 		case 'break':
