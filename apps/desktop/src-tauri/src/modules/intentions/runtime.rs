@@ -3,6 +3,8 @@ use super::{
     session::{complete_session, start_session, stop_session, SessionTransitionError},
     timed_runtime::{TimedRuntime, TimedRuntimeError},
 };
+#[cfg(target_os = "macos")]
+use crate::app::tray::AppTray;
 use crate::common::time::unix_ms_now;
 use std::fmt;
 use tauri::AppHandle;
@@ -19,11 +21,17 @@ impl IntentionRuntime {
     }
 
     pub async fn reevaluate(&self, app: &AppHandle) -> Result<(), IntentionRuntimeError> {
-        return self
-            .timed
+        self.timed
             .reevaluate(app)
             .await
-            .map_err(IntentionRuntimeError::TimedRuntime);
+            .map_err(IntentionRuntimeError::TimedRuntime)?;
+
+        #[cfg(target_os = "macos")]
+        if let Err(error) = AppTray::refresh_menu(app).await {
+            log::warn!(target: LOG_TARGET, "tray menu refresh failed: {}", error);
+        }
+
+        return Ok(());
     }
 
     pub async fn start_intention(

@@ -129,9 +129,6 @@ pub fn run() {
             // https://docs.rs/tauri-specta/2.0.0-rc.21/tauri_specta/index.html
             specta_builder.mount_events(app);
 
-            #[cfg(target_os = "macos")]
-            tray::AppTray::setup(app)?;
-
             // Setup modules
             db::setup(app)?;
             #[cfg(target_os = "macos")]
@@ -143,6 +140,8 @@ pub fn run() {
             intentions::setup(app)?;
             activity::setup(app);
             settings::setup(app);
+            #[cfg(target_os = "macos")]
+            tray::AppTray::setup(app)?;
 
             if !launch_at_login::cli::was_launched_at_login() {
                 let _ = window::AppWindow::Main.show(app.handle());
