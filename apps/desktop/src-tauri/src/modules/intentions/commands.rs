@@ -1,5 +1,5 @@
 use super::{
-    condition_timing, edit_policy,
+    edit_policy,
     intention::{
         Intention, IntentionBlockScope, IntentionBlockTargetAction,
         IntentionConditionAfterTransitionRule, IntentionConditionDateTimeRule,
@@ -11,15 +11,13 @@ use super::{
         WriteIntentionBlockAppTargetInput, WriteIntentionBlockInput,
         WriteIntentionBlockWebsiteTargetInput, WriteIntentionConditionInput, WriteIntentionInput,
     },
-    timed_evaluator::{TimedConditionActivation, TimedConditionTransition},
+    today,
     types::{
         IntentionCreatedEvent, IntentionDeletedEvent, IntentionRuntimeState, IntentionUpdatedEvent,
     },
 };
 use crate::{
-    common::time::{
-        local_day_bounds_containing, to_local_datetime, unix_ms_now, DateOnly, TimeOnly,
-    },
+    common::time::{to_local_datetime, unix_ms_now, DateOnly, TimeOnly},
     common::url::extract_hostname,
     modules::{
         catalog::repository::{UpsertAppInput, UpsertWebsiteInput},
@@ -27,8 +25,7 @@ use crate::{
     },
 };
 use serde::{Deserialize, Serialize};
-use sqlx::{Pool, Sqlite};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use tauri::{AppHandle, State};
 use tauri_specta::Event;
 
@@ -83,9 +80,9 @@ pub async fn get_today_intention_overview(
     database_state: State<'_, DatabaseState>,
 ) -> Result<TodayIntentionOverviewDto, String> {
     let now = unix_ms_now();
-    let active = get_today_active_intentions(&database_state.pool).await?;
-    let upcoming_today = get_upcoming_today_intentions(&database_state.pool, now).await?;
-    let earlier_today = get_earlier_today_intentions(&database_state.pool, now).await?;
+    let active = today::get_active(&database_state.pool).await?;
+    let upcoming_today = today::get_upcoming(&database_state.pool, now).await?;
+    let earlier_today = today::get_earlier(&database_state.pool, now).await?;
 
     return Ok(TodayIntentionOverviewDto {
         active,
@@ -94,143 +91,12 @@ pub async fn get_today_intention_overview(
     });
 }
 
-async fn get_today_active_intentions(
-    pool: &Pool<Sqlite>,
-) -> Result<Vec<TodayActiveIntentionDto>, String> {
-    let active_sessions = IntentionSessionRepository::get_active_sessions(pool)
-        .await
-        .map_err(|error| error.to_string())?;
-
-    let mut active = Vec::new();
-    for session in active_sessions {
-        let intention = IntentionRepository::get_by_id(pool, session.intention_id)
-            .await
-            .map_err(|error| error.to_string())?
-            .ok_or_else(|| format!("Active Intention {} does not exist", session.intention_id))?;
-        let automatic_end_at =
-            condition_timing::automatic_intention_end_at(&intention.conditions, session.started_at);
-
-        active.push(TodayActiveIntentionDto {
-            intention,
-            session,
-            automatic_end_at,
-        });
-    }
-
-    return Ok(active);
-}
-
-async fn get_upcoming_today_intentions(
-    pool: &Pool<Sqlite>,
-    now: i64,
-) -> Result<Vec<TodayUpcomingIntentionDto>, String> {
-    let today_bounds = local_day_bounds_containing(now)
-        .ok_or_else(|| "Could not resolve local day bounds".to_string())?;
-    let timed_conditions = IntentionRepository::get_timed_conditions(pool)
-        .await
-        .map_err(|error| error.to_string())?;
-
-    let mut earliest_trigger_at_by_intention_id = HashMap::<i64, i64>::new();
-    for condition in timed_conditions {
-        if condition.transition != TimedConditionTransition::Start {
-            continue;
-        }
-
-        let activation = condition
-            .evaluate_activation(pool, now)
-            .await
-            .map_err(|error| error.to_string())?;
-        let trigger_at = match activation {
-            TimedConditionActivation::Future { trigger_at }
-                if trigger_at > now && trigger_at < today_bounds.end_at =>
-            {
-                trigger_at
-            }
-            _ => continue,
-        };
-
-        earliest_trigger_at_by_intention_id
-            .entry(condition.intention_id)
-            .and_modify(|current| *current = (*current).min(trigger_at))
-            .or_insert(trigger_at);
-    }
-
-    let mut intention_triggers = earliest_trigger_at_by_intention_id
-        .into_iter()
-        .collect::<Vec<_>>();
-    intention_triggers.sort_by_key(|(intention_id, trigger_at)| (*trigger_at, *intention_id));
-
-    let mut upcoming_today = Vec::new();
-    for (intention_id, trigger_at) in intention_triggers {
-        let intention = IntentionRepository::get_by_id(pool, intention_id)
-            .await
-            .map_err(|error| error.to_string())?
-            .ok_or_else(|| format!("Upcoming Intention {} does not exist", intention_id))?;
-
-        upcoming_today.push(TodayUpcomingIntentionDto {
-            intention,
-            trigger_at,
-        });
-    }
-
-    return Ok(upcoming_today);
-}
-
-async fn get_earlier_today_intentions(
-    pool: &Pool<Sqlite>,
-    now: i64,
-) -> Result<Vec<TodayEarlierIntentionDto>, String> {
-    let today_bounds = local_day_bounds_containing(now)
-        .ok_or_else(|| "Could not resolve local day bounds".to_string())?;
-    let earlier_sessions = IntentionSessionRepository::get_finished_sessions_ended_in_range(
-        pool,
-        today_bounds.start_at,
-        today_bounds.end_at,
-    )
-    .await
-    .map_err(|error| error.to_string())?;
-
-    let mut earlier_today = Vec::new();
-    for session in earlier_sessions {
-        let intention = IntentionRepository::get_by_id(pool, session.intention_id)
-            .await
-            .map_err(|error| error.to_string())?
-            .ok_or_else(|| format!("Earlier Intention {} does not exist", session.intention_id))?;
-
-        earlier_today.push(TodayEarlierIntentionDto { intention, session });
-    }
-
-    return Ok(earlier_today);
-}
-
 #[derive(Debug, Clone, Serialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct TodayIntentionOverviewDto {
-    pub active: Vec<TodayActiveIntentionDto>,
-    pub upcoming_today: Vec<TodayUpcomingIntentionDto>,
-    pub earlier_today: Vec<TodayEarlierIntentionDto>,
-}
-
-#[derive(Debug, Clone, Serialize, specta::Type)]
-#[serde(rename_all = "camelCase")]
-pub struct TodayActiveIntentionDto {
-    pub intention: Intention,
-    pub session: IntentionSession,
-    pub automatic_end_at: Option<i64>,
-}
-
-#[derive(Debug, Clone, Serialize, specta::Type)]
-#[serde(rename_all = "camelCase")]
-pub struct TodayUpcomingIntentionDto {
-    pub intention: Intention,
-    pub trigger_at: i64,
-}
-
-#[derive(Debug, Clone, Serialize, specta::Type)]
-#[serde(rename_all = "camelCase")]
-pub struct TodayEarlierIntentionDto {
-    pub intention: Intention,
-    pub session: IntentionSession,
+    pub active: Vec<today::TodayActiveIntention>,
+    pub upcoming_today: Vec<today::TodayUpcomingIntention>,
+    pub earlier_today: Vec<today::TodayEarlierIntention>,
 }
 
 #[tauri::command]

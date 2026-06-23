@@ -10,6 +10,7 @@ pub mod runtime;
 pub mod session;
 pub mod timed_evaluator;
 pub mod timed_runtime;
+pub mod today;
 pub mod types;
 
 use tauri::{App, Manager};

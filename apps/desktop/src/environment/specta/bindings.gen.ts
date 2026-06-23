@@ -362,24 +362,24 @@ export type Theme = "light" | "dark" | "auto";
 
 export type TimeOnly = number;
 
-export type TodayActiveIntentionDto = {
+export type TodayActiveIntention = {
 	intention: Intention,
 	session: IntentionSession,
 	automaticEndAt: number | null,
 };
 
-export type TodayEarlierIntentionDto = {
+export type TodayEarlierIntention = {
 	intention: Intention,
 	session: IntentionSession,
 };
 
 export type TodayIntentionOverviewDto = {
-	active: TodayActiveIntentionDto[],
-	upcomingToday: TodayUpcomingIntentionDto[],
-	earlierToday: TodayEarlierIntentionDto[],
+	active: TodayActiveIntention[],
+	upcomingToday: TodayUpcomingIntention[],
+	earlierToday: TodayEarlierIntention[],
 };
 
-export type TodayUpcomingIntentionDto = {
+export type TodayUpcomingIntention = {
 	intention: Intention,
 	triggerAt: number,
 };

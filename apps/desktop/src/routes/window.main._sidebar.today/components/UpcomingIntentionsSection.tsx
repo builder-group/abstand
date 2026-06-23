@@ -56,5 +56,5 @@ const UpcomingIntentionRow: React.FC<TUpcomingIntentionRowProps> = (props) => {
 };
 
 interface TUpcomingIntentionRowProps {
-	upcomingIntention: specta.TodayUpcomingIntentionDto;
+	upcomingIntention: specta.TodayUpcomingIntention;
 }

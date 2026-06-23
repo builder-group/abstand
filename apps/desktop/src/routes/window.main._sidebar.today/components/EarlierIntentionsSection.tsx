@@ -47,7 +47,7 @@ const EarlierIntentionRow: React.FC<TEarlierIntentionRowProps> = (props) => {
 };
 
 interface TEarlierIntentionRowProps {
-	earlierIntention: specta.TodayEarlierIntentionDto;
+	earlierIntention: specta.TodayEarlierIntention;
 }
 
 function formatEarlierTimeLabel(session: specta.IntentionSession): string {

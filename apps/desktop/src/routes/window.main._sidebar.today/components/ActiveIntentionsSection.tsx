@@ -79,5 +79,5 @@ const ActiveIntentionRow: React.FC<TActiveIntentionRowProps> = (props) => {
 };
 
 interface TActiveIntentionRowProps {
-	activeIntention: specta.TodayActiveIntentionDto;
+	activeIntention: specta.TodayActiveIntention;
 }
