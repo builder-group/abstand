@@ -469,12 +469,21 @@ const BalancedDelayRow: React.FC<TBalancedDelayRowProps> = (props) => {
 	const minSeconds = delayConfig.minMs / 1_000;
 	const maxSeconds = delayConfig.maxMs / 1_000;
 	const stepSeconds = delayConfig.stepMs / 1_000;
+	const [draftInputValue, setDraftInputValue] = React.useState<string | null>(null);
+	const displayValue = draftInputValue ?? delaySeconds.toString();
 
 	// MARK: - Actions
 
 	const handleSecondsChange = React.useCallback(
 		(event: React.ChangeEvent<HTMLInputElement>) => {
-			const nextSeconds = Number(event.target.value);
+			const nextInputValue = event.target.value;
+			setDraftInputValue(nextInputValue);
+
+			if (nextInputValue === '') {
+				return;
+			}
+
+			const nextSeconds = Number(nextInputValue);
 			if (!Number.isFinite(nextSeconds)) {
 				return;
 			}
@@ -484,8 +493,13 @@ const BalancedDelayRow: React.FC<TBalancedDelayRowProps> = (props) => {
 		[formCx]
 	);
 
+	const handleBlur = React.useCallback(() => {
+		setDraftInputValue(null);
+	}, []);
+
 	const handleStep = React.useCallback(
 		(deltaSeconds: number) => {
+			setDraftInputValue(null);
 			formCx.$form.fields.balancedDelayMs.set(
 				clampDelaySeconds(delaySeconds + deltaSeconds) * 1_000
 			);
@@ -511,9 +525,10 @@ const BalancedDelayRow: React.FC<TBalancedDelayRowProps> = (props) => {
 					min={minSeconds}
 					max={maxSeconds}
 					step={stepSeconds}
-					value={delaySeconds}
+					value={displayValue}
 					disabled={isDisabled}
 					onChange={handleSecondsChange}
+					onBlur={handleBlur}
 					aria-label="Balanced pause seconds"
 					aria-invalid={delayError != null}
 				/>

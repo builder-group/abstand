@@ -228,10 +228,21 @@ const DurationNumberInput: React.FC<TDurationNumberInputProps> = (props) => {
 		isInvalid = false,
 		isDisabled = false
 	} = props;
+	const [draftInputValue, setDraftInputValue] = React.useState<string | null>(null);
+	const displayValue = draftInputValue ?? value.toString();
+
+	// MARK: - Actions
 
 	const handleChange = React.useCallback(
 		(event: React.ChangeEvent<HTMLInputElement>) => {
-			const nextValue = Number(event.target.value);
+			const nextInputValue = event.target.value;
+			setDraftInputValue(nextInputValue);
+
+			if (nextInputValue === '') {
+				return;
+			}
+
+			const nextValue = Number(nextInputValue);
 			if (!Number.isFinite(nextValue)) {
 				return;
 			}
@@ -241,6 +252,22 @@ const DurationNumberInput: React.FC<TDurationNumberInputProps> = (props) => {
 		[min, max, onValueChange]
 	);
 
+	const handleBlur = React.useCallback(() => {
+		setDraftInputValue(null);
+	}, []);
+
+	const handleIncrement = React.useCallback(() => {
+		setDraftInputValue(null);
+		onStep(step);
+	}, [step, onStep]);
+
+	const handleDecrement = React.useCallback(() => {
+		setDraftInputValue(null);
+		onStep(-step);
+	}, [step, onStep]);
+
+	// MARK: - UI
+
 	return (
 		<InputGroup className="w-17">
 			<InputGroupInput
@@ -248,9 +275,10 @@ const DurationNumberInput: React.FC<TDurationNumberInputProps> = (props) => {
 				min={min}
 				max={max}
 				step={step}
-				value={value}
+				value={displayValue}
 				disabled={isDisabled}
 				onChange={handleChange}
+				onBlur={handleBlur}
 				aria-label={ariaLabel}
 				aria-invalid={isInvalid}
 			/>
@@ -258,8 +286,8 @@ const DurationNumberInput: React.FC<TDurationNumberInputProps> = (props) => {
 				{getDurationInputUnitLabel(unit)}
 			</InputGroupAddon>
 			<InputGroupStepper
-				onIncrement={() => onStep(step)}
-				onDecrement={() => onStep(-step)}
+				onIncrement={handleIncrement}
+				onDecrement={handleDecrement}
 				incrementDisabled={isDisabled || value >= max}
 				decrementDisabled={isDisabled || value <= min}
 				incrementLabel={`Increase ${unit}`}
