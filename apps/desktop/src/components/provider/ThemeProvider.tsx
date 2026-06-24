@@ -19,14 +19,16 @@ export const ThemeProvider: React.FC<TThemeProviderProps> = (props) => {
 			// For index.html to apply theme before CSS loads (prevents flash)
 			localStorage.setItem('theme', theme);
 
+			const currentWindow = getCurrentWindow();
+
 			if (theme === 'auto') {
-				await getCurrentWindow().setTheme(null);
-				const effectiveTheme = await getCurrentWindow().theme();
+				await currentWindow.setTheme(null);
+				const effectiveTheme = await currentWindow.theme();
 				applyThemeClass(effectiveTheme ?? 'light');
 				return;
 			}
 
-			await getCurrentWindow().setTheme(theme);
+			await currentWindow.setTheme(theme);
 			applyThemeClass(theme);
 		},
 		[applyThemeClass]
@@ -42,7 +44,9 @@ export const ThemeProvider: React.FC<TThemeProviderProps> = (props) => {
 
 	// Listen for system theme changes (only matters if set to 'auto')
 	React.useEffect(() => {
-		const unlistenPromise = getCurrentWindow().onThemeChanged(() => {
+		const currentWindow = getCurrentWindow();
+
+		const unlistenPromise = currentWindow.onThemeChanged(() => {
 			const currentTheme = settingsCx.$appSettings._v.appearance.theme;
 			if (currentTheme === 'auto') {
 				applyTheme('auto');

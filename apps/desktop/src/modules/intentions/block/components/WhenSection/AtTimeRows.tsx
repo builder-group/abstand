@@ -70,10 +70,7 @@ export const AtTimeRows: React.FC<TConditionRowsProps> = (props) => {
 					aria-invalid={dateError != null}
 				>
 					{dateOptions.map((option) => (
-						<option
-							key={option.valueEpochDays}
-							value={formatDateInput(option.valueEpochDays)}
-						>
+						<option key={option.valueEpochDays} value={formatDateInput(option.valueEpochDays)}>
 							{option.label}
 						</option>
 					))}
@@ -135,12 +132,7 @@ const dateOptionLabelFormatter = new Intl.DateTimeFormat('en-US', {
 });
 
 const CustomDateInput: React.FC<TCustomDateInputProps> = (props) => {
-	const {
-		dateEpochDays,
-		onDateEpochDaysChange,
-		isInvalid = false,
-		isDisabled = false
-	} = props;
+	const { dateEpochDays, onDateEpochDaysChange, isInvalid = false, isDisabled = false } = props;
 
 	const handleChange = React.useCallback(
 		(event: React.ChangeEvent<HTMLInputElement>) => {
