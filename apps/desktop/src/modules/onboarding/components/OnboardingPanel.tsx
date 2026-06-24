@@ -24,10 +24,7 @@ export const OnboardingPanel: React.FC<TOnboardingPanelProps> = (props) => {
 				</div>
 				<div className="flex gap-1.5" aria-hidden>
 					{onboardingStepOrder.map((item) => (
-						<div
-							key={item}
-							className={onboardingStepDotVariants({ active: item === step })}
-						/>
+						<div key={item} className={onboardingStepDotVariants({ active: item === step })} />
 					))}
 				</div>
 			</div>
