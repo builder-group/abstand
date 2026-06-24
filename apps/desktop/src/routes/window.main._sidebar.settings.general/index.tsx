@@ -5,7 +5,6 @@ import {
 	ArrowUpRightIcon,
 	Badge,
 	Button,
-	CheckIcon,
 	ChevronRightIcon,
 	CircleArrowDownIcon,
 	CircleCheckIcon,
@@ -30,7 +29,13 @@ import { appConfig, specta } from '@/environment';
 import { useAppInfo } from '@/hooks';
 import { openExternalUrl, toTuple } from '@/lib';
 import { useIntentionsCx } from '@/modules/intentions';
-import { SettingsGroup, SettingsRow, SettingsRowFrame, useSettingsCx } from '@/modules/settings';
+import {
+	PermissionStatusBadge,
+	SettingsGroup,
+	SettingsRow,
+	SettingsRowFrame,
+	useSettingsCx
+} from '@/modules/settings';
 import { useUpdaterCx, type TUpdaterState } from '@/modules/updater';
 
 export const Route = createFileRoute('/window/main/_sidebar/settings/general/')({
@@ -216,6 +221,7 @@ const AccessibilityPermissionRow: React.FC = () => {
 
 	const [isGranted, setIsGranted] = React.useState<boolean | null>(null);
 	const [isStatusPending, setIsStatusPending] = React.useState(true);
+	const [needsRestart, setNeedsRestart] = React.useState(false);
 
 	// MARK: - Actions
 
@@ -240,6 +246,7 @@ const AccessibilityPermissionRow: React.FC = () => {
 			setIsStatusPending(false);
 
 			if (previousIsGranted === false && nextIsGranted) {
+				setNeedsRestart(true);
 				showRestartToast();
 			}
 		},
@@ -291,7 +298,11 @@ const AccessibilityPermissionRow: React.FC = () => {
 			render={<button type="button" onClick={handleOpenSettings} />}
 		>
 			{isGranted != null ? (
-				<PermissionStatusBadge isGranted={isGranted} />
+				isGranted && needsRestart ? (
+					<Badge variant="secondary">Restart required</Badge>
+				) : (
+					<PermissionStatusBadge isGranted={isGranted} />
+				)
 			) : isStatusPending ? (
 				<Spinner size="sm" />
 			) : (
@@ -338,30 +349,6 @@ const RestartAppToastAction: React.FC<TRestartAppToastActionProps> = (props) => 
 
 interface TRestartAppToastActionProps {
 	toastsCx: ToastsCx;
-}
-
-const PermissionStatusBadge: React.FC<TPermissionStatusBadgeProps> = (props) => {
-	const { isGranted } = props;
-
-	if (isGranted) {
-		return (
-			<Badge variant="success">
-				<CheckIcon />
-				Granted
-			</Badge>
-		);
-	}
-
-	return (
-		<Badge variant="warning">
-			<CircleSlashIcon />
-			Required
-		</Badge>
-	);
-};
-
-interface TPermissionStatusBadgeProps {
-	isGranted: boolean;
 }
 
 const StartupRecoverySection: React.FC = () => {
