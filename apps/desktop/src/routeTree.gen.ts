@@ -14,6 +14,7 @@ import { Route as WindowMainRouteRouteImport } from './routes/window.main/route'
 import { Route as WindowMainSidebarRouteRouteImport } from './routes/window.main._sidebar/route'
 import { Route as WindowOverlayBlockingIndexRouteImport } from './routes/window.overlay.blocking/index'
 import { Route as WindowMainSplashIndexRouteImport } from './routes/window.main.splash/index'
+import { Route as WindowMainOnboardingIndexRouteImport } from './routes/window.main.onboarding/index'
 import { Route as WindowMainSidebarTodayIndexRouteImport } from './routes/window.main._sidebar.today/index'
 import { Route as WindowMainSidebarSettingsIndexRouteImport } from './routes/window.main._sidebar.settings/index'
 import { Route as WindowMainSidebarIntentionsNewRouteRouteImport } from './routes/window.main._sidebar.intentions.new/route'
@@ -50,6 +51,12 @@ const WindowMainSplashIndexRoute = WindowMainSplashIndexRouteImport.update({
   path: '/splash/',
   getParentRoute: () => WindowMainRouteRoute,
 } as any)
+const WindowMainOnboardingIndexRoute =
+  WindowMainOnboardingIndexRouteImport.update({
+    id: '/onboarding/',
+    path: '/onboarding/',
+    getParentRoute: () => WindowMainRouteRoute,
+  } as any)
 const WindowMainSidebarTodayIndexRoute =
   WindowMainSidebarTodayIndexRouteImport.update({
     id: '/today/',
@@ -114,6 +121,7 @@ const WindowMainSidebarIntentionsNewBlockIndexRoute =
 export interface FileRoutesByFullPath {
   '/window/main': typeof WindowMainRouteRouteWithChildren
   '/window/overlay': typeof WindowOverlayRouteRouteWithChildren
+  '/window/main/onboarding/': typeof WindowMainOnboardingIndexRoute
   '/window/main/splash/': typeof WindowMainSplashIndexRoute
   '/window/overlay/blocking/': typeof WindowOverlayBlockingIndexRoute
   '/window/main/intentions/new': typeof WindowMainSidebarIntentionsNewRouteRouteWithChildren
@@ -130,6 +138,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/window/main': typeof WindowMainRouteRouteWithChildren
   '/window/overlay': typeof WindowOverlayRouteRouteWithChildren
+  '/window/main/onboarding': typeof WindowMainOnboardingIndexRoute
   '/window/main/splash': typeof WindowMainSplashIndexRoute
   '/window/overlay/blocking': typeof WindowOverlayBlockingIndexRoute
   '/window/main/settings': typeof WindowMainSidebarSettingsIndexRoute
@@ -147,6 +156,7 @@ export interface FileRoutesById {
   '/window/main': typeof WindowMainRouteRouteWithChildren
   '/window/overlay': typeof WindowOverlayRouteRouteWithChildren
   '/window/main/_sidebar': typeof WindowMainSidebarRouteRouteWithChildren
+  '/window/main/onboarding/': typeof WindowMainOnboardingIndexRoute
   '/window/main/splash/': typeof WindowMainSplashIndexRoute
   '/window/overlay/blocking/': typeof WindowOverlayBlockingIndexRoute
   '/window/main/_sidebar/intentions/new': typeof WindowMainSidebarIntentionsNewRouteRouteWithChildren
@@ -165,6 +175,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/window/main'
     | '/window/overlay'
+    | '/window/main/onboarding/'
     | '/window/main/splash/'
     | '/window/overlay/blocking/'
     | '/window/main/intentions/new'
@@ -181,6 +192,7 @@ export interface FileRouteTypes {
   to:
     | '/window/main'
     | '/window/overlay'
+    | '/window/main/onboarding'
     | '/window/main/splash'
     | '/window/overlay/blocking'
     | '/window/main/settings'
@@ -197,6 +209,7 @@ export interface FileRouteTypes {
     | '/window/main'
     | '/window/overlay'
     | '/window/main/_sidebar'
+    | '/window/main/onboarding/'
     | '/window/main/splash/'
     | '/window/overlay/blocking/'
     | '/window/main/_sidebar/intentions/new'
@@ -251,6 +264,13 @@ declare module '@tanstack/react-router' {
       path: '/splash'
       fullPath: '/window/main/splash/'
       preLoaderRoute: typeof WindowMainSplashIndexRouteImport
+      parentRoute: typeof WindowMainRouteRoute
+    }
+    '/window/main/onboarding/': {
+      id: '/window/main/onboarding/'
+      path: '/onboarding'
+      fullPath: '/window/main/onboarding/'
+      preLoaderRoute: typeof WindowMainOnboardingIndexRouteImport
       parentRoute: typeof WindowMainRouteRoute
     }
     '/window/main/_sidebar/today/': {
@@ -380,11 +400,13 @@ const WindowMainSidebarRouteRouteWithChildren =
 
 interface WindowMainRouteRouteChildren {
   WindowMainSidebarRouteRoute: typeof WindowMainSidebarRouteRouteWithChildren
+  WindowMainOnboardingIndexRoute: typeof WindowMainOnboardingIndexRoute
   WindowMainSplashIndexRoute: typeof WindowMainSplashIndexRoute
 }
 
 const WindowMainRouteRouteChildren: WindowMainRouteRouteChildren = {
   WindowMainSidebarRouteRoute: WindowMainSidebarRouteRouteWithChildren,
+  WindowMainOnboardingIndexRoute: WindowMainOnboardingIndexRoute,
   WindowMainSplashIndexRoute: WindowMainSplashIndexRoute,
 }
 

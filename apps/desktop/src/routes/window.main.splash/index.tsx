@@ -1,6 +1,8 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { useFeatureState } from 'feature-react/state';
 import React from 'react';
 import { LogoIcon, WindowHeader } from '@/components';
+import { useCreateOnboardingCx } from '@/modules/onboarding';
 
 export const Route = createFileRoute('/window/main/splash/')({
 	component: RouteComponent
@@ -8,24 +10,28 @@ export const Route = createFileRoute('/window/main/splash/')({
 
 function RouteComponent() {
 	const navigate = useNavigate();
-
-	// MARK: - Effects
+	const onboardingCx = useCreateOnboardingCx();
+	const hasLoadedOnboarding = useFeatureState(onboardingCx.$hasLoaded);
 
 	React.useEffect(() => {
+		if (!hasLoadedOnboarding) {
+			return;
+		}
+
 		const splashTimer = setTimeout(() => {
-			void navigate({ to: '/window/main/today' });
+			void navigate({
+				to: onboardingCx.isComplete() ? '/window/main/today' : '/window/main/onboarding'
+			});
 		}, 1000);
 
 		return () => {
 			clearTimeout(splashTimer);
 		};
-	}, [navigate]);
-
-	// MARK: - UI
+	}, [hasLoadedOnboarding, navigate, onboardingCx]);
 
 	return (
 		<main className="relative flex h-screen items-center justify-center">
-			<WindowHeader floating />
+			<WindowHeader floating showBadges={false} />
 			<LogoIcon className="text-base-950 size-20" />
 		</main>
 	);

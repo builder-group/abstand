@@ -42,6 +42,7 @@ export {
 	PlayIcon,
 	PlusIcon,
 	RefreshCwIcon,
+	ScanSearchIcon,
 	SearchIcon,
 	SettingsIcon,
 	ShieldCheckIcon,
