@@ -6,13 +6,16 @@ import { createMountLifecycle, toTuple } from '@/lib';
 
 export class SettingsCx {
 	public readonly $appSettings = createState<specta.AppSettings>({
-		version: '0.0.1',
+		version: '0.0.2',
 		appearance: {
 			theme: 'auto',
 			fontScale: 1
 		},
 		developer: {
 			enabled: false
+		},
+		onboarding: {
+			completedAt: null
 		},
 		updates: {
 			automaticallyCheck: true,
@@ -43,7 +46,7 @@ export class SettingsCx {
 	}
 
 	public async update(changes: TSettingsUpdates): Promise<TResult<null, string>> {
-		const currentSettings = this.$appSettings._v;
+		const currentSettings = this.$appSettings.get();
 		const nextSettings: specta.AppSettings = {
 			...currentSettings,
 			...changes,
@@ -54,6 +57,10 @@ export class SettingsCx {
 			developer: {
 				...currentSettings.developer,
 				...changes.developer
+			},
+			onboarding: {
+				...currentSettings.onboarding,
+				...changes.onboarding
 			},
 			updates: {
 				...currentSettings.updates,
@@ -75,10 +82,11 @@ export class SettingsCx {
 }
 
 type TSettingsUpdates = Partial<
-	Omit<specta.AppSettings, 'appearance' | 'developer' | 'updates' | 'shortcuts'>
+	Omit<specta.AppSettings, 'appearance' | 'developer' | 'onboarding' | 'updates' | 'shortcuts'>
 > & {
 	appearance?: Partial<specta.AppearanceSettings>;
 	developer?: Partial<specta.DeveloperSettings>;
+	onboarding?: Partial<specta.OnboardingSettings>;
 	updates?: Partial<specta.UpdateSettings>;
 	shortcuts?: specta.AppSettings['shortcuts'];
 };

@@ -1,7 +1,7 @@
 import { cva } from 'class-variance-authority';
 import React from 'react';
 import { Button } from '@/components';
-import { onboardingStepOrder, type TOnboardingStep } from '../OnboardingCx';
+import { onboardingSteps, type TOnboardingStep } from '../OnboardingCx';
 
 export const OnboardingPanel: React.FC<TOnboardingPanelProps> = (props) => {
 	const {
@@ -23,7 +23,7 @@ export const OnboardingPanel: React.FC<TOnboardingPanelProps> = (props) => {
 					{icon}
 				</div>
 				<div className="flex gap-1.5" aria-hidden>
-					{onboardingStepOrder.map((item) => (
+					{onboardingSteps.map((item) => (
 						<div key={item} className={onboardingStepDotVariants({ active: item === step })} />
 					))}
 				</div>

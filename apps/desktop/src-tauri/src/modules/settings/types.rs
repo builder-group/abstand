@@ -10,6 +10,7 @@ pub struct AppSettings {
     pub version: SettingsVersion,
     pub appearance: AppearanceSettings,
     pub developer: DeveloperSettings,
+    pub onboarding: OnboardingSettings,
     pub updates: UpdateSettings,
     /// User overrides per action. Absent key = use default. None value = shortcut cleared.
     pub shortcuts: HashMap<ShortcutAction, Option<KeyboardShortcut>>,
@@ -21,6 +22,7 @@ impl Default for AppSettings {
             version: SettingsVersion::current(),
             appearance: AppearanceSettings::default(),
             developer: DeveloperSettings::default(),
+            onboarding: OnboardingSettings::default(),
             updates: UpdateSettings::default(),
             shortcuts: HashMap::new(),
         };
@@ -31,11 +33,13 @@ impl Default for AppSettings {
 pub enum SettingsVersion {
     #[serde(rename = "0.0.1")]
     V0_0_1,
+    #[serde(rename = "0.0.2")]
+    V0_0_2,
 }
 
 impl SettingsVersion {
     pub fn current() -> Self {
-        return Self::V0_0_1;
+        return Self::V0_0_2;
     }
 }
 
@@ -76,6 +80,12 @@ pub enum Theme {
 #[serde(rename_all = "camelCase")]
 pub struct DeveloperSettings {
     pub enabled: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct OnboardingSettings {
+    pub completed_at: Option<i64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]

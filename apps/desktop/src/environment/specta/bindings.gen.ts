@@ -120,6 +120,7 @@ export type AppSettings = {
 	version: SettingsVersion,
 	appearance: AppearanceSettings,
 	developer: DeveloperSettings,
+	onboarding: OnboardingSettings,
 	updates: UpdateSettings,
 	/**  User overrides per action. Absent key = use default. None value = shortcut cleared. */
 	shortcuts: Partial<{ [key in ShortcutAction]: KeyboardShortcut | null }>,
@@ -318,6 +319,10 @@ export type LaunchAtLoginStatus = {
 	isEnabled: boolean,
 };
 
+export type OnboardingSettings = {
+	completedAt: number | null,
+};
+
 export type QuitBlockedAppByBundleIdResult = { status: "notRunning" } | { status: "requested"; processCount: number } | { status: "failed" } | { status: "unsupported" };
 
 export type QuitPreventedEvent = { reason: "activeBalancedBlock"; durationMs: number } | { reason: "activeStrictBlock" };
@@ -339,7 +344,7 @@ export type SearchCatalogParams = {
 	includeIcon: CatalogIconMode | null,
 };
 
-export type SettingsVersion = "0.0.1";
+export type SettingsVersion = "0.0.1" | "0.0.2";
 
 export type ShortcutAction = "search" | "newIntention" | "toggleSidebar";
 

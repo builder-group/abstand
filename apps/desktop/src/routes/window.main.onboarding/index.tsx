@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useFeatureState } from 'feature-react/state';
 import React from 'react';
-import { Spinner, WindowHeader } from '@/components';
+import { Spinner, useToastsCx, WindowHeader } from '@/components';
 import {
 	AccessibilityStep,
 	FirstBlockStep,
@@ -15,14 +15,24 @@ export const Route = createFileRoute('/window/main/onboarding/')({
 
 function RouteComponent() {
 	const navigate = useNavigate();
+	const toastsCx = useToastsCx();
 	const cx = useCreateOnboardingCx();
 	const currentStep = useFeatureState(cx.$currentStep);
 	const hasLoaded = useFeatureState(cx.$hasLoaded);
 
-	const handleCreateBlock = React.useCallback(() => {
-		cx.complete();
+	const handleCreateBlock = React.useCallback(async () => {
+		const [isCompleteOk, completeErr] = await cx.complete();
+		if (!isCompleteOk) {
+			toastsCx.add({
+				type: 'error',
+				title: 'Could not complete onboarding',
+				description: completeErr
+			});
+			return;
+		}
+
 		void navigate({ to: '/window/main/intentions/new/block' });
-	}, [cx, navigate]);
+	}, [cx, navigate, toastsCx]);
 
 	return (
 		<main className="bg-base-0 relative flex h-screen flex-col overflow-hidden">

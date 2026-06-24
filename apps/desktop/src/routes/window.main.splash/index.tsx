@@ -1,8 +1,8 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useFeatureState } from 'feature-react/state';
+import { useCompute, useFeatureState } from 'feature-react/state';
 import React from 'react';
 import { LogoIcon, WindowHeader } from '@/components';
-import { useCreateOnboardingCx } from '@/modules/onboarding';
+import { useSettingsCx } from '@/modules/settings';
 
 export const Route = createFileRoute('/window/main/splash/')({
 	component: RouteComponent
@@ -10,24 +10,28 @@ export const Route = createFileRoute('/window/main/splash/')({
 
 function RouteComponent() {
 	const navigate = useNavigate();
-	const onboardingCx = useCreateOnboardingCx();
-	const hasLoadedOnboarding = useFeatureState(onboardingCx.$hasLoaded);
+	const settingsCx = useSettingsCx();
+	const isOnboardingComplete = useCompute(
+		settingsCx.$appSettings,
+		(settings) => settings.onboarding.completedAt != null
+	);
+	const hasLoadedSettings = useFeatureState(settingsCx.$hasLoaded);
 
 	React.useEffect(() => {
-		if (!hasLoadedOnboarding) {
+		if (!hasLoadedSettings) {
 			return;
 		}
 
 		const splashTimer = setTimeout(() => {
 			void navigate({
-				to: onboardingCx.isComplete() ? '/window/main/today' : '/window/main/onboarding'
+				to: isOnboardingComplete ? '/window/main/today' : '/window/main/onboarding'
 			});
 		}, 1000);
 
 		return () => {
 			clearTimeout(splashTimer);
 		};
-	}, [hasLoadedOnboarding, navigate, onboardingCx]);
+	}, [hasLoadedSettings, isOnboardingComplete, navigate]);
 
 	return (
 		<main className="relative flex h-screen items-center justify-center">

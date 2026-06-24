@@ -10,16 +10,19 @@ import React from 'react';
 import type { TResult } from 'tuple-result';
 import { specta } from '@/environment';
 import { createMountLifecycle, toTuple } from '@/lib';
+import { useSettingsCx, type SettingsCx } from '@/modules/settings';
 
 export class OnboardingCx {
+	private readonly settingsCx: SettingsCx;
+
+	private readonly $hasLoadedOnboarding = createState(false);
+	public readonly $hasLoaded: TComputedState<boolean, readonly [TState<boolean>, TState<boolean>]>;
+
 	private readonly $stepper: TState<TOnboardingStepperState, [TStorageFeature]> =
 		createState<TOnboardingStepperState>({
 			currentStepIndex: 0,
 			visitedSteps: [{ type: 'welcome' }]
 		}).with(localStorageFeature<TOnboardingStepperState>('abstand:onboarding:stepper:v2'));
-	private readonly $completedAt: TState<number | null, [TStorageFeature]> = createState<
-		number | null
-	>(null).with(localStorageFeature<number | null>('abstand:onboarding:completed-at'));
 	public readonly $currentStep: TComputedState<
 		TOnboardingStep,
 		readonly [TState<TOnboardingStepperState, [TStorageFeature]>]
@@ -28,7 +31,6 @@ export class OnboardingCx {
 		(stepper) => stepper.visitedSteps[stepper.currentStepIndex]?.type ?? 'welcome'
 	);
 
-	public readonly $hasLoaded = createState(false);
 	public readonly $isRestartingApp = createState(false);
 
 	public readonly $isAccessibilityGranted = createState<boolean | null>(null);
@@ -45,23 +47,26 @@ export class OnboardingCx {
 
 	private lastIsAccessibilityGranted: boolean | null = null;
 
+	constructor(options: TOnboardingCxOptions) {
+		this.settingsCx = options.settingsCx;
+		this.$hasLoaded = createComputed(
+			[this.$hasLoadedOnboarding, this.settingsCx.$hasLoaded] as const,
+			([hasLoadedOnboarding, hasLoadedSettings]) => hasLoadedOnboarding && hasLoadedSettings
+		);
+	}
+
 	public mount(): () => void {
 		const lifecycle = createMountLifecycle();
 
 		void (async () => {
-			await Promise.all([this.$stepper.persist(), this.$completedAt.persist()]);
+			await this.$stepper.persist();
 			if (lifecycle.isUnmounted()) return;
-
-			if (this.isComplete()) {
-				this.$hasLoaded.set(true);
-				return;
-			}
 
 			this.updateStep('accessibility', { restartRequiredAt: undefined });
 			await this.loadAccessibilityStatus();
 			if (lifecycle.isUnmounted()) return;
 
-			this.$hasLoaded.set(true);
+			this.$hasLoadedOnboarding.set(true);
 
 			window.addEventListener('focus', this.handleWindowFocus);
 			lifecycle.addCleanup(() => {
@@ -76,13 +81,14 @@ export class OnboardingCx {
 		void this.loadAccessibilityStatus();
 	};
 
-	public complete(): void {
-		this.$completedAt.set(Date.now());
-		void this.resetStepper();
-	}
+	public async complete(): Promise<TResult<null, string>> {
+		const result = await this.settingsCx.update({ onboarding: { completedAt: Date.now() } });
+		const [isUpdateOk] = result;
+		if (isUpdateOk) {
+			await this.resetStepper();
+		}
 
-	public isComplete(): boolean {
-		return this.$completedAt.get() != null;
+		return result;
 	}
 
 	public goToStep(step: TOnboardingStep): void {
@@ -114,9 +120,7 @@ export class OnboardingCx {
 		});
 	}
 
-	private updateStep(step: TOnboardingStep, data: TOnboardingStepData): boolean {
-		let didUpdate = false;
-
+	private updateStep(step: TOnboardingStep, data: TOnboardingStepData): void {
 		this.$stepper.set((stepper) => {
 			const existingStepIndex = stepper.visitedSteps.findIndex((item) => item.type === step);
 			if (existingStepIndex === -1) {
@@ -131,15 +135,12 @@ export class OnboardingCx {
 
 			const visitedSteps = [...stepper.visitedSteps];
 			visitedSteps[existingStepIndex] = nextStep;
-			didUpdate = true;
 
 			return {
 				...stepper,
 				visitedSteps
 			};
 		});
-
-		return didUpdate;
 	}
 
 	public async restartApp(): Promise<TResult<null, string>> {
@@ -206,7 +207,8 @@ export class OnboardingCx {
 }
 
 export function useCreateOnboardingCx(): OnboardingCx {
-	const cx = React.useMemo(() => new OnboardingCx(), []);
+	const settingsCx = useSettingsCx();
+	const cx = React.useMemo(() => new OnboardingCx({ settingsCx }), [settingsCx]);
 
 	React.useEffect(() => {
 		return cx.mount();
@@ -215,9 +217,13 @@ export function useCreateOnboardingCx(): OnboardingCx {
 	return cx;
 }
 
-export const onboardingStepOrder = ['welcome', 'accessibility', 'firstBlock'] as const;
+interface TOnboardingCxOptions {
+	settingsCx: SettingsCx;
+}
 
-export type TOnboardingStep = (typeof onboardingStepOrder)[number];
+export const onboardingSteps = ['welcome', 'accessibility', 'firstBlock'] as const;
+
+export type TOnboardingStep = (typeof onboardingSteps)[number];
 
 interface TOnboardingStepperState {
 	currentStepIndex: number;
