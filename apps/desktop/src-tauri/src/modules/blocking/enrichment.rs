@@ -18,6 +18,7 @@ pub async fn enrich_blocking_violation(
         session_id: policy_violation.session_id,
         session_started_at: policy_violation.session_started_at,
         session_automatic_end_at: policy_violation.session_automatic_end_at,
+        triggering_process_id: focus.pid,
         blocked_target: enrich_blocked_target(app, &policy_violation.blocked_target, focus).await,
     };
 }

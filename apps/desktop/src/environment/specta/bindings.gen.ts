@@ -32,6 +32,7 @@ export const commands = {
 	sessionId: number,
 	sessionStartedAt: number,
 	sessionAutomaticEndAt: number | null,
+	triggeringProcessId: number,
 	blockedTarget: BlockedTarget,
 } | null>("get_blocking_violation"),
 	pauseBlockingOverlay: (durationMs: number) => typedError<null, string>(__TAURI_INVOKE("pause_blocking_overlay", { durationMs })),
@@ -143,6 +144,7 @@ export type BlockingViolation = {
 	sessionId: number,
 	sessionStartedAt: number,
 	sessionAutomaticEndAt: number | null,
+	triggeringProcessId: number,
 	blockedTarget: BlockedTarget,
 };
 

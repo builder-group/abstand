@@ -10,6 +10,7 @@ pub struct BlockingViolation {
     pub session_id: i64,
     pub session_started_at: i64,
     pub session_automatic_end_at: Option<i64>,
+    pub triggering_process_id: i32,
     pub blocked_target: BlockedTarget,
 }
 

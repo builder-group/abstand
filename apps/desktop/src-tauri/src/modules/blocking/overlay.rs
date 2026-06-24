@@ -73,6 +73,39 @@ pub fn hide(app: &AppHandle) {
     }
 }
 
+pub fn hide_for_temporary_pause(app: &AppHandle, triggering_process_id: i32) {
+    let app = app.clone();
+
+    // Note: Focus handling is driven by mado outside Tauri's main thread, but
+    // native window mutations must run on it
+    if let Err(error) = app.clone().run_on_main_thread(move || {
+        let Some(window) = AppWindow::Overlay.get(&app) else {
+            return;
+        };
+
+        if let Err(error) = window.hide() {
+            log::error!(target: LOG_TARGET, "failed to hide blocking overlay: {}", error);
+            return;
+        }
+
+        // Note: Temporary overlay pauses should focus the blocked app/browser after hiding.
+        // Otherwise macOS can promote Abstand's main window when the overlay disappears.
+        if !abstand_macos::activate_app_by_pid(triggering_process_id) {
+            log::warn!(
+                target: LOG_TARGET,
+                "failed to reactivate blocked app: pid={}",
+                triggering_process_id
+            );
+        }
+    }) {
+        log::error!(
+            target: LOG_TARGET,
+            "failed to schedule blocking overlay pause: {}",
+            error
+        );
+    }
+}
+
 fn resolve_bounds_for_violation(
     app: &AppHandle,
     focus: &ActivityFocus,

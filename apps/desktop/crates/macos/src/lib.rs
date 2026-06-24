@@ -4,10 +4,10 @@ use std::ffi::c_void;
 mod ffi;
 #[cfg(target_os = "macos")]
 use ffi::{
-    abstand_macos_apply_window_liquid_glass, abstand_macos_apply_window_screen_overlay_behavior,
-    abstand_macos_apply_window_transparency, abstand_macos_get_small_system_font_size,
-    abstand_macos_get_system_font_size, abstand_macos_is_app_running,
-    abstand_macos_request_app_quit,
+    abstand_macos_activate_app_by_pid, abstand_macos_apply_window_liquid_glass,
+    abstand_macos_apply_window_screen_overlay_behavior, abstand_macos_apply_window_transparency,
+    abstand_macos_get_small_system_font_size, abstand_macos_get_system_font_size,
+    abstand_macos_is_app_running, abstand_macos_request_app_quit,
 };
 #[cfg(target_os = "macos")]
 use swift_rs::{Int, SRString};
@@ -67,6 +67,24 @@ pub fn apply_window_screen_overlay_behavior(window_ptr: *mut c_void) -> bool {
     #[cfg(not(target_os = "macos"))]
     {
         let _ = window_ptr;
+        return false;
+    }
+}
+
+/// Activates the running app with the provided process id.
+pub fn activate_app_by_pid(pid: i32) -> bool {
+    #[cfg(target_os = "macos")]
+    {
+        if pid <= 0 {
+            return false;
+        }
+
+        return unsafe { abstand_macos_activate_app_by_pid(pid) };
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = pid;
         return false;
     }
 }

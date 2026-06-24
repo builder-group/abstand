@@ -16,6 +16,14 @@ public func abstandMacosApplyWindowScreenOverlayBehavior(windowPtr: Int) -> Bool
     return WindowOverlay.applyWindowScreenOverlayBehavior(windowPtr: windowPtr)
 }
 
+@_cdecl("abstand_macos_activate_app_by_pid")
+public func abstandMacosActivateAppByPid(pid: Int32) -> Bool {
+    return FfiMainActorBridge.run {
+        let app = NSRunningApplication(processIdentifier: pid_t(pid))
+        return app?.activate(options: [.activateAllWindows, .activateIgnoringOtherApps]) ?? false
+    }
+}
+
 @_cdecl("abstand_macos_get_system_font_size")
 public func abstandMacosGetSystemFontSize() -> Double {
     return Double(NSFont.systemFontSize)

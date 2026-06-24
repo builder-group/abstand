@@ -155,7 +155,12 @@ impl BlockingRuntime {
 
     pub fn pause_overlay(&mut self, app: AppHandle, pause_duration: Duration) {
         self.overlay_paused_until = Some(Instant::now() + pause_duration);
-        overlay::hide(&app);
+        match &self.active_violation {
+            Some(violation) => {
+                overlay::hide_for_temporary_pause(&app, violation.triggering_process_id)
+            }
+            None => overlay::hide(&app),
+        }
 
         scheduler::schedule_after(&app, "blocking overlay pause", pause_duration, move |app| {
             // Note: Re-check focus after the pause instead of restoring the old overlay
