@@ -1,4 +1,4 @@
-import { useFeatureState } from 'feature-react/state';
+import { useCompute } from 'feature-react/state';
 import React from 'react';
 import { ClockIcon } from '@/components';
 import { type specta } from '@/environment';
@@ -10,8 +10,9 @@ import { SectionIndicator, TodaySection } from './TodaySection';
 
 export const UpcomingIntentionsSection: React.FC<TUpcomingIntentionsSectionProps> = (props) => {
 	const { cx } = props;
-	const todayOverview = useFeatureState(cx.$todayOverview);
-	const upcomingIntentions = todayOverview?.upcomingToday ?? [];
+	const upcomingIntentions = useCompute(cx.$todayOverview, (todayOverview) => {
+		return todayOverview?.upcomingToday ?? [];
+	});
 
 	if (!upcomingIntentions.length) {
 		return null;

@@ -1,4 +1,4 @@
-import { useFeatureState } from 'feature-react/state';
+import { useCompute } from 'feature-react/state';
 import React from 'react';
 import { type specta } from '@/environment';
 import { cn, formatActiveTimeRangeLabel } from '@/lib';
@@ -9,8 +9,9 @@ import { SectionIndicator, TodayEmptyRow, TodaySection } from './TodaySection';
 
 export const ActiveIntentionsSection: React.FC<TActiveIntentionsSectionProps> = (props) => {
 	const { cx } = props;
-	const todayOverview = useFeatureState(cx.$todayOverview);
-	const activeIntentions = todayOverview?.active ?? [];
+	const activeIntentions = useCompute(cx.$todayOverview, (todayOverview) => {
+		return todayOverview?.active ?? [];
+	});
 
 	if (!activeIntentions.length) {
 		return (
