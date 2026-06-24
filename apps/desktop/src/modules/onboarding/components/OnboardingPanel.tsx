@@ -19,7 +19,7 @@ export const OnboardingPanel: React.FC<TOnboardingPanelProps> = (props) => {
 	return (
 		<section className="bg-base-0 flex min-h-0 flex-1 flex-col overflow-hidden">
 			<div className={onboardingArtworkVariants({ tone: artworkTone })}>
-				<div className="bg-base-0/70 text-base-950 ring-base-950/8 flex size-20 items-center justify-center rounded-[22px] shadow-sm ring-1 [&_svg:not([class*='size-'])]:size-9">
+				<div className="bg-base-0 text-base-950 ring-base-950/8 flex size-20 items-center justify-center rounded-[22px] shadow-sm ring-1 [&_svg:not([class*='size-'])]:size-9">
 					{icon}
 				</div>
 				<div className="flex gap-1.5" aria-hidden>
