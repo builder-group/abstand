@@ -221,7 +221,9 @@ const AccessibilityPermissionRow: React.FC = () => {
 
 	const [isGranted, setIsGranted] = React.useState<boolean | null>(null);
 	const [isStatusPending, setIsStatusPending] = React.useState(true);
-	const [needsRestart, setNeedsRestart] = React.useState(false);
+	const [isRestartRequired, setIsRestartRequired] = React.useState(false);
+
+	const needsRestart = isGranted === true && isRestartRequired;
 
 	// MARK: - Actions
 
@@ -246,7 +248,7 @@ const AccessibilityPermissionRow: React.FC = () => {
 			setIsStatusPending(false);
 
 			if (previousIsGranted === false && nextIsGranted) {
-				setNeedsRestart(true);
+				setIsRestartRequired(true);
 				showRestartToast();
 			}
 		},
@@ -298,7 +300,7 @@ const AccessibilityPermissionRow: React.FC = () => {
 			render={<button type="button" onClick={handleOpenSettings} />}
 		>
 			{isGranted != null ? (
-				isGranted && needsRestart ? (
+				needsRestart ? (
 					<Badge variant="secondary">Restart required</Badge>
 				) : (
 					<PermissionStatusBadge isGranted={isGranted} />
