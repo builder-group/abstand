@@ -118,6 +118,7 @@ export type AppInfoDto = {
 
 export type AppSettings = {
 	version: SettingsVersion,
+	activity: ActivitySettings,
 	appearance: AppearanceSettings,
 	developer: DeveloperSettings,
 	onboarding: OnboardingSettings,
@@ -127,6 +128,18 @@ export type AppSettings = {
 };
 
 export type AppSettingsChangedEvent = AppSettings;
+
+export type ActivityForegroundSettings = {
+	trackApps: boolean,
+	trackWindows: boolean,
+	trackBrowser: boolean,
+	trackPrivateBrowser: boolean,
+};
+
+export type ActivitySettings = {
+	enabled: boolean,
+	foreground: ActivityForegroundSettings,
+};
 
 export type AppearanceSettings = {
 	theme: Theme,
@@ -344,7 +357,7 @@ export type SearchCatalogParams = {
 	includeIcon: CatalogIconMode | null,
 };
 
-export type SettingsVersion = "0.0.1" | "0.0.2";
+export type SettingsVersion = "0.0.1" | "0.0.2" | "0.0.3";
 
 export type ShortcutAction = "search" | "newIntention" | "toggleSidebar";
 
@@ -505,4 +518,3 @@ function makeEvent<T>(name: string, serialize?: (payload: T) => unknown, deseria
 
     return Object.assign(fn, base);
 }
-

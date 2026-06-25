@@ -8,6 +8,7 @@ use tauri::App;
 #[serde(rename_all = "camelCase")]
 pub struct AppSettings {
     pub version: SettingsVersion,
+    pub activity: ActivitySettings,
     pub appearance: AppearanceSettings,
     pub developer: DeveloperSettings,
     pub onboarding: OnboardingSettings,
@@ -20,6 +21,7 @@ impl Default for AppSettings {
     fn default() -> Self {
         return Self {
             version: SettingsVersion::current(),
+            activity: ActivitySettings::default(),
             appearance: AppearanceSettings::default(),
             developer: DeveloperSettings::default(),
             onboarding: OnboardingSettings::default(),
@@ -35,17 +37,78 @@ pub enum SettingsVersion {
     V0_0_1,
     #[serde(rename = "0.0.2")]
     V0_0_2,
+    #[serde(rename = "0.0.3")]
+    V0_0_3,
 }
 
 impl SettingsVersion {
     pub fn current() -> Self {
-        return Self::V0_0_2;
+        return Self::V0_0_3;
     }
 }
 
 impl Default for SettingsVersion {
     fn default() -> Self {
         return Self::current();
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct ActivitySettings {
+    pub enabled: bool,
+    pub foreground: ActivityForegroundSettings,
+}
+
+impl ActivitySettings {
+    pub fn normalized(mut self) -> Self {
+        self.foreground = self.foreground.normalized();
+        return self;
+    }
+}
+
+impl Default for ActivitySettings {
+    fn default() -> Self {
+        return Self {
+            enabled: false,
+            foreground: ActivityForegroundSettings::default(),
+        };
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct ActivityForegroundSettings {
+    pub track_apps: bool,
+    pub track_windows: bool,
+    pub track_browser: bool,
+    pub track_private_browser: bool,
+}
+
+impl ActivityForegroundSettings {
+    pub fn normalized(mut self) -> Self {
+        if !self.track_apps {
+            self.track_windows = false;
+        }
+        if !self.track_windows {
+            self.track_browser = false;
+        }
+        if !self.track_browser {
+            self.track_private_browser = false;
+        }
+
+        return self;
+    }
+}
+
+impl Default for ActivityForegroundSettings {
+    fn default() -> Self {
+        return Self {
+            track_apps: false,
+            track_windows: false,
+            track_browser: false,
+            track_private_browser: false,
+        };
     }
 }
 

@@ -18,7 +18,10 @@ pub fn set_settings(
     settings_state: State<'_, AppSettingsState>,
     mut settings: AppSettings,
 ) -> Result<(), String> {
-    // Normalize: remove overrides that match the action's default (absent key = use default)
+    // Normalize dependent activity flags so child trackers cannot be enabled without their parent.
+    settings.activity = settings.activity.normalized();
+
+    // Normalize shortcuts: remove overrides that match the action's default (absent key = use default)
     settings
         .shortcuts
         .retain(|action, shortcut| match shortcut {

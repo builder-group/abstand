@@ -108,7 +108,11 @@ fn migrate_value_one_step(value: &mut Value) -> Result<SettingsVersion, String> 
             migrate_v0_0_1_to_v0_0_2(value)?;
             return version_from_value(value);
         }
-        SettingsVersion::V0_0_2 => return Ok(SettingsVersion::V0_0_2),
+        SettingsVersion::V0_0_2 => {
+            migrate_v0_0_2_to_v0_0_3(value)?;
+            return version_from_value(value);
+        }
+        SettingsVersion::V0_0_3 => return Ok(SettingsVersion::V0_0_3),
     }
 }
 
@@ -122,6 +126,28 @@ fn migrate_v0_0_1_to_v0_0_2(value: &mut Value) -> Result<(), String> {
         "onboarding".to_string(),
         json!({
             "completedAt": unix_ms_now()
+        }),
+    );
+
+    return Ok(());
+}
+
+fn migrate_v0_0_2_to_v0_0_3(value: &mut Value) -> Result<(), String> {
+    let Some(object) = value.as_object_mut() else {
+        return Err("settings file root must be an object".to_string());
+    };
+
+    object.insert("version".to_string(), json!("0.0.3"));
+    object.insert(
+        "activity".to_string(),
+        json!({
+            "enabled": false,
+            "foreground": {
+                "trackApps": false,
+                "trackWindows": false,
+                "trackBrowser": false,
+                "trackPrivateBrowser": false
+            }
         }),
     );
 
