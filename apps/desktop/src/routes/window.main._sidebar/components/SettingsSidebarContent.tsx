@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { useCompute } from 'feature-react/state';
 import React from 'react';
 import {
+	ActivityIcon,
 	ArrowLeftIcon,
 	CodeXmlIcon,
 	CommandIcon,
@@ -16,6 +17,7 @@ import { SidebarItem } from './SidebarItem';
 export const SettingsSidebarContent: React.FC<TSettingsSidebarContentProps> = (props) => {
 	const { className } = props;
 	const settingsCx = useSettingsCx();
+	const activityEnabled = useCompute(settingsCx.$appSettings, (value) => value.activity.enabled);
 	const developerEnabled = useCompute(settingsCx.$appSettings, (value) => value.developer.enabled);
 
 	return (
@@ -44,6 +46,18 @@ export const SettingsSidebarContent: React.FC<TSettingsSidebarContentProps> = (p
 					render={<Link to="/window/main/settings/general" />}
 					className="py-0.75"
 				/>
+				{activityEnabled && (
+					<SidebarItem
+						icon={
+							<IconBubble variant="success" size="xs">
+								<ActivityIcon />
+							</IconBubble>
+						}
+						label="Activity"
+						render={<Link to="/window/main/settings/activity" />}
+						className="py-0.75"
+					/>
+				)}
 				<SidebarItem
 					icon={
 						<IconBubble variant="warning" size="xs">

@@ -98,7 +98,7 @@ export class SettingsCx {
 	}
 }
 
-type TSettingsUpdates = Partial<
+export type TSettingsUpdates = Partial<
 	Omit<
 		specta.AppSettings,
 		'activity' | 'appearance' | 'developer' | 'onboarding' | 'updates' | 'shortcuts'

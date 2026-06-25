@@ -34,6 +34,7 @@ import {
 	SettingsGroup,
 	SettingsRow,
 	SettingsRowFrame,
+	type TSettingsUpdates,
 	useSettingsCx
 } from '@/modules/settings';
 import { useUpdaterCx, type TUpdaterState } from '@/modules/updater';
@@ -171,13 +172,14 @@ function formatFontScale(value: number) {
 const FeaturesSection: React.FC = () => {
 	const settingsCx = useSettingsCx();
 	const toastsCx = useToastsCx();
+	const activityEnabled = useCompute(settingsCx.$appSettings, (value) => value.activity.enabled);
 	const developerEnabled = useCompute(settingsCx.$appSettings, (value) => value.developer.enabled);
 
 	// MARK: - Actions
 
-	const handleDeveloperToggle = React.useCallback(
-		async (pressed: boolean) => {
-			const [isUpdateOk, updateErr] = await settingsCx.update({ developer: { enabled: pressed } });
+	const saveFeatureSettings = React.useCallback(
+		async (changes: TSettingsUpdates) => {
+			const [isUpdateOk, updateErr] = await settingsCx.update(changes);
 			if (!isUpdateOk) {
 				toastsCx.add({
 					type: 'error',
@@ -189,10 +191,30 @@ const FeaturesSection: React.FC = () => {
 		[settingsCx, toastsCx]
 	);
 
+	const handleActivityToggle = React.useCallback(
+		(pressed: boolean) => {
+			void saveFeatureSettings({ activity: { enabled: pressed } });
+		},
+		[saveFeatureSettings]
+	);
+
+	const handleDeveloperToggle = React.useCallback(
+		(pressed: boolean) => {
+			void saveFeatureSettings({ developer: { enabled: pressed } });
+		},
+		[saveFeatureSettings]
+	);
+
 	// MARK: - UI
 
 	return (
 		<SettingsGroup title="Features">
+			<SettingsRow
+				label="Activity tracking"
+				description="Record active apps, windows, and websites."
+			>
+				<Switch checked={activityEnabled} onCheckedChange={handleActivityToggle} />
+			</SettingsRow>
 			<SettingsRow label="Developer" description="Unlock the Developer settings panel.">
 				<Switch checked={developerEnabled} onCheckedChange={handleDeveloperToggle} />
 			</SettingsRow>

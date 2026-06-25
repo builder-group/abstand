@@ -94,6 +94,18 @@ export const events = {
 };
 
 /* Types */
+export type ActivityForegroundSettings = {
+	trackApps: boolean,
+	trackWindows: boolean,
+	trackBrowser: boolean,
+	trackPrivateBrowser: boolean,
+};
+
+export type ActivitySettings = {
+	enabled: boolean,
+	foreground: ActivityForegroundSettings,
+};
+
 export type App = {
 	/**  Database row identifier for persisted app records. */
 	id: number,
@@ -128,18 +140,6 @@ export type AppSettings = {
 };
 
 export type AppSettingsChangedEvent = AppSettings;
-
-export type ActivityForegroundSettings = {
-	trackApps: boolean,
-	trackWindows: boolean,
-	trackBrowser: boolean,
-	trackPrivateBrowser: boolean,
-};
-
-export type ActivitySettings = {
-	enabled: boolean,
-	foreground: ActivityForegroundSettings,
-};
 
 export type AppearanceSettings = {
 	theme: Theme,

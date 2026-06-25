@@ -5,6 +5,7 @@ export * from './LogoIcon';
 
 // Third Party Icons
 export {
+	ActivityIcon,
 	AppWindowIcon,
 	ArrowLeftIcon,
 	ArrowUpRightIcon,
