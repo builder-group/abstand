@@ -61,7 +61,7 @@ impl TrayStatusItem {
         return tray.with_inner_tray_icon(move |inner| {
             return inner.ns_status_item().map(|status_item| {
                 // SAFETY: `ns_status_item` returns Tauri's borrowed native `NSStatusItem` for this tray,
-                // and the pointer is only used during the synchronous FFI call.
+                // and the pointer is only used during the synchronous FFI call
                 unsafe { abstand_macos::apply_status_item_appearance(&*status_item, appearance) }
             });
         });
