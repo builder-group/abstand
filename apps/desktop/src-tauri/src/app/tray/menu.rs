@@ -1,4 +1,4 @@
-use super::snapshot::TrayMenuSnapshot;
+use super::snapshot::TraySnapshot;
 #[cfg(debug_assertions)]
 use crate::modules::recovery_agent::agent::RecoveryAgent;
 use crate::{
@@ -30,7 +30,7 @@ impl TrayMenu {
     }
 
     pub async fn build(app: &AppHandle) -> tauri::Result<Menu<tauri::Wry>> {
-        let snapshot = match TrayMenuSnapshot::load(app).await {
+        let snapshot = match TraySnapshot::load(app).await {
             Ok(snapshot) => snapshot,
             Err(error) => {
                 log::warn!(target: LOG_TARGET, "failed to load tray menu state: {}", error);
@@ -50,7 +50,7 @@ impl TrayMenu {
         item.handle(app);
     }
 
-    fn from_snapshot(snapshot: TrayMenuSnapshot) -> Self {
+    fn from_snapshot(snapshot: TraySnapshot) -> Self {
         let mut menu = Self::new();
         menu.append_status(&snapshot);
         menu.append_primary_actions(&snapshot);
@@ -74,7 +74,7 @@ impl TrayMenu {
         self.entries.push(entry);
     }
 
-    fn append_status(&mut self, snapshot: &TrayMenuSnapshot) {
+    fn append_status(&mut self, snapshot: &TraySnapshot) {
         let Some(active) = snapshot.active.first() else {
             self.append(TrayMenuEntry::label(
                 "tray_status_idle",
@@ -117,7 +117,7 @@ impl TrayMenu {
         }
     }
 
-    fn append_primary_actions(&mut self, snapshot: &TrayMenuSnapshot) {
+    fn append_primary_actions(&mut self, snapshot: &TraySnapshot) {
         self.append(TrayMenuEntry::separator());
         self.append(TrayMenuEntry::action(TrayMenuItem::OpenAbstand));
 

@@ -4,10 +4,11 @@ use std::ffi::c_void;
 mod ffi;
 #[cfg(target_os = "macos")]
 use ffi::{
-    abstand_macos_activate_app_by_pid, abstand_macos_apply_window_liquid_glass,
-    abstand_macos_apply_window_screen_overlay_behavior, abstand_macos_apply_window_transparency,
-    abstand_macos_get_small_system_font_size, abstand_macos_get_system_font_size,
-    abstand_macos_is_app_running, abstand_macos_request_app_quit,
+    abstand_macos_activate_app_by_pid, abstand_macos_apply_status_item_appearance,
+    abstand_macos_apply_window_liquid_glass, abstand_macos_apply_window_screen_overlay_behavior,
+    abstand_macos_apply_window_transparency, abstand_macos_get_small_system_font_size,
+    abstand_macos_get_system_font_size, abstand_macos_is_app_running,
+    abstand_macos_request_app_quit,
 };
 #[cfg(target_os = "macos")]
 use swift_rs::{Int, SRString};
@@ -170,4 +171,47 @@ pub enum AppQuitRequestResult {
     Requested { process_count: u32 },
     Failed,
     Unsupported,
+}
+
+/// Applies native appearance properties to the provided macOS status item.
+///
+/// # Safety
+///
+/// `status_item` must be a borrowed `NSStatusItem` that remains valid for the duration of this
+/// synchronous call. The pointer must not be retained or used after the call returns.
+///
+/// Returns `false` if the platform is unsupported.
+pub unsafe fn apply_status_item_appearance<T>(
+    status_item: &T,
+    appearance: TrayStatusItemAppearance,
+) -> bool {
+    #[cfg(target_os = "macos")]
+    {
+        let status_item_ptr = borrowed_native_object_ptr(status_item);
+
+        return unsafe {
+            abstand_macos_apply_status_item_appearance(
+                status_item_ptr as Int,
+                appearance.active_dot_visible,
+            )
+        };
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = status_item;
+        let _ = appearance;
+        return false;
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct TrayStatusItemAppearance {
+    pub active_dot_visible: bool,
+}
+
+/// Returns the address of a borrowed native object for immediate FFI use without changing ownership.
+#[cfg(target_os = "macos")]
+fn borrowed_native_object_ptr<T>(object: &T) -> *mut c_void {
+    return std::ptr::from_ref(object).cast_mut().cast();
 }

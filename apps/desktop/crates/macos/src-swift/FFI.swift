@@ -12,7 +12,8 @@ public func abstandMacosApplyWindowTransparency(windowPtr: Int) -> Bool {
 }
 
 @_cdecl("abstand_macos_apply_window_screen_overlay_behavior")
-public func abstandMacosApplyWindowScreenOverlayBehavior(windowPtr: Int) -> Bool {
+public func abstandMacosApplyWindowScreenOverlayBehavior(windowPtr: Int) -> Bool
+{
     return WindowOverlay.applyWindowScreenOverlayBehavior(windowPtr: windowPtr)
 }
 
@@ -20,7 +21,9 @@ public func abstandMacosApplyWindowScreenOverlayBehavior(windowPtr: Int) -> Bool
 public func abstandMacosActivateAppByPid(pid: Int32) -> Bool {
     return FfiMainActorBridge.run {
         let app = NSRunningApplication(processIdentifier: pid_t(pid))
-        return app?.activate(options: [.activateAllWindows, .activateIgnoringOtherApps]) ?? false
+        return app?.activate(options: [
+            .activateAllWindows, .activateIgnoringOtherApps,
+        ]) ?? false
     }
 }
 
@@ -74,4 +77,15 @@ public func abstandMacosRequestAppQuit(
     }
 
     return requestedQuitCount
+}
+
+@_cdecl("abstand_macos_apply_status_item_appearance")
+public func abstandMacosApplyStatusItemAppearance(
+    statusItemPtr: Int,
+    activeDotVisible: Bool
+) -> Bool {
+    return TrayStatusItemAppearance.apply(
+        statusItemPtr: statusItemPtr,
+        activeDotVisible: activeDotVisible
+    )
 }

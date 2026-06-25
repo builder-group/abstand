@@ -27,8 +27,8 @@ impl IntentionRuntime {
             .map_err(IntentionRuntimeError::TimedRuntime)?;
 
         #[cfg(target_os = "macos")]
-        if let Err(error) = AppTray::refresh_menu(app).await {
-            log::warn!(target: LOG_TARGET, "tray menu refresh failed: {}", error);
+        if let Err(error) = AppTray::refresh(app).await {
+            log::warn!(target: LOG_TARGET, "tray refresh failed: {}", error);
         }
 
         return Ok(());

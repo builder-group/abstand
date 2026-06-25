@@ -7,12 +7,12 @@ use crate::{
 };
 use tauri::{AppHandle, Manager};
 
-pub struct TrayMenuSnapshot {
+pub struct TraySnapshot {
     pub active: Vec<TodayActiveIntention>,
     pub upcoming_today: Vec<TodayUpcomingIntention>,
 }
 
-impl TrayMenuSnapshot {
+impl TraySnapshot {
     pub async fn load(app: &AppHandle) -> Result<Self, String> {
         let database_state = app.state::<DatabaseState>();
         let now = unix_ms_now();

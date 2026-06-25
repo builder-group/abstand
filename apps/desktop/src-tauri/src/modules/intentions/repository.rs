@@ -1010,6 +1010,23 @@ impl IntentionSessionRepository {
             .collect::<Result<Vec<_>, _>>();
     }
 
+    pub async fn has_active_sessions(
+        pool: &Pool<Sqlite>,
+    ) -> Result<bool, IntentionSessionRepositoryError> {
+        let exists = sqlx::query_scalar::<_, i64>(
+            "SELECT EXISTS (
+                SELECT 1
+                FROM intention_session
+                WHERE status = 'active'
+                LIMIT 1
+            )",
+        )
+        .fetch_one(pool)
+        .await?;
+
+        return Ok(exists != 0);
+    }
+
     pub async fn get_finished_sessions_ended_in_range(
         pool: &Pool<Sqlite>,
         start_at: i64,

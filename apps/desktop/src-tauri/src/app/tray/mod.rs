@@ -1,8 +1,10 @@
 mod menu;
 mod snapshot;
+mod status_item;
 
 use crate::environment::configs::app::AppConfig;
 use menu::TrayMenu;
+use status_item::TrayStatusItem;
 use tauri::{
     menu::Menu,
     tray::{TrayIcon, TrayIconBuilder},
@@ -19,21 +21,14 @@ impl AppTray {
     pub fn setup(app: &mut App) -> tauri::Result<()> {
         // Note: Accessory mode gives Abstand tray-app behavior without a Dock or Cmd-Tab entry
         app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+
         Self::build(app.handle())?;
-        Self::set_title(app.handle(), None);
+        tauri::async_runtime::block_on(Self::refresh_status_item(app.handle()));
         return Ok(());
     }
 
     pub fn get(app: &AppHandle) -> Option<TrayIcon<tauri::Wry>> {
         return app.tray_by_id(Self::id());
-    }
-
-    pub fn set_title(app: &AppHandle, title: Option<&str>) {
-        let Some(tray) = Self::get(app) else {
-            return;
-        };
-
-        let _ = tray.set_title(Some(title.unwrap_or("")));
     }
 
     fn build(app: &AppHandle) -> tauri::Result<TrayIcon<tauri::Wry>> {
@@ -54,6 +49,12 @@ impl AppTray {
         return TrayMenu::build(app).await;
     }
 
+    pub async fn refresh(app: &AppHandle) -> tauri::Result<()> {
+        Self::refresh_menu(app).await?;
+        Self::refresh_status_item(app).await;
+        return Ok(());
+    }
+
     pub async fn refresh_menu(app: &AppHandle) -> tauri::Result<()> {
         let Some(tray) = Self::get(app) else {
             return Ok(());
@@ -62,5 +63,9 @@ impl AppTray {
         let menu = Self::build_menu(app).await?;
         tray.set_menu(Some(menu))?;
         return Ok(());
+    }
+
+    pub async fn refresh_status_item(app: &AppHandle) {
+        TrayStatusItem::refresh(app).await;
     }
 }

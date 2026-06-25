@@ -9,6 +9,8 @@ use super::{
         IntentionSessionCompletedEvent, IntentionSessionStartedEvent, IntentionSessionStoppedEvent,
     },
 };
+#[cfg(target_os = "macos")]
+use crate::app::tray::AppTray;
 use crate::modules::{
     activity::monitor,
     blocking::{self, types::BlockingRuntimeState},
@@ -64,6 +66,8 @@ pub async fn start_session(
     }
     .emit(app);
     refresh_blocking(app).await;
+    #[cfg(target_os = "macos")]
+    AppTray::refresh_status_item(app).await;
 
     return Ok(session);
 }
@@ -102,6 +106,8 @@ pub async fn complete_session(
     }
     .emit(app);
     clear_blocking(app, session.id);
+    #[cfg(target_os = "macos")]
+    AppTray::refresh_status_item(app).await;
 
     return Ok(session);
 }
@@ -138,6 +144,8 @@ pub async fn stop_session(
     }
     .emit(app);
     clear_blocking(app, session.id);
+    #[cfg(target_os = "macos")]
+    AppTray::refresh_status_item(app).await;
 
     return Ok(session);
 }

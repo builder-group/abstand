@@ -15,3 +15,7 @@ swift!(pub fn abstand_macos_is_app_running(
 swift!(pub fn abstand_macos_request_app_quit(
     bundle_identifier: &SRString
 ) -> i32);
+swift!(pub fn abstand_macos_apply_status_item_appearance(
+    status_item_ptr: Int,
+    active_dot_visible: Bool
+) -> Bool);
