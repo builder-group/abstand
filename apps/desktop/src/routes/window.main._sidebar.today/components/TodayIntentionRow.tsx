@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import React from 'react';
-import { MonitorPauseIcon, ShieldIcon } from '@/components';
+import { MonitorPauseIcon, MoveRightIcon, ShieldIcon } from '@/components';
 import { type specta } from '@/environment';
 import { SettingsRowFrame } from '@/modules/settings';
 
@@ -17,12 +17,16 @@ export const TodayIntentionRow: React.FC<TTodayIntentionRowProps> = (props) => {
 				/>
 			}
 			variant="compact"
-			className="gap-1.5"
+			className="group/today-intention gap-1.5"
 		>
 			<IntentionIcon intention={intention} />
 			<div className="flex min-w-0 flex-1 flex-col">
 				<span className="text-base-950 truncate text-sm">{intention.name}</span>
 				<span className="text-base-400 truncate text-xs">{description}</span>
+			</div>
+			<div className="text-base-500 flex w-0 shrink-0 items-center justify-end gap-1 overflow-hidden text-xs font-medium whitespace-nowrap opacity-0 transition-[width,opacity] group-focus-within/today-intention:w-26 group-focus-within/today-intention:opacity-100 group-hover/today-intention:w-26 group-hover/today-intention:opacity-100">
+				<span>Open Intention</span>
+				<MoveRightIcon className="size-3.5" />
 			</div>
 		</SettingsRowFrame>
 	);
