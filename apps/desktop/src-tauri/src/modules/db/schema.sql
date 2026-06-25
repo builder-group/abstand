@@ -193,6 +193,71 @@ CREATE UNIQUE INDEX intention_session_one_active_per_intention
 ON intention_session (intention_id)
 WHERE status = 'active';
 
+-- MARK: - Activity
+
+-- Foreground activity captured at app, window, or browser detail
+CREATE TABLE activity_foreground (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    app_id INTEGER NOT NULL REFERENCES app (id),
+    website_id INTEGER REFERENCES website (id),
+    capture_level TEXT NOT NULL CHECK (capture_level IN ('app', 'window', 'browser')),
+    window_title TEXT,
+    window_id INTEGER,
+    window_x REAL,
+    window_y REAL,
+    window_width REAL,
+    window_height REAL,
+    browser_url TEXT,
+    browser_is_private INTEGER,
+    started_at INTEGER NOT NULL,
+    ended_at INTEGER,
+    updated_at INTEGER NOT NULL DEFAULT (CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)),
+    created_at INTEGER NOT NULL DEFAULT (CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)),
+    CHECK (ended_at IS NULL OR ended_at >= started_at),
+    CHECK (browser_is_private IS NULL OR browser_is_private IN (0, 1)),
+    CHECK (
+        capture_level != 'app'
+        OR (
+            website_id IS NULL
+            AND window_title IS NULL
+            AND window_id IS NULL
+            AND window_x IS NULL
+            AND window_y IS NULL
+            AND window_width IS NULL
+            AND window_height IS NULL
+            AND browser_url IS NULL
+            AND browser_is_private IS NULL
+        )
+    ),
+    CHECK (
+        capture_level != 'window'
+        OR (
+            website_id IS NULL
+            AND browser_url IS NULL
+            AND browser_is_private IS NULL
+        )
+    ),
+    CHECK (
+        capture_level != 'browser'
+        OR browser_is_private IS NOT NULL
+        OR website_id IS NOT NULL
+        OR browser_url IS NOT NULL
+    )
+);
+
+CREATE INDEX idx_activity_foreground_started_at ON activity_foreground (started_at);
+
+CREATE INDEX idx_activity_foreground_app_id_started_at
+ON activity_foreground (app_id, started_at);
+
+CREATE INDEX idx_activity_foreground_website_id_started_at
+ON activity_foreground (website_id, started_at)
+WHERE website_id IS NOT NULL;
+
+CREATE UNIQUE INDEX activity_foreground_one_active
+ON activity_foreground ((1))
+WHERE ended_at IS NULL;
+
 -- MARK: - Updated At Triggers
 
 CREATE TRIGGER app_set_updated_at
@@ -482,6 +547,19 @@ FOR EACH ROW
 WHEN NEW.updated_at = OLD.updated_at
 BEGIN
     UPDATE intention_session
+    SET updated_at = CASE
+        WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= OLD.updated_at THEN OLD.updated_at + 1
+        ELSE CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)
+    END
+    WHERE id = NEW.id;
+END;
+
+CREATE TRIGGER activity_foreground_set_updated_at
+AFTER UPDATE ON activity_foreground
+FOR EACH ROW
+WHEN NEW.updated_at = OLD.updated_at
+BEGIN
+    UPDATE activity_foreground
     SET updated_at = CASE
         WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= OLD.updated_at THEN OLD.updated_at + 1
         ELSE CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)
