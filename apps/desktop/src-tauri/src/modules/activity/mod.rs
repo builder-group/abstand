@@ -2,6 +2,7 @@
 
 pub mod focus;
 pub mod foreground;
+mod heartbeat;
 pub mod monitor;
 pub mod recorder;
 pub mod repository;

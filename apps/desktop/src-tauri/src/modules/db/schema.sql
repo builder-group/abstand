@@ -34,6 +34,16 @@ CREATE TABLE website (
     created_at INTEGER NOT NULL DEFAULT (CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER))
 );
 
+-- MARK: - Runtime State
+
+-- Key-value store for durable runtime state
+CREATE TABLE runtime_state (
+    key TEXT NOT NULL PRIMARY KEY,
+    value_json TEXT NOT NULL CHECK (json_valid(value_json)),
+    updated_at INTEGER NOT NULL DEFAULT (CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)),
+    created_at INTEGER NOT NULL DEFAULT (CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER))
+);
+
 -- MARK: - Intentions
 
 -- Configured commitments that trigger an Abstand
@@ -284,6 +294,19 @@ BEGIN
         ELSE CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)
     END
     WHERE id = NEW.id;
+END;
+
+CREATE TRIGGER runtime_state_set_updated_at
+AFTER UPDATE ON runtime_state
+FOR EACH ROW
+WHEN NEW.updated_at = OLD.updated_at
+BEGIN
+    UPDATE runtime_state
+    SET updated_at = CASE
+        WHEN CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER) <= OLD.updated_at THEN OLD.updated_at + 1
+        ELSE CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)
+    END
+    WHERE key = NEW.key;
 END;
 
 CREATE TRIGGER intention_set_updated_at

@@ -1,6 +1,7 @@
 //! Manages the SQLite database connection and migrations.
 
 pub mod database;
+pub mod runtime_state;
 pub mod types;
 
 use tauri::{App, Manager};

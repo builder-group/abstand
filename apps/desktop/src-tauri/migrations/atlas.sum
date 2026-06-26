@@ -1,6 +1,7 @@
-h1:lnaP1JPqXCfmlZ0eS9rq6CmTFsLLhbOmdo/reydJDbA=
+h1:wrpRXrfzeleMi9tpq66z/Syyjh4ScX7LFgOSNTDuizs=
 20260529053343_init.sql h1:EtIQT19ahdgMPr7XpyNw4wMbnMkCZM+U7goIKQ9zB+M=
 20260616045051_pause_intentions.sql h1:JCNkptTHb5Tw6sw5scdEDkc58ZN8kbzvTYbcrndOuq8=
 20260616150519_block_target_actions.sql h1:VP9M/vwrOTiptd0KaRR8vm7lR/8WlaZenLT1+JH/Yp8=
 20260617151408_balanced_delay.sql h1:L80FBUwoJuzYRdNyCpUHazTlmglgAJ5DtCDbtLJiF+Y=
 20260625183503_add_activity_foreground.sql h1:VjLqvoclVTZwzmO4NE0M0ZofG5ZIJJvjoxdDoZL4hWs=
+20260626145109_add_runtime_state.sql h1:npl/gE+jt0M09R8ONzFuAXqXdD75BaTeARhl52+aacM=

@@ -1,10 +1,11 @@
 use super::foreground::ForegroundActivityCaptureLevel;
+use super::heartbeat::ForegroundActivityHeartbeat;
 use super::repository::{
     ForegroundActivityRepository, ForegroundActivityRepositoryError, RecordForegroundActivityInput,
 };
 use super::types::{ForegroundActivityRecordEvent, ForegroundActivityRecorderState};
 use crate::{
-    common::{time::unix_ms_now, url::extract_hostname},
+    common::url::extract_hostname,
     modules::{
         catalog::{
             app_identity::{resolve_app_identity, ResolvedAppIdentity},
@@ -65,13 +66,30 @@ impl ForegroundActivityRecorder {
     }
 
     async fn run(mut self) {
-        if let Err(error) = Self::close_active(&self.app, unix_ms_now()).await {
+        let stale_activity_ended_at =
+            ForegroundActivityHeartbeat::stale_activity_ended_at(&self.app).await;
+        if let Err(error) = Self::close_active(&self.app, stale_activity_ended_at).await {
             log::warn!(target: LOG_TARGET, "failed to close stale foreground activity: {}", error);
         }
 
-        while let Some(event) = self.receiver.recv().await {
-            if let Err(error) = self.record_window_event(event).await {
-                log::warn!(target: LOG_TARGET, "failed to record foreground activity: {}", error);
+        let mut heartbeat = ForegroundActivityHeartbeat::interval();
+
+        loop {
+            tokio::select! {
+                event = self.receiver.recv() => {
+                    let Some(event) = event else {
+                        return;
+                    };
+
+                    ForegroundActivityHeartbeat::record(&self.app).await;
+
+                    if let Err(error) = self.record_window_event(event).await {
+                        log::warn!(target: LOG_TARGET, "failed to record foreground activity: {}", error);
+                    }
+                }
+                _ = heartbeat.tick() => {
+                    ForegroundActivityHeartbeat::record(&self.app).await;
+                }
             }
         }
     }
