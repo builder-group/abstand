@@ -18,6 +18,18 @@ impl ForegroundActivityRepository {
                 return Ok(active_activity);
             }
 
+            // Note: mado can report the same focus first as an app, then with window or browser detail
+            if active_activity.app_id == input.app_id
+                && active_activity.capture_level == ForegroundActivityCaptureLevel::App
+                && input.capture_level != ForegroundActivityCaptureLevel::App
+            {
+                let activity =
+                    Self::update_activity_details(&mut transaction, &active_activity, input)
+                        .await?;
+                transaction.commit().await?;
+                return Ok(activity);
+            }
+
             Self::close_activity(&mut transaction, &active_activity, input.started_at).await?;
         }
 
@@ -116,6 +128,43 @@ impl ForegroundActivityRepository {
         .bind(input.browser_url)
         .bind(input.browser_is_private.map(i64::from))
         .bind(input.started_at)
+        .fetch_one(&mut **transaction)
+        .await?;
+
+        return Self::build_activity(row);
+    }
+
+    async fn update_activity_details(
+        transaction: &mut Transaction<'_, Sqlite>,
+        activity: &ForegroundActivity,
+        input: RecordForegroundActivityInput,
+    ) -> Result<ForegroundActivity, ForegroundActivityRepositoryError> {
+        let row = sqlx::query_as::<_, ForegroundActivityRow>(
+            "UPDATE activity_foreground
+            SET website_id = ?,
+                capture_level = ?,
+                window_title = ?,
+                window_id = ?,
+                window_x = ?,
+                window_y = ?,
+                window_width = ?,
+                window_height = ?,
+                browser_url = ?,
+                browser_is_private = ?
+            WHERE id = ?
+            RETURNING id, app_id, website_id, capture_level, window_title, window_id, window_x, window_y, window_width, window_height, browser_url, browser_is_private, started_at, ended_at, updated_at, created_at",
+        )
+        .bind(input.website_id)
+        .bind(input.capture_level.as_str())
+        .bind(input.window_title)
+        .bind(input.window_id)
+        .bind(input.window_x)
+        .bind(input.window_y)
+        .bind(input.window_width)
+        .bind(input.window_height)
+        .bind(input.browser_url)
+        .bind(input.browser_is_private.map(i64::from))
+        .bind(activity.id)
         .fetch_one(&mut **transaction)
         .await?;
 

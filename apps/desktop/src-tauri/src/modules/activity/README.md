@@ -10,6 +10,8 @@ mado provides focus events. SQLite stores the current and historical activity. B
 
 The current interval is the single row where `ended_at IS NULL`. The repository owns that invariant: when a different activity is recorded, it closes the current row and inserts the next row in one transaction. If the incoming activity matches the current row, the repository leaves the row unchanged.
 
+App activation can arrive before window details. If the active row is app-level and a following event adds window or browser details for the same app, the repository updates the active row and preserves its original `started_at`.
+
 The database also enforces the invariant with a partial unique index for `ended_at IS NULL`.
 
 ## Event Ordering
