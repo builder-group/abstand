@@ -4,7 +4,7 @@ import type { OnboardingCx } from '../../OnboardingCx';
 import { OnboardingPanel } from '../OnboardingPanel';
 
 export const FirstBlockStep: React.FC<TFirstBlockStepProps> = (props) => {
-	const { cx, onCreateBlock } = props;
+	const { cx, onCreateBlock, onSkip } = props;
 
 	return (
 		<OnboardingPanel
@@ -22,6 +22,7 @@ export const FirstBlockStep: React.FC<TFirstBlockStepProps> = (props) => {
 				),
 				onPress: onCreateBlock
 			}}
+			secondaryAction={{ children: 'Skip', onPress: onSkip }}
 			onBack={() => cx.goBack()}
 		/>
 	);
@@ -30,4 +31,5 @@ export const FirstBlockStep: React.FC<TFirstBlockStepProps> = (props) => {
 interface TFirstBlockStepProps {
 	cx: OnboardingCx;
 	onCreateBlock: () => void;
+	onSkip: () => void;
 }

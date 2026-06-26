@@ -20,7 +20,9 @@ function RouteComponent() {
 	const currentStep = useFeatureState(cx.$currentStep);
 	const hasLoaded = useFeatureState(cx.$hasLoaded);
 
-	const handleCreateBlock = React.useCallback(async () => {
+	// MARK: - Actions
+
+	const completeOnboarding = React.useCallback(async () => {
 		const [isCompleteOk, completeErr] = await cx.complete();
 		if (!isCompleteOk) {
 			toastsCx.add({
@@ -28,11 +30,31 @@ function RouteComponent() {
 				title: 'Could not complete onboarding',
 				description: completeErr
 			});
+			return false;
+		}
+
+		return true;
+	}, [cx, toastsCx]);
+
+	const handleCreateBlock = React.useCallback(async () => {
+		const isComplete = await completeOnboarding();
+		if (!isComplete) {
 			return;
 		}
 
 		void navigate({ to: '/window/main/intentions/new/block' });
-	}, [cx, navigate, toastsCx]);
+	}, [completeOnboarding, navigate]);
+
+	const handleSkipFirstBlock = React.useCallback(async () => {
+		const isComplete = await completeOnboarding();
+		if (!isComplete) {
+			return;
+		}
+
+		void navigate({ to: '/window/main/today' });
+	}, [completeOnboarding, navigate]);
+
+	// MARK: - UI
 
 	return (
 		<main className="bg-base-0 relative flex h-screen flex-col overflow-hidden">
@@ -42,7 +64,11 @@ function RouteComponent() {
 					{currentStep === 'welcome' && <WelcomeStep cx={cx} />}
 					{currentStep === 'accessibility' && <AccessibilityStep cx={cx} />}
 					{currentStep === 'firstBlock' && (
-						<FirstBlockStep cx={cx} onCreateBlock={handleCreateBlock} />
+						<FirstBlockStep
+							cx={cx}
+							onCreateBlock={handleCreateBlock}
+							onSkip={handleSkipFirstBlock}
+						/>
 					)}
 				</>
 			) : (
