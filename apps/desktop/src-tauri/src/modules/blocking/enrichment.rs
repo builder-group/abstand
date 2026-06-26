@@ -3,7 +3,7 @@ use super::{
     types::{BlockedTarget, BlockingViolation},
 };
 use crate::modules::{
-    activity::types::ActivityFocus, catalog::resolver, intentions::block_policy::BlockPolicyTarget,
+    activity::focus::ActivityFocus, catalog::resolver, intentions::block_policy::BlockPolicyTarget,
 };
 use tauri::AppHandle;
 

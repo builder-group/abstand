@@ -9,13 +9,25 @@ use super::{
 use crate::{
     app::window::AppWindow,
     modules::{
-        activity::{monitor, types::ActivityFocus},
+        activity::{focus::ActivityFocus, monitor},
         scheduler,
     },
 };
+use mado::WindowEvent;
 use std::time::{Duration, Instant};
 use tauri::{AppHandle, Manager};
 use tauri_specta::Event;
+
+pub async fn handle_window_event(app: &AppHandle, event: WindowEvent, expects_window_update: bool) {
+    let focus = match event {
+        WindowEvent::AppActivated { app } => {
+            ActivityFocus::from_app_info(app, expects_window_update)
+        }
+        WindowEvent::WindowChanged { window } => ActivityFocus::from_window_info(window),
+    };
+
+    handle_activity_focus(app, focus).await;
+}
 
 pub async fn handle_activity_focus(app: &AppHandle, focus: ActivityFocus) {
     // Note: Policy checks can finish after newer focus events. Advance the

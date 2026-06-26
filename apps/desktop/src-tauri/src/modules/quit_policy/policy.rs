@@ -1,7 +1,9 @@
 use super::types::{QuitPolicyState, QuitPreventedEvent, QuitRequestSource};
 use crate::{
     app::window::AppWindow,
+    common::time::unix_ms_now,
     modules::{
+        activity::recorder::ForegroundActivityRecorder,
         db::types::DatabaseState,
         intentions::{intention::IntentionEnforcementMode, repository::IntentionSessionRepository},
     },
@@ -60,18 +62,25 @@ pub async fn confirm_balanced_quit(app: &AppHandle) -> Result<(), String> {
 
 pub fn handle_exit_requested(app: &AppHandle, api: &ExitRequestApi) {
     // App-initiated exits are assessed before `app.exit(0)` and approved for this callback
-    if consume_next_exit_request_approval(app) {
-        return;
-    }
+    let decision = if consume_next_exit_request_approval(app) {
+        QuitDecision::Allowed
+    } else {
+        // Note: RunEvent::ExitRequested is synchronous, so prevent_exit must be decided before returning
+        tauri::async_runtime::block_on(assess_quit(app, QuitAssessmentMode::Unconfirmed))
+    };
 
-    // Note: RunEvent::ExitRequested is synchronous, so prevent_exit must be decided before returning
-    match tauri::async_runtime::block_on(assess_quit(app, QuitAssessmentMode::Unconfirmed)) {
-        QuitDecision::Allowed => {}
+    match decision {
+        QuitDecision::Allowed => {
+            let _ = tauri::async_runtime::block_on(ForegroundActivityRecorder::close_active(
+                app,
+                unix_ms_now(),
+            ));
+        }
         QuitDecision::Denied { reason } => {
             api.prevent_exit();
             handle_quit_denial(app, reason);
         }
-    }
+    };
 }
 
 fn approve_next_exit_request(app: &AppHandle) -> Result<(), String> {

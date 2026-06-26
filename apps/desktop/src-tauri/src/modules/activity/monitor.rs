@@ -1,5 +1,5 @@
-use super::types::{ActivityFocus, ActivityFocusSource, ActivityTarget};
-use crate::modules::blocking;
+use super::{focus::ActivityFocus, recorder};
+use crate::{common::time::unix_ms_now, modules::blocking};
 use mado::{
     MonitorConfig, QueryConfig, WindowEvent, WindowListener, WindowMonitor as MadoWindowMonitor,
 };
@@ -67,36 +67,20 @@ impl ActivityWindowListener {
             tracks_window_changes,
         };
     }
-
-    fn handle_focus_change(&self, focus: ActivityFocus) {
-        let app = self.app.clone();
-        tauri::async_runtime::spawn(async move {
-            blocking::runtime::handle_activity_focus(&app, focus).await;
-        });
-    }
 }
 
 impl WindowListener for ActivityWindowListener {
     fn on_focus_change(&self, event: WindowEvent) {
-        match event {
-            WindowEvent::AppActivated { app } => {
-                self.handle_focus_change(ActivityFocus {
-                    source: ActivityFocusSource::AppActivated {
-                        expects_window_update: self.tracks_window_changes,
-                    },
-                    pid: app.pid,
-                    app_name: app.name,
-                    target: ActivityTarget {
-                        app_bundle_id: app.bundle_id,
-                        website_hostname: None,
-                    },
-                    window_bounds: None,
-                });
-            }
-            WindowEvent::WindowChanged { window } => {
-                self.handle_focus_change(ActivityFocus::from(window));
-            }
-        }
+        let app = self.app.clone();
+        let blocking_event = event.clone();
+        let expects_window_update = self.tracks_window_changes;
+        tauri::async_runtime::spawn(async move {
+            blocking::runtime::handle_window_event(&app, blocking_event, expects_window_update)
+                .await;
+        });
+
+        // Note: Queue activity recording so async database writes do not reorder foreground intervals
+        recorder::ForegroundActivityRecorder::enqueue_window_event(&self.app, event, unix_ms_now());
     }
 }
 
@@ -106,7 +90,7 @@ pub fn get_current_focus() -> Result<ActivityFocus, mado::Error> {
         ..Default::default()
     })?;
 
-    return Ok(ActivityFocus::from(window));
+    return Ok(ActivityFocus::from_window_info(window));
 }
 
 const LOG_TARGET: &str = "modules::activity::monitor";

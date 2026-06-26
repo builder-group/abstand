@@ -1,5 +1,5 @@
 use super::types::{BlockedTarget, BlockingViolation};
-use crate::{app::window::AppWindow, modules::activity::types::ActivityFocus};
+use crate::{app::window::AppWindow, modules::activity::focus::ActivityFocus};
 use tauri::{AppHandle, LogicalPosition, LogicalSize};
 
 pub fn show(app: &AppHandle, focus: &ActivityFocus, violation: &BlockingViolation) {

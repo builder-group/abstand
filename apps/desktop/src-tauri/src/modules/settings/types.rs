@@ -65,6 +65,10 @@ impl ActivitySettings {
         self.foreground = self.foreground.normalized();
         return self;
     }
+
+    pub fn records_foreground_activity(&self) -> bool {
+        return self.enabled && self.foreground.track_apps;
+    }
 }
 
 impl Default for ActivitySettings {

@@ -1,5 +1,5 @@
 use crate::modules::{
-    activity::types::ActivityTarget,
+    activity::focus::ActivityTarget,
     db::types::DatabaseState,
     intentions::{
         block_policy::{BlockPolicySubject, BlockPolicyTarget},
@@ -209,7 +209,7 @@ mod tests {
         BlockingPolicyViolation, IntentionBlock, IntentionBlockScope,
     };
     use crate::modules::{
-        activity::types::ActivityTarget,
+        activity::focus::ActivityTarget,
         catalog::types::{App, Website},
         intentions::intention::{
             IntentionBlockAppTarget, IntentionBlockTargetAction, IntentionBlockWebsiteTarget,

@@ -136,10 +136,10 @@ pub fn run() {
             quit_policy::setup(app);
             scheduler::setup(app);
             catalog::setup(app);
+            settings::setup(app);
             blocking::setup(app);
             intentions::setup(app)?;
             activity::setup(app);
-            settings::setup(app);
             #[cfg(target_os = "macos")]
             tray::AppTray::setup(app)?;
 

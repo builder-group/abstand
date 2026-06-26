@@ -1,6 +1,6 @@
 //! Manages catalog lookup and search.
 
-mod app_identity;
+pub mod app_identity;
 mod assets;
 pub mod commands;
 mod matcher;
