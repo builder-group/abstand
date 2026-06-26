@@ -38,6 +38,12 @@ Other schema objects fail intentionally until the wrapper has comparison support
 
 ## Design Decisions
 
+### What belongs in `runtime_state`?
+
+`runtime_state` stores small runtime-owned markers that need to survive restart or crash. It is not for user settings, product history, or ad hoc cached data.
+
+Use typed repository methods and namespaced keys. For example, activity uses `activity.foreground_recorder.last_seen_at` to close stale foreground intervals after a crash or missed shutdown.
+
 ### Why does `intention_block` use `intention_id` as its primary key?
 
 `intention` is the thing the user creates. `intention_block` is its block-specific configuration: a 1:1 extension row, not an independent entity.

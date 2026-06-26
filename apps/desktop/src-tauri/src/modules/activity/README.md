@@ -1,39 +1,37 @@
 # Activity
 
-Activity records foreground app, window, and browser intervals.
+Activity records local foreground intervals from mado. The data is raw timeline data: reporting decides how to group, classify, hide, or score it.
 
-mado provides focus events. SQLite stores the current and historical activity. Blocking uses the same focus source, but it runs separately so activity database work cannot delay enforcement.
+Blocking uses the same mado source, but runs separately so activity database work cannot delay enforcement.
 
-## Contract
+## Foreground Intervals
 
-`activity_foreground` stores one row per foreground interval.
+`activity_foreground` stores one row per foreground interval. The active interval is the single row where `ended_at IS NULL`, guarded by a partial unique index.
 
-The current interval is the single row where `ended_at IS NULL`. The repository owns that invariant: when a different activity is recorded, it closes the current row and inserts the next row in one transaction. If the incoming activity matches the current row, the repository leaves the row unchanged.
+The repository owns interval transitions:
 
-App activation can arrive before window details. If the active row is app-level and a following event adds window or browser details for the same app, the repository updates the active row and preserves its original `started_at`.
+- same activity: keep the active row unchanged
+- same app with more detail: update the active row and preserve its `started_at`
+- different activity: close the active row at the next activity start and insert the next row
 
-The database also enforces the invariant with a partial unique index for `ended_at IS NULL`.
-
-## Event Ordering
-
-mado callbacks must stay fast. The monitor queues focus events, and the recorder writes them sequentially. This keeps interval boundaries in focus-event order even when database writes are slower than incoming events.
-
-Settings changes and app exit do not go through the focus queue. They are product boundaries:
-
-- disabling tracking closes the active row at the settings-change time
-- allowed app exit closes the active row from the Tauri `ExitRequested` path
-- recorder startup closes any leftover active row from a crash, force quit, or other missed shutdown path
-
-Queued focus events that run after tracking is disabled read disabled settings and do not create new rows.
+mado can report an app activation before window or browser details. The repository updates the matching app-level active row instead of inserting a duplicate interval.
 
 ## Detail Levels
 
-App, window, and browser details describe the same foreground interval at different capture levels. They live in one table so timeline queries do not need to merge separate interval sources.
-
-`capture_level` states which fields are meaningful:
+`capture_level` describes which fields were captured:
 
 - `app`: foreground app only
-- `window`: app plus window title, id, and bounds
-- `browser`: window detail plus URL, website, and private-mode signal when available
+- `window`: app plus title, window id, or bounds
+- `browser`: window detail plus URL, website, or private-mode signal
 
-If private browser tracking is disabled and mado reports a private browser window, the recorder stores app-level activity so private window titles and URLs are not persisted.
+Private browser windows are stored as app-level activity when private browser tracking is disabled.
+
+## Recording Lifecycle
+
+The monitor queues focus events, and the recorder writes them sequentially so interval boundaries stay in focus-event order. The recorder reads settings per event; if tracking is disabled before a queued event is processed, the recorder skips it.
+
+Disabling tracking and allowed app exit close the active row immediately because they are user-visible product boundaries.
+
+The recorder writes `activity.foreground_recorder.last_seen_at` to `runtime_state` while it runs. On startup, it closes any stale active row at that heartbeat time so crashes, force quits, and killed processes do not extend the previous activity until the next launch.
+
+Lock and sleep stay raw. In the tested macOS lock/sleep path, mado reports `com.apple.loginwindow`, and the recorder stores it as its own interval. Reporting should decide whether system activity counts as away, neutral, or hidden.
