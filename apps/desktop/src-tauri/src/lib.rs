@@ -1,4 +1,5 @@
 mod app;
+mod cli;
 mod common;
 mod environment;
 mod modules;
@@ -8,7 +9,6 @@ pub fn run() {
     app::run();
 }
 
-#[cfg(target_os = "macos")]
-pub fn try_run_recovery_agent_from_args() -> bool {
-    return modules::recovery_agent::cli::try_run_from_args();
+pub fn try_run_cli_from_args() -> Option<i32> {
+    return cli::try_run_from_args();
 }

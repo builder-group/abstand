@@ -11,10 +11,10 @@ Installing the agent writes a per-user LaunchAgent plist in `~/Library/LaunchAge
 The plist starts the same Abstand executable with:
 
 ```text
---recovery-agent
+recovery-agent run
 ```
 
-`main.rs` checks for that argument before starting Tauri. When the argument is present, the process runs `watchdog::run()` instead of the normal app.
+`main.rs` routes that argument through the top-level CLI entry point before starting Tauri. When the argument is present, the process runs the recovery watchdog instead of the normal app.
 
 The watchdog loop:
 

@@ -250,7 +250,7 @@ mod tests {
         let agent = UserLaunchAgent::new(UserLaunchAgentConfig {
             label: "com.buildergroup.abstand.test".to_string(),
             executable_path: PathBuf::from("/Applications/Abstand.app/Contents/MacOS/Abstand"),
-            arguments: vec!["--recovery-agent".to_string()],
+            arguments: vec!["recovery-agent".to_string(), "run".to_string()],
             bundle_identifiers: vec!["com.buildergroup.abstand".to_string()],
             plist_path: PathBuf::from("/Users/test/Library/LaunchAgents/com.test.plist"),
             log_dir: PathBuf::from("/Users/test/Library/Application Support/Abstand/logs"),
@@ -260,7 +260,8 @@ mod tests {
 
         assert!(plist.contains("<string>com.buildergroup.abstand.test</string>"));
         assert!(plist.contains("<string>/Applications/Abstand.app/Contents/MacOS/Abstand</string>"));
-        assert!(plist.contains("<string>--recovery-agent</string>"));
+        assert!(plist.contains("<string>recovery-agent</string>"));
+        assert!(plist.contains("<string>run</string>"));
         assert!(plist.contains("<key>KeepAlive</key>"));
     }
 }

@@ -1,5 +1,7 @@
 use super::window::AppWindow;
 #[cfg(target_os = "macos")]
+use crate::cli;
+#[cfg(target_os = "macos")]
 use crate::environment::{
     configs::app::{AppConfig, AppDistribution},
     logger::Logger,
@@ -8,8 +10,6 @@ use crate::environment::{
 use crate::modules::quit_policy::policy::request_restart;
 #[cfg(target_os = "macos")]
 use crate::modules::quit_policy::types::QuitPreventedEvent;
-#[cfg(target_os = "macos")]
-use crate::modules::recovery_agent::cli;
 use serde::Serialize;
 use tauri::AppHandle;
 use tauri_plugin_opener::OpenerExt;
@@ -75,7 +75,7 @@ pub fn notify_frontend_ready(app: AppHandle) {
     // If the watchdog relaunched the app, wait until the frontend has mounted before
     // emitting the existing quit-prevented event so the toast listener can receive it
     #[cfg(target_os = "macos")]
-    if cli::consume_relaunched_by_agent_arg() {
+    if cli::recovery_agent::consume_relaunched_by_agent_arg() {
         let _ = QuitPreventedEvent::active_strict_block().emit(&app);
     }
 }

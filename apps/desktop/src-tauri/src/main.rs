@@ -2,11 +2,8 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    #[cfg(target_os = "macos")]
-    {
-        if abstand_lib::try_run_recovery_agent_from_args() {
-            return;
-        }
+    if let Some(exit_code) = abstand_lib::try_run_cli_from_args() {
+        std::process::exit(exit_code);
     }
 
     abstand_lib::run();

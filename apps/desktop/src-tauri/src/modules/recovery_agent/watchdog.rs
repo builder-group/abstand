@@ -1,5 +1,5 @@
-use super::{cli, recovery_condition::RecoveryConditionProbe};
-use crate::environment::configs::app::AppConfig;
+use super::recovery_condition::RecoveryConditionProbe;
+use crate::{cli, environment::configs::app::AppConfig};
 use std::{
     error::Error,
     path::{Path, PathBuf},
@@ -83,7 +83,7 @@ impl AppLaunchTarget {
                     .arg("-n")
                     .arg(app_bundle_path)
                     .arg("--args")
-                    .arg(cli::RELAUNCHED_BY_AGENT_ARG)
+                    .arg(cli::recovery_agent::RELAUNCHED_BY_AGENT_ARG)
                     .status()?;
 
                 if !status.success() {
@@ -92,7 +92,7 @@ impl AppLaunchTarget {
             }
             Self::Executable(executable_path) => {
                 Command::new(executable_path)
-                    .arg(cli::RELAUNCHED_BY_AGENT_ARG)
+                    .arg(cli::recovery_agent::RELAUNCHED_BY_AGENT_ARG)
                     .spawn()?;
             }
         }

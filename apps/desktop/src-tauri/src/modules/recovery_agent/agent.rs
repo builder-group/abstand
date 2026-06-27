@@ -1,10 +1,13 @@
 use super::{
-    cli, recovery_condition,
+    recovery_condition,
     user_launch_agent::{UserLaunchAgent, UserLaunchAgentConfig},
 };
-use crate::environment::{
-    configs::app::AppConfig,
-    path::{get_app_support_dir, get_user_launch_agents_dir},
+use crate::{
+    cli::recovery_agent,
+    environment::{
+        configs::app::AppConfig,
+        path::{get_app_support_dir, get_user_launch_agents_dir},
+    },
 };
 use serde::Serialize;
 use std::{
@@ -23,7 +26,7 @@ impl RecoveryAgent {
         let user_launch_agent = UserLaunchAgent::new(UserLaunchAgentConfig {
             label: label(),
             executable_path: env::current_exe()?,
-            arguments: vec![cli::RUN_AGENT_ARG.to_string()],
+            arguments: vec![recovery_agent::COMMAND.to_string(), "run".to_string()],
             bundle_identifiers: vec![AppConfig::bundle_identifier().to_string()],
             plist_path: plist_path()?,
             log_dir: log_dir()?,
