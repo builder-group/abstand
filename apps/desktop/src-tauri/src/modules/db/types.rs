@@ -8,7 +8,7 @@ pub struct DatabaseState(Database);
 
 impl DatabaseState {
     pub fn init(app: &App) -> Result<Self, Box<dyn std::error::Error>> {
-        let database = tauri::async_runtime::block_on(Database::new(app))?;
+        let database = tauri::async_runtime::block_on(Database::open_for_app(app))?;
         return Ok(Self(database));
     }
 }

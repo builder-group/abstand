@@ -1,13 +1,7 @@
-use crate::{
-    environment::{
-        configs::{app::AppConfig, db::DbConfig},
-        path::get_app_support_dir,
-    },
-    modules::intentions::{
-        intention::IntentionEnforcementMode, repository::IntentionSessionRepository,
-    },
+use crate::modules::{
+    db::database::{default_app_db_path, Database},
+    intentions::{intention::IntentionEnforcementMode, repository::IntentionSessionRepository},
 };
-use sqlx::{sqlite::SqliteConnectOptions, SqlitePool};
 use std::{error::Error, path::PathBuf};
 
 /// Checks whether the recovery agent should recover the app.
@@ -16,40 +10,34 @@ use std::{error::Error, path::PathBuf};
 /// read-only SQLite pool and delegates the session query to the intentions repository.
 pub struct RecoveryConditionProbe {
     db_path: PathBuf,
-    pool: Option<SqlitePool>,
+    database: Option<Database>,
 }
 
 impl RecoveryConditionProbe {
     pub fn new() -> Result<Self, Box<dyn Error>> {
         return Ok(Self {
-            db_path: db_path()?,
-            pool: None,
+            db_path: default_app_db_path()?,
+            database: None,
         });
     }
 
     pub async fn should_recover_app(&mut self) -> Result<bool, Box<dyn Error>> {
         if !self.db_path.exists() {
             // Note: The recovery agent can start before the app has created its database
-            self.pool = None;
+            self.database = None;
             return Ok(false);
         }
 
-        if self.pool.is_none() {
-            let connection_options = SqliteConnectOptions::new()
-                .filename(&self.db_path)
-                .create_if_missing(false)
-                .read_only(true)
-                .foreign_keys(true);
-
-            self.pool = Some(SqlitePool::connect_with(connection_options).await?);
+        if self.database.is_none() {
+            self.database = Some(Database::open_read_only(self.db_path.clone()).await?);
         }
 
-        let pool = self
-            .pool
+        let database = self
+            .database
             .as_ref()
-            .ok_or("recovery condition pool unavailable")?;
+            .ok_or("recovery condition database unavailable")?;
         return IntentionSessionRepository::has_active_block_session_with_enforcement(
-            pool,
+            &database.pool,
             IntentionEnforcementMode::Strict,
         )
         .await
@@ -67,9 +55,4 @@ pub fn should_recover_app_blocking() -> Result<bool, Box<dyn Error>> {
     let mut probe = RecoveryConditionProbe::new()?;
 
     return runtime.block_on(probe.should_recover_app());
-}
-
-fn db_path() -> Result<PathBuf, Box<dyn Error>> {
-    // Resolve the DB through Application Support because Tauri's app data path needs an `AppHandle`
-    return Ok(get_app_support_dir(AppConfig::bundle_identifier())?.join(DbConfig::db_name()));
 }
