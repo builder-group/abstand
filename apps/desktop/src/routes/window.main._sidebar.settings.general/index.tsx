@@ -34,8 +34,8 @@ import {
 	SettingsGroup,
 	SettingsRow,
 	SettingsRowFrame,
-	type TSettingsUpdates,
-	useSettingsCx
+	useSettingsCx,
+	type TSettingsUpdates
 } from '@/modules/settings';
 import { useUpdaterCx, type TUpdaterState } from '@/modules/updater';
 
@@ -172,6 +172,7 @@ function formatFontScale(value: number) {
 const FeaturesSection: React.FC = () => {
 	const settingsCx = useSettingsCx();
 	const toastsCx = useToastsCx();
+	const appInfo = useAppInfo();
 	const activityEnabled = useCompute(settingsCx.$appSettings, (value) => value.activity.enabled);
 	const developerEnabled = useCompute(settingsCx.$appSettings, (value) => value.developer.enabled);
 
@@ -193,9 +194,41 @@ const FeaturesSection: React.FC = () => {
 
 	const handleActivityToggle = React.useCallback(
 		(pressed: boolean) => {
-			void saveFeatureSettings({ activity: { enabled: pressed } });
+			void (async () => {
+				if (!pressed) {
+					await saveFeatureSettings({ activity: { enabled: false } });
+					return;
+				}
+
+				const foregroundSettings = settingsCx.$appSettings.get().activity.foreground;
+				const hasForegroundTracking =
+					foregroundSettings.trackApps ||
+					foregroundSettings.trackWindows ||
+					foregroundSettings.trackBrowser ||
+					foregroundSettings.trackPrivateBrowser;
+				if (hasForegroundTracking) {
+					await saveFeatureSettings({ activity: { enabled: true } });
+					return;
+				}
+
+				const canTrackWindowDetails =
+					!appInfo.isPending &&
+					appInfo.distribution !== 'appStore' &&
+					(await specta.commands.isAccessibilityPermissionGranted());
+				await saveFeatureSettings({
+					activity: {
+						enabled: true,
+						foreground: {
+							trackApps: true,
+							trackWindows: canTrackWindowDetails,
+							trackBrowser: canTrackWindowDetails,
+							trackPrivateBrowser: false
+						}
+					}
+				});
+			})();
 		},
-		[saveFeatureSettings]
+		[appInfo.distribution, appInfo.isPending, saveFeatureSettings, settingsCx]
 	);
 
 	const handleDeveloperToggle = React.useCallback(
