@@ -113,6 +113,16 @@ pub fn run() {
     }
 
     let builder = tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+            if args
+                .iter()
+                .any(|arg| arg == launch_at_login::cli::LAUNCHED_AT_LOGIN_ARG)
+            {
+                return;
+            }
+
+            let _ = window::AppWindow::Main.show(app);
+        }))
         .plugin(logger::Logger::build())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_os::init())
