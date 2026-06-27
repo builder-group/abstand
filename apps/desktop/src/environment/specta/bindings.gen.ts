@@ -12,6 +12,9 @@ export const commands = {
 	showIntentionInMainWindow: (intentionId: number) => typedError<null, string>(__TAURI_INVOKE("show_intention_in_main_window", { intentionId })),
 	openDataDirectory: () => typedError<null, string>(__TAURI_INVOKE("open_data_directory")),
 	revealLogFile: () => typedError<null, string>(__TAURI_INVOKE("reveal_log_file")),
+	getCliStatus: () => typedError<CliInstallStatus, string>(__TAURI_INVOKE("get_cli_status")),
+	installCli: () => typedError<CliInstallStatus, string>(__TAURI_INVOKE("install_cli")),
+	uninstallCli: () => typedError<CliInstallStatus, string>(__TAURI_INVOKE("uninstall_cli")),
 	confirmBalancedQuit: () => typedError<null, string>(__TAURI_INVOKE("confirm_balanced_quit")),
 	getRecoveryAgentStatus: () => typedError<RecoveryAgentStatus, string>(__TAURI_INVOKE("get_recovery_agent_status")),
 	installRecoveryAgent: () => typedError<RecoveryAgentStatus, string>(__TAURI_INVOKE("install_recovery_agent")),
@@ -190,6 +193,15 @@ export type CatalogWebsiteSearchResultDto = {
 	name: string | null,
 	icon: string | null,
 	color: string | null,
+};
+
+export type CliInstallState = "notInstalled" | "installed" | "conflict";
+
+export type CliInstallStatus = {
+	state: CliInstallState,
+	commandName: string,
+	binPath: string,
+	binDir: string,
 };
 
 export type CreateIntentionParams = {

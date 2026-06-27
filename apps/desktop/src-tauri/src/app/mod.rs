@@ -8,6 +8,7 @@ pub mod tray;
 pub mod window;
 
 use crate::{
+    cli,
     environment::logger,
     modules::{
         activity, blocking, catalog, db, intentions, launch_at_login, permissions, quit_policy,
@@ -29,6 +30,10 @@ pub fn run() {
             commands::show_intention_in_main_window,
             commands::open_data_directory,
             commands::reveal_log_file,
+            // CLI commands
+            cli::commands::get_cli_status,
+            cli::commands::install_cli,
+            cli::commands::uninstall_cli,
             // Quit policy commands
             quit_policy::commands::confirm_balanced_quit,
             // Recovery agent commands

@@ -2,7 +2,9 @@
 
 pub mod activity;
 mod args;
+pub mod commands;
 pub mod error;
+mod installer;
 #[cfg(target_os = "macos")]
 pub mod recovery_agent;
 
