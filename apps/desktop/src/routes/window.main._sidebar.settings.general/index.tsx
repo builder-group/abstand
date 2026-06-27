@@ -763,7 +763,7 @@ const CommandLineToolAutomationRow: React.FC = () => {
 				setStatus(status);
 				if (checked) {
 					toastsCx.add({
-						type: 'success',
+						type: 'info',
 						title: 'Command line tool installed',
 						description: (
 							<>
@@ -771,6 +771,7 @@ const CommandLineToolAutomationRow: React.FC = () => {
 								not found, add <InlineCode>{status.binDir}</InlineCode> to PATH.
 							</>
 						),
+						timeout: 0,
 						data: { action: <CopyCliPathSetupCommandAction status={status} toastsCx={toastsCx} /> }
 					});
 				}

@@ -155,6 +155,10 @@ pub fn local_unix_ms_from_date_and_time(date: NaiveDate, time: &TimeOnly) -> Opt
 /// `start_at` is inclusive and `end_at` is exclusive.
 pub fn local_day_bounds_containing(unix_ms: i64) -> Option<LocalDayBounds> {
     let date = local_datetime_from_unix_ms(unix_ms)?.date_naive();
+    return local_day_bounds_for_date(date);
+}
+
+pub fn local_day_bounds_for_date(date: NaiveDate) -> Option<LocalDayBounds> {
     let next_date = date.succ_opt()?;
     let midnight = TimeOnly::from_millis_since_midnight(0).ok()?;
 

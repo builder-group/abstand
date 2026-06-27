@@ -1,12 +1,13 @@
 use super::{command_name, CliError};
 use crate::{
-    common::time::unix_ms_now,
+    common::time::{local_day_bounds_containing, local_day_bounds_for_date, unix_ms_now},
     modules::activity::{
         foreground::ForegroundActivity,
         repository::{ForegroundActivityRepository, ListForegroundActivitiesForTimeRangeInput},
     },
     modules::db::database::{default_app_db_path, Database},
 };
+use chrono::NaiveDate;
 use serde::Serialize;
 
 pub const COMMAND: &str = "activity";
@@ -102,13 +103,15 @@ struct ForegroundActivityOutput {
 
 fn print_foreground_help() {
     println!(
-        "Usage:\n  {0} activity foreground [--since <duration>]\n  {0} activity foreground --from <unix-ms> --to <unix-ms>\n\nOptions:\n  --since   Duration ending now, such as 30m, 24h, or 7d. Defaults to 24h.\n            Requires one of these suffixes: ms, s, m, h, d.\n  --from    Inclusive Unix millisecond range start.\n  --to      Exclusive Unix millisecond range end.",
+        "Usage:\n  {0} activity foreground [--since <duration>]\n  {0} activity foreground --today\n  {0} activity foreground --date <yyyy-mm-dd>\n  {0} activity foreground --from <unix-ms> --to <unix-ms>\n\nOptions:\n  --since   Duration ending now, such as 30m, 24h, or 7d. Defaults to 24h.\n            Requires one of these suffixes: ms, s, m, h, d.\n  --today   Local calendar day containing now.\n  --date    Local calendar day for a date such as 2026-06-27.\n  --from    Inclusive Unix millisecond range start.\n  --to      Exclusive Unix millisecond range end.",
         command_name()
     );
 }
 
 fn parse_foreground_time_range(args: &[String]) -> Result<ForegroundTimeRange, CliError> {
     let mut since_duration_ms: Option<i64> = None;
+    let mut date: Option<NaiveDate> = None;
+    let mut is_today = false;
     let mut from: Option<i64> = None;
     let mut to: Option<i64> = None;
     let mut index = 0;
@@ -118,21 +121,56 @@ fn parse_foreground_time_range(args: &[String]) -> Result<ForegroundTimeRange, C
         match arg.as_str() {
             "--since" => {
                 let value = next_option_value(args, index, "--since")?;
-                set_unique_time_option(
-                    &mut since_duration_ms,
-                    "--since",
-                    parse_duration_ms(value)?,
-                )?;
+                if since_duration_ms.is_some() {
+                    return Err(CliError::new(
+                        "duplicate activity foreground option: --since".to_string(),
+                    ));
+                }
+
+                since_duration_ms = Some(parse_duration_ms(value)?);
+                index += 2;
+            }
+            "--today" => {
+                if is_today {
+                    return Err(CliError::new(
+                        "duplicate activity foreground option: --today".to_string(),
+                    ));
+                }
+
+                is_today = true;
+                index += 1;
+            }
+            "--date" => {
+                let value = next_option_value(args, index, "--date")?;
+                if date.is_some() {
+                    return Err(CliError::new(
+                        "duplicate activity foreground option: --date".to_string(),
+                    ));
+                }
+
+                date = Some(parse_local_date(value)?);
                 index += 2;
             }
             "--from" => {
                 let value = next_option_value(args, index, "--from")?;
-                set_unique_time_option(&mut from, "--from", parse_unix_ms("--from", value)?)?;
+                if from.is_some() {
+                    return Err(CliError::new(
+                        "duplicate activity foreground option: --from".to_string(),
+                    ));
+                }
+
+                from = Some(parse_unix_ms("--from", value)?);
                 index += 2;
             }
             "--to" => {
                 let value = next_option_value(args, index, "--to")?;
-                set_unique_time_option(&mut to, "--to", parse_unix_ms("--to", value)?)?;
+                if to.is_some() {
+                    return Err(CliError::new(
+                        "duplicate activity foreground option: --to".to_string(),
+                    ));
+                }
+
+                to = Some(parse_unix_ms("--to", value)?);
                 index += 2;
             }
             _ => {
@@ -145,9 +183,14 @@ fn parse_foreground_time_range(args: &[String]) -> Result<ForegroundTimeRange, C
         }
     }
 
-    if since_duration_ms.is_some() && (from.is_some() || to.is_some()) {
+    let mode_count = usize::from(since_duration_ms.is_some())
+        + usize::from(is_today)
+        + usize::from(date.is_some())
+        + usize::from(from.is_some() || to.is_some());
+    if mode_count > 1 {
         return Err(CliError::new(
-            "use either --since or --from/--to, not both".to_string(),
+            "use only one activity foreground time mode: --since, --today, --date, or --from/--to"
+                .to_string(),
         ));
     }
 
@@ -158,6 +201,19 @@ fn parse_foreground_time_range(args: &[String]) -> Result<ForegroundTimeRange, C
             .ok_or_else(|| CliError::new("activity foreground --since is too large"))?;
 
         return ForegroundTimeRange::new(from, to);
+    }
+
+    if is_today {
+        let bounds = local_day_bounds_containing(unix_ms_now())
+            .ok_or_else(|| CliError::new("could not resolve today's local day bounds"))?;
+        return ForegroundTimeRange::new(bounds.start_at, bounds.end_at);
+    }
+
+    if let Some(date) = date {
+        let bounds = local_day_bounds_for_date(date).ok_or_else(|| {
+            CliError::new(format!("invalid local date: {}", date.format("%Y-%m-%d")))
+        })?;
+        return ForegroundTimeRange::new(bounds.start_at, bounds.end_at);
     }
 
     if from.is_none() && to.is_none() {
@@ -206,27 +262,20 @@ fn next_option_value<'a>(
     return Ok(value);
 }
 
-fn set_unique_time_option(
-    target: &mut Option<i64>,
-    option_name: &str,
-    value: i64,
-) -> Result<(), CliError> {
-    if target.is_some() {
-        return Err(CliError::new(format!(
-            "duplicate activity foreground option: {}",
-            option_name
-        )));
-    }
-
-    *target = Some(value);
-    return Ok(());
-}
-
 fn parse_unix_ms(option_name: &str, value: &str) -> Result<i64, CliError> {
     return value.parse::<i64>().map_err(|_| {
         CliError::new(format!(
             "invalid {} value, expected Unix milliseconds: {}",
             option_name, value
+        ))
+    });
+}
+
+fn parse_local_date(value: &str) -> Result<NaiveDate, CliError> {
+    return NaiveDate::parse_from_str(value, "%Y-%m-%d").map_err(|_| {
+        CliError::new(format!(
+            "invalid --date value, expected yyyy-mm-dd: {}",
+            value
         ))
     });
 }
