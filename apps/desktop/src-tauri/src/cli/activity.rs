@@ -84,6 +84,7 @@ fn run_foreground(args: &[String]) -> Result<(), CliError> {
         let output = ForegroundActivityOutput {
             from: time_range.from,
             to: time_range.to,
+            generated_at: unix_ms_now(),
             activities,
         };
         let json = serde_json::to_string_pretty(&output).map_err(CliError::from_display)?;
@@ -98,6 +99,7 @@ fn run_foreground(args: &[String]) -> Result<(), CliError> {
 struct ForegroundActivityOutput {
     from: i64,
     to: i64,
+    generated_at: i64,
     activities: Vec<ForegroundActivity>,
 }
 
