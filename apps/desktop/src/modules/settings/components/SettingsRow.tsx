@@ -51,7 +51,7 @@ export const SettingsRow: React.FC<TSettingsRowProps> = (props) => {
 interface TSettingsRowProps extends TSettingsRowFrameProps {
 	label: string;
 	labelAccessory?: React.ReactNode;
-	description?: string;
+	description?: React.ReactNode;
 	descriptionVariant?: VariantProps<typeof descriptionVariants>['variant'];
 	contentClassName?: string;
 }

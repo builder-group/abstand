@@ -24,6 +24,7 @@ export {
 	ClockIcon,
 	CodeXmlIcon,
 	CommandIcon,
+	CopyIcon,
 	FolderOpenIcon,
 	GlobeIcon,
 	LibraryBigIcon,

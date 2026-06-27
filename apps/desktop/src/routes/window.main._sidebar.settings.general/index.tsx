@@ -5,11 +5,14 @@ import {
 	ArrowUpRightIcon,
 	Badge,
 	Button,
+	CheckIcon,
 	ChevronRightIcon,
 	CircleArrowDownIcon,
 	CircleCheckIcon,
 	CircleSlashIcon,
+	CopyIcon,
 	HelpPopover,
+	InlineCode,
 	MonitorIcon,
 	MoonIcon,
 	SegmentedControl,
@@ -54,6 +57,7 @@ function RouteComponent() {
 			<AppearanceSection />
 			<PermissionsSection />
 			<StartupRecoverySection />
+			<AutomationSection />
 			<FeaturesSection />
 			<UpdatesSection />
 			<HelpFeedbackSection />
@@ -425,6 +429,7 @@ const RecoveryAgentStartupRecoveryRow: React.FC = () => {
 	const hasActiveStrictBlockSession = useFeatureState(intentionsCx.$hasActiveStrictBlockSession);
 
 	const [status, setStatus] = React.useState<specta.RecoveryAgentStatus | null>(null);
+	const [hasStatusLoadError, setHasStatusLoadError] = React.useState(false);
 	const [isStatusPending, setIsStatusPending] = React.useState(true);
 	const [isUpdating, setIsUpdating] = React.useState(false);
 
@@ -473,6 +478,7 @@ const RecoveryAgentStartupRecoveryRow: React.FC = () => {
 				const [isOk, error, status] = toTuple(await specta.commands.getRecoveryAgentStatus());
 				if (isUnmountedRef.current) return;
 				if (!isOk) {
+					setHasStatusLoadError(true);
 					toastsCx.add({
 						type: 'error',
 						title: 'Could not load recovery status',
@@ -481,6 +487,7 @@ const RecoveryAgentStartupRecoveryRow: React.FC = () => {
 					return;
 				}
 
+				setHasStatusLoadError(false);
 				setStatus(status);
 			} finally {
 				if (!isUnmountedRef.current) {
@@ -496,13 +503,20 @@ const RecoveryAgentStartupRecoveryRow: React.FC = () => {
 
 	// MARK: - UI
 
+	const description = getRecoveryAgentDescription(
+		status,
+		hasActiveStrictBlockSession,
+		hasStatusLoadError
+	);
+
 	return (
 		<SettingsRow
 			label="Reopen Abstand during Strict Enforcement"
 			labelAccessory={
 				<HelpPopover description="A background process that watches Abstand and relaunches it automatically if it closes unexpectedly." />
 			}
-			description={getRecoveryAgentDescription(status, hasActiveStrictBlockSession)}
+			description={description.content}
+			descriptionVariant={description.variant}
 		>
 			{status != null ? (
 				<Switch
@@ -521,21 +535,43 @@ const RecoveryAgentStartupRecoveryRow: React.FC = () => {
 
 function getRecoveryAgentDescription(
 	status: specta.RecoveryAgentStatus | null,
-	hasActiveStrictBlockSession: boolean
-) {
+	hasActiveStrictBlockSession: boolean,
+	hasStatusLoadError: boolean
+): TSettingsRowDescription {
+	if (hasStatusLoadError) {
+		return {
+			content: 'Could not load recovery status.',
+			variant: 'error'
+		};
+	}
+
 	if (status == null) {
-		return 'Checking recovery status...';
+		return {
+			content: 'Checking recovery status...',
+			variant: 'default'
+		};
 	}
 
 	if (status.isEnabled && hasActiveStrictBlockSession) {
-		return 'Abstand will reopen during this Strict Enforcement session. Cannot be turned off until it ends.';
+		return {
+			content:
+				'Abstand will reopen during this Strict Enforcement session. Cannot be turned off until it ends.',
+			variant: 'default'
+		};
 	}
 
 	if (status.isConfigured && !status.isLoaded) {
-		return 'Recovery stopped working. Turn this on again before your next Strict Enforcement session.';
+		return {
+			content:
+				'Recovery stopped working. Turn this on again before your next Strict Enforcement session.',
+			variant: 'error'
+		};
 	}
 
-	return 'Automatically relaunch Abstand if it closes during a Strict Enforcement session.';
+	return {
+		content: 'Automatically relaunch Abstand if it closes during a Strict Enforcement session.',
+		variant: 'default'
+	};
 }
 
 const LaunchAtLoginStartupRecoveryRow: React.FC = () => {
@@ -546,6 +582,7 @@ const LaunchAtLoginStartupRecoveryRow: React.FC = () => {
 	const hasActiveStrictBlockSession = useFeatureState(intentionsCx.$hasActiveStrictBlockSession);
 
 	const [status, setStatus] = React.useState<specta.LaunchAtLoginStatus | null>(null);
+	const [hasStatusLoadError, setHasStatusLoadError] = React.useState(false);
 	const [isStatusPending, setIsStatusPending] = React.useState(true);
 	const [isUpdating, setIsUpdating] = React.useState(false);
 
@@ -596,6 +633,7 @@ const LaunchAtLoginStartupRecoveryRow: React.FC = () => {
 				const [isOk, error, status] = toTuple(await specta.commands.getLaunchAtLoginStatus());
 				if (isUnmountedRef.current) return;
 				if (!isOk) {
+					setHasStatusLoadError(true);
 					toastsCx.add({
 						type: 'error',
 						title: 'Could not load launch at login status',
@@ -604,6 +642,7 @@ const LaunchAtLoginStartupRecoveryRow: React.FC = () => {
 					return;
 				}
 
+				setHasStatusLoadError(false);
 				setStatus(status);
 			} finally {
 				if (!isUnmountedRef.current) {
@@ -619,10 +658,17 @@ const LaunchAtLoginStartupRecoveryRow: React.FC = () => {
 
 	// MARK: - UI
 
+	const description = getLaunchAtLoginDescription(
+		status,
+		hasActiveStrictBlockSession,
+		hasStatusLoadError
+	);
+
 	return (
 		<SettingsRow
 			label="Open Abstand at login"
-			description={getLaunchAtLoginDescription(status, hasActiveStrictBlockSession)}
+			description={description.content}
+			descriptionVariant={description.variant}
 		>
 			{status != null ? (
 				<Switch
@@ -641,17 +687,270 @@ const LaunchAtLoginStartupRecoveryRow: React.FC = () => {
 
 function getLaunchAtLoginDescription(
 	status: specta.LaunchAtLoginStatus | null,
-	hasActiveStrictBlockSession: boolean
-) {
+	hasActiveStrictBlockSession: boolean,
+	hasStatusLoadError: boolean
+): TSettingsRowDescription {
+	if (hasStatusLoadError) {
+		return {
+			content: 'Could not load launch at login status.',
+			variant: 'error'
+		};
+	}
+
 	if (status == null) {
-		return 'Checking status...';
+		return {
+			content: 'Checking status...',
+			variant: 'default'
+		};
 	}
 
 	if (status.isEnabled && hasActiveStrictBlockSession) {
-		return 'Abstand opens at login during this Strict Enforcement session. Cannot be turned off until it ends.';
+		return {
+			content:
+				'Abstand opens at login during this Strict Enforcement session. Cannot be turned off until it ends.',
+			variant: 'default'
+		};
 	}
 
-	return 'Launches in the background when you sign in.';
+	return {
+		content: 'Launches in the background when you sign in.',
+		variant: 'default'
+	};
+}
+
+const AutomationSection: React.FC = () => {
+	return (
+		<SettingsGroup title="Automation">
+			<CommandLineToolAutomationRow />
+		</SettingsGroup>
+	);
+};
+
+const CommandLineToolAutomationRow: React.FC = () => {
+	const toastsCx = useToastsCx();
+	const isUnmountedRef = React.useRef(false);
+
+	const [status, setStatus] = React.useState<specta.CliInstallStatus | null>(null);
+	const [hasStatusLoadError, setHasStatusLoadError] = React.useState(false);
+	const [isStatusPending, setIsStatusPending] = React.useState(true);
+	const [isUpdating, setIsUpdating] = React.useState(false);
+
+	const isInstalled = status?.state === 'installed';
+	const hasConflict = status?.state === 'conflict';
+
+	// MARK: - Actions
+
+	const handleToggle = React.useCallback(
+		async (checked: boolean) => {
+			setIsUpdating(true);
+
+			try {
+				const [isOk, error, status] = toTuple(
+					checked ? await specta.commands.installCli() : await specta.commands.uninstallCli()
+				);
+				if (isUnmountedRef.current) return;
+				if (!isOk) {
+					toastsCx.add({
+						type: 'error',
+						title: checked
+							? 'Could not install command line tool'
+							: 'Could not uninstall command line tool',
+						description: error
+					});
+					return;
+				}
+
+				setStatus(status);
+				if (checked) {
+					toastsCx.add({
+						type: 'success',
+						title: 'Command line tool installed',
+						description: (
+							<>
+								Run <InlineCode>{status.commandName}</InlineCode> from Terminal or agents. If it is
+								not found, add <InlineCode>{status.binDir}</InlineCode> to PATH.
+							</>
+						),
+						data: { action: <CopyCliPathSetupCommandAction status={status} toastsCx={toastsCx} /> }
+					});
+				}
+			} finally {
+				if (!isUnmountedRef.current) {
+					setIsUpdating(false);
+				}
+			}
+		},
+		[toastsCx]
+	);
+
+	// MARK: - Effects
+
+	React.useEffect(() => {
+		isUnmountedRef.current = false;
+
+		(async () => {
+			try {
+				const [isOk, error, status] = toTuple(await specta.commands.getCliStatus());
+				if (isUnmountedRef.current) return;
+				if (!isOk) {
+					setHasStatusLoadError(true);
+					toastsCx.add({
+						type: 'error',
+						title: 'Could not load command line tool status',
+						description: error
+					});
+					return;
+				}
+
+				setHasStatusLoadError(false);
+				setStatus(status);
+			} finally {
+				if (!isUnmountedRef.current) {
+					setIsStatusPending(false);
+				}
+			}
+		})();
+
+		return () => {
+			isUnmountedRef.current = true;
+		};
+	}, [toastsCx]);
+
+	// MARK: - UI
+
+	const description = getCliDescription(status, hasStatusLoadError);
+
+	return (
+		<SettingsRow
+			label="Command line tool"
+			description={description.content}
+			descriptionVariant={description.variant}
+		>
+			{status != null ? (
+				<Switch
+					checked={isInstalled}
+					disabled={isStatusPending || isUpdating || hasConflict}
+					onCheckedChange={handleToggle}
+				/>
+			) : isStatusPending ? (
+				<Spinner size="sm" />
+			) : (
+				<Switch checked={false} disabled />
+			)}
+		</SettingsRow>
+	);
+};
+
+function getCliDescription(
+	status: specta.CliInstallStatus | null,
+	hasStatusLoadError: boolean
+): TSettingsRowDescription {
+	if (hasStatusLoadError) {
+		return {
+			content: 'Could not load command line tool status.',
+			variant: 'error'
+		};
+	}
+
+	if (status == null) {
+		return {
+			content: 'Checking command line tool status...',
+			variant: 'default'
+		};
+	}
+
+	if (status.state === 'conflict') {
+		return {
+			content: (
+				<>
+					Cannot install <InlineCode>{status.commandName}</InlineCode> because another item already
+					exists at <InlineCode>{status.binPath}</InlineCode>.
+				</>
+			),
+			variant: 'error'
+		};
+	}
+
+	return {
+		content: (
+			<>
+				Use <InlineCode>{status.commandName}</InlineCode> from Terminal, scripts, and agents.
+			</>
+		),
+		variant: 'default'
+	};
+}
+
+interface TSettingsRowDescription {
+	content: React.ReactNode;
+	variant: 'default' | 'warning' | 'error';
+}
+
+const CopyCliPathSetupCommandAction: React.FC<TCopyCliPathSetupCommandActionProps> = (props) => {
+	const { status, toastsCx } = props;
+	const [isCopied, setIsCopied] = React.useState(false);
+	const resetCopiedTimeoutRef = React.useRef<number | null>(null);
+
+	const handleCopySetupInstructions = React.useCallback(async () => {
+		try {
+			await navigator.clipboard.writeText(getCliSetupInstructions(status));
+			setIsCopied(true);
+			if (resetCopiedTimeoutRef.current != null) {
+				window.clearTimeout(resetCopiedTimeoutRef.current);
+			}
+			resetCopiedTimeoutRef.current = window.setTimeout(() => {
+				setIsCopied(false);
+				resetCopiedTimeoutRef.current = null;
+			}, 1800);
+		} catch (error) {
+			toastsCx.add({
+				type: 'error',
+				title: 'Could not copy setup instructions',
+				description: String(error)
+			});
+		}
+	}, [status, toastsCx]);
+
+	React.useEffect(() => {
+		return () => {
+			if (resetCopiedTimeoutRef.current != null) {
+				window.clearTimeout(resetCopiedTimeoutRef.current);
+			}
+		};
+	}, []);
+
+	return (
+		<Button
+			type="button"
+			variant="soft"
+			size="sm"
+			onClick={() => void handleCopySetupInstructions()}
+		>
+			{isCopied ? <CheckIcon /> : <CopyIcon />}
+			{isCopied ? 'Copied' : 'Copy setup instructions'}
+		</Button>
+	);
+};
+
+interface TCopyCliPathSetupCommandActionProps {
+	status: specta.CliInstallStatus;
+	toastsCx: ToastsCx;
+}
+
+function getCliSetupInstructions(status: specta.CliInstallStatus) {
+	return [
+		'Set up the Abstand command line tool for this shell or agent environment.',
+		'',
+		`Command: ${status.commandName}`,
+		`Installed at: ${status.binPath}`,
+		`Required PATH directory: ${status.binDir}`,
+		'',
+		'Make sure the PATH directory is available before running the command.',
+		'For zsh on macOS, add this line to ~/.zprofile if it is missing:',
+		`export PATH="${status.binDir}:$PATH"`,
+		'',
+		`After setup, verify with: ${status.commandName} help`
+	].join('\n');
 }
 
 const UpdatesSection: React.FC = () => {
