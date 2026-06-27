@@ -26,7 +26,15 @@ pub fn try_run_from_args() -> Option<i32> {
         activity::COMMAND => Some(exit_code(activity::run(command_args))),
         #[cfg(target_os = "macos")]
         recovery_agent::COMMAND => Some(exit_code(recovery_agent::run(command_args))),
-        _ => None,
+        // Treat unknown top-level flags as app-launch metadata rather than CLI errors.
+        // macOS/Tauri/packaging may pass flags like `-psn_...`, and this executable is
+        // primarily the desktop app launch target. Known CLI flags must be matched above.
+        command if command.starts_with("-") => None,
+        _ => Some(exit_code(Err(CliError::unknown_command(
+            "top-level",
+            command,
+            format!("{} --help", command_name()),
+        )))),
     };
 }
 
