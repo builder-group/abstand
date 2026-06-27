@@ -3,6 +3,7 @@ export * from './Badge';
 export * from './HelpPopover';
 export * from './IconBubble';
 export * from './icons';
+export * from './InlineCode';
 export * from './Kbd';
 export * from './Popover';
 export * from './Spinner';

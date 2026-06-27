@@ -53,6 +53,7 @@ import {
 	HelpPopover,
 	HelpPopoverLink,
 	IconBubble,
+	InlineCode,
 	Input,
 	InputGroup,
 	InputGroupAddon,
@@ -127,6 +128,7 @@ function RouteComponent() {
 			<DropMenuSection />
 			<ComboboxSection />
 			<BadgeSection />
+			<InlineCodeSection />
 			<AlertSection />
 			<KbdSection />
 			<IconBubbleSection />
@@ -980,6 +982,29 @@ const BadgeSection: React.FC = () => {
 				<Badge variant="outline">Outline</Badge>
 				<Badge variant="ghost">Ghost</Badge>
 				<Badge variant="link">Link</Badge>
+			</PlaygroundRow>
+		</PlaygroundGroup>
+	);
+};
+
+// MARK: - Inline Code
+
+const InlineCodeSection: React.FC = () => {
+	return (
+		<PlaygroundGroup title="Inline Code">
+			<PlaygroundRow label="Content" contentClassName="flex-col items-end">
+				<span className="text-base-600 text-sm">
+					Run <InlineCode>pnpm --filter @repo/desktop typecheck</InlineCode> before shipping.
+				</span>
+				<span className="text-base-600 text-sm">
+					The route param is <InlineCode>$blockId</InlineCode>.
+				</span>
+			</PlaygroundRow>
+			<PlaygroundRow label="Wrapping" contentClassName="flex-col items-end">
+				<span className="text-base-600 max-w-80 text-right text-sm">
+					Include <InlineCode>~/Library/Application Support/com.abstand/config.json</InlineCode> in
+					diagnostics.
+				</span>
 			</PlaygroundRow>
 		</PlaygroundGroup>
 	);
