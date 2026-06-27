@@ -7,7 +7,7 @@ use std::{error::Error, path::PathBuf};
 /// Checks whether the recovery agent should recover the app.
 ///
 /// Note: The recovery agent cannot use Tauri-managed app state, so it opens its own
-/// read-only SQLite pool and delegates the session query to the intentions repository.
+/// read-only database connection and delegates the session query to the intentions repository.
 pub struct RecoveryConditionProbe {
     db_path: PathBuf,
     database: Option<Database>,

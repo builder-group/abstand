@@ -11,13 +11,15 @@ pub struct Database {
 }
 
 impl Database {
+    /// Opens the app database through Tauri-managed app state.
     pub async fn open_for_app(app: &App) -> Result<Self, Box<dyn Error>> {
         let data_dir_path = get_app_data_dir(app)?;
         let db_path = data_dir_path.join(DbConfig::db_name());
-        return Self::open(db_path).await;
+        return Self::open_writable(db_path).await;
     }
 
-    pub async fn open(db_path: PathBuf) -> Result<Self, Box<dyn Error>> {
+    /// Opens a writable database, creating it if needed and running migrations.
+    pub async fn open_writable(db_path: PathBuf) -> Result<Self, Box<dyn Error>> {
         let connection_options = sqlx::sqlite::SqliteConnectOptions::new()
             .filename(&db_path)
             .create_if_missing(true)
@@ -32,6 +34,7 @@ impl Database {
         return Ok(Self { pool });
     }
 
+    /// Opens an existing database for reads without creating or migrating it.
     pub async fn open_read_only(db_path: PathBuf) -> Result<Self, Box<dyn Error>> {
         let connection_options = sqlx::sqlite::SqliteConnectOptions::new()
             .filename(&db_path)
@@ -45,6 +48,7 @@ impl Database {
     }
 }
 
+/// Resolves the app database path before a Tauri `AppHandle` exists.
 pub fn default_app_db_path() -> Result<PathBuf, Box<dyn Error>> {
     return Ok(get_app_support_dir(AppConfig::bundle_identifier())?.join(DbConfig::db_name()));
 }

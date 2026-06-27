@@ -51,6 +51,31 @@ impl ForegroundActivityRepository {
         return Ok(());
     }
 
+    pub async fn list_for_time_range(
+        pool: &Pool<Sqlite>,
+        input: ListForegroundActivitiesForTimeRangeInput,
+    ) -> Result<Vec<ForegroundActivity>, ForegroundActivityRepositoryError> {
+        input.validate()?;
+
+        let rows = sqlx::query_as::<_, ForegroundActivityRow>(
+            "SELECT id, app_id, website_id, capture_level, window_title, window_id, window_x, window_y, window_width, window_height, browser_url, browser_is_private, started_at, ended_at, updated_at, created_at
+            FROM activity_foreground
+            WHERE started_at < ?
+                AND COALESCE(ended_at, ?) > ?
+            ORDER BY started_at ASC, id ASC",
+        )
+        .bind(input.ended_at)
+        .bind(input.ended_at)
+        .bind(input.started_at)
+        .fetch_all(pool)
+        .await?;
+
+        return rows
+            .into_iter()
+            .map(Self::build_activity)
+            .collect::<Result<Vec<_>, _>>();
+    }
+
     async fn get_active(
         transaction: &mut Transaction<'_, Sqlite>,
     ) -> Result<Option<ForegroundActivity>, ForegroundActivityRepositoryError> {
@@ -299,6 +324,25 @@ impl RecordForegroundActivityInput {
         return self.website_id.is_some()
             || self.browser_url.is_some()
             || self.browser_is_private.is_some();
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ListForegroundActivitiesForTimeRangeInput {
+    pub started_at: i64,
+    pub ended_at: i64,
+}
+
+impl ListForegroundActivitiesForTimeRangeInput {
+    fn validate(&self) -> Result<(), ForegroundActivityRepositoryError> {
+        if self.ended_at <= self.started_at {
+            return Err(ForegroundActivityRepositoryError::InvalidData(format!(
+                "Foreground activity time range must end after it starts: {} <= {}",
+                self.ended_at, self.started_at
+            )));
+        }
+
+        return Ok(());
     }
 }
 
