@@ -8,6 +8,7 @@ mod installer;
 #[cfg(target_os = "macos")]
 pub mod recovery_agent;
 
+use crate::environment::configs::app::AppConfig;
 use error::CliError;
 use std::{env, path::Path};
 
@@ -21,6 +22,10 @@ pub fn try_run_from_args() -> Option<i32> {
     return match command.as_str() {
         "help" | "--help" | "-h" => {
             print_help();
+            Some(0)
+        }
+        "version" | "--version" | "-V" => {
+            print_version();
             Some(0)
         }
         activity::COMMAND => Some(exit_code(activity::run(command_args))),
@@ -49,7 +54,10 @@ fn exit_code(result: Result<(), CliError>) -> i32 {
 }
 
 fn print_help() {
-    let mut commands = vec!["  activity          Activity tracking commands."];
+    let mut commands = vec![
+        "  activity          Activity tracking commands.",
+        "  version           Print the Abstand CLI version.",
+    ];
     #[cfg(target_os = "macos")]
     commands.push("  recovery-agent    Manage the recovery agent.");
 
@@ -58,6 +66,10 @@ fn print_help() {
         command_name(),
         commands.join("\n")
     );
+}
+
+fn print_version() {
+    println!("{} {}", command_name(), AppConfig::display_version());
 }
 
 /// Returns the executable name used in CLI help and error messages.
