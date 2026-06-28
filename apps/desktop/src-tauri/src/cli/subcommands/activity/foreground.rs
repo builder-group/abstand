@@ -167,8 +167,11 @@ struct ForegroundActivityInterval {
     duration_ms: i64,
     capture_level: ForegroundActivityCaptureLevel,
     app: ForegroundActivityApp,
+    #[serde(skip_serializing_if = "Option::is_none")]
     window: Option<ForegroundActivityWindow>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     browser: Option<ForegroundActivityBrowser>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     website: Option<ForegroundActivityWebsite>,
 }
 
@@ -176,7 +179,9 @@ struct ForegroundActivityInterval {
 #[serde(rename_all = "camelCase")]
 struct ForegroundActivityApp {
     stable_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     bundle_id: Option<String>,
 }
 
@@ -194,6 +199,7 @@ impl ForegroundActivityApp {
 #[serde(rename_all = "camelCase")]
 struct ForegroundActivityWebsite {
     hostname: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     name: Option<String>,
 }
 
@@ -224,7 +230,9 @@ impl ForegroundActivityWindow {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct ForegroundActivityBrowser {
+    #[serde(skip_serializing_if = "Option::is_none")]
     url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     is_private: Option<bool>,
 }
 
