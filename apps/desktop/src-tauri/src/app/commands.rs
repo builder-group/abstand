@@ -19,15 +19,14 @@ use tauri_specta::Event;
 #[tauri::command]
 #[specta::specta]
 pub fn get_app_info() -> AppInfoDto {
-    let base_version = env!("CARGO_PKG_VERSION");
-    let (stage, suffix) = if cfg!(debug_assertions) {
-        (Stage::Dev, "d")
+    let stage = if cfg!(debug_assertions) {
+        Stage::Dev
     } else {
-        (Stage::Prod, "p")
+        Stage::Prod
     };
 
     return AppInfoDto {
-        version: format!("v{}{}", base_version, suffix),
+        version: AppConfig::display_version(),
         stage,
         distribution: AppConfig::distribution(),
     };

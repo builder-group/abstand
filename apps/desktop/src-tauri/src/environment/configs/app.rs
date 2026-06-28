@@ -8,6 +8,15 @@ impl AppConfig {
         return "Abstand";
     }
 
+    pub fn version() -> &'static str {
+        return env!("CARGO_PKG_VERSION");
+    }
+
+    pub fn display_version() -> String {
+        let suffix = if cfg!(debug_assertions) { "d" } else { "p" };
+        return format!("v{}{}", Self::version(), suffix);
+    }
+
     /// Rust-side mirror of Tauri's identifier for code that runs before `AppHandle` exists.
     ///
     /// Prefer reading the identifier from Tauri config when app state is available.
