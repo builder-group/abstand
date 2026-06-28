@@ -74,7 +74,7 @@ pub fn notify_frontend_ready(app: AppHandle) {
     // If the watchdog relaunched the app, wait until the frontend has mounted before
     // emitting the existing quit-prevented event so the toast listener can receive it
     #[cfg(target_os = "macos")]
-    if cli::recovery_agent::consume_relaunched_by_agent_arg() {
+    if cli::subcommands::recovery_agent::consume_relaunched_by_agent_arg() {
         let _ = QuitPreventedEvent::active_strict_block().emit(&app);
     }
 }

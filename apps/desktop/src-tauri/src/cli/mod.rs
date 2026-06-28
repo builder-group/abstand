@@ -1,13 +1,11 @@
 //! Routes command-line invocations before the Tauri app starts.
 
-pub mod activity;
-mod args;
+pub mod args;
 pub mod commands;
 pub mod error;
 mod installer;
-#[cfg(target_os = "macos")]
-pub mod recovery_agent;
-mod time_range;
+pub mod subcommands;
+pub mod time_range;
 
 use crate::environment::configs::app::AppConfig;
 use error::CliError;
@@ -29,9 +27,11 @@ pub fn try_run_from_args() -> Option<i32> {
             print_version();
             Some(0)
         }
-        activity::COMMAND => Some(exit_code(activity::run(command_args))),
+        subcommands::activity::COMMAND => Some(exit_code(subcommands::activity::run(command_args))),
         #[cfg(target_os = "macos")]
-        recovery_agent::COMMAND => Some(exit_code(recovery_agent::run(command_args))),
+        subcommands::recovery_agent::COMMAND => {
+            Some(exit_code(subcommands::recovery_agent::run(command_args)))
+        }
         // Treat unknown top-level flags as app-launch metadata rather than CLI errors.
         // macOS/Tauri/packaging may pass flags like `-psn_...`, and this executable is
         // primarily the desktop app launch target. Known CLI flags must be matched above.

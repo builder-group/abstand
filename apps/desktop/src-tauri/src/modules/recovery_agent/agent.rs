@@ -3,7 +3,7 @@ use super::{
     user_launch_agent::{UserLaunchAgent, UserLaunchAgentConfig},
 };
 use crate::{
-    cli::recovery_agent,
+    cli,
     environment::{
         configs::app::AppConfig,
         path::{get_app_support_dir, get_user_launch_agents_dir},
@@ -26,7 +26,10 @@ impl RecoveryAgent {
         let user_launch_agent = UserLaunchAgent::new(UserLaunchAgentConfig {
             label: label(),
             executable_path: env::current_exe()?,
-            arguments: vec![recovery_agent::COMMAND.to_string(), "run".to_string()],
+            arguments: vec![
+                cli::subcommands::recovery_agent::COMMAND.to_string(),
+                "run".to_string(),
+            ],
             bundle_identifiers: vec![AppConfig::bundle_identifier().to_string()],
             plist_path: plist_path()?,
             log_dir: log_dir()?,

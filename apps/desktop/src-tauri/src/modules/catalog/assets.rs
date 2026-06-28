@@ -1,4 +1,4 @@
-use crate::modules::catalog::types::{CatalogAssetLoadedEvent, CatalogAssetsState, CatalogItemId};
+use super::types::{CatalogAssetLoadedEvent, CatalogAssetsState, CatalogItemId};
 use mado::{get_app_icon, get_website_icon};
 use std::collections::HashMap;
 use std::sync::atomic::Ordering;

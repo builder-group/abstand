@@ -1,5 +1,7 @@
-use super::{args, command_name, CliError};
-use crate::modules::recovery_agent::{self as recovery_agent_module, agent::RecoveryAgent};
+use crate::{
+    cli::{args, command_name, CliError},
+    modules::recovery_agent::{self as recovery_agent_module, agent::RecoveryAgent},
+};
 use std::sync::atomic::{AtomicBool, Ordering};
 
 pub const COMMAND: &str = "recovery-agent";
