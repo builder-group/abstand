@@ -7,6 +7,7 @@ pub mod error;
 mod installer;
 #[cfg(target_os = "macos")]
 pub mod recovery_agent;
+mod time_range;
 
 use crate::environment::configs::app::AppConfig;
 use error::CliError;
