@@ -12,13 +12,7 @@ export interface TToastData {
 
 export type TToastId = string;
 export type TToastType =
-	| 'default'
-	| 'success'
-	| 'warning'
-	| 'destructive'
-	| 'error'
-	| 'info'
-	| 'loading';
+	'default' | 'success' | 'warning' | 'destructive' | 'error' | 'info' | 'loading';
 
 export type TToastObject = ToastObject<TToastData> & {
 	/**

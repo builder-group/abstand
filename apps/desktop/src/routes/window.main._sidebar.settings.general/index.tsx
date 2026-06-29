@@ -1205,13 +1205,7 @@ type TUpdateView =
 	  };
 
 type TUpdateStatus =
-	| 'available'
-	| 'upToDate'
-	| 'unsupported'
-	| 'error'
-	| 'idle'
-	| 'development'
-	| 'appStore';
+	'available' | 'upToDate' | 'unsupported' | 'error' | 'idle' | 'development' | 'appStore';
 type TUpdateStatusTone = 'primary' | 'success' | 'error' | 'muted';
 
 const UpdateStatusIndicator: React.FC<TUpdateStatusIndicatorProps> = (props) => {

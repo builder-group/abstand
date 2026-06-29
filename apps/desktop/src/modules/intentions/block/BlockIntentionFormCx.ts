@@ -353,9 +353,7 @@ interface TBlockIntentionFormCxOptions {
 export type TBlockIntentionFormMode = 'create' | 'edit';
 
 type TBlockIntentionFormValidationContextInput =
-	| TBlockIntentionFormValidationContext
-	| (() => TBlockIntentionFormValidationContext | null)
-	| null;
+	TBlockIntentionFormValidationContext | (() => TBlockIntentionFormValidationContext | null) | null;
 
 interface TBlockIntentionFormValidationContext {
 	activeSessionStartedAt?: number;
@@ -382,12 +380,7 @@ export interface TBlockIntentionConditionFormData {
 }
 
 export type TBlockIntentionConditionMode =
-	| 'now'
-	| 'atTime'
-	| 'afterDelay'
-	| 'afterDuration'
-	| 'repeats'
-	| 'manual';
+	'now' | 'atTime' | 'afterDelay' | 'afterDuration' | 'repeats' | 'manual';
 
 export interface TBlockIntentionConditionModeOption {
 	value: TBlockIntentionConditionMode;
@@ -455,32 +448,28 @@ function getCatalogItemsForAction(
 	return [
 		...block.appTargets
 			.filter((target) => target.action === action)
-			.map(
-				(target): TCatalogItem => ({
-					type: 'app',
-					app: {
-						stableId: target.app.stableId,
-						name: target.app.name,
-						bundleId: target.app.bundleId,
-						processPath: target.app.processPath,
-						icon: target.app.icon,
-						color: target.app.color
-					}
-				})
-			),
+			.map((target): TCatalogItem => ({
+				type: 'app',
+				app: {
+					stableId: target.app.stableId,
+					name: target.app.name,
+					bundleId: target.app.bundleId,
+					processPath: target.app.processPath,
+					icon: target.app.icon,
+					color: target.app.color
+				}
+			})),
 		...block.websiteTargets
 			.filter((target) => target.action === action)
-			.map(
-				(target): TCatalogItem => ({
-					type: 'website',
-					website: {
-						hostname: target.website.hostname,
-						name: target.website.name,
-						icon: target.website.icon,
-						color: target.website.color
-					}
-				})
-			)
+			.map((target): TCatalogItem => ({
+				type: 'website',
+				website: {
+					hostname: target.website.hostname,
+					name: target.website.name,
+					icon: target.website.icon,
+					color: target.website.color
+				}
+			}))
 	];
 }
 

@@ -155,8 +155,7 @@ const PAUSE_BLOCKING_OVERLAY_DURATION_MS = 5_000;
 type TBlockedAppTarget = Extract<specta.BlockedTarget, { type: 'app' }>;
 
 type TBlockedAppCloseState =
-	| { status: 'quitting'; targetKey: string }
-	| { status: 'needsManualClose'; targetKey: string };
+	{ status: 'quitting'; targetKey: string } | { status: 'needsManualClose'; targetKey: string };
 
 type TBlockedAppCloseStatus = 'idle' | 'quitting' | 'needsManualClose';
 

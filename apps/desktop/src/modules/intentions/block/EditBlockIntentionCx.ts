@@ -107,9 +107,7 @@ interface TEditBlockIntentionPolicyOptions {
 }
 
 export type TEditBlockIntentionActionPolicy =
-	| { type: 'available' }
-	| { type: 'delayed'; durationMs: number }
-	| { type: 'blocked' };
+	{ type: 'available' } | { type: 'delayed'; durationMs: number } | { type: 'blocked' };
 
 export type TEditBlockIntentionSavePolicyError =
 	| { code: 'invalidForm' }
@@ -117,5 +115,4 @@ export type TEditBlockIntentionSavePolicyError =
 	| { code: 'intentionMissing' };
 
 export type TEditBlockIntentionSaveError =
-	| { code: 'invalidForm' }
-	| { code: 'updateFailed'; message: string };
+	{ code: 'invalidForm' } | { code: 'updateFailed'; message: string };
