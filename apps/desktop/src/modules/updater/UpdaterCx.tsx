@@ -10,6 +10,7 @@ import { useSettingsCx, type SettingsCx } from '@/modules/settings';
 
 export class UpdaterCx {
 	private readonly settingsCx: SettingsCx;
+	private lastAutomaticUpdateCheckAt: number | null = null;
 
 	public readonly $updateState = createState<TUpdaterState>({
 		type: 'checking',
@@ -30,7 +31,7 @@ export class UpdaterCx {
 					return;
 				}
 
-				this.applyAutomaticUpdateSettings(this.settingsCx.$appSettings.get());
+				this.maybeCheckAutomatically();
 			})
 		);
 
@@ -47,19 +48,47 @@ export class UpdaterCx {
 					return;
 				}
 
-				this.applyAutomaticUpdateSettings(value);
+				const shouldBypassCooldown =
+					value.updates.releaseChannel !== prevValue?.updates.releaseChannel ||
+					(value.updates.automaticallyCheck && !prevValue?.updates.automaticallyCheck);
+				this.maybeCheckAutomatically(shouldBypassCooldown);
 			})
 		);
+
+		const handleWindowFocus = (): void => {
+			if (!this.settingsCx.$hasLoaded.get()) {
+				return;
+			}
+
+			this.maybeCheckAutomatically();
+		};
+		window.addEventListener('focus', handleWindowFocus);
+		lifecycle.addCleanup(() => {
+			window.removeEventListener('focus', handleWindowFocus);
+		});
 
 		return lifecycle.unmount;
 	}
 
-	private applyAutomaticUpdateSettings(settings: specta.AppSettings): void {
-		if (!settings.updates.automaticallyCheck) {
+	private maybeCheckAutomatically(bypassCooldown = false): void {
+		if (!this.settingsCx.$appSettings.get().updates.automaticallyCheck) {
 			this.$updateState.set({ type: 'idle' });
 			return;
 		}
 
+		const now = Date.now();
+		const isAutomaticCheckCoolingDown =
+			this.lastAutomaticUpdateCheckAt != null &&
+			now - this.lastAutomaticUpdateCheckAt < automaticUpdateCheckCooldownMs;
+		if (!bypassCooldown && isAutomaticCheckCoolingDown) {
+			return;
+		}
+		const isInstallingUpdate = this.$updateState.get().type === 'installing';
+		if (isInstallingUpdate) {
+			return;
+		}
+
+		this.lastAutomaticUpdateCheckAt = now;
 		void this.checkForUpdates('automatic');
 	}
 
@@ -67,6 +96,12 @@ export class UpdaterCx {
 		source: TUpdaterCheckSource = 'manual'
 	): Promise<TResult<null, string>> {
 		const appInfo = await specta.commands.getAppInfo();
+		const shouldContinueCheck =
+			source !== 'automatic' || this.settingsCx.$appSettings.get().updates.automaticallyCheck;
+		if (!shouldContinueCheck) {
+			return Ok(null);
+		}
+
 		const canCheckForUpdates = appInfo.stage === 'prod' && appInfo.distribution === 'direct';
 		if (!canCheckForUpdates) {
 			this.$updateState.set({ type: 'unsupported' });
@@ -78,9 +113,9 @@ export class UpdaterCx {
 		const [isUpdateCheckOk, updateCheckErr, updateCheck] = toTuple(
 			await specta.commands.checkForUpdate()
 		);
-		const shouldApplyAutomaticResult =
+		const shouldApplyUpdateCheckState =
 			source !== 'automatic' || this.settingsCx.$appSettings.get().updates.automaticallyCheck;
-		if (!shouldApplyAutomaticResult) {
+		if (!shouldApplyUpdateCheckState) {
 			return Ok(null);
 		}
 		if (!isUpdateCheckOk) {
@@ -155,6 +190,8 @@ export type TUpdaterState =
 	| { type: 'error'; message: string; source: TUpdaterCheckSource };
 
 type TUpdaterCheckSource = 'automatic' | 'manual';
+
+const automaticUpdateCheckCooldownMs = 60 * 60_000;
 
 // MARK: - React Context
 
