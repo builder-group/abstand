@@ -3,7 +3,6 @@ import { useCompute, useFeatureState } from 'feature-react/state';
 import React from 'react';
 import * as z from 'zod';
 import {
-	ArrowUpRightIcon,
 	Badge,
 	Button,
 	CheckIcon,
@@ -29,9 +28,9 @@ import {
 	XCircleIcon,
 	type ToastsCx
 } from '@/components';
-import { specta, supportLinks } from '@/environment';
+import { specta } from '@/environment';
 import { useAppInfo } from '@/hooks';
-import { openExternalUrl, toTuple } from '@/lib';
+import { toTuple } from '@/lib';
 import { useIntentionsCx } from '@/modules/intentions';
 import {
 	PermissionStatusBadge,
@@ -69,7 +68,6 @@ function RouteComponent() {
 			<AutomationSection />
 			<FeaturesSection />
 			<UpdatesSection />
-			<HelpFeedbackSection />
 		</SettingsPage>
 	);
 }
@@ -1292,24 +1290,3 @@ const UpdateStatusIndicator: React.FC<TUpdateStatusIndicatorProps> = (props) => 
 interface TUpdateStatusIndicatorProps {
 	tone: TUpdateStatusTone;
 }
-
-const HelpFeedbackSection: React.FC = () => {
-	const handleOpenSupportUrl = React.useCallback((url: string) => {
-		void openExternalUrl(url);
-	}, []);
-
-	return (
-		<SettingsGroup title="Help & Feedback">
-			{supportLinks.map((link) => (
-				<SettingsRow
-					key={link.label}
-					label={link.label}
-					description={link.description}
-					render={<button type="button" onClick={() => handleOpenSupportUrl(link.url)} />}
-				>
-					<ArrowUpRightIcon aria-hidden className="text-base-400" />
-				</SettingsRow>
-			))}
-		</SettingsGroup>
-	);
-};

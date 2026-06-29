@@ -7,6 +7,7 @@ import {
 	CodeXmlIcon,
 	CommandIcon,
 	IconBubble,
+	LogoIcon,
 	SettingsIcon,
 	WindowHeaderRow
 } from '@/components';
@@ -80,6 +81,16 @@ export const SettingsSidebarContent: React.FC<TSettingsSidebarContentProps> = (p
 						className="py-0.75"
 					/>
 				)}
+				<SidebarItem
+					icon={
+						<IconBubble size="xs">
+							<LogoIcon />
+						</IconBubble>
+					}
+					label="About"
+					render={<Link to="/window/main/settings/about" />}
+					className="py-0.75"
+				/>
 			</div>
 		</div>
 	);

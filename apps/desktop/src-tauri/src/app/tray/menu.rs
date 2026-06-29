@@ -141,6 +141,7 @@ impl TrayMenu {
     fn append_utility_actions(&mut self) {
         self.append(TrayMenuEntry::separator());
         self.append(TrayMenuEntry::action(TrayMenuItem::OpenSettings));
+        self.append(TrayMenuEntry::action(TrayMenuItem::OpenAbout));
         self.append(TrayMenuEntry::action(TrayMenuItem::OpenUpdatesSettings));
         self.append(TrayMenuEntry::separator());
         self.append(TrayMenuEntry::action(TrayMenuItem::Quit));
@@ -214,6 +215,7 @@ enum TrayMenuItem {
     EndIntention(i64),
     NewBlockIntention,
     OpenSettings,
+    OpenAbout,
     OpenUpdatesSettings,
     Quit,
     #[cfg(debug_assertions)]
@@ -230,6 +232,7 @@ impl TrayMenuItem {
             Self::EndIntention(intention_id) => format!("tray_end_intention_{}", intention_id),
             Self::NewBlockIntention => "tray_new_block_intention".to_string(),
             Self::OpenSettings => "tray_settings".to_string(),
+            Self::OpenAbout => "tray_about".to_string(),
             Self::OpenUpdatesSettings => "tray_updates".to_string(),
             Self::Quit => "tray_quit_app".to_string(),
             #[cfg(debug_assertions)]
@@ -244,6 +247,7 @@ impl TrayMenuItem {
             Self::EndIntention(_) => "End Intention",
             Self::NewBlockIntention => "New Block Intention...",
             Self::OpenSettings => "Settings...",
+            Self::OpenAbout => "About Abstand...",
             Self::OpenUpdatesSettings => "Check for Updates...",
             Self::Quit => "Quit",
             #[cfg(debug_assertions)]
@@ -263,6 +267,7 @@ impl TrayMenuItem {
             "tray_open_abstand" => Some(Self::OpenAbstand),
             "tray_new_block_intention" => Some(Self::NewBlockIntention),
             "tray_settings" => Some(Self::OpenSettings),
+            "tray_about" => Some(Self::OpenAbout),
             "tray_updates" => Some(Self::OpenUpdatesSettings),
             "tray_quit_app" => Some(Self::Quit),
             #[cfg(debug_assertions)]
@@ -288,6 +293,9 @@ impl TrayMenuItem {
             }
             Self::OpenSettings => {
                 let _ = AppWindow::Main.show_at(app, "/settings/general");
+            }
+            Self::OpenAbout => {
+                let _ = AppWindow::Main.show_at(app, "/settings/about");
             }
             Self::OpenUpdatesSettings => {
                 let _ =

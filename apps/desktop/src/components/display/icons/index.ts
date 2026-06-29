@@ -2,6 +2,8 @@ export * from './types';
 
 // Custom Icons
 export * from './LogoIcon';
+export * from './GithubIcon';
+export * from './XTwitterIcon';
 
 // Third Party Icons
 export {
