@@ -1,3 +1,4 @@
+mod date_format;
 mod menu;
 mod snapshot;
 mod status_item;

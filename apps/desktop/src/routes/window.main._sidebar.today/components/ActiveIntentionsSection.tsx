@@ -1,4 +1,4 @@
-import { useCompute } from 'feature-react/state';
+import { useCompute, useFeatureState } from 'feature-react/state';
 import React from 'react';
 import { type specta } from '@/environment';
 import { cn, formatActiveTimeRangeLabel } from '@/lib';
@@ -31,7 +31,11 @@ export const ActiveIntentionsSection: React.FC<TActiveIntentionsSectionProps> = 
 	return (
 		<TodaySection title="Active now" indicator={<ActiveSectionIndicator isActive />}>
 			{activeIntentions.map((activeIntention) => (
-				<ActiveIntentionRow key={activeIntention.session.id} activeIntention={activeIntention} />
+				<ActiveIntentionRow
+					key={activeIntention.session.id}
+					cx={cx}
+					activeIntention={activeIntention}
+				/>
 			))}
 		</TodaySection>
 	);
@@ -62,8 +66,9 @@ interface TActiveSectionIndicatorProps {
 }
 
 const ActiveIntentionRow: React.FC<TActiveIntentionRowProps> = (props) => {
-	const { activeIntention } = props;
+	const { cx, activeIntention } = props;
 	const { intention, session, automaticEndAt } = activeIntention;
+	const baseDate = useFeatureState(cx.$baseDate);
 
 	return (
 		<TodayIntentionRow
@@ -71,7 +76,8 @@ const ActiveIntentionRow: React.FC<TActiveIntentionRowProps> = (props) => {
 			description={[
 				formatActiveTimeRangeLabel({
 					startedAt: session.startedAt,
-					endsAt: automaticEndAt
+					endsAt: automaticEndAt,
+					referenceDate: baseDate
 				}),
 				formatIntentionBehavior(intention)
 			].join(' · ')}
@@ -80,5 +86,6 @@ const ActiveIntentionRow: React.FC<TActiveIntentionRowProps> = (props) => {
 };
 
 interface TActiveIntentionRowProps {
+	cx: TodayPageCx;
 	activeIntention: specta.TodayActiveIntention;
 }

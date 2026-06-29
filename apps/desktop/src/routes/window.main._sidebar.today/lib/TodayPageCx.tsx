@@ -5,10 +5,18 @@ import { createMountLifecycle, toTuple } from '@/lib';
 
 export class TodayPageCx {
 	public readonly $todayOverview = createState<specta.TodayIntentionOverviewDto | null>(null);
+	public readonly $baseDate = createState(new Date());
 	public readonly $hasLoaded = createState(false);
 
 	public mount(): () => void {
 		const lifecycle = createMountLifecycle();
+
+		const baseDateIntervalId = window.setInterval(() => {
+			this.$baseDate.set(new Date());
+		}, baseDateRefreshIntervalMs);
+		lifecycle.addCleanup(() => {
+			window.clearInterval(baseDateIntervalId);
+		});
 
 		void (async () => {
 			await this._refreshTodayOverview(() => lifecycle.isUnmounted());
@@ -61,6 +69,8 @@ export class TodayPageCx {
 		}
 	}
 }
+
+const baseDateRefreshIntervalMs = 5 * 60_000;
 
 export function useCreateTodayPageCx(): TodayPageCx {
 	const cx = React.useMemo(() => new TodayPageCx(), []);

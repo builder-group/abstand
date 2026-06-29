@@ -7,7 +7,6 @@ import {
 	EarlierIntentionsSection,
 	UpcomingIntentionsSection
 } from './components';
-import { useTodayHeader } from './hooks';
 import { useCreateTodayPageCx } from './lib';
 
 export const Route = createFileRoute('/window/main/_sidebar/today/')({
@@ -15,8 +14,9 @@ export const Route = createFileRoute('/window/main/_sidebar/today/')({
 });
 
 function RouteComponent() {
-	const todayHeader = useTodayHeader();
 	const cx = useCreateTodayPageCx();
+	const baseDate = useFeatureState(cx.$baseDate);
+	const todayHeader = React.useMemo(() => createTodayHeaderContent(baseDate), [baseDate]);
 	const hasTodayOverviewLoaded = useFeatureState(cx.$hasLoaded);
 
 	const collapsedHeader = (
@@ -53,4 +53,24 @@ function RouteComponent() {
 			</div>
 		</ContentPage>
 	);
+}
+
+function createTodayHeaderContent(date: Date): TTodayHeader {
+	const dateLabel = new Intl.DateTimeFormat('en-US', {
+		weekday: 'long',
+		month: 'long',
+		day: 'numeric'
+	}).format(date);
+
+	return {
+		title: 'Welcome back.',
+		subtitle: `It's ${dateLabel}.`,
+		collapsedTitle: dateLabel
+	};
+}
+
+interface TTodayHeader {
+	title: string;
+	subtitle: string;
+	collapsedTitle: string;
 }

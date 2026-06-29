@@ -1,8 +1,8 @@
-import { useCompute } from 'feature-react/state';
+import { useCompute, useFeatureState } from 'feature-react/state';
 import React from 'react';
 import { ChevronDownIcon, CircleCheckIcon } from '@/components';
 import { type specta } from '@/environment';
-import { formatDisplayTime } from '@/lib';
+import { formatRelativeDisplayDateTime } from '@/lib';
 import { SettingsRowFrame } from '@/modules/settings';
 import { type TodayPageCx } from '../lib';
 import { TodayIntentionRow } from './TodayIntentionRow';
@@ -47,6 +47,7 @@ export const EarlierIntentionsSection: React.FC<TEarlierIntentionsSectionProps> 
 			{visibleEarlierIntentions.map((earlierIntention) => (
 				<EarlierIntentionRow
 					key={earlierIntention.session.id}
+					cx={cx}
 					earlierIntention={earlierIntention}
 				/>
 			))}
@@ -68,24 +69,34 @@ interface TEarlierIntentionsSectionProps {
 const EARLIER_INTENTION_PREVIEW_COUNT = 5;
 
 const EarlierIntentionRow: React.FC<TEarlierIntentionRowProps> = (props) => {
-	const { earlierIntention } = props;
+	const { cx, earlierIntention } = props;
 	const { intention, session } = earlierIntention;
+	const baseDate = useFeatureState(cx.$baseDate);
 
-	return <TodayIntentionRow intention={intention} description={formatEarlierTimeLabel(session)} />;
+	return (
+		<TodayIntentionRow
+			intention={intention}
+			description={formatEarlierTimeLabel(session, baseDate)}
+		/>
+	);
 };
 
 interface TEarlierIntentionRowProps {
+	cx: TodayPageCx;
 	earlierIntention: specta.TodayEarlierIntention;
 }
 
-function formatEarlierTimeLabel(session: specta.IntentionSession): string {
+function formatEarlierTimeLabel(session: specta.IntentionSession, referenceDate: Date): string {
 	if (session.endedAt == null) {
 		return session.status === 'stopped' ? 'Ended early today' : 'Completed today';
 	}
 
-	const timeRangeLabel = `${formatDisplayTime(new Date(session.startedAt))}-${formatDisplayTime(
-		new Date(session.endedAt)
-	)}`;
+	const startedAt = new Date(session.startedAt);
+	const endedAt = new Date(session.endedAt);
+	const timeRangeLabel = `${formatRelativeDisplayDateTime(
+		startedAt,
+		referenceDate
+	)}-${formatRelativeDisplayDateTime(endedAt, referenceDate)}`;
 	if (session.status === 'stopped') {
 		return `Ended early ${timeRangeLabel}`;
 	}

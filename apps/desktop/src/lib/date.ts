@@ -132,18 +132,19 @@ export function formatDisplayTime(date: Date): string {
 }
 
 export function formatActiveTimeRangeLabel(options: TFormatActiveTimeRangeLabelOptions): string {
-	const { startedAt, endsAt } = options;
+	const { startedAt, endsAt, referenceDate = new Date() } = options;
 
 	if (endsAt != null) {
-		return `Until ${formatDisplayTime(new Date(endsAt))}`;
+		return `Until ${formatRelativeDisplayDateTime(new Date(endsAt), referenceDate)}`;
 	}
 
-	return `Started ${formatDisplayTime(new Date(startedAt))}`;
+	return `Started ${formatRelativeDisplayDateTime(new Date(startedAt), referenceDate)}`;
 }
 
 interface TFormatActiveTimeRangeLabelOptions {
 	startedAt: number;
 	endsAt: number | null;
+	referenceDate?: Date;
 }
 
 export function addTimeOfDayMs(timeOfDayMs: specta.TimeOnly, deltaMs: number): specta.TimeOnly {
@@ -161,6 +162,39 @@ function timePartsToTimeOfDayMs(
 
 function normalizeTimeOfDayMs(timeOfDayMs: number): specta.TimeOnly {
 	return ((Math.trunc(timeOfDayMs) % msPerDay) + msPerDay) % msPerDay;
+}
+
+export function formatRelativeDisplayDateTime(date: Date, referenceDate = new Date()): string {
+	const dayDelta = getLocalCalendarDayDelta(date, referenceDate);
+	const time = formatDisplayTime(date);
+	if (dayDelta === 0) {
+		return time;
+	}
+
+	if (dayDelta === 1) {
+		return `tomorrow, ${time}`;
+	}
+
+	if (dayDelta === -1) {
+		return `yesterday, ${time}`;
+	}
+
+	const dateLabel =
+		date.getFullYear() === referenceDate.getFullYear()
+			? displayDateFormatter.format(date)
+			: displayDateWithYearFormatter.format(date);
+	return `${dateLabel}, ${time}`;
+}
+
+function getLocalCalendarDayDelta(date: Date, referenceDate: Date): number {
+	const dateDay = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+	const referenceDay = Date.UTC(
+		referenceDate.getFullYear(),
+		referenceDate.getMonth(),
+		referenceDate.getDate()
+	);
+
+	return Math.round((dateDay - referenceDay) / msPerDay);
 }
 
 // MARK: - Weekday
@@ -217,6 +251,15 @@ const weekdayValues = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
 const displayTimeFormatter = new Intl.DateTimeFormat('en-US', {
 	hour: 'numeric',
 	minute: '2-digit'
+});
+const displayDateFormatter = new Intl.DateTimeFormat('en-US', {
+	month: 'short',
+	day: 'numeric'
+});
+const displayDateWithYearFormatter = new Intl.DateTimeFormat('en-US', {
+	month: 'short',
+	day: 'numeric',
+	year: 'numeric'
 });
 
 export type TWeekday = (typeof weekdayValues)[number];

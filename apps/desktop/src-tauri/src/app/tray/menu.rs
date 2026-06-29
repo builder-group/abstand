@@ -1,4 +1,7 @@
-use super::snapshot::TraySnapshot;
+use super::{
+    date_format::{format_display_time, format_relative_display_datetime},
+    snapshot::TraySnapshot,
+};
 #[cfg(debug_assertions)]
 use crate::modules::recovery_agent::agent::RecoveryAgent;
 use crate::{
@@ -12,7 +15,7 @@ use crate::{
         quit_policy::{policy::request_quit_blocking, types::QuitRequestSource},
     },
 };
-use chrono::{Local, TimeZone};
+use chrono::Local;
 use tauri::{
     menu::{Menu, MenuBuilder, MenuItem},
     AppHandle,
@@ -305,10 +308,17 @@ impl TrayMenuItem {
 }
 
 fn format_active_detail(active: &TodayActiveIntention) -> String {
+    let reference_datetime = Local::now();
     let time_label = if let Some(automatic_end_at) = active.automatic_end_at {
-        format!("Until {}", format_display_time(automatic_end_at))
+        format!(
+            "Until {}",
+            format_relative_display_datetime(automatic_end_at, &reference_datetime)
+        )
     } else {
-        format!("Started {}", format_display_time(active.session.started_at))
+        format!(
+            "Started {}",
+            format_relative_display_datetime(active.session.started_at, &reference_datetime)
+        )
     };
 
     return format!(
@@ -316,14 +326,6 @@ fn format_active_detail(active: &TodayActiveIntention) -> String {
         time_label,
         format_intention_behavior(&active.intention)
     );
-}
-
-fn format_display_time(timestamp_ms: i64) -> String {
-    let Some(datetime) = Local.timestamp_millis_opt(timestamp_ms).single() else {
-        return "--:--".to_string();
-    };
-
-    return datetime.format("%-I:%M %p").to_string();
 }
 
 fn format_intention_behavior(intention: &Intention) -> String {
