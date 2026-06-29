@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, useNavigate } from '@tanstack/react-router';
 import { useFeatureState } from 'feature-react/state';
 import { PanelLeftCloseIcon, PanelLeftOpenIcon, Toggle, Tooltip, WindowHeader } from '@/components';
 import { cn } from '@/lib';
+import { CommandPaletteCxProvider, CommandPaletteModal } from '@/modules/command-palette';
 import { IntentionsCxProvider } from '@/modules/intentions';
 import { useOnShortcut, useShortcutHint } from '@/modules/shortcuts';
 import { SidebarContent } from './components';
@@ -15,7 +16,10 @@ function LayoutComponent() {
 	return (
 		<SidebarCxProvider>
 			<IntentionsCxProvider>
-				<SidebarLayout />
+				<CommandPaletteCxProvider>
+					<SidebarLayout />
+					<CommandPaletteModal />
+				</CommandPaletteCxProvider>
 			</IntentionsCxProvider>
 		</SidebarCxProvider>
 	);

@@ -110,6 +110,10 @@ export class IntentionsCx {
 		return lifecycle.unmount;
 	}
 
+	public getIntention(intentionId: number): specta.Intention | null {
+		return this.getIntentionState(intentionId).get();
+	}
+
 	// Note: Keep intention states stable so callers can subscribe before the record exists;
 	// direct map reads can return undefined, which feature-react cannot observe later
 	public getIntentionState(intentionId: number): TState<specta.Intention | null, []> {

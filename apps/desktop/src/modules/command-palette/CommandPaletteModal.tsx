@@ -42,7 +42,7 @@ export const CommandPaletteModal: React.FC = () => {
 		async (item: TCommandItem) => {
 			switch (item.type) {
 				case 'navigation':
-					void navigate({ to: item.to });
+					void navigate({ to: item.to, params: item.params });
 					break;
 				case 'action':
 					await item.run();
@@ -208,16 +208,18 @@ interface TCommandPaletteItemProps {
 
 function groupCommandItems(items: TCommandItem[]): TCommandGroup[] {
 	const groups: TCommandGroup[] = [];
+	const groupsByLabel = new Map<string, TCommandGroup>();
 
 	items.forEach((item, index) => {
-		const lastGroup = groups.at(-1);
-
-		if (lastGroup?.label === item.group) {
-			lastGroup.items.push({ item, index });
+		const existingGroup = groupsByLabel.get(item.group);
+		if (existingGroup != null) {
+			existingGroup.items.push({ item, index });
 			return;
 		}
 
-		groups.push({ label: item.group, items: [{ item, index }] });
+		const group = { label: item.group, items: [{ item, index }] };
+		groupsByLabel.set(item.group, group);
+		groups.push(group);
 	});
 
 	return groups;
