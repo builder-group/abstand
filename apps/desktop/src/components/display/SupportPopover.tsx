@@ -1,5 +1,5 @@
 import React from 'react';
-import { appConfig } from '@/environment';
+import { supportLinks, type TSupportLinkId } from '@/environment';
 import { openExternalUrl } from '@/lib';
 import { Button } from '../input';
 import { BugIcon, CircleQuestionMarkIcon, MailIcon, MessageCircleIcon } from './icons';
@@ -45,17 +45,21 @@ export const SupportPopover: React.FC<TSupportPopoverProps> = (props) => {
 					<PopoverDescription>Get help or share feedback.</PopoverDescription>
 				</PopoverHeader>
 				<div className="-mx-1 flex flex-col gap-0.5">
-					{supportLinks.map((link) => (
-						<PopoverClose
-							key={link.label}
-							type="button"
-							className="text-base-600 hover:bg-base-950/6 hover:text-base-950 focus-ring flex w-full items-center gap-2 rounded-lg border border-transparent px-2 py-1 text-left text-sm transition-colors select-none"
-							onClick={() => handleOpenSupportUrl(link.url)}
-						>
-							<link.Icon aria-hidden className="pointer-events-none size-4 shrink-0" />
-							<span>{link.label}</span>
-						</PopoverClose>
-					))}
+					{supportLinks.map((link) => {
+						const Icon = supportLinkIcons[link.id];
+
+						return (
+							<PopoverClose
+								key={link.label}
+								type="button"
+								className="text-base-600 hover:bg-base-950/6 hover:text-base-950 focus-ring flex w-full items-center gap-2 rounded-lg border border-transparent px-2 py-1 text-left text-sm transition-colors select-none"
+								onClick={() => handleOpenSupportUrl(link.url)}
+							>
+								<Icon aria-hidden className="pointer-events-none size-4 shrink-0" />
+								<span>{link.label}</span>
+							</PopoverClose>
+						);
+					})}
 				</div>
 			</PopoverContent>
 		</Popover>
@@ -68,26 +72,8 @@ export interface TSupportPopoverProps {
 	triggerClassName?: string;
 }
 
-const supportLinks = [
-	{
-		label: 'Join Discord',
-		url: appConfig.help.discord,
-		Icon: MessageCircleIcon
-	},
-	{
-		label: 'Email support',
-		url: appConfig.help.mailto('Support'),
-		Icon: MailIcon
-	},
-	{
-		label: 'Report issue',
-		url: appConfig.help.githubIssues,
-		Icon: BugIcon
-	}
-] satisfies TSupportLink[];
-
-interface TSupportLink {
-	label: string;
-	url: string;
-	Icon: React.ComponentType<{ className?: string }>;
-}
+const supportLinkIcons = {
+	discord: MessageCircleIcon,
+	email: MailIcon,
+	issue: BugIcon
+} satisfies Record<TSupportLinkId, React.ComponentType<{ className?: string }>>;

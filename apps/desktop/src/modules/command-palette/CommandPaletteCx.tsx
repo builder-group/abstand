@@ -1,8 +1,8 @@
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { createState } from 'feature-state';
 import React from 'react';
-import { specta } from '@/environment';
-import { createMountLifecycle } from '@/lib';
+import { specta, supportLinks } from '@/environment';
+import { createMountLifecycle, openExternalUrl } from '@/lib';
 import { formatIntentionBehavior, useIntentionsCx, type IntentionsCx } from '@/modules/intentions';
 import { useSettingsCx, type SettingsCx } from '@/modules/settings';
 import type { FileRouteTypes } from '@/routeTree.gen';
@@ -132,7 +132,8 @@ export class CommandPaletteCx {
 				group: 'Settings',
 				keywords: ['shortcuts', 'keyboard', 'keybindings', 'hotkeys'],
 				to: '/window/main/settings/shortcuts'
-			}
+			},
+			...this.buildSupportItems()
 		];
 
 		if (developer.enabled) {
@@ -175,6 +176,17 @@ export class CommandPaletteCx {
 					params: { intentionId: intention.id }
 				};
 			});
+	}
+
+	private buildSupportItems(): TCommandItem[] {
+		return supportLinks.map((link) => ({
+			type: 'action',
+			id: `support-${link.id}`,
+			label: link.label,
+			group: 'Help & Feedback',
+			keywords: ['help', 'feedback', 'support', ...link.keywords],
+			run: () => openExternalUrl(link.url)
+		}));
 	}
 
 	private async toggleTheme(): Promise<void> {

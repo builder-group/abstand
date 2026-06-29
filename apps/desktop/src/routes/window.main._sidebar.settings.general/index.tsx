@@ -28,7 +28,7 @@ import {
 	XCircleIcon,
 	type ToastsCx
 } from '@/components';
-import { appConfig, specta } from '@/environment';
+import { specta, supportLinks } from '@/environment';
 import { useAppInfo } from '@/hooks';
 import { openExternalUrl, toTuple } from '@/lib';
 import { useIntentionsCx } from '@/modules/intentions';
@@ -1259,7 +1259,7 @@ const HelpFeedbackSection: React.FC = () => {
 
 	return (
 		<SettingsGroup title="Help & Feedback">
-			{helpFeedbackLinks.map((link) => (
+			{supportLinks.map((link) => (
 				<SettingsRow
 					key={link.label}
 					label={link.label}
@@ -1272,27 +1272,3 @@ const HelpFeedbackSection: React.FC = () => {
 		</SettingsGroup>
 	);
 };
-
-const helpFeedbackLinks = [
-	{
-		label: 'Join Discord',
-		description: 'Chat with the community.',
-		url: appConfig.help.discord
-	},
-	{
-		label: 'Email support',
-		description: 'Get help by email.',
-		url: appConfig.help.mailto('Support')
-	},
-	{
-		label: 'Report issue',
-		description: 'Open a GitHub issue.',
-		url: appConfig.help.githubIssues
-	}
-] satisfies THelpFeedbackLink[];
-
-interface THelpFeedbackLink {
-	label: string;
-	description: string;
-	url: string;
-}
