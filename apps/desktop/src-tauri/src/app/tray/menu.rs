@@ -290,7 +290,8 @@ impl TrayMenuItem {
                 let _ = AppWindow::Main.show_at(app, "/settings/general");
             }
             Self::OpenUpdatesSettings => {
-                let _ = AppWindow::Main.show_at(app, "/settings/general#updates");
+                let _ =
+                    AppWindow::Main.show_at(app, "/settings/general?action=checkUpdates#updates");
             }
             Self::Quit => {
                 request_quit_blocking(app, QuitRequestSource::Tray);

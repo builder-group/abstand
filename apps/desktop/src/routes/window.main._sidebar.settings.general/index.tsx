@@ -1,6 +1,7 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useCompute, useFeatureState } from 'feature-react/state';
 import React from 'react';
+import * as z from 'zod';
 import {
 	ArrowUpRightIcon,
 	Badge,
@@ -43,7 +44,15 @@ import {
 import { useUpdaterCx, type TUpdaterState } from '@/modules/updater';
 
 export const Route = createFileRoute('/window/main/_sidebar/settings/general/')({
+	validateSearch: (search) => {
+		const result = SGeneralSettingsRouteSearch.safeParse(search);
+		return result.success ? result.data : {};
+	},
 	component: RouteComponent
+});
+
+const SGeneralSettingsRouteSearch = z.object({
+	action: z.enum(['checkUpdates']).optional()
 });
 
 function RouteComponent() {
@@ -955,6 +964,8 @@ function getCliSetupInstructions(status: specta.CliInstallStatus) {
 }
 
 const UpdatesSection: React.FC = () => {
+	const navigate = useNavigate({ from: Route.fullPath });
+	const { action } = Route.useSearch();
 	const settingsCx = useSettingsCx();
 	const updaterCx = useUpdaterCx();
 	const toastsCx = useToastsCx();
@@ -1029,6 +1040,36 @@ const UpdatesSection: React.FC = () => {
 		},
 		[settingsCx, toastsCx]
 	);
+
+	// MARK: - Effects
+
+	React.useEffect(() => {
+		if (action !== 'checkUpdates') {
+			return;
+		}
+
+		void navigate({
+			hash: 'updates',
+			search: {},
+			replace: true
+		});
+
+		const currentUpdateState = updaterCx.$updateState.get();
+		if (currentUpdateState.type === 'available' || currentUpdateState.type === 'installing') {
+			return;
+		}
+
+		void (async () => {
+			const [isUpdateCheckOk, updateCheckErr] = await updaterCx.checkForUpdates();
+			if (!isUpdateCheckOk) {
+				toastsCx.add({
+					type: 'error',
+					title: 'Could not check for updates',
+					description: updateCheckErr
+				});
+			}
+		})();
+	}, [action, navigate, toastsCx, updaterCx]);
 
 	// MARK: - UI
 

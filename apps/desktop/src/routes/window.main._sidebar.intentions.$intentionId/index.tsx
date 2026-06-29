@@ -9,7 +9,7 @@ import { BlockIntentionPage, TIntentionAutoRunAction } from './components';
 export const Route = createFileRoute('/window/main/_sidebar/intentions/$intentionId/')({
 	params: {
 		parse: (params) => {
-			const result = SIntentionRouteParams.safeParse(params);
+			const result = SIntentionDetailRouteParams.safeParse(params);
 			return result.success ? result.data : false;
 		},
 		stringify: (params) => ({
@@ -17,13 +17,13 @@ export const Route = createFileRoute('/window/main/_sidebar/intentions/$intentio
 		})
 	},
 	validateSearch: (search) => {
-		const result = SIntentionRouteSearch.safeParse(search);
+		const result = SIntentionDetailRouteSearch.safeParse(search);
 		return result.success ? result.data : {};
 	},
 	component: RouteComponent
 });
 
-const SIntentionRouteParams = z.object({
+const SIntentionDetailRouteParams = z.object({
 	// Note: Use regex + Number instead of coercion so only positive decimal path segments match
 	intentionId: z
 		.string()
@@ -31,7 +31,7 @@ const SIntentionRouteParams = z.object({
 		.transform(Number)
 });
 
-const SIntentionRouteSearch = z.object({
+const SIntentionDetailRouteSearch = z.object({
 	backTo: z.enum(['/window/main/today']).optional(),
 	action: z.enum(['end']).optional()
 });
