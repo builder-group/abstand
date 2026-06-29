@@ -78,6 +78,14 @@ export class CommandPaletteCx {
 				to: '/window/main/intentions/new'
 			},
 			{
+				type: 'navigation',
+				id: 'new-block-intention',
+				label: 'New Block Intention',
+				group: 'Navigation',
+				keywords: ['new', 'block', 'intention', 'create', 'plan'],
+				to: '/window/main/intentions/new/block'
+			},
+			{
 				type: 'action',
 				id: 'toggle-theme',
 				label: 'Toggle theme',
@@ -92,6 +100,14 @@ export class CommandPaletteCx {
 				group: 'Settings',
 				keywords: ['general', 'appearance', 'theme'],
 				to: '/window/main/settings/general'
+			},
+			{
+				type: 'navigation',
+				id: 'settings-activity',
+				label: 'Activity',
+				group: 'Settings',
+				keywords: ['activity', 'tracking', 'recording', 'flow map'],
+				to: '/window/main/settings/activity'
 			},
 			{
 				type: 'navigation',
@@ -111,6 +127,14 @@ export class CommandPaletteCx {
 				group: 'Settings',
 				keywords: ['developer', 'debug', 'dev'],
 				to: '/window/main/settings/developer'
+			});
+			items.push({
+				type: 'navigation',
+				id: 'settings-developer-ui-playground',
+				label: 'UI Playground',
+				group: 'Developer',
+				keywords: ['developer', 'debug', 'dev', 'ui', 'playground'],
+				to: '/window/main/settings/developer/ui-playground'
 			});
 		}
 
