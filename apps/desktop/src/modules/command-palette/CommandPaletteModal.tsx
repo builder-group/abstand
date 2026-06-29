@@ -15,6 +15,7 @@ export const CommandPaletteModal: React.FC = () => {
 	const query = useFeatureState(cx.$query);
 	const items = useFeatureState(cx.$items);
 	const filteredItems = React.useMemo(() => cx.filter(query, items), [cx, query, items]);
+	const groupedItems = React.useMemo(() => groupCommandItems(filteredItems), [filteredItems]);
 
 	// Single selection source shared by arrow keys and pointer movement
 	const [activeIndex, setActiveIndex] = React.useState(0);
@@ -138,14 +139,21 @@ export const CommandPaletteModal: React.FC = () => {
 				<div ref={resultsRef} className="max-h-72 overflow-y-auto px-1 py-1">
 					{filteredItems.length > 0 ? (
 						<div id="command-palette-results" role="listbox" aria-label="Command results">
-							{filteredItems.map((item, index) => (
-								<CommandPaletteItem
-									key={item.id}
-									item={item}
-									isActive={index === activeIndex}
-									onSelect={handleSelect}
-									onPointerMove={() => setActiveIndex(index)}
-								/>
+							{groupedItems.map((group) => (
+								<div key={group.label} className="py-1 first:pt-0">
+									<div className="text-base-400 px-2 pt-2 pb-1 text-xs font-medium">
+										{group.label}
+									</div>
+									{group.items.map(({ item, index }) => (
+										<CommandPaletteItem
+											key={item.id}
+											item={item}
+											isActive={index === activeIndex}
+											onSelect={handleSelect}
+											onPointerMove={() => setActiveIndex(index)}
+										/>
+									))}
+								</div>
 							))}
 						</div>
 					) : (
@@ -187,7 +195,6 @@ const CommandPaletteItem: React.FC<TCommandPaletteItemProps> = (props) => {
 			onPointerMove={onPointerMove}
 		>
 			<span className="min-w-0 flex-1 truncate">{item.label}</span>
-			<span className="text-base-400 shrink-0 text-xs">{item.group}</span>
 		</div>
 	);
 };
@@ -197,4 +204,31 @@ interface TCommandPaletteItemProps {
 	isActive: boolean;
 	onSelect: (item: TCommandItem) => Promise<void>;
 	onPointerMove: () => void;
+}
+
+function groupCommandItems(items: TCommandItem[]): TCommandGroup[] {
+	const groups: TCommandGroup[] = [];
+
+	items.forEach((item, index) => {
+		const lastGroup = groups.at(-1);
+
+		if (lastGroup?.label === item.group) {
+			lastGroup.items.push({ item, index });
+			return;
+		}
+
+		groups.push({ label: item.group, items: [{ item, index }] });
+	});
+
+	return groups;
+}
+
+interface TCommandGroup {
+	label: string;
+	items: TIndexedCommandItem[];
+}
+
+interface TIndexedCommandItem {
+	item: TCommandItem;
+	index: number;
 }
