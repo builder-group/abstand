@@ -3,7 +3,12 @@ use crate::{
     environment::configs::cli::CliConfig,
 };
 use serde::Serialize;
-use std::{env, error::Error, fs, path::PathBuf};
+use std::{
+    env,
+    error::Error,
+    fs,
+    path::{Path, PathBuf},
+};
 
 pub struct CliInstaller {
     bin_path: PathBuf,
@@ -71,6 +76,10 @@ impl CliInstaller {
             bin_path: self.bin_path.to_string_lossy().to_string(),
             bin_dir: self.bin_dir().to_string_lossy().to_string(),
         };
+    }
+
+    pub fn bin_path(&self) -> &Path {
+        return &self.bin_path;
     }
 
     fn install_state(&self) -> CliInstallState {

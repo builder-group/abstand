@@ -34,6 +34,7 @@ pub fn run() {
             cli::commands::get_cli_status,
             cli::commands::install_cli,
             cli::commands::uninstall_cli,
+            cli::commands::reveal_cli_binary,
             // Quit policy commands
             quit_policy::commands::confirm_balanced_quit,
             // Recovery agent commands

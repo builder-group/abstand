@@ -15,6 +15,7 @@ export const commands = {
 	getCliStatus: () => typedError<CliInstallStatus, string>(__TAURI_INVOKE("get_cli_status")),
 	installCli: () => typedError<CliInstallStatus, string>(__TAURI_INVOKE("install_cli")),
 	uninstallCli: () => typedError<CliInstallStatus, string>(__TAURI_INVOKE("uninstall_cli")),
+	revealCliBinary: () => typedError<null, string>(__TAURI_INVOKE("reveal_cli_binary")),
 	confirmBalancedQuit: () => typedError<null, string>(__TAURI_INVOKE("confirm_balanced_quit")),
 	getRecoveryAgentStatus: () => typedError<RecoveryAgentStatus, string>(__TAURI_INVOKE("get_recovery_agent_status")),
 	installRecoveryAgent: () => typedError<RecoveryAgentStatus, string>(__TAURI_INVOKE("install_recovery_agent")),
