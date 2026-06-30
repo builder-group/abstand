@@ -17,7 +17,6 @@ import { clampNumber, cn } from '@/lib';
 import {
 	CatalogIconPeek,
 	getCatalogItemKey,
-	isWebsiteCatalogItem,
 	useCatalogPicker,
 	type TCatalogItem,
 	type TCatalogPickerItemDisabledState
@@ -38,7 +37,7 @@ export const BlockSection: React.FC<TBlockSectionProps> = (props) => {
 			}
 
 			formCx.$form.fields.baseTargets.set(items);
-			const hasWebsiteBaseTargets = items.some(isWebsiteCatalogItem);
+			const hasWebsiteBaseTargets = items.some((item) => item.type === 'website');
 			if (!hasWebsiteBaseTargets) {
 				formCx.$form.fields.exceptionTargets.set([]);
 			}
@@ -49,7 +48,7 @@ export const BlockSection: React.FC<TBlockSectionProps> = (props) => {
 			title: 'Select Website Exceptions',
 			searchPlaceholder: 'Search websites…',
 			searchStatus: 'Select websites',
-			isItemVisible: isWebsiteCatalogItem,
+			isItemVisible: (item) => item.type === 'website',
 			getItemDisabledState: (item) => getExceptionTargetPickerDisabledState(formCx, item),
 			onConfirm: (items: TCatalogItem[]) => {
 				// Note: The picker can already be open when a submit starts, so ignore late confirms
@@ -57,7 +56,7 @@ export const BlockSection: React.FC<TBlockSectionProps> = (props) => {
 					return;
 				}
 
-				formCx.$form.fields.exceptionTargets.set(items.filter(isWebsiteCatalogItem));
+				formCx.$form.fields.exceptionTargets.set(items.filter((item) => item.type === 'website'));
 			}
 		}
 	);
@@ -96,7 +95,7 @@ function getBaseTargetPickerDisabledState(
 	item: TCatalogItem
 ): TCatalogPickerItemDisabledState | null {
 	const exceptionTargets = formCx.$form.fields.exceptionTargets.get() ?? [];
-	if (containsCatalogItemKey(exceptionTargets, item)) {
+	if (containsCatalogItem(exceptionTargets, item)) {
 		return { message: 'already an exception' };
 	}
 
@@ -108,7 +107,7 @@ function getExceptionTargetPickerDisabledState(
 	item: TCatalogItem
 ): TCatalogPickerItemDisabledState | null {
 	const baseTargets = formCx.$form.fields.baseTargets.get() ?? [];
-	if (!containsCatalogItemKey(baseTargets, item)) {
+	if (!containsCatalogItem(baseTargets, item)) {
 		return null;
 	}
 
@@ -118,7 +117,7 @@ function getExceptionTargetPickerDisabledState(
 	};
 }
 
-function containsCatalogItemKey(items: TCatalogItem[], item: TCatalogItem): boolean {
+function containsCatalogItem(items: TCatalogItem[], item: TCatalogItem): boolean {
 	const itemKey = getCatalogItemKey(item);
 	return items.some((candidate) => getCatalogItemKey(candidate) === itemKey);
 }
@@ -217,11 +216,11 @@ const BlockTargetRows: React.FC<TBlockTargetRowsProps> = (props) => {
 	const baseTargets = useFeatureState(formCx.$form.fields.baseTargets);
 	const baseTargetsStatus = useFeatureState(formCx.$form.fields.baseTargets.status);
 	const exceptionTargets = useCompute(formCx.$form.fields.exceptionTargets, (targets) =>
-		targets.filter(isWebsiteCatalogItem)
+		targets.filter((item) => item.type === 'website')
 	);
 	const exceptionTargetsStatus = useFeatureState(formCx.$form.fields.exceptionTargets.status);
 
-	const hasBaseWebsiteTargets = baseTargets.some(isWebsiteCatalogItem);
+	const hasBaseWebsiteTargets = baseTargets.some((item) => item.type === 'website');
 
 	// MARK: - UI
 

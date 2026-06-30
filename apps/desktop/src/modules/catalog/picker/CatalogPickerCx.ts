@@ -45,12 +45,12 @@ export class CatalogPickerCx {
 						return;
 					}
 
-					const itemKey = catalogItemIdToKey(itemId);
+					const assetKey = getCatalogItemAssetKey(itemId);
 					this.$searchResults.set((items) =>
-						patchCatalogItemsWithAsset(items, itemKey, { icon, color })
+						patchCatalogItemsWithAsset(items, assetKey, { icon, color })
 					);
 					this.$selectedItems.set((items) =>
-						patchCatalogItemsWithAsset(items, itemKey, { icon, color })
+						patchCatalogItemsWithAsset(items, assetKey, { icon, color })
 					);
 				})
 			);
@@ -158,8 +158,8 @@ export class CatalogPickerCx {
 }
 
 export type TCatalogItem =
-	| { type: 'app'; app: specta.CatalogAppSearchResultDto }
-	| { type: 'website'; website: specta.CatalogWebsiteSearchResultDto };
+	| ({ type: 'app' } & specta.CatalogAppSearchResultDto)
+	| ({ type: 'website' } & specta.CatalogWebsiteSearchResultDto);
 
 export type TCatalogPickerItemVisibleFn = (item: TCatalogItem) => boolean;
 
@@ -172,61 +172,49 @@ export interface TCatalogPickerItemDisabledState {
 }
 
 export function getCatalogItemKey(item: TCatalogItem): string {
-	return item.type === 'app' ? `app:${item.app.stableId}` : `website:${item.website.hostname}`;
-}
-
-export function isWebsiteCatalogItem(item: TCatalogItem): boolean {
-	return item.type === 'website';
-}
-
-export function catalogItemIdToKey(itemId: specta.CatalogItemId): string {
-	return itemId.type === 'app' ? `app:${itemId.stableId}` : `website:${itemId.hostname}`;
+	return item.type === 'app'
+		? `app:${item.stableId}`
+		: `website:${item.hostname}${item.path ?? ''}`;
 }
 
 export function toCatalogItem(result: specta.CatalogSearchResultDto): TCatalogItem {
 	return result.type === 'app'
-		? { type: 'app', app: result.app }
-		: { type: 'website', website: result.website };
+		? { type: 'app', ...result.app }
+		: { type: 'website', ...result.website };
 }
 
 export function getCatalogItemLabel(item: TCatalogItem): string {
 	return item.type === 'app'
-		? (item.app.name ?? item.app.bundleId ?? item.app.processPath ?? item.app.stableId)
-		: (item.website.name ?? item.website.hostname);
+		? (item.name ?? item.bundleId ?? item.processPath ?? item.stableId)
+		: (item.name ?? `${item.hostname}${item.path ?? ''}`);
 }
 
 export function getCatalogItemSublabel(item: TCatalogItem): string {
 	return item.type === 'app'
-		? (item.app.bundleId ?? item.app.processPath ?? item.app.stableId)
-		: item.website.hostname;
+		? (item.bundleId ?? item.processPath ?? item.stableId)
+		: `${item.hostname}${item.path ?? ''}`;
 }
 
 function patchCatalogItemsWithAsset(
 	items: TCatalogItem[],
-	itemKey: string,
+	assetKey: string,
 	asset: TCatalogItemAssetPatch
 ): TCatalogItem[] {
 	return items.map((item) => {
-		if (getCatalogItemKey(item) !== itemKey) {
+		if (getCatalogItemAssetKey(item) !== assetKey) {
 			return item;
 		}
 
 		return item.type === 'app'
 			? {
 					...item,
-					app: {
-						...item.app,
-						icon: asset.icon ?? item.app.icon,
-						color: asset.color ?? item.app.color
-					}
+					icon: asset.icon ?? item.icon,
+					color: asset.color ?? item.color
 				}
 			: {
 					...item,
-					website: {
-						...item.website,
-						icon: asset.icon ?? item.website.icon,
-						color: asset.color ?? item.website.color
-					}
+					icon: asset.icon ?? item.icon,
+					color: asset.color ?? item.color
 				};
 	});
 }
@@ -234,4 +222,8 @@ function patchCatalogItemsWithAsset(
 interface TCatalogItemAssetPatch {
 	icon?: string | null;
 	color?: string | null;
+}
+
+function getCatalogItemAssetKey(item: TCatalogItem | specta.CatalogItemId): string {
+	return item.type === 'app' ? `app:${item.stableId}` : `website:${item.hostname}`;
 }

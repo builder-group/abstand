@@ -4,11 +4,7 @@ import { cn } from '@/lib';
 import type { TCatalogItem } from './CatalogPickerCx';
 
 export const CatalogItemIcon: React.FC<TCatalogItemIconProps> = (props) => {
-	const {
-		item,
-		icon = item.type === 'app' ? item.app.icon : item.website.icon,
-		isSelected = false
-	} = props;
+	const { item, icon = item.icon, isSelected = false } = props;
 
 	return (
 		<span

@@ -10,7 +10,7 @@ export const CatalogIconPeek: React.FC<TCatalogIconPeekProps> = (props) => {
 		const labels = new Set<string>();
 		for (const item of items) {
 			const key = getCatalogItemKey(item);
-			const icon = item.type === 'app' ? item.app.icon : item.website.icon;
+			const icon = item.icon;
 			if (icon == null) {
 				continue;
 			}

@@ -191,6 +191,7 @@ export type CatalogSearchResultDto = { type: "app"; app: CatalogAppSearchResultD
 
 export type CatalogWebsiteSearchResultDto = {
 	hostname: string,
+	path: string | null,
 	name: string | null,
 	icon: string | null,
 	color: string | null,
@@ -479,6 +480,7 @@ export type WriteIntentionBlockTargetParams = {
 export type WriteIntentionBlockWebsiteTargetParams = {
 	action: IntentionBlockTargetAction,
 	hostname: string,
+	path: string | null,
 	name: string | null,
 	icon: string | null,
 	color: string | null,

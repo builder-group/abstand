@@ -38,20 +38,38 @@ pub fn extract_website_target(input: &str) -> Option<WebsiteTarget> {
         .trim_matches('.')
         .to_lowercase();
 
-    if !is_domain_like(&host) {
-        return None;
-    }
-
-    return Some(WebsiteTarget {
-        hostname: host,
-        path: extract_path(without_scheme, authority_end),
-    });
+    return WebsiteTarget::from_parts(host, extract_path(without_scheme, authority_end)).ok();
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct WebsiteTarget {
     pub hostname: String,
     pub path: Option<String>,
+}
+
+impl WebsiteTarget {
+    pub fn from_parts(hostname: String, path: Option<String>) -> Result<Self, String> {
+        if hostname != hostname.trim() || hostname != hostname.to_lowercase() {
+            return Err(format!("Invalid website hostname: {}", hostname));
+        }
+        if !is_domain_like(&hostname) {
+            return Err(format!("Invalid website hostname: {}", hostname));
+        }
+
+        if let Some(path) = path.as_deref() {
+            if path.is_empty() || path == "/" || !path.starts_with('/') {
+                return Err("Website path must be an absolute path".to_string());
+            }
+            if path.ends_with('/') || path.contains('?') || path.contains('#') {
+                return Err(
+                    "Website path must not include a trailing slash, query, or fragment"
+                        .to_string(),
+                );
+            }
+        }
+
+        return Ok(Self { hostname, path });
+    }
 }
 
 /// Extracts a normalized hostname from input.
@@ -124,7 +142,7 @@ fn is_domain_like(value: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{extract_hostname, extract_website_target};
+    use super::{extract_hostname, extract_website_target, WebsiteTarget};
 
     #[test]
     fn extracts_hostnames_from_urls() {
@@ -172,5 +190,18 @@ mod tests {
         assert_eq!(extract_hostname("not a domain"), None);
         assert_eq!(extract_hostname("benno@example.com"), None);
         assert_eq!(extract_hostname("mailto:benno@example.com"), None);
+    }
+
+    #[test]
+    fn validates_website_target_parts() {
+        assert!(
+            WebsiteTarget::from_parts("example.com".to_string(), Some("/docs".to_string())).is_ok()
+        );
+        assert!(WebsiteTarget::from_parts("EXAMPLE.com".to_string(), None).is_err());
+        assert!(WebsiteTarget::from_parts(
+            "example.com".to_string(),
+            Some("/docs?query=1".to_string())
+        )
+        .is_err());
     }
 }

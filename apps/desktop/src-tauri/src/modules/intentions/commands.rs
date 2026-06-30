@@ -18,7 +18,7 @@ use super::{
 };
 use crate::{
     common::time::{to_local_datetime, unix_ms_now, DateOnly, TimeOnly},
-    common::url::extract_website_target,
+    common::url::WebsiteTarget,
     modules::{
         catalog::repository::{UpsertAppInput, UpsertWebsiteInput},
         db::types::DatabaseState,
@@ -439,8 +439,7 @@ fn build_block_targets(
                 });
             }
             WriteIntentionBlockTargetParams::Website(website) => {
-                let website_target = extract_website_target(&website.hostname)
-                    .ok_or_else(|| format!("Invalid website hostname: {}", website.hostname))?;
+                let website_target = WebsiteTarget::from_parts(website.hostname, website.path)?;
 
                 if !seen_websites.insert(website_target.clone()) {
                     return Err(format!(
@@ -597,6 +596,7 @@ pub struct WriteIntentionBlockAppTargetParams {
 pub struct WriteIntentionBlockWebsiteTargetParams {
     pub action: IntentionBlockTargetAction,
     pub hostname: String,
+    pub path: Option<String>,
     pub name: Option<String>,
     pub icon: Option<String>,
     pub color: Option<String>,

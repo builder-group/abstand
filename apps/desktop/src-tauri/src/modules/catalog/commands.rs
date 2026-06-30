@@ -141,6 +141,7 @@ pub struct CatalogAppSearchResultDto {
 #[serde(rename_all = "camelCase")]
 pub struct CatalogWebsiteSearchResultDto {
     pub hostname: String,
+    pub path: Option<String>,
     pub name: Option<String>,
     pub icon: Option<String>,
     pub color: Option<String>,
@@ -160,9 +161,14 @@ impl CatalogSearchResultDto {
                 },
                 score: *score,
             },
-            CatalogSearchResult::Website { website, score } => Self::Website {
+            CatalogSearchResult::Website {
+                website,
+                path,
+                score,
+            } => Self::Website {
                 website: CatalogWebsiteSearchResultDto {
                     hostname: website.hostname.clone(),
+                    path: path.clone(),
                     name: website.name.clone(),
                     icon: asset.and_then(|a| a.icon.clone()),
                     color: asset.and_then(|a| a.color.clone()),

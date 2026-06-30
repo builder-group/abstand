@@ -20,7 +20,7 @@ import {
 	weekdayMaskFromWeekdays,
 	type TWeekday
 } from '@/lib';
-import { getCatalogItemKey, isWebsiteCatalogItem, type TCatalogItem } from '@/modules/catalog';
+import { getCatalogItemKey, type TCatalogItem } from '@/modules/catalog';
 
 export class BlockIntentionFormCx {
 	public readonly mode: TBlockIntentionFormMode;
@@ -255,7 +255,7 @@ export class BlockIntentionFormCx {
 									getWritableTargetParam(item, targetActions.base)
 								),
 								...formData.exceptionTargets
-									.filter(isWebsiteCatalogItem)
+									.filter((item) => item.type === 'website')
 									.map((item) => getWritableTargetParam(item, targetActions.exception))
 							]
 						: []
@@ -450,25 +450,22 @@ function getCatalogItemsForAction(
 			.filter((target) => target.action === action)
 			.map((target): TCatalogItem => ({
 				type: 'app',
-				app: {
-					stableId: target.app.stableId,
-					name: target.app.name,
-					bundleId: target.app.bundleId,
-					processPath: target.app.processPath,
-					icon: target.app.icon,
-					color: target.app.color
-				}
+				stableId: target.app.stableId,
+				name: target.app.name,
+				bundleId: target.app.bundleId,
+				processPath: target.app.processPath,
+				icon: target.app.icon,
+				color: target.app.color
 			})),
 		...block.websiteTargets
 			.filter((target) => target.action === action)
 			.map((target): TCatalogItem => ({
 				type: 'website',
-				website: {
-					hostname: target.website.hostname,
-					name: target.website.name,
-					icon: target.website.icon,
-					color: target.website.color
-				}
+				hostname: target.website.hostname,
+				path: target.path,
+				name: target.website.name,
+				icon: target.website.icon,
+				color: target.website.color
 			}))
 	];
 }
@@ -482,21 +479,22 @@ function getWritableTargetParam(
 			return {
 				type: 'app',
 				action,
-				stableId: item.app.stableId,
-				name: item.app.name,
-				bundleId: item.app.bundleId,
-				processPath: item.app.processPath,
-				icon: item.app.icon,
-				color: item.app.color
+				stableId: item.stableId,
+				name: item.name,
+				bundleId: item.bundleId,
+				processPath: item.processPath,
+				icon: item.icon,
+				color: item.color
 			};
 		case 'website':
 			return {
 				type: 'website',
 				action,
-				hostname: item.website.hostname,
-				name: item.website.name,
-				icon: item.website.icon,
-				color: item.website.color
+				hostname: item.hostname,
+				path: item.path,
+				name: item.name,
+				icon: item.icon,
+				color: item.color
 			};
 	}
 }
@@ -750,11 +748,11 @@ const blockIntentionFormValidator = {
 			}
 
 			const duplicateException = formData.exceptionTargets
-				.filter(isWebsiteCatalogItem)
+				.filter((item) => item.type === 'website')
 				.find((exceptionTarget) => {
-					const exceptionTargetKey = getCatalogItemKey(exceptionTarget);
+					const itemKey = getCatalogItemKey(exceptionTarget);
 					return formData.baseTargets.some(
-						(baseTarget) => getCatalogItemKey(baseTarget) === exceptionTargetKey
+						(baseTarget) => getCatalogItemKey(baseTarget) === itemKey
 					);
 				});
 			if (duplicateException != null) {

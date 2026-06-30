@@ -1,7 +1,7 @@
 use super::{
     app_identity::resolve_app_identity, matcher::fuzzy_match, predefined::PREDEFINED_SERVICES,
 };
-use crate::common::url::extract_hostname;
+use crate::common::url::extract_website_target;
 use mado::{get_installed_apps, InstalledAppsConfig};
 use std::collections::HashSet;
 
@@ -25,22 +25,27 @@ impl CatalogSearch {
             return Vec::new();
         }
 
-        // Normalize URL-like input so `https://docs.example.com/page` matches on the host
-        let (match_query, custom_hostname) = match extract_hostname(trimmed_query) {
-            Some(hostname) => {
-                let custom_hostname = (!self.has_website_hostname(&hostname))
-                    .then(|| SearchableItem::custom_hostname(hostname.clone()));
-                (hostname, custom_hostname)
-            }
-            None => (trimmed_query.to_string(), None),
-        };
+        let query_website_target = extract_website_target(trimmed_query);
 
+        let custom_website = query_website_target.as_ref().and_then(|target| {
+            let is_known_website = self
+                .websites
+                .iter()
+                .any(|item| item.id() == target.hostname);
+            return (!is_known_website)
+                .then(|| SearchableItem::custom_hostname(target.hostname.clone()));
+        });
         let items = self
             .apps
             .iter()
             .chain(self.websites.iter())
-            .chain(custom_hostname.iter());
-        let matches = fuzzy_match(items, &match_query);
+            .chain(custom_website.iter());
+
+        let fuzzy_match_query = query_website_target
+            .as_ref()
+            .map(|target| target.hostname.as_str())
+            .unwrap_or(trimmed_query);
+        let matches = fuzzy_match(items, fuzzy_match_query);
 
         let mut seen_ids = HashSet::<String>::new();
         return matches
@@ -48,7 +53,22 @@ impl CatalogSearch {
             // Keep only the best result for each stable identifier
             .filter(|(item, _)| seen_ids.insert(item.id().to_string()))
             .take(limit)
-            .map(|(item, score)| CatalogSearchResult::from((item.clone(), score)))
+            .map(|(item, score)| match item {
+                SearchableItem::App { app, .. } => CatalogSearchResult::App {
+                    app: app.clone(),
+                    score,
+                },
+                SearchableItem::Website { website, .. } => CatalogSearchResult::Website {
+                    website: website.clone(),
+                    // Note: Paths are query-specific, not catalog metadata. Attach the parsed path only when
+                    // this website result is the hostname the user typed.
+                    path: query_website_target
+                        .as_ref()
+                        .filter(|target| target.hostname == website.hostname)
+                        .and_then(|target| target.path.clone()),
+                    score,
+                },
+            })
             .collect();
     }
 
@@ -104,10 +124,6 @@ impl CatalogSearch {
         }
 
         return items;
-    }
-
-    fn has_website_hostname(&self, hostname: &str) -> bool {
-        return self.websites.iter().any(|item| item.id() == hostname);
     }
 }
 
@@ -187,17 +203,9 @@ pub enum CatalogSearchResult {
     },
     Website {
         website: SearchableWebsite,
+        path: Option<String>,
         score: u32,
     },
-}
-
-impl From<(SearchableItem, u32)> for CatalogSearchResult {
-    fn from((item, score): (SearchableItem, u32)) -> Self {
-        return match item {
-            SearchableItem::App { app, .. } => Self::App { app, score },
-            SearchableItem::Website { website, .. } => Self::Website { website, score },
-        };
-    }
 }
 
 #[derive(Debug, Clone)]
