@@ -93,13 +93,14 @@ CREATE INDEX idx_intention_block_app_target_app_id ON intention_block_app_target
 CREATE TABLE intention_block_website_target (
     intention_id INTEGER NOT NULL REFERENCES intention_block (intention_id) ON DELETE CASCADE,
     website_id INTEGER NOT NULL REFERENCES website (id) ON DELETE CASCADE,
+    path TEXT NOT NULL DEFAULT '' CHECK (path = '' OR substr(path, 1, 1) = '/'),
     action TEXT NOT NULL DEFAULT 'block' CHECK (action IN ('block', 'allow')),
     created_at INTEGER NOT NULL DEFAULT (CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)),
-    PRIMARY KEY (intention_id, website_id)
+    PRIMARY KEY (intention_id, website_id, path)
 );
 
 -- Reverse lookup: enforcement checks which intentions target a given website
-CREATE INDEX idx_intention_block_website_target_website_id ON intention_block_website_target (website_id, intention_id);
+CREATE INDEX idx_intention_block_website_target_website_id ON intention_block_website_target (website_id, intention_id, path);
 
 -- MARK: - Intention Conditions
 

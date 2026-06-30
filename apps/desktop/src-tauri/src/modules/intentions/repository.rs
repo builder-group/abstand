@@ -261,10 +261,11 @@ impl IntentionRepository {
             let website_id =
                 CatalogRepository::upsert_website(&mut **transaction, target.website).await?;
             sqlx::query(
-                "INSERT INTO intention_block_website_target (intention_id, website_id, action) VALUES (?, ?, ?)",
+                "INSERT INTO intention_block_website_target (intention_id, website_id, path, action) VALUES (?, ?, ?, ?)",
             )
             .bind(intention_id)
             .bind(website_id)
+            .bind(target.path.as_deref().unwrap_or(""))
             .bind(target.action.as_str())
             .execute(&mut **transaction)
             .await?;
@@ -433,7 +434,11 @@ impl IntentionRepository {
             block_website_targets_by_intention_id
                 .entry(row.intention_id)
                 .or_default()
-                .push(IntentionBlockWebsiteTarget { action, website });
+                .push(IntentionBlockWebsiteTarget {
+                    action,
+                    website,
+                    path: (!row.path.is_empty()).then_some(row.path),
+                });
         }
 
         let mut intentions = Vec::with_capacity(bases.len());
@@ -653,13 +658,13 @@ impl IntentionRepository {
         }
 
         let mut query_builder = QueryBuilder::<Sqlite>::new(
-            "SELECT intention_id, website_id, action FROM intention_block_website_target WHERE intention_id IN (",
+            "SELECT intention_id, website_id, path, action FROM intention_block_website_target WHERE intention_id IN (",
         );
         let mut separated = query_builder.separated(", ");
         for intention_id in intention_ids {
             separated.push_bind(intention_id);
         }
-        separated.push_unseparated(") ORDER BY intention_id ASC, website_id ASC");
+        separated.push_unseparated(") ORDER BY intention_id ASC, website_id ASC, path ASC");
 
         return query_builder
             .build_query_as::<IntentionBlockWebsiteRow>()
@@ -870,6 +875,7 @@ struct IntentionBlockAppRow {
 struct IntentionBlockWebsiteRow {
     intention_id: i64,
     website_id: i64,
+    path: String,
     action: String,
 }
 
@@ -954,6 +960,7 @@ pub struct WriteIntentionBlockAppTargetInput {
 pub struct WriteIntentionBlockWebsiteTargetInput {
     pub action: IntentionBlockTargetAction,
     pub website: UpsertWebsiteInput,
+    pub path: Option<String>,
 }
 
 pub struct WriteIntentionConditionInput {

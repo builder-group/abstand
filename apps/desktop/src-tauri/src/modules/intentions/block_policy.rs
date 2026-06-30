@@ -15,8 +15,8 @@ impl BlockPolicySubject {
         return Self::from_target(BlockPolicyTarget::app(bundle_id));
     }
 
-    pub fn website(hostname: impl Into<String>) -> Self {
-        return Self::from_target(BlockPolicyTarget::website(hostname));
+    pub fn website(hostname: impl Into<String>, path: Option<String>) -> Self {
+        return Self::from_target(BlockPolicyTarget::website(hostname, path));
     }
 
     pub fn device() -> Self {
@@ -43,10 +43,11 @@ impl BlockPolicySubject {
     pub fn app_and_website(
         app_bundle_id: impl Into<String>,
         website_hostname: impl Into<String>,
+        website_path: Option<String>,
     ) -> Self {
         return Self {
             app: Some(BlockPolicyTarget::app(app_bundle_id)),
-            website: Some(BlockPolicyTarget::website(website_hostname)),
+            website: Some(BlockPolicyTarget::website(website_hostname, website_path)),
         };
     }
 
@@ -109,8 +110,13 @@ impl BlockPolicySubject {
 /// Atomic target identity matched by block policy rules.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum BlockPolicyTarget {
-    App { bundle_id: String },
-    Website { hostname: String },
+    App {
+        bundle_id: String,
+    },
+    Website {
+        hostname: String,
+        path: Option<String>,
+    },
     Device,
 }
 
@@ -121,9 +127,10 @@ impl BlockPolicyTarget {
         };
     }
 
-    pub fn website(hostname: impl Into<String>) -> Self {
+    pub fn website(hostname: impl Into<String>, path: Option<String>) -> Self {
         return Self::Website {
             hostname: hostname.into(),
+            path,
         };
     }
 
@@ -142,11 +149,18 @@ impl BlockPolicyTarget {
                 },
             ) => covering == candidate,
             (
-                Self::Website { hostname: covering },
+                Self::Website {
+                    hostname: covering,
+                    path: covering_path,
+                },
                 Self::Website {
                     hostname: candidate,
+                    path: candidate_path,
                 },
-            ) => hostname_matches_target(candidate, covering),
+            ) => {
+                hostname_matches_target(candidate, covering)
+                    && path_matches_target(covering_path.as_deref(), candidate_path.as_deref())
+            }
             (Self::Device, Self::Device) => true,
             _ => false,
         };
@@ -166,6 +180,20 @@ fn hostname_matches_target(hostname: &str, target_hostname: &str) -> bool {
             .is_some_and(|prefix| prefix.ends_with('.'));
 }
 
+fn path_matches_target(covering_path: Option<&str>, candidate_path: Option<&str>) -> bool {
+    let Some(covering_path) = covering_path else {
+        return true;
+    };
+    let Some(candidate_path) = candidate_path else {
+        return false;
+    };
+
+    return candidate_path == covering_path
+        || candidate_path
+            .strip_prefix(covering_path)
+            .is_some_and(|suffix| suffix.starts_with('/'));
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -176,75 +204,156 @@ mod tests {
 
         assert!(BlockPolicyTarget::app("com.apple.Terminal").covers(&target));
         assert!(!BlockPolicyTarget::app("com.apple.Safari").covers(&target));
-        assert!(!BlockPolicyTarget::website("com.apple.Terminal").covers(&target));
+        assert!(!BlockPolicyTarget::website("com.apple.Terminal", None).covers(&target));
         assert!(!BlockPolicyTarget::device().covers(&target));
     }
 
     #[test]
     fn website_targets_cover_exact_and_subdomain_hosts() {
-        let exact = BlockPolicyTarget::website("youtube.com");
-        let subdomain = BlockPolicyTarget::website("studio.youtube.com");
-        let sibling = BlockPolicyTarget::website("notyoutube.com");
+        let exact = BlockPolicyTarget::website("youtube.com", None);
+        let subdomain = BlockPolicyTarget::website("studio.youtube.com", None);
+        let sibling = BlockPolicyTarget::website("notyoutube.com", None);
 
-        assert!(BlockPolicyTarget::website("youtube.com").covers(&exact));
-        assert!(BlockPolicyTarget::website("youtube.com").covers(&subdomain));
-        assert!(!BlockPolicyTarget::website("youtube.com").covers(&sibling));
+        assert!(BlockPolicyTarget::website("youtube.com", None).covers(&exact));
+        assert!(BlockPolicyTarget::website("youtube.com", None).covers(&subdomain));
+        assert!(!BlockPolicyTarget::website("youtube.com", None).covers(&sibling));
+    }
+
+    #[test]
+    fn website_targets_cover_matching_paths() {
+        let watch_target = BlockPolicyTarget::website("youtube.com", Some("/watch".to_string()));
+        let watch = BlockPolicyTarget::website("www.youtube.com", Some("/watch".to_string()));
+        let watch_child =
+            BlockPolicyTarget::website("www.youtube.com", Some("/watch/abc".to_string()));
+        let watching = BlockPolicyTarget::website("www.youtube.com", Some("/watching".to_string()));
+
+        assert!(BlockPolicyTarget::website("youtube.com", None).covers(&watch));
+        assert!(watch_target.covers(&watch));
+        assert!(watch_target.covers(&watch_child));
+        assert!(!watch_target.covers(&watching));
+        assert!(!watch_target.covers(&BlockPolicyTarget::website("www.youtube.com", None)));
     }
 
     #[test]
     fn block_target_scope_lets_allow_exception_win() {
         let mut block_targets = BTreeSet::new();
-        block_targets.insert(BlockPolicyTarget::website("youtube.com"));
+        block_targets.insert(BlockPolicyTarget::website("youtube.com", None));
         let mut allow_targets = BTreeSet::new();
-        allow_targets.insert(BlockPolicyTarget::website("studio.youtube.com"));
+        allow_targets.insert(BlockPolicyTarget::website("studio.youtube.com", None));
 
         assert!(
-            !BlockPolicySubject::website("studio.youtube.com").is_blocked_by(
+            !BlockPolicySubject::website("studio.youtube.com", None).is_blocked_by(
                 IntentionBlockScope::BlockTargets,
                 &block_targets,
                 &allow_targets,
             )
         );
         assert!(
-            BlockPolicySubject::website("www.youtube.com").is_blocked_by(
+            BlockPolicySubject::website("www.youtube.com", None).is_blocked_by(
                 IntentionBlockScope::BlockTargets,
                 &block_targets,
                 &allow_targets,
             )
         );
-        assert!(!BlockPolicySubject::website("google.com").is_blocked_by(
-            IntentionBlockScope::BlockTargets,
-            &block_targets,
-            &allow_targets,
+        assert!(
+            !BlockPolicySubject::website("google.com", None).is_blocked_by(
+                IntentionBlockScope::BlockTargets,
+                &block_targets,
+                &allow_targets,
+            )
+        );
+    }
+
+    #[test]
+    fn block_target_scope_lets_path_exception_win() {
+        let mut block_targets = BTreeSet::new();
+        block_targets.insert(BlockPolicyTarget::website("youtube.com", None));
+        let mut allow_targets = BTreeSet::new();
+        allow_targets.insert(BlockPolicyTarget::website(
+            "youtube.com",
+            Some("/watch".to_string()),
         ));
+
+        assert!(
+            !BlockPolicySubject::website("www.youtube.com", Some("/watch".to_string()))
+                .is_blocked_by(
+                    IntentionBlockScope::BlockTargets,
+                    &block_targets,
+                    &allow_targets,
+                )
+        );
+        assert!(
+            BlockPolicySubject::website("www.youtube.com", Some("/shorts".to_string()))
+                .is_blocked_by(
+                    IntentionBlockScope::BlockTargets,
+                    &block_targets,
+                    &allow_targets,
+                )
+        );
+    }
+
+    #[test]
+    fn allow_target_scope_respects_path_targets() {
+        let block_targets = BTreeSet::new();
+        let mut allow_targets = BTreeSet::new();
+        allow_targets.insert(BlockPolicyTarget::website(
+            "youtube.com",
+            Some("/watch".to_string()),
+        ));
+
+        assert!(
+            !BlockPolicySubject::website("www.youtube.com", Some("/watch/abc".to_string()))
+                .is_blocked_by(
+                    IntentionBlockScope::AllowTargets,
+                    &block_targets,
+                    &allow_targets,
+                )
+        );
+        assert!(
+            BlockPolicySubject::website("www.youtube.com", Some("/shorts".to_string()))
+                .is_blocked_by(
+                    IntentionBlockScope::AllowTargets,
+                    &block_targets,
+                    &allow_targets,
+                )
+        );
+        assert!(
+            BlockPolicySubject::website("www.youtube.com", None).is_blocked_by(
+                IntentionBlockScope::AllowTargets,
+                &block_targets,
+                &allow_targets,
+            )
+        );
     }
 
     #[test]
     fn allow_target_scope_blocks_by_default_and_lets_block_exception_win() {
         let mut block_targets = BTreeSet::new();
-        block_targets.insert(BlockPolicyTarget::website("studio.youtube.com"));
+        block_targets.insert(BlockPolicyTarget::website("studio.youtube.com", None));
         let mut allow_targets = BTreeSet::new();
-        allow_targets.insert(BlockPolicyTarget::website("youtube.com"));
+        allow_targets.insert(BlockPolicyTarget::website("youtube.com", None));
 
         assert!(
-            !BlockPolicySubject::website("www.youtube.com").is_blocked_by(
+            !BlockPolicySubject::website("www.youtube.com", None).is_blocked_by(
                 IntentionBlockScope::AllowTargets,
                 &block_targets,
                 &allow_targets,
             )
         );
         assert!(
-            BlockPolicySubject::website("studio.youtube.com").is_blocked_by(
+            BlockPolicySubject::website("studio.youtube.com", None).is_blocked_by(
                 IntentionBlockScope::AllowTargets,
                 &block_targets,
                 &allow_targets,
             )
         );
-        assert!(BlockPolicySubject::website("google.com").is_blocked_by(
-            IntentionBlockScope::AllowTargets,
-            &block_targets,
-            &allow_targets,
-        ));
+        assert!(
+            BlockPolicySubject::website("google.com", None).is_blocked_by(
+                IntentionBlockScope::AllowTargets,
+                &block_targets,
+                &allow_targets,
+            )
+        );
     }
 
     #[test]
@@ -252,8 +361,8 @@ mod tests {
         let mut block_targets = BTreeSet::new();
         block_targets.insert(BlockPolicyTarget::app("com.apple.Safari"));
         let mut allow_targets = BTreeSet::new();
-        allow_targets.insert(BlockPolicyTarget::website("example.com"));
-        let subject = BlockPolicySubject::app_and_website("com.apple.Safari", "example.com");
+        allow_targets.insert(BlockPolicyTarget::website("example.com", None));
+        let subject = BlockPolicySubject::app_and_website("com.apple.Safari", "example.com", None);
 
         assert!(!subject.is_blocked_by(
             IntentionBlockScope::BlockTargets,
@@ -265,10 +374,10 @@ mod tests {
     #[test]
     fn subject_lets_website_exception_override_app_allow_base() {
         let mut block_targets = BTreeSet::new();
-        block_targets.insert(BlockPolicyTarget::website("example.com"));
+        block_targets.insert(BlockPolicyTarget::website("example.com", None));
         let mut allow_targets = BTreeSet::new();
         allow_targets.insert(BlockPolicyTarget::app("com.apple.Safari"));
-        let subject = BlockPolicySubject::app_and_website("com.apple.Safari", "example.com");
+        let subject = BlockPolicySubject::app_and_website("com.apple.Safari", "example.com", None);
 
         assert!(subject.is_blocked_by(
             IntentionBlockScope::AllowTargets,
@@ -286,12 +395,16 @@ mod tests {
             &targets,
             &targets,
         ));
-        assert!(BlockPolicySubject::website("example.com").is_blocked_by(
-            IntentionBlockScope::WholeDevice,
-            &targets,
-            &targets,
-        ));
+        assert!(
+            BlockPolicySubject::website("example.com", None).is_blocked_by(
+                IntentionBlockScope::WholeDevice,
+                &targets,
+                &targets,
+            )
+        );
         assert!(BlockPolicyTarget::device().covers(&BlockPolicyTarget::device()));
-        assert!(!BlockPolicyTarget::device().covers(&BlockPolicyTarget::website("example.com")));
+        assert!(
+            !BlockPolicyTarget::device().covers(&BlockPolicyTarget::website("example.com", None,))
+        );
     }
 }

@@ -59,7 +59,7 @@ async fn enrich_blocked_target(
                 color: catalog_app.and_then(|app| app.color),
             }
         }
-        BlockPolicyTarget::Website { hostname } => {
+        BlockPolicyTarget::Website { hostname, .. } => {
             let catalog_website = match resolver::resolve_website_by_hostname(app, hostname).await {
                 Ok(website) => website,
                 Err(error) => {

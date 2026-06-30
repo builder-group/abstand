@@ -18,7 +18,7 @@ use super::{
 };
 use crate::{
     common::time::{to_local_datetime, unix_ms_now, DateOnly, TimeOnly},
-    common::url::extract_hostname,
+    common::url::extract_website_target,
     modules::{
         catalog::repository::{UpsertAppInput, UpsertWebsiteInput},
         db::types::DatabaseState,
@@ -412,7 +412,7 @@ fn build_block_targets(
     // other says allow, the saved intention is contradictory even though runtime
     // precedence could pick a winner.
     let mut seen_apps = HashSet::<String>::new();
-    let mut seen_websites = HashSet::<String>::new();
+    let mut seen_websites = HashSet::new();
 
     for target in targets {
         match target {
@@ -439,21 +439,26 @@ fn build_block_targets(
                 });
             }
             WriteIntentionBlockTargetParams::Website(website) => {
-                let hostname = extract_hostname(&website.hostname)
+                let website_target = extract_website_target(&website.hostname)
                     .ok_or_else(|| format!("Invalid website hostname: {}", website.hostname))?;
 
-                if !seen_websites.insert(hostname.clone()) {
-                    return Err(format!("Duplicate website target: {}", hostname));
+                if !seen_websites.insert(website_target.clone()) {
+                    return Err(format!(
+                        "Duplicate website target: {}{}",
+                        website_target.hostname,
+                        website_target.path.as_deref().unwrap_or("")
+                    ));
                 }
 
                 website_targets.push(WriteIntentionBlockWebsiteTargetInput {
                     action: website.action,
                     website: UpsertWebsiteInput {
-                        hostname,
+                        hostname: website_target.hostname,
                         name: website.name,
                         icon: website.icon,
                         color: website.color,
                     },
+                    path: website_target.path,
                 });
             }
         }

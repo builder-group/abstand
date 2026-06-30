@@ -1,22 +1,22 @@
-/// Extracts a normalized hostname from input.
-pub fn extract_hostname(input: &str) -> Option<String> {
-    let trimmed = input.trim().to_lowercase();
+/// Extracts a normalized website target from input.
+pub fn extract_website_target(input: &str) -> Option<WebsiteTarget> {
+    let trimmed = input.trim();
     if trimmed.is_empty() {
         return None;
     }
 
     let has_explicit_authority = trimmed.contains("://") || trimmed.starts_with("//");
 
-    // Peel away transport, path, query, and auth pieces until only the host remains
+    // Peel away transport and auth pieces so host and path can be normalized separately
     let without_scheme = trimmed
         .split_once("://")
         .map(|(_, remainder)| remainder)
-        .unwrap_or(trimmed.as_str())
+        .unwrap_or(trimmed)
         .trim_start_matches("//");
-    let authority = without_scheme
-        .split(['/', '?', '#'])
-        .next()
-        .unwrap_or_default();
+    let authority_end = without_scheme
+        .find(['/', '?', '#'])
+        .unwrap_or(without_scheme.len());
+    let authority = &without_scheme[..authority_end];
     let host_with_optional_port = match authority.rsplit_once('@') {
         Some((credentials, host))
             if has_explicit_authority || looks_like_authority_credentials(credentials, host) =>
@@ -35,13 +35,47 @@ pub fn extract_hostname(input: &str) -> Option<String> {
         .split_once(':')
         .map(|(host, _)| host)
         .unwrap_or(host_with_optional_port)
-        .trim_matches('.');
+        .trim_matches('.')
+        .to_lowercase();
 
-    if !is_domain_like(host) {
+    if !is_domain_like(&host) {
         return None;
     }
 
-    return Some(host.to_string());
+    return Some(WebsiteTarget {
+        hostname: host,
+        path: extract_path(without_scheme, authority_end),
+    });
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct WebsiteTarget {
+    pub hostname: String,
+    pub path: Option<String>,
+}
+
+/// Extracts a normalized hostname from input.
+pub fn extract_hostname(input: &str) -> Option<String> {
+    return extract_website_target(input).map(|target| target.hostname);
+}
+
+fn extract_path(without_scheme: &str, authority_end: usize) -> Option<String> {
+    let remainder = &without_scheme[authority_end..];
+    if !remainder.starts_with('/') {
+        return None;
+    }
+
+    let path = remainder
+        .split(['?', '#'])
+        .next()
+        .unwrap_or_default()
+        .trim()
+        .trim_end_matches('/');
+    if path.is_empty() {
+        return None;
+    }
+
+    return Some(path.to_string());
 }
 
 fn looks_like_authority_credentials(credentials: &str, host: &str) -> bool {
@@ -90,7 +124,7 @@ fn is_domain_like(value: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::extract_hostname;
+    use super::{extract_hostname, extract_website_target};
 
     #[test]
     fn extracts_hostnames_from_urls() {
@@ -114,6 +148,21 @@ mod tests {
             extract_hostname("EXAMPLE.com"),
             Some("example.com".to_string())
         );
+    }
+
+    #[test]
+    fn extracts_website_targets() {
+        let target = extract_website_target("https://www.youtube.com/watch/?v=123").unwrap();
+        assert_eq!(target.hostname, "www.youtube.com");
+        assert_eq!(target.path, Some("/watch".to_string()));
+
+        let target = extract_website_target("docs.example.com/reference/path#section").unwrap();
+        assert_eq!(target.hostname, "docs.example.com");
+        assert_eq!(target.path, Some("/reference/path".to_string()));
+
+        let target = extract_website_target("EXAMPLE.com").unwrap();
+        assert_eq!(target.hostname, "example.com");
+        assert_eq!(target.path, None);
     }
 
     #[test]

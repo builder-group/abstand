@@ -65,6 +65,7 @@ pub struct IntentionBlockAppTarget {
 pub struct IntentionBlockWebsiteTarget {
     pub action: IntentionBlockTargetAction,
     pub website: Website,
+    pub path: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]

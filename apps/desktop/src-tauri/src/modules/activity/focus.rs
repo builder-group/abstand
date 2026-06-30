@@ -1,4 +1,4 @@
-use crate::common::url::extract_hostname;
+use crate::common::url::extract_website_target;
 use mado::{AppInfo, WindowBounds, WindowInfo};
 
 /// Describes the best currently available focused activity.
@@ -25,23 +25,29 @@ impl ActivityFocus {
             target: ActivityTarget {
                 app_bundle_id: app.bundle_id,
                 website_hostname: None,
+                website_path: None,
             },
             window_bounds: None,
         };
     }
 
     pub fn from_window_info(window: WindowInfo) -> Self {
+        let website_target = window
+            .browser
+            .as_ref()
+            .and_then(|browser| browser.url.as_deref())
+            .and_then(extract_website_target);
+
         return Self {
             source: ActivityFocusSource::WindowChanged,
             pid: window.app.pid,
             app_name: window.app.name,
             target: ActivityTarget {
                 app_bundle_id: window.app.bundle_id,
-                website_hostname: window
-                    .browser
+                website_hostname: website_target
                     .as_ref()
-                    .and_then(|browser| browser.url.as_deref())
-                    .and_then(extract_hostname),
+                    .map(|target| target.hostname.clone()),
+                website_path: website_target.and_then(|target| target.path),
             },
             window_bounds: window.bounds.map(ActivityWindowBounds::from),
         };
@@ -62,10 +68,11 @@ impl ActivityFocus {
 
     pub fn summary(&self) -> String {
         return format!(
-            "app={} bundle_id={} website={}",
+            "app={} bundle_id={} website={} path={}",
             self.app_name.as_deref().unwrap_or("Unknown"),
             self.target.app_bundle_id.as_deref().unwrap_or("unknown"),
-            self.target.website_hostname.as_deref().unwrap_or("none")
+            self.target.website_hostname.as_deref().unwrap_or("none"),
+            self.target.website_path.as_deref().unwrap_or("none")
         );
     }
 }
@@ -80,6 +87,7 @@ pub enum ActivityFocusSource {
 pub struct ActivityTarget {
     pub app_bundle_id: Option<String>,
     pub website_hostname: Option<String>,
+    pub website_path: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]

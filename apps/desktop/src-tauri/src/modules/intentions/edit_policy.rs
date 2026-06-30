@@ -381,7 +381,9 @@ fn target_set_from_block(
                 .website_targets
                 .iter()
                 .filter(|target| target.action == action)
-                .map(|target| BlockPolicyTarget::website(target.website.hostname.clone())),
+                .map(|target| {
+                    BlockPolicyTarget::website(target.website.hostname.clone(), target.path.clone())
+                }),
         )
         .collect();
 }
@@ -400,7 +402,9 @@ fn target_set_from_write_block(
                 .website_targets
                 .iter()
                 .filter(|target| target.action == action)
-                .map(|target| BlockPolicyTarget::website(target.website.hostname.clone())),
+                .map(|target| {
+                    BlockPolicyTarget::website(target.website.hostname.clone(), target.path.clone())
+                }),
         )
         .collect();
 }
@@ -426,8 +430,10 @@ fn candidate_subjects_from_targets(
     // Note: Edit policy cannot know which apps can host website focus, so compare all app/website pairs
     for app in &apps {
         for website in &websites {
-            let (BlockPolicyTarget::App { bundle_id }, BlockPolicyTarget::Website { hostname }) =
-                (app, website)
+            let (
+                BlockPolicyTarget::App { bundle_id },
+                BlockPolicyTarget::Website { hostname, path },
+            ) = (app, website)
             else {
                 continue;
             };
@@ -435,6 +441,7 @@ fn candidate_subjects_from_targets(
             subjects.push(BlockPolicySubject::app_and_website(
                 bundle_id.clone(),
                 hostname.clone(),
+                path.clone(),
             ));
         }
     }
@@ -470,8 +477,12 @@ mod tests {
         let proposed = write_block(
             IntentionBlockScope::BlockTargets,
             vec![
-                write_website_target(IntentionBlockTargetAction::Block, "studio.youtube.com"),
-                write_website_target(IntentionBlockTargetAction::Allow, "youtube.com"),
+                write_website_target(
+                    IntentionBlockTargetAction::Block,
+                    "studio.youtube.com",
+                    None,
+                ),
+                write_website_target(IntentionBlockTargetAction::Allow, "youtube.com", None),
             ],
         );
 
@@ -497,6 +508,7 @@ mod tests {
             vec![write_website_target(
                 IntentionBlockTargetAction::Allow,
                 "example.com",
+                None,
             )],
         );
 
@@ -515,12 +527,36 @@ mod tests {
         let proposed = write_block(
             IntentionBlockScope::BlockTargets,
             vec![
-                write_website_target(IntentionBlockTargetAction::Block, "youtube.com"),
-                write_website_target(IntentionBlockTargetAction::Allow, "google.com"),
+                write_website_target(IntentionBlockTargetAction::Block, "youtube.com", None),
+                write_website_target(IntentionBlockTargetAction::Allow, "google.com", None),
             ],
         );
 
         assert!(!weakens_block(&current, &proposed));
+    }
+
+    #[test]
+    fn adding_path_allow_exception_weakens_block_target_scope() {
+        let current = block(
+            IntentionBlockScope::BlockTargets,
+            vec![website_target(
+                IntentionBlockTargetAction::Block,
+                "youtube.com",
+            )],
+        );
+        let proposed = write_block(
+            IntentionBlockScope::BlockTargets,
+            vec![
+                write_website_target(IntentionBlockTargetAction::Block, "youtube.com", None),
+                write_website_target(
+                    IntentionBlockTargetAction::Allow,
+                    "youtube.com",
+                    Some("/watch"),
+                ),
+            ],
+        );
+
+        assert!(weakens_block(&current, &proposed));
     }
 
     #[test]
@@ -537,6 +573,7 @@ mod tests {
             vec![write_website_target(
                 IntentionBlockTargetAction::Allow,
                 "youtube.com",
+                None,
             )],
         );
 
@@ -555,8 +592,12 @@ mod tests {
         let proposed = write_block(
             IntentionBlockScope::AllowTargets,
             vec![
-                write_website_target(IntentionBlockTargetAction::Allow, "youtube.com"),
-                write_website_target(IntentionBlockTargetAction::Block, "studio.youtube.com"),
+                write_website_target(IntentionBlockTargetAction::Allow, "youtube.com", None),
+                write_website_target(
+                    IntentionBlockTargetAction::Block,
+                    "studio.youtube.com",
+                    None,
+                ),
             ],
         );
 
@@ -577,6 +618,7 @@ mod tests {
             vec![write_website_target(
                 IntentionBlockTargetAction::Allow,
                 "youtube.com",
+                None,
             )],
         );
 
@@ -597,6 +639,7 @@ mod tests {
             vec![write_website_target(
                 IntentionBlockTargetAction::Allow,
                 "studio.youtube.com",
+                None,
             )],
         );
 
@@ -652,6 +695,7 @@ mod tests {
                 icon: None,
                 color: None,
             },
+            path: None,
         };
     }
 
@@ -696,6 +740,7 @@ mod tests {
     fn write_website_target(
         action: IntentionBlockTargetAction,
         hostname: &str,
+        path: Option<&str>,
     ) -> WriteIntentionBlockWebsiteTargetInput {
         return WriteIntentionBlockWebsiteTargetInput {
             action,
@@ -705,6 +750,7 @@ mod tests {
                 icon: None,
                 color: None,
             },
+            path: path.map(str::to_string),
         };
     }
 }

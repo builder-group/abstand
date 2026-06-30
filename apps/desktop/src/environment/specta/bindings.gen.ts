@@ -252,6 +252,7 @@ export type IntentionBlockTargetAction = "block" | "allow";
 export type IntentionBlockWebsiteTarget = {
 	action: IntentionBlockTargetAction,
 	website: Website,
+	path: string | null,
 };
 
 export type IntentionCondition = {
