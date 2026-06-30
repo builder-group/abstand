@@ -55,6 +55,7 @@ export {
 	TimerIcon,
 	Trash2Icon,
 	Undo2Icon,
+	WorkflowIcon,
 	XCircleIcon,
 	XIcon
 } from 'lucide-react';

@@ -136,6 +136,7 @@ export type AppSettings = {
 	version: SettingsVersion,
 	activity: ActivitySettings,
 	appearance: AppearanceSettings,
+	automation: AutomationSettings,
 	developer: DeveloperSettings,
 	onboarding: OnboardingSettings,
 	updates: UpdateSettings,
@@ -148,6 +149,10 @@ export type AppSettingsChangedEvent = AppSettings;
 export type AppearanceSettings = {
 	theme: Theme,
 	fontScale: number,
+};
+
+export type AutomationSettings = {
+	enabled: boolean,
 };
 
 export type BlockedAppQuitTimedOutEvent = {
@@ -372,7 +377,7 @@ export type SearchCatalogParams = {
 	includeIcon: CatalogIconMode | null,
 };
 
-export type SettingsVersion = "0.0.1" | "0.0.2" | "0.0.3";
+export type SettingsVersion = "0.0.1" | "0.0.2" | "0.0.3" | "0.0.4";
 
 export type ShortcutAction = "search" | "newIntention" | "toggleSidebar";
 

@@ -28,6 +28,7 @@ const iconBubbleVariants = cva(
 			variant: {
 				default: 'bg-primary text-white',
 				secondary: 'bg-secondary text-white',
+				info: 'bg-info text-white',
 				success: 'bg-success text-white',
 				warning: 'bg-warning text-white',
 				destructive: 'bg-error text-white',

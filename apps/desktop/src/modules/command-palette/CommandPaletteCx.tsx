@@ -74,7 +74,7 @@ export class CommandPaletteCx {
 	}
 
 	private buildItems(): TCommandItem[] {
-		const { developer } = this.settingsCx.$appSettings._v;
+		const { activity, automation, developer } = this.settingsCx.$appSettings._v;
 		const items: TCommandItem[] = [
 			{
 				type: 'navigation',
@@ -119,41 +119,58 @@ export class CommandPaletteCx {
 			},
 			{
 				type: 'navigation',
-				id: 'settings-activity',
-				label: 'Activity',
-				group: 'Settings',
-				keywords: ['activity', 'tracking', 'recording', 'flow map'],
-				to: '/window/main/settings/activity'
-			},
-			{
-				type: 'navigation',
 				id: 'settings-shortcuts',
 				label: 'Shortcuts',
 				group: 'Settings',
 				keywords: ['shortcuts', 'keyboard', 'keybindings', 'hotkeys'],
 				to: '/window/main/settings/shortcuts'
 			},
+			...((activity.enabled
+				? [
+						{
+							type: 'navigation',
+							id: 'settings-activity',
+							label: 'Activity',
+							group: 'Settings',
+							keywords: ['activity', 'tracking', 'recording', 'flow map'],
+							to: '/window/main/settings/activity'
+						}
+					]
+				: []) satisfies TCommandItem[]),
+			...((automation.enabled
+				? [
+						{
+							type: 'navigation',
+							id: 'settings-automation',
+							label: 'Automation',
+							group: 'Settings',
+							keywords: ['automation', 'command', 'cli', 'scripts', 'agents'],
+							to: '/window/main/settings/automation'
+						}
+					]
+				: []) satisfies TCommandItem[]),
+			...((developer.enabled
+				? [
+						{
+							type: 'navigation',
+							id: 'settings-developer',
+							label: 'Developer',
+							group: 'Settings',
+							keywords: ['developer', 'debug', 'dev'],
+							to: '/window/main/settings/developer'
+						},
+						{
+							type: 'navigation',
+							id: 'settings-developer-ui-playground',
+							label: 'UI Playground',
+							group: 'Developer',
+							keywords: ['developer', 'debug', 'dev', 'ui', 'playground'],
+							to: '/window/main/settings/developer/ui-playground'
+						}
+					]
+				: []) satisfies TCommandItem[]),
 			...this.buildSupportItems()
 		];
-
-		if (developer.enabled) {
-			items.push({
-				type: 'navigation',
-				id: 'settings-developer',
-				label: 'Developer',
-				group: 'Settings',
-				keywords: ['developer', 'debug', 'dev'],
-				to: '/window/main/settings/developer'
-			});
-			items.push({
-				type: 'navigation',
-				id: 'settings-developer-ui-playground',
-				label: 'UI Playground',
-				group: 'Developer',
-				keywords: ['developer', 'debug', 'dev', 'ui', 'playground'],
-				to: '/window/main/settings/developer/ui-playground'
-			});
-		}
 
 		return items;
 	}

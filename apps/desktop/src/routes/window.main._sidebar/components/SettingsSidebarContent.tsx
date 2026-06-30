@@ -9,7 +9,8 @@ import {
 	IconBubble,
 	LogoIcon,
 	SettingsIcon,
-	WindowHeaderRow
+	WindowHeaderRow,
+	WorkflowIcon
 } from '@/components';
 import { cn } from '@/lib';
 import { useSettingsCx } from '@/modules/settings';
@@ -19,6 +20,10 @@ export const SettingsSidebarContent: React.FC<TSettingsSidebarContentProps> = (p
 	const { className } = props;
 	const settingsCx = useSettingsCx();
 	const activityEnabled = useCompute(settingsCx.$appSettings, (value) => value.activity.enabled);
+	const automationEnabled = useCompute(
+		settingsCx.$appSettings,
+		(value) => value.automation.enabled
+	);
 	const developerEnabled = useCompute(settingsCx.$appSettings, (value) => value.developer.enabled);
 
 	return (
@@ -56,6 +61,18 @@ export const SettingsSidebarContent: React.FC<TSettingsSidebarContentProps> = (p
 						}
 						label="Activity"
 						render={<Link to="/window/main/settings/activity" />}
+						className="py-0.75"
+					/>
+				)}
+				{automationEnabled && (
+					<SidebarItem
+						icon={
+							<IconBubble variant="info" size="xs">
+								<WorkflowIcon />
+							</IconBubble>
+						}
+						label="Automation"
+						render={<Link to="/window/main/settings/automation" />}
 						className="py-0.75"
 					/>
 				)}

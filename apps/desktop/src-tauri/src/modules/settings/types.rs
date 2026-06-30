@@ -10,6 +10,7 @@ pub struct AppSettings {
     pub version: SettingsVersion,
     pub activity: ActivitySettings,
     pub appearance: AppearanceSettings,
+    pub automation: AutomationSettings,
     pub developer: DeveloperSettings,
     pub onboarding: OnboardingSettings,
     pub updates: UpdateSettings,
@@ -23,6 +24,7 @@ impl Default for AppSettings {
             version: SettingsVersion::current(),
             activity: ActivitySettings::default(),
             appearance: AppearanceSettings::default(),
+            automation: AutomationSettings::default(),
             developer: DeveloperSettings::default(),
             onboarding: OnboardingSettings::default(),
             updates: UpdateSettings::default(),
@@ -39,11 +41,13 @@ pub enum SettingsVersion {
     V0_0_2,
     #[serde(rename = "0.0.3")]
     V0_0_3,
+    #[serde(rename = "0.0.4")]
+    V0_0_4,
 }
 
 impl SettingsVersion {
     pub fn current() -> Self {
-        return Self::V0_0_3;
+        return Self::V0_0_4;
     }
 }
 
@@ -141,6 +145,12 @@ pub enum Theme {
     Dark,
     #[default]
     Auto,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct AutomationSettings {
+    pub enabled: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type, Default)]

@@ -21,6 +21,7 @@ import { Route as WindowMainSidebarIntentionsNewRouteRouteImport } from './route
 import { Route as WindowMainSidebarSettingsShortcutsIndexRouteImport } from './routes/window.main._sidebar.settings.shortcuts/index'
 import { Route as WindowMainSidebarSettingsGeneralIndexRouteImport } from './routes/window.main._sidebar.settings.general/index'
 import { Route as WindowMainSidebarSettingsDeveloperIndexRouteImport } from './routes/window.main._sidebar.settings.developer/index'
+import { Route as WindowMainSidebarSettingsAutomationIndexRouteImport } from './routes/window.main._sidebar.settings.automation/index'
 import { Route as WindowMainSidebarSettingsActivityIndexRouteImport } from './routes/window.main._sidebar.settings.activity/index'
 import { Route as WindowMainSidebarSettingsAboutIndexRouteImport } from './routes/window.main._sidebar.settings.about/index'
 import { Route as WindowMainSidebarIntentionsNewIndexRouteImport } from './routes/window.main._sidebar.intentions.new/index'
@@ -95,6 +96,12 @@ const WindowMainSidebarSettingsDeveloperIndexRoute =
     path: '/settings/developer/',
     getParentRoute: () => WindowMainSidebarRouteRoute,
   } as any)
+const WindowMainSidebarSettingsAutomationIndexRoute =
+  WindowMainSidebarSettingsAutomationIndexRouteImport.update({
+    id: '/settings/automation/',
+    path: '/settings/automation/',
+    getParentRoute: () => WindowMainSidebarRouteRoute,
+  } as any)
 const WindowMainSidebarSettingsActivityIndexRoute =
   WindowMainSidebarSettingsActivityIndexRouteImport.update({
     id: '/settings/activity/',
@@ -145,6 +152,7 @@ export interface FileRoutesByFullPath {
   '/window/main/intentions/new/': typeof WindowMainSidebarIntentionsNewIndexRoute
   '/window/main/settings/about/': typeof WindowMainSidebarSettingsAboutIndexRoute
   '/window/main/settings/activity/': typeof WindowMainSidebarSettingsActivityIndexRoute
+  '/window/main/settings/automation/': typeof WindowMainSidebarSettingsAutomationIndexRoute
   '/window/main/settings/developer/': typeof WindowMainSidebarSettingsDeveloperIndexRoute
   '/window/main/settings/general/': typeof WindowMainSidebarSettingsGeneralIndexRoute
   '/window/main/settings/shortcuts/': typeof WindowMainSidebarSettingsShortcutsIndexRoute
@@ -163,6 +171,7 @@ export interface FileRoutesByTo {
   '/window/main/intentions/new': typeof WindowMainSidebarIntentionsNewIndexRoute
   '/window/main/settings/about': typeof WindowMainSidebarSettingsAboutIndexRoute
   '/window/main/settings/activity': typeof WindowMainSidebarSettingsActivityIndexRoute
+  '/window/main/settings/automation': typeof WindowMainSidebarSettingsAutomationIndexRoute
   '/window/main/settings/developer': typeof WindowMainSidebarSettingsDeveloperIndexRoute
   '/window/main/settings/general': typeof WindowMainSidebarSettingsGeneralIndexRoute
   '/window/main/settings/shortcuts': typeof WindowMainSidebarSettingsShortcutsIndexRoute
@@ -184,6 +193,7 @@ export interface FileRoutesById {
   '/window/main/_sidebar/intentions/new/': typeof WindowMainSidebarIntentionsNewIndexRoute
   '/window/main/_sidebar/settings/about/': typeof WindowMainSidebarSettingsAboutIndexRoute
   '/window/main/_sidebar/settings/activity/': typeof WindowMainSidebarSettingsActivityIndexRoute
+  '/window/main/_sidebar/settings/automation/': typeof WindowMainSidebarSettingsAutomationIndexRoute
   '/window/main/_sidebar/settings/developer/': typeof WindowMainSidebarSettingsDeveloperIndexRoute
   '/window/main/_sidebar/settings/general/': typeof WindowMainSidebarSettingsGeneralIndexRoute
   '/window/main/_sidebar/settings/shortcuts/': typeof WindowMainSidebarSettingsShortcutsIndexRoute
@@ -205,6 +215,7 @@ export interface FileRouteTypes {
     | '/window/main/intentions/new/'
     | '/window/main/settings/about/'
     | '/window/main/settings/activity/'
+    | '/window/main/settings/automation/'
     | '/window/main/settings/developer/'
     | '/window/main/settings/general/'
     | '/window/main/settings/shortcuts/'
@@ -223,6 +234,7 @@ export interface FileRouteTypes {
     | '/window/main/intentions/new'
     | '/window/main/settings/about'
     | '/window/main/settings/activity'
+    | '/window/main/settings/automation'
     | '/window/main/settings/developer'
     | '/window/main/settings/general'
     | '/window/main/settings/shortcuts'
@@ -243,6 +255,7 @@ export interface FileRouteTypes {
     | '/window/main/_sidebar/intentions/new/'
     | '/window/main/_sidebar/settings/about/'
     | '/window/main/_sidebar/settings/activity/'
+    | '/window/main/_sidebar/settings/automation/'
     | '/window/main/_sidebar/settings/developer/'
     | '/window/main/_sidebar/settings/general/'
     | '/window/main/_sidebar/settings/shortcuts/'
@@ -341,6 +354,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WindowMainSidebarSettingsDeveloperIndexRouteImport
       parentRoute: typeof WindowMainSidebarRouteRoute
     }
+    '/window/main/_sidebar/settings/automation/': {
+      id: '/window/main/_sidebar/settings/automation/'
+      path: '/settings/automation'
+      fullPath: '/window/main/settings/automation/'
+      preLoaderRoute: typeof WindowMainSidebarSettingsAutomationIndexRouteImport
+      parentRoute: typeof WindowMainSidebarRouteRoute
+    }
     '/window/main/_sidebar/settings/activity/': {
       id: '/window/main/_sidebar/settings/activity/'
       path: '/settings/activity'
@@ -411,6 +431,7 @@ interface WindowMainSidebarRouteRouteChildren {
   WindowMainSidebarIntentionsIntentionIdIndexRoute: typeof WindowMainSidebarIntentionsIntentionIdIndexRoute
   WindowMainSidebarSettingsAboutIndexRoute: typeof WindowMainSidebarSettingsAboutIndexRoute
   WindowMainSidebarSettingsActivityIndexRoute: typeof WindowMainSidebarSettingsActivityIndexRoute
+  WindowMainSidebarSettingsAutomationIndexRoute: typeof WindowMainSidebarSettingsAutomationIndexRoute
   WindowMainSidebarSettingsDeveloperIndexRoute: typeof WindowMainSidebarSettingsDeveloperIndexRoute
   WindowMainSidebarSettingsGeneralIndexRoute: typeof WindowMainSidebarSettingsGeneralIndexRoute
   WindowMainSidebarSettingsShortcutsIndexRoute: typeof WindowMainSidebarSettingsShortcutsIndexRoute
@@ -429,6 +450,8 @@ const WindowMainSidebarRouteRouteChildren: WindowMainSidebarRouteRouteChildren =
       WindowMainSidebarSettingsAboutIndexRoute,
     WindowMainSidebarSettingsActivityIndexRoute:
       WindowMainSidebarSettingsActivityIndexRoute,
+    WindowMainSidebarSettingsAutomationIndexRoute:
+      WindowMainSidebarSettingsAutomationIndexRoute,
     WindowMainSidebarSettingsDeveloperIndexRoute:
       WindowMainSidebarSettingsDeveloperIndexRoute,
     WindowMainSidebarSettingsGeneralIndexRoute:

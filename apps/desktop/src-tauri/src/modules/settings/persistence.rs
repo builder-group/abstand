@@ -112,7 +112,11 @@ fn migrate_value_one_step(value: &mut Value) -> Result<SettingsVersion, String> 
             migrate_v0_0_2_to_v0_0_3(value)?;
             return version_from_value(value);
         }
-        SettingsVersion::V0_0_3 => return Ok(SettingsVersion::V0_0_3),
+        SettingsVersion::V0_0_3 => {
+            migrate_v0_0_3_to_v0_0_4(value)?;
+            return version_from_value(value);
+        }
+        SettingsVersion::V0_0_4 => return Ok(SettingsVersion::V0_0_4),
     }
 }
 
@@ -148,6 +152,22 @@ fn migrate_v0_0_2_to_v0_0_3(value: &mut Value) -> Result<(), String> {
                 "trackBrowser": false,
                 "trackPrivateBrowser": false
             }
+        }),
+    );
+
+    return Ok(());
+}
+
+fn migrate_v0_0_3_to_v0_0_4(value: &mut Value) -> Result<(), String> {
+    let Some(object) = value.as_object_mut() else {
+        return Err("settings file root must be an object".to_string());
+    };
+
+    object.insert("version".to_string(), json!("0.0.4"));
+    object.insert(
+        "automation".to_string(),
+        json!({
+            "enabled": false
         }),
     );
 

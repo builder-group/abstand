@@ -6,7 +6,7 @@ import { createMountLifecycle, toTuple } from '@/lib';
 
 export class SettingsCx {
 	public readonly $appSettings = createState<specta.AppSettings>({
-		version: '0.0.3',
+		version: '0.0.4',
 		activity: {
 			enabled: false,
 			foreground: {
@@ -19,6 +19,9 @@ export class SettingsCx {
 		appearance: {
 			theme: 'auto',
 			fontScale: 1
+		},
+		automation: {
+			enabled: false
 		},
 		developer: {
 			enabled: false
@@ -71,6 +74,10 @@ export class SettingsCx {
 				...currentSettings.appearance,
 				...changes.appearance
 			},
+			automation: {
+				...currentSettings.automation,
+				...changes.automation
+			},
 			developer: {
 				...currentSettings.developer,
 				...changes.developer
@@ -101,13 +108,14 @@ export class SettingsCx {
 export type TSettingsUpdates = Partial<
 	Omit<
 		specta.AppSettings,
-		'activity' | 'appearance' | 'developer' | 'onboarding' | 'updates' | 'shortcuts'
+		'activity' | 'appearance' | 'automation' | 'developer' | 'onboarding' | 'updates' | 'shortcuts'
 	>
 > & {
 	activity?: Partial<Omit<specta.ActivitySettings, 'foreground'>> & {
 		foreground?: Partial<specta.ActivityForegroundSettings>;
 	};
 	appearance?: Partial<specta.AppearanceSettings>;
+	automation?: Partial<specta.AutomationSettings>;
 	developer?: Partial<specta.DeveloperSettings>;
 	onboarding?: Partial<specta.OnboardingSettings>;
 	updates?: Partial<specta.UpdateSettings>;
