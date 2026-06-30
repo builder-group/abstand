@@ -29,6 +29,7 @@ export {
 	CopyIcon,
 	FolderOpenIcon,
 	GlobeIcon,
+	InfoIcon,
 	LibraryBigIcon,
 	LoaderIcon,
 	LogOutIcon,

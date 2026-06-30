@@ -1,7 +1,11 @@
 import React from 'react';
 import { Select } from '@/components';
 import { type specta } from '@/environment';
-import { SettingsGroup, SettingsRow } from '@/modules/settings';
+import {
+	SettingsGroup,
+	SettingsRow,
+	type TSettingsRowDescriptionVariant
+} from '@/modules/settings';
 import {
 	type BlockIntentionFormCx,
 	type TBlockIntentionConditionMode
@@ -20,20 +24,19 @@ export const WhenSection: React.FC<TWhenSectionProps> = (props) => {
 				<ConditionRowSet
 					transition="start"
 					label="Starts"
-					description={shouldShowActiveEditDescriptions ? 'Applies to future sessions' : undefined}
+					description={
+						shouldShowActiveEditDescriptions
+							? 'Applies next time this Intention starts.'
+							: undefined
+					}
+					descriptionVariant={shouldShowActiveEditDescriptions ? 'info' : 'default'}
 					formCx={formCx}
 					isDisabled={isDisabled}
 				/>
 			</SettingsGroup>
 
 			<SettingsGroup>
-				<ConditionRowSet
-					transition="end"
-					label="Ends"
-					description={shouldShowActiveEditDescriptions ? 'Can affect this session' : undefined}
-					formCx={formCx}
-					isDisabled={isDisabled}
-				/>
+				<ConditionRowSet transition="end" label="Ends" formCx={formCx} isDisabled={isDisabled} />
 			</SettingsGroup>
 		</div>
 	);
@@ -46,7 +49,7 @@ interface TWhenSectionProps {
 }
 
 const ConditionRowSet: React.FC<TConditionRowSetProps> = (props) => {
-	const { transition, label, description, formCx, isDisabled = false } = props;
+	const { transition, label, description, descriptionVariant, formCx, isDisabled = false } = props;
 	const conditionRow = useConditionRow(formCx, transition);
 
 	return (
@@ -56,6 +59,7 @@ const ConditionRowSet: React.FC<TConditionRowSetProps> = (props) => {
 				formCx={formCx}
 				label={label}
 				description={description}
+				descriptionVariant={descriptionVariant}
 				isDisabled={isDisabled}
 			/>
 			<ConditionDetailRows formCx={formCx} conditionRow={conditionRow} isDisabled={isDisabled} />
@@ -66,7 +70,8 @@ const ConditionRowSet: React.FC<TConditionRowSetProps> = (props) => {
 interface TConditionRowSetProps {
 	transition: specta.IntentionConditionTransition;
 	label: string;
-	description?: string;
+	description?: React.ReactNode;
+	descriptionVariant?: TSettingsRowDescriptionVariant;
 	formCx: BlockIntentionFormCx;
 	isDisabled?: boolean;
 }
@@ -79,6 +84,7 @@ const ConditionModeRow: React.FC<TConditionModeRowProps> = (props) => {
 		formCx,
 		label,
 		description,
+		descriptionVariant,
 		isDisabled = false
 	} = props;
 	const modeOptions = formCx.getConditionModeOptions(transition);
@@ -93,7 +99,12 @@ const ConditionModeRow: React.FC<TConditionModeRowProps> = (props) => {
 	// MARK: - UI
 
 	return (
-		<SettingsRow label={label} description={description} variant="compact">
+		<SettingsRow
+			label={label}
+			description={description}
+			descriptionVariant={descriptionVariant}
+			variant="compact"
+		>
 			<Select variant="ghost" value={mode} disabled={isDisabled} onChange={handleModeChange}>
 				{modeOptions.map((option) => (
 					<option key={option.value} value={option.value}>
@@ -109,6 +120,7 @@ interface TConditionModeRowProps {
 	conditionRow: TConditionRow;
 	formCx: BlockIntentionFormCx;
 	label: string;
-	description?: string;
+	description?: React.ReactNode;
+	descriptionVariant?: TSettingsRowDescriptionVariant;
 	isDisabled?: boolean;
 }

@@ -2,6 +2,7 @@ import { mergeProps } from '@base-ui/react/merge-props';
 import { useRender } from '@base-ui/react/use-render';
 import { cva, type VariantProps } from 'class-variance-authority';
 import React from 'react';
+import { CircleAlertIcon, InfoIcon, XCircleIcon } from '@/components';
 import { cn } from '@/lib';
 
 export const SettingsRow: React.FC<TSettingsRowProps> = (props) => {
@@ -37,6 +38,7 @@ export const SettingsRow: React.FC<TSettingsRowProps> = (props) => {
 				</div>
 				{description != null && (
 					<span className={descriptionVariants({ size, variant: descriptionVariant })}>
+						<SettingsRowDescriptionIcon variant={descriptionVariant} />
 						{description}
 					</span>
 				)}
@@ -52,9 +54,13 @@ interface TSettingsRowProps extends TSettingsRowFrameProps {
 	label: string;
 	labelAccessory?: React.ReactNode;
 	description?: React.ReactNode;
-	descriptionVariant?: VariantProps<typeof descriptionVariants>['variant'];
+	descriptionVariant?: TSettingsRowDescriptionVariant;
 	contentClassName?: string;
 }
+
+export type TSettingsRowDescriptionVariant = NonNullable<
+	VariantProps<typeof descriptionVariants>['variant']
+>;
 
 const labelVariants = cva('text-base-950', {
 	variants: {
@@ -72,8 +78,11 @@ const descriptionVariants = cva('', {
 	variants: {
 		variant: {
 			default: 'text-base-500',
-			warning: 'text-warning',
-			error: 'text-error'
+			info: 'text-info inline-flex items-start gap-1 [&>svg]:mt-px [&>svg]:size-3 [&>svg]:shrink-0',
+			warning:
+				'text-warning inline-flex items-start gap-1 [&>svg]:mt-px [&>svg]:size-3 [&>svg]:shrink-0',
+			error:
+				'text-error inline-flex items-start gap-1 [&>svg]:mt-px [&>svg]:size-3 [&>svg]:shrink-0'
 		},
 		size: {
 			sm: 'mt-px text-xs',
@@ -97,6 +106,25 @@ const controlVariants = cva('flex shrink-0 items-center', {
 		size: 'sm'
 	}
 });
+
+const SettingsRowDescriptionIcon: React.FC<TSettingsRowDescriptionIconProps> = (props) => {
+	const { variant } = props;
+
+	switch (variant) {
+		case 'default':
+			return null;
+		case 'info':
+			return <InfoIcon />;
+		case 'warning':
+			return <CircleAlertIcon />;
+		case 'error':
+			return <XCircleIcon />;
+	}
+};
+
+interface TSettingsRowDescriptionIconProps {
+	variant: TSettingsRowDescriptionVariant;
+}
 
 export const SettingsRowFrame: React.FC<TSettingsRowFrameProps> = (props) => {
 	const {
