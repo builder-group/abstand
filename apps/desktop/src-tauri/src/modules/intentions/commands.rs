@@ -531,26 +531,26 @@ fn build_conditions(
 
 fn validate_write_intention_input(input: &WriteIntentionInput) -> Result<(), String> {
     if input.name.is_empty() {
-        return Err("Please enter a name".to_string());
+        return Err("Enter a name".to_string());
     }
     if !input
         .conditions
         .iter()
         .any(|condition| condition.transition == IntentionConditionTransition::Start)
     {
-        return Err("Please add a start condition".to_string());
+        return Err("Add a start condition".to_string());
     }
     if !input
         .conditions
         .iter()
         .any(|condition| condition.transition == IntentionConditionTransition::End)
     {
-        return Err("Please add an end condition".to_string());
+        return Err("Add an end condition".to_string());
     }
 
     let WriteIntentionBehaviorInput::Block(block) = &input.behavior;
     if block.balanced_delay_ms <= 0 {
-        return Err("Balanced pause must be greater than 0".to_string());
+        return Err("Choose a Balanced pause greater than 0".to_string());
     }
 
     return Ok(());

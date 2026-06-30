@@ -42,8 +42,8 @@ export class BlockIntentionFormCx {
 					validator: z
 						.string()
 						.trim()
-						.min(1, 'Please enter a name')
-						.max(80, 'Name must be 80 characters or less')
+						.min(1, 'Enter a name')
+						.max(80, 'Use 80 characters or less')
 				},
 				scope: {
 					defaultValue: initialData.scope,
@@ -68,13 +68,13 @@ export class BlockIntentionFormCx {
 						.int()
 						.min(
 							blockIntentionFormConfig.balancedDelay.minMs,
-							`Balanced pause must be at least ${formatBalancedDelayMs(
+							`Choose at least ${formatBalancedDelayMs(
 								blockIntentionFormConfig.balancedDelay.minMs
 							)}`
 						)
 						.max(
 							blockIntentionFormConfig.balancedDelay.maxMs,
-							`Balanced pause must be ${formatBalancedDelayMs(
+							`Choose ${formatBalancedDelayMs(
 								blockIntentionFormConfig.balancedDelay.maxMs
 							)} or less`
 						)
@@ -594,16 +594,16 @@ function createConditionsValidator(
 				offsetMs: z
 					.number()
 					.int()
-					.min(blockIntentionFormConfig.conditionDuration.minMs)
+					.min(blockIntentionFormConfig.conditionDuration.minMs, 'Choose at least 1 minute')
 					.max(blockIntentionFormConfig.conditionDuration.maxMs, 'Choose a duration up to 5 years')
 					.refine(
 						(offsetMs) => offsetMs % blockIntentionFormConfig.conditionDuration.stepMs === 0,
-						'Duration must use whole minutes'
+						'Use whole minutes'
 					),
 				weekdaysMask: z
 					.custom<specta.WeekdayMask>(
 						(value) => typeof value === 'number' && isWeekdayMask(value),
-						'Please choose at least one day'
+						'Choose at least one day'
 					)
 					.nullable()
 			})
@@ -618,10 +618,10 @@ function createConditionsValidator(
 			const endCondition = conditions[endConditionIndex] ?? null;
 
 			if (startCondition == null) {
-				ctx.addIssue({ code: 'custom', message: 'Please add a start condition' });
+				ctx.addIssue({ code: 'custom', message: 'Add a start condition' });
 			}
 			if (endCondition == null) {
-				ctx.addIssue({ code: 'custom', message: 'Please add an end condition' });
+				ctx.addIssue({ code: 'custom', message: 'Add an end condition' });
 			}
 			if (startCondition == null || endCondition == null) {
 				return;
@@ -663,7 +663,7 @@ function createConditionsValidator(
 					ctx.addIssue({
 						code: 'custom',
 						path: [endConditionIndex, 'timeOfDayMs'],
-						message: 'End time must be after start time'
+						message: 'Choose an end time after the start time'
 					});
 				}
 				return;
@@ -692,14 +692,14 @@ function createConditionsValidator(
 				ctx.addIssue({
 					code: 'custom',
 					path: [endConditionIndex, 'timeOfDayMs'],
-					message: 'End time must be after start time'
+					message: 'Choose an end time after the start time'
 				});
 			}
 			if (startAt != null && endAt <= startAt) {
 				ctx.addIssue({
 					code: 'custom',
 					path: [endConditionIndex, 'timeOfDayMs'],
-					message: 'End time must be after start time'
+					message: 'Choose an end time after the start time'
 				});
 			}
 		});
@@ -760,7 +760,7 @@ const blockIntentionFormValidator = {
 					issues: [
 						{
 							path: ['exceptionTargets'],
-							message: 'A target cannot be both a base target and an exception'
+							message: 'Remove targets that appear in both lists'
 						}
 					]
 				};

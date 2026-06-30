@@ -1290,7 +1290,7 @@ const ToastSection: React.FC = () => {
 			error: {
 				type: 'destructive',
 				title: 'Sync failed',
-				description: 'Please try again.'
+				description: 'Try again.'
 			}
 		});
 	}
