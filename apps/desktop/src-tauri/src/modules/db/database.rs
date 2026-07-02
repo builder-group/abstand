@@ -2,7 +2,7 @@ use crate::environment::{
     configs::{app::AppConfig, db::DbConfig},
     path::{get_app_data_dir, get_app_support_dir},
 };
-use sqlx::{sqlite::SqlitePool, Pool, Sqlite};
+use sqlx::{sqlite::SqlitePool, ConnectOptions, Pool, Sqlite};
 use std::{error::Error, path::PathBuf};
 use tauri::App;
 
@@ -24,7 +24,8 @@ impl Database {
             .filename(&db_path)
             .create_if_missing(true)
             .journal_mode(sqlx::sqlite::SqliteJournalMode::Wal)
-            .foreign_keys(true);
+            .foreign_keys(true)
+            .disable_statement_logging();
 
         let pool = SqlitePool::connect_with(connection_options).await?;
 
@@ -40,7 +41,8 @@ impl Database {
             .filename(&db_path)
             .create_if_missing(false)
             .read_only(true)
-            .foreign_keys(true);
+            .foreign_keys(true)
+            .disable_statement_logging();
 
         let pool = SqlitePool::connect_with(connection_options).await?;
 
