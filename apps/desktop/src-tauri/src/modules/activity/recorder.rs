@@ -43,6 +43,10 @@ impl ForegroundActivityRecorder {
     }
 
     pub fn enqueue_window_event(app: &AppHandle, event: WindowEvent, occurred_at: i64) {
+        if matches!(event, WindowEvent::WindowBoundsChanged { .. }) {
+            return;
+        }
+
         let Some(recorder_state) = app.try_state::<ForegroundActivityRecorderState>() else {
             log::warn!(target: LOG_TARGET, "foreground activity recorder state unavailable");
             return;
@@ -98,6 +102,10 @@ impl ForegroundActivityRecorder {
         &self,
         event: ForegroundActivityRecordEvent,
     ) -> Result<(), ForegroundActivityRecorderError> {
+        if matches!(event.event, WindowEvent::WindowBoundsChanged { .. }) {
+            return Ok(());
+        }
+
         let settings = {
             let settings_state = self.app.state::<AppSettingsState>();
             let activity_settings = settings_state.lock().unwrap().activity.clone().normalized();
@@ -149,6 +157,7 @@ async fn build_activity_input(
                     .await?,
             ))
         }
+        WindowEvent::WindowBoundsChanged { .. } => Ok(None),
     };
 }
 

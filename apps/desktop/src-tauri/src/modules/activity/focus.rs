@@ -12,6 +12,7 @@ pub struct ActivityFocus {
     pub app_name: Option<String>,
     pub target: ActivityTarget,
     pub window_bounds: Option<ActivityWindowBounds>,
+    pub browser_content_bounds: Option<ActivityWindowBounds>,
 }
 
 impl ActivityFocus {
@@ -28,6 +29,7 @@ impl ActivityFocus {
                 website_path: None,
             },
             window_bounds: None,
+            browser_content_bounds: None,
         };
     }
 
@@ -50,6 +52,10 @@ impl ActivityFocus {
                 website_path: website_target.and_then(|target| target.path),
             },
             window_bounds: window.bounds.map(ActivityWindowBounds::from),
+            browser_content_bounds: window
+                .browser
+                .and_then(|browser| browser.content_bounds)
+                .map(ActivityWindowBounds::from),
         };
     }
 

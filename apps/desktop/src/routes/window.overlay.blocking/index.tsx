@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useFeatureState } from 'feature-react/state';
 import React from 'react';
+import * as z from 'zod';
 import {
 	ArrowUpRightIcon,
 	Button,
@@ -17,14 +18,23 @@ import { cn, formatActiveTimeRangeLabel } from '@/lib';
 import { BlockingOverlayCx, useCreateBlockingOverlayCx } from './lib';
 
 export const Route = createFileRoute('/window/overlay/blocking/')({
+	validateSearch: (search) => {
+		const result = SBlockingOverlayRouteSearch.safeParse(search);
+		return result.success ? result.data : { manualClose: false };
+	},
 	loader: () => specta.commands.getBlockingViolation(),
 	pendingComponent: BlockingOverlayLoading,
 	pendingMs: 150,
 	component: RouteComponent
 });
 
+const SBlockingOverlayRouteSearch = z.object({
+	manualClose: z.union([z.boolean(), z.stringbool()]).catch(false)
+});
+
 function RouteComponent() {
 	const initialViolation = Route.useLoaderData();
+	const { manualClose } = Route.useSearch();
 	const toastsCx = useToastsCx();
 	const cx = useCreateBlockingOverlayCx(initialViolation, toastsCx);
 	const violation = useFeatureState(cx.$violation);
@@ -35,11 +45,17 @@ function RouteComponent() {
 		return <BlockingOverlayLoading />;
 	}
 
-	return <BlockingOverlay violation={violation} cx={cx} />;
+	return (
+		<BlockingOverlay
+			violation={violation}
+			manualClose={manualClose}
+			cx={cx}
+		/>
+	);
 }
 
 const BlockingOverlay: React.FC<TBlockingOverlayProps> = (props) => {
-	const { violation, cx } = props;
+	const { violation, manualClose, cx } = props;
 	const target = violation.blockedTarget;
 	const isDeviceBlock = target.type === 'device';
 
@@ -74,13 +90,14 @@ const BlockingOverlay: React.FC<TBlockingOverlayProps> = (props) => {
 				</div>
 			</div>
 
-			<BlockingOverlayActions target={target} cx={cx} />
+			<BlockingOverlayActions target={target} manualClose={manualClose} cx={cx} />
 		</main>
 	);
 };
 
 interface TBlockingOverlayProps {
 	violation: specta.BlockingViolation;
+	manualClose: boolean;
 	cx: BlockingOverlayCx;
 }
 
@@ -106,14 +123,14 @@ interface TIntentionNameLinkProps {
 }
 
 const BlockingOverlayActions: React.FC<TBlockingOverlayActionsProps> = (props) => {
-	const { target, cx } = props;
+	const { target, manualClose, cx } = props;
 	const blockedAppCloseStatus = useFeatureState(cx.$blockedAppCloseStatus);
 	const isOpeningIntention = useFeatureState(cx.$isOpeningIntention);
 	const isPausingOverlay = useFeatureState(cx.$isPausingOverlay);
 
 	const isQuittingApp = blockedAppCloseStatus === 'quitting';
 	const canQuitBlockedApp = target.type === 'app' && blockedAppCloseStatus !== 'needsManualClose';
-	const canPauseOverlay = target.type === 'website' || blockedAppCloseStatus === 'needsManualClose';
+	const canPauseOverlay = manualClose || blockedAppCloseStatus === 'needsManualClose';
 
 	return (
 		<div className="relative z-10 flex flex-col items-center gap-3">
@@ -163,6 +180,7 @@ const BlockingOverlayActions: React.FC<TBlockingOverlayActionsProps> = (props) =
 
 interface TBlockingOverlayActionsProps {
 	target: specta.BlockedTarget;
+	manualClose: boolean;
 	cx: BlockingOverlayCx;
 }
 

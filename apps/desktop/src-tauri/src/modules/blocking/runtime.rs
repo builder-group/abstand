@@ -13,20 +13,27 @@ use crate::{
         scheduler,
     },
 };
-use mado::WindowEvent;
+use mado::{WindowBoundsChange, WindowEvent};
 use std::time::{Duration, Instant};
 use tauri::{AppHandle, Manager};
 use tauri_specta::Event;
 
 pub async fn handle_window_event(app: &AppHandle, event: WindowEvent, expects_window_update: bool) {
-    let focus = match event {
-        WindowEvent::AppActivated { app } => {
-            ActivityFocus::from_app_info(app, expects_window_update)
+    match event {
+        WindowEvent::AppActivated { app: app_info } => {
+            let focus = ActivityFocus::from_app_info(app_info, expects_window_update);
+            handle_activity_focus(app, focus).await;
         }
-        WindowEvent::WindowChanged { window } => ActivityFocus::from_window_info(window),
-    };
-
-    handle_activity_focus(app, focus).await;
+        WindowEvent::WindowChanged { window } => {
+            let focus = ActivityFocus::from_window_info(window);
+            handle_activity_focus(app, focus).await;
+        }
+        WindowEvent::WindowBoundsChanged { window } => {
+            let runtime_state = app.state::<BlockingRuntimeState>();
+            let mut runtime = runtime_state.lock().unwrap();
+            runtime.handle_window_bounds_change(app, &window);
+        }
+    }
 }
 
 pub async fn handle_activity_focus(app: &AppHandle, focus: ActivityFocus) {
@@ -163,6 +170,22 @@ impl BlockingRuntime {
     pub fn clear_active_violation(&mut self, app: &AppHandle) {
         self.set_active_violation(app, None);
         overlay::hide(app);
+    }
+
+    fn handle_window_bounds_change(&mut self, app: &AppHandle, window: &WindowBoundsChange) {
+        if self.is_overlay_paused() {
+            return;
+        }
+
+        let Some(violation) = self.active_violation.as_ref() else {
+            return;
+        };
+
+        if window.app.pid != violation.triggering_process_id {
+            return;
+        }
+
+        overlay::handle_window_bounds_change(app, window, violation);
     }
 
     pub fn pause_overlay(&mut self, app: AppHandle, pause_duration: Duration) {

@@ -15,6 +15,7 @@ pub fn start_monitoring(app: AppHandle) {
             // window tracking starts after the monitor is rebuilt, which currently
             // requires app restart.
             track_window_changes: tracks_window_changes,
+            track_window_bounds_changes: tracks_window_changes,
             include_browser_info: tracks_window_changes,
             include_website_info: false,
             ..Default::default()

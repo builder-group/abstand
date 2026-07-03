@@ -96,11 +96,23 @@ impl AppWindow {
         let full_route = self.resolve_full_route(local_route);
 
         return if let Some(window) = self.get(app) {
-            self.navigate_to_route(&window, &full_route)?;
+            self.navigate_to_route(&window, &full_route, false)?;
             Ok(window)
         } else {
             self.build(app, &full_route)
         };
+    }
+
+    /// Replaces the route of an existing native window.
+    ///
+    /// This does not show, focus, resize, reposition, or build the window.
+    pub fn replace_url(&self, app: &AppHandle, local_route: &str) -> tauri::Result<()> {
+        let Some(window) = self.get(app) else {
+            return Ok(());
+        };
+
+        let full_route = self.resolve_full_route(local_route);
+        return self.navigate_to_route(&window, &full_route, true);
     }
 
     /// Shows the native window at its current route or builds it at the default window-local route.
@@ -261,10 +273,15 @@ impl AppWindow {
         );
     }
 
-    fn navigate_to_route(&self, window: &WebviewWindow, full_route: &str) -> tauri::Result<()> {
+    fn navigate_to_route(
+        &self,
+        window: &WebviewWindow,
+        full_route: &str,
+        replace: bool,
+    ) -> tauri::Result<()> {
         return window.eval(&format!(
-            "window.__TAURI_ROUTER__?.navigate({{ href: {:?} }});",
-            full_route
+            "window.__TAURI_ROUTER__?.navigate({{ href: {:?}, replace: {} }});",
+            full_route, replace
         ));
     }
 
