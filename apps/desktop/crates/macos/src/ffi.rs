@@ -6,6 +6,10 @@ swift!(pub fn abstand_macos_apply_window_normal_overlay_behavior(
     window_ptr: Int,
     order_front: Bool
 ) -> Bool);
+swift!(pub fn abstand_macos_apply_window_floating_overlay_behavior(
+    window_ptr: Int,
+    order_front: Bool
+) -> Bool);
 swift!(pub fn abstand_macos_apply_window_screen_overlay_behavior(
     window_ptr: Int
 ) -> Bool);

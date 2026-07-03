@@ -36,6 +36,15 @@ impl OverlayWindowConfig {
         };
     }
 
+    pub fn floating(local_route: Option<String>, bounds: Option<OverlayWindowBounds>) -> Self {
+        return Self {
+            local_route,
+            bounds,
+            level: OverlayWindowLevel::Floating,
+            order_front: true,
+        };
+    }
+
     pub fn screen_saver(local_route: Option<String>, bounds: Option<OverlayWindowBounds>) -> Self {
         return Self {
             local_route,
@@ -49,6 +58,7 @@ impl OverlayWindowConfig {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OverlayWindowLevel {
     Normal,
+    Floating,
     ScreenSaver,
 }
 

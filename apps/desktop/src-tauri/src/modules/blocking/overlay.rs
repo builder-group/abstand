@@ -95,7 +95,7 @@ pub fn handle_window_bounds_change(
     overlay_window::update(
         app,
         OverlayWindowOwner::new(BLOCKING_OVERLAY_OWNER_ID),
-        OverlayWindowConfig::normal(
+        OverlayWindowConfig::floating(
             local_route.map(str::to_string),
             Some(OverlayWindowBounds::from(bounds)),
         ),
@@ -117,11 +117,14 @@ fn resolve_placement_for_violation(
             source: BlockingOverlayPlacementSource::MonitorBounds,
         },
         BlockedTarget::Website { .. } => {
+            // Note: App and website blocks use floating level as a deliberate compromise:
+            // it stays above the blocked focused window while mado keeps receiving move events,
+            // but it may appear above allowed apps until their focus event clears it.
             if let Some(bounds) = focus.browser_content_bounds {
                 BlockingOverlayPlacement {
                     bounds: Some(BlockingOverlayBounds::from(bounds)),
                     show_manual_close: false,
-                    level: OverlayWindowLevel::Normal,
+                    level: OverlayWindowLevel::Floating,
                     source: BlockingOverlayPlacementSource::BrowserContentBounds,
                 }
             } else if let Some(bounds) = get_active_browser_content_bounds(
@@ -131,21 +134,21 @@ fn resolve_placement_for_violation(
                 BlockingOverlayPlacement {
                     bounds: Some(BlockingOverlayBounds::from(bounds)),
                     show_manual_close: false,
-                    level: OverlayWindowLevel::Normal,
+                    level: OverlayWindowLevel::Floating,
                     source: BlockingOverlayPlacementSource::BrowserContentBounds,
                 }
             } else if let Some(bounds) = focus.window_bounds {
                 BlockingOverlayPlacement {
                     bounds: Some(BlockingOverlayBounds::from(bounds)),
                     show_manual_close: true,
-                    level: OverlayWindowLevel::Normal,
+                    level: OverlayWindowLevel::Floating,
                     source: BlockingOverlayPlacementSource::WindowBounds,
                 }
             } else {
                 BlockingOverlayPlacement {
                     bounds: resolve_monitor_bounds_for_focus(app, focus),
                     show_manual_close: true,
-                    level: OverlayWindowLevel::Normal,
+                    level: OverlayWindowLevel::Floating,
                     source: BlockingOverlayPlacementSource::MonitorBounds,
                 }
             }
@@ -155,14 +158,14 @@ fn resolve_placement_for_violation(
                 BlockingOverlayPlacement {
                     bounds: Some(BlockingOverlayBounds::from(bounds)),
                     show_manual_close: false,
-                    level: OverlayWindowLevel::Normal,
+                    level: OverlayWindowLevel::Floating,
                     source: BlockingOverlayPlacementSource::WindowBounds,
                 }
             } else {
                 BlockingOverlayPlacement {
                     bounds: resolve_monitor_bounds_for_focus(app, focus),
                     show_manual_close: false,
-                    level: OverlayWindowLevel::Normal,
+                    level: OverlayWindowLevel::Floating,
                     source: BlockingOverlayPlacementSource::MonitorBounds,
                 }
             }
@@ -189,6 +192,7 @@ impl BlockingOverlayPlacement {
         let bounds = self.bounds.map(OverlayWindowBounds::from);
         return match self.level {
             OverlayWindowLevel::Normal => OverlayWindowConfig::normal(route, bounds),
+            OverlayWindowLevel::Floating => OverlayWindowConfig::floating(route, bounds),
             OverlayWindowLevel::ScreenSaver => OverlayWindowConfig::screen_saver(route, bounds),
         };
     }
@@ -309,7 +313,7 @@ fn schedule_browser_content_bounds_retries(app: &AppHandle, focus: &ActivityFocu
                 overlay_window::update(
                     &app,
                     OverlayWindowOwner::new(BLOCKING_OVERLAY_OWNER_ID),
-                    OverlayWindowConfig::normal(
+                    OverlayWindowConfig::floating(
                         Some(BLOCKING_OVERLAY_ROUTE.to_string()),
                         Some(bounds),
                     ),
@@ -367,8 +371,14 @@ const LOG_TARGET: &str = "modules::blocking::overlay";
 const BLOCKING_OVERLAY_OWNER_ID: &str = "blocking";
 const BLOCKING_OVERLAY_ROUTE: &str = "/blocking";
 const BLOCKING_OVERLAY_MANUAL_CLOSE_ROUTE: &str = "/blocking?manualClose=true";
-const BROWSER_CONTENT_BOUNDS_RETRY_DELAYS: [Duration; 3] = [
+// Note: Absolute delays from the initial window-bounds fallback, not intervals between retries
+const BROWSER_CONTENT_BOUNDS_RETRY_DELAYS: [Duration; 8] = [
+    Duration::from_millis(200),
     Duration::from_millis(400),
     Duration::from_millis(800),
     Duration::from_millis(1_200),
+    Duration::from_millis(1_600),
+    Duration::from_millis(2_400),
+    Duration::from_millis(3_200),
+    Duration::from_millis(5_000),
 ];

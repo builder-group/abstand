@@ -42,6 +42,9 @@ pub fn apply_overlay_behavior(
         OverlayWindowLevel::Normal => {
             abstand_macos::apply_window_normal_overlay_behavior(window_ptr, config.order_front)
         }
+        OverlayWindowLevel::Floating => {
+            abstand_macos::apply_window_floating_overlay_behavior(window_ptr, config.order_front)
+        }
         OverlayWindowLevel::ScreenSaver => {
             abstand_macos::apply_window_screen_overlay_behavior(window_ptr)
         }
