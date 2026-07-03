@@ -1,6 +1,9 @@
 use super::types::{BlockedTarget, BlockingViolation};
 use crate::{
-    app::window::AppWindow,
+    app::window::overlay_window::{
+        self,
+        types::{OverlayWindowBounds, OverlayWindowConfig, OverlayWindowLevel, OverlayWindowOwner},
+    },
     common::url::extract_website_target,
     modules::{
         activity::focus::{ActivityFocus, ActivityWindowBounds},
@@ -9,7 +12,7 @@ use crate::{
 };
 use mado::{QueryConfig, WindowBounds, WindowBoundsChange};
 use std::time::Duration;
-use tauri::{AppHandle, LogicalPosition, LogicalSize};
+use tauri::AppHandle;
 
 pub fn show(app: &AppHandle, focus: &ActivityFocus, violation: &BlockingViolation) {
     let placement = resolve_placement_for_violation(app, focus, violation);
@@ -24,84 +27,24 @@ pub fn show(app: &AppHandle, focus: &ActivityFocus, violation: &BlockingViolatio
         schedule_browser_content_bounds_retries(app, focus);
     }
 
-    let app = app.clone();
-
-    // Note: Focus handling is driven by mado outside Tauri's main thread, but
-    // native window mutations must run on it
-    if let Err(error) = app.clone().run_on_main_thread(move || {
-        let window = match AppWindow::Overlay.get_or_build_at(&app, placement.route()) {
-            Ok(window) => window,
-            Err(error) => {
-                log::error!(target: LOG_TARGET, "failed to build blocking overlay: {}", error);
-                return;
-            }
-        };
-
-        if let Some(bounds) = placement.bounds {
-            if let Err(error) = window.set_position(LogicalPosition::new(bounds.x, bounds.y)) {
-                log::warn!(
-                    target: LOG_TARGET,
-                    "failed to position blocking overlay: {}",
-                    error
-                );
-            }
-            if let Err(error) = window.set_size(LogicalSize::new(bounds.width, bounds.height)) {
-                log::warn!(target: LOG_TARGET, "failed to size blocking overlay: {}", error);
-            }
-        }
-
-        if let Err(error) = window.show() {
-            log::error!(target: LOG_TARGET, "failed to show blocking overlay: {}", error);
-            return;
-        }
-    }) {
-        log::error!(
-            target: LOG_TARGET,
-            "failed to schedule blocking overlay show: {}",
-            error
-        );
-    }
+    overlay_window::show(
+        app,
+        OverlayWindowOwner::new(BLOCKING_OVERLAY_OWNER_ID),
+        placement.config(),
+    );
 }
 
 pub fn hide(app: &AppHandle) {
-    let app = app.clone();
-
-    // Note: Focus handling is driven by mado outside Tauri's main thread, but
-    // native window mutations must run on it
-    if let Err(error) = app.clone().run_on_main_thread(move || {
-        let Some(window) = AppWindow::Overlay.get(&app) else {
-            return;
-        };
-
-        if let Err(error) = window.hide() {
-            log::error!(target: LOG_TARGET, "failed to hide blocking overlay: {}", error);
-        }
-    }) {
-        log::error!(
-            target: LOG_TARGET,
-            "failed to schedule blocking overlay hide: {}",
-            error
-        );
-    }
+    overlay_window::hide(app, OverlayWindowOwner::new(BLOCKING_OVERLAY_OWNER_ID));
 }
 
 pub fn hide_for_temporary_pause(app: &AppHandle, triggering_process_id: i32) {
     let app = app.clone();
-
-    // Note: Focus handling is driven by mado outside Tauri's main thread, but
-    // native window mutations must run on it
     if let Err(error) = app.clone().run_on_main_thread(move || {
-        let Some(window) = AppWindow::Overlay.get(&app) else {
-            return;
-        };
+        // Note: Hide immediately in this main-thread operation so app reactivation happens after
+        // the overlay is hidden
+        overlay_window::hide_immediately(&app, OverlayWindowOwner::new(BLOCKING_OVERLAY_OWNER_ID));
 
-        if let Err(error) = window.hide() {
-            log::error!(target: LOG_TARGET, "failed to hide blocking overlay: {}", error);
-            return;
-        }
-
-        // Note: Temporary overlay pauses should focus the blocked app/browser after hiding.
-        // Otherwise macOS can promote Abstand's main window when the overlay disappears.
         if !abstand_macos::activate_app_by_pid(triggering_process_id) {
             log::warn!(
                 target: LOG_TARGET,
@@ -112,7 +55,7 @@ pub fn hide_for_temporary_pause(app: &AppHandle, triggering_process_id: i32) {
     }) {
         log::error!(
             target: LOG_TARGET,
-            "failed to schedule blocking overlay pause: {}",
+            "failed to schedule blocked app reactivation: {}",
             error
         );
     }
@@ -149,7 +92,14 @@ pub fn handle_window_bounds_change(
         BlockedTarget::Device { .. } => return,
     };
 
-    update_overlay_window(app, bounds, local_route);
+    overlay_window::update(
+        app,
+        OverlayWindowOwner::new(BLOCKING_OVERLAY_OWNER_ID),
+        OverlayWindowConfig::normal(
+            local_route.map(str::to_string),
+            Some(OverlayWindowBounds::from(bounds)),
+        ),
+    );
 }
 
 // MARK: - Placement
@@ -163,6 +113,7 @@ fn resolve_placement_for_violation(
         BlockedTarget::Device { .. } => BlockingOverlayPlacement {
             bounds: resolve_monitor_bounds_for_focus(app, focus),
             show_manual_close: false,
+            level: OverlayWindowLevel::ScreenSaver,
             source: BlockingOverlayPlacementSource::MonitorBounds,
         },
         BlockedTarget::Website { .. } => {
@@ -170,6 +121,7 @@ fn resolve_placement_for_violation(
                 BlockingOverlayPlacement {
                     bounds: Some(BlockingOverlayBounds::from(bounds)),
                     show_manual_close: false,
+                    level: OverlayWindowLevel::Normal,
                     source: BlockingOverlayPlacementSource::BrowserContentBounds,
                 }
             } else if let Some(bounds) = get_active_browser_content_bounds(
@@ -179,18 +131,21 @@ fn resolve_placement_for_violation(
                 BlockingOverlayPlacement {
                     bounds: Some(BlockingOverlayBounds::from(bounds)),
                     show_manual_close: false,
+                    level: OverlayWindowLevel::Normal,
                     source: BlockingOverlayPlacementSource::BrowserContentBounds,
                 }
             } else if let Some(bounds) = focus.window_bounds {
                 BlockingOverlayPlacement {
                     bounds: Some(BlockingOverlayBounds::from(bounds)),
                     show_manual_close: true,
+                    level: OverlayWindowLevel::Normal,
                     source: BlockingOverlayPlacementSource::WindowBounds,
                 }
             } else {
                 BlockingOverlayPlacement {
                     bounds: resolve_monitor_bounds_for_focus(app, focus),
                     show_manual_close: true,
+                    level: OverlayWindowLevel::Normal,
                     source: BlockingOverlayPlacementSource::MonitorBounds,
                 }
             }
@@ -200,12 +155,14 @@ fn resolve_placement_for_violation(
                 BlockingOverlayPlacement {
                     bounds: Some(BlockingOverlayBounds::from(bounds)),
                     show_manual_close: false,
+                    level: OverlayWindowLevel::Normal,
                     source: BlockingOverlayPlacementSource::WindowBounds,
                 }
             } else {
                 BlockingOverlayPlacement {
                     bounds: resolve_monitor_bounds_for_focus(app, focus),
                     show_manual_close: false,
+                    level: OverlayWindowLevel::Normal,
                     source: BlockingOverlayPlacementSource::MonitorBounds,
                 }
             }
@@ -217,15 +174,22 @@ fn resolve_placement_for_violation(
 struct BlockingOverlayPlacement {
     bounds: Option<BlockingOverlayBounds>,
     show_manual_close: bool,
+    level: OverlayWindowLevel,
     source: BlockingOverlayPlacementSource,
 }
 
 impl BlockingOverlayPlacement {
-    fn route(&self) -> &'static str {
-        return if self.show_manual_close {
+    fn config(&self) -> OverlayWindowConfig {
+        let route = if self.show_manual_close {
             BLOCKING_OVERLAY_MANUAL_CLOSE_ROUTE
         } else {
             BLOCKING_OVERLAY_ROUTE
+        };
+        let route = Some(route.to_string());
+        let bounds = self.bounds.map(OverlayWindowBounds::from);
+        return match self.level {
+            OverlayWindowLevel::Normal => OverlayWindowConfig::normal(route, bounds),
+            OverlayWindowLevel::ScreenSaver => OverlayWindowConfig::screen_saver(route, bounds),
         };
     }
 }
@@ -258,6 +222,17 @@ impl From<ActivityWindowBounds> for BlockingOverlayBounds {
 
 impl From<&WindowBounds> for BlockingOverlayBounds {
     fn from(bounds: &WindowBounds) -> Self {
+        return Self {
+            x: bounds.x,
+            y: bounds.y,
+            width: bounds.width,
+            height: bounds.height,
+        };
+    }
+}
+
+impl From<BlockingOverlayBounds> for OverlayWindowBounds {
+    fn from(bounds: BlockingOverlayBounds) -> Self {
         return Self {
             x: bounds.x,
             y: bounds.y,
@@ -309,7 +284,7 @@ fn resolve_monitor_bounds_for_focus(
     });
 }
 
-// MARK: - Window Updates
+// MARK: - Browser Content
 
 fn schedule_browser_content_bounds_retries(app: &AppHandle, focus: &ActivityFocus) {
     if focus.browser_content_bounds.is_some() {
@@ -329,64 +304,20 @@ fn schedule_browser_content_bounds_retries(app: &AppHandle, focus: &ActivityFocu
                 ) else {
                     return;
                 };
+                let bounds = OverlayWindowBounds::from(BlockingOverlayBounds::from(bounds));
 
-                update_overlay_window(
+                overlay_window::update(
                     &app,
-                    BlockingOverlayBounds::from(bounds),
-                    Some(BLOCKING_OVERLAY_ROUTE),
+                    OverlayWindowOwner::new(BLOCKING_OVERLAY_OWNER_ID),
+                    OverlayWindowConfig::normal(
+                        Some(BLOCKING_OVERLAY_ROUTE.to_string()),
+                        Some(bounds),
+                    ),
                 );
             },
         );
     }
 }
-
-fn update_overlay_window(
-    app: &AppHandle,
-    bounds: BlockingOverlayBounds,
-    local_route: Option<&str>,
-) {
-    let app = app.clone();
-    let local_route = local_route.map(str::to_string);
-
-    if let Err(error) = app.clone().run_on_main_thread(move || {
-        let Some(window) = AppWindow::Overlay.get(&app) else {
-            return;
-        };
-
-        if let Err(error) = window.set_position(LogicalPosition::new(bounds.x, bounds.y)) {
-            log::warn!(
-                target: LOG_TARGET,
-                "failed to reposition blocking overlay: {}",
-                error
-            );
-        }
-        if let Err(error) = window.set_size(LogicalSize::new(bounds.width, bounds.height)) {
-            log::warn!(
-                target: LOG_TARGET,
-                "failed to resize blocking overlay: {}",
-                error
-            );
-        }
-
-        if let Some(local_route) = local_route {
-            if let Err(error) = AppWindow::Overlay.replace_url(&app, &local_route) {
-                log::warn!(
-                    target: LOG_TARGET,
-                    "failed to replace blocking overlay route: {}",
-                    error
-                );
-            }
-        }
-    }) {
-        log::error!(
-            target: LOG_TARGET,
-            "failed to schedule blocking overlay update: {}",
-            error
-        );
-    }
-}
-
-// MARK: - Browser Content Bounds
 
 fn get_active_browser_content_bounds(
     pid: i32,
@@ -433,6 +364,7 @@ fn matches_browser_hostname(url: Option<&str>, expected_hostname: Option<&str>) 
 }
 
 const LOG_TARGET: &str = "modules::blocking::overlay";
+const BLOCKING_OVERLAY_OWNER_ID: &str = "blocking";
 const BLOCKING_OVERLAY_ROUTE: &str = "/blocking";
 const BLOCKING_OVERLAY_MANUAL_CLOSE_ROUTE: &str = "/blocking?manualClose=true";
 const BROWSER_CONTENT_BOUNDS_RETRY_DELAYS: [Duration; 3] = [

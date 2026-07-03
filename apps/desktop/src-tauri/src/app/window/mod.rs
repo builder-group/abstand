@@ -1,76 +1,74 @@
-use crate::environment::configs::app::AppConfig;
-use tauri::{
-    AppHandle, CloseRequestApi, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder, Window,
-    WindowEvent,
-};
+#[cfg(target_os = "macos")]
+mod macos;
+pub mod overlay_window;
 
-#[cfg(target_os = "macos")]
-use tauri::window::{Effect, EffectsBuilder};
-#[cfg(target_os = "macos")]
-use tauri::LogicalPosition;
+use self::overlay_window::types::OverlayWindow;
+use crate::environment::configs::app::AppConfig;
 #[cfg(target_os = "macos")]
 use tauri::TitleBarStyle;
+use tauri::{
+    App, AppHandle, CloseRequestApi, LogicalPosition, Manager, WebviewUrl, WebviewWindow,
+    WebviewWindowBuilder, Window, WindowEvent,
+};
+
+pub fn setup(app: &mut App) {
+    overlay_window::setup(app);
+}
+
+// MARK: - App Window
 
 /// Native windows owned by the app.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AppWindow {
     Main,
-    Overlay,
+    Overlay(OverlayWindow),
 }
 
 impl AppWindow {
-    fn label(&self) -> &'static str {
+    fn label(&self) -> String {
         return match self {
-            Self::Main => "main",
-            Self::Overlay => "overlay",
+            Self::Main => "main".to_string(),
+            Self::Overlay(window) => window.label(),
         };
     }
 
     fn title(&self) -> String {
         return match self {
             Self::Main => AppConfig::app_name().to_string(),
-            Self::Overlay => format!("{} Overlay", AppConfig::app_name()),
+            Self::Overlay(_) => format!("{} Overlay", AppConfig::app_name()),
         };
     }
 
     fn base_route(&self) -> &'static str {
         return match self {
             Self::Main => "/window/main",
-            Self::Overlay => "/window/overlay",
+            Self::Overlay(_) => "/window/overlay",
         };
     }
 
     fn default_local_route(&self) -> &'static str {
         return match self {
             Self::Main => "/splash",
-            Self::Overlay => "/",
+            Self::Overlay(_) => "/",
         };
     }
 
     fn size(&self) -> Option<(f64, f64)> {
         return match self {
             Self::Main => Some((880.0, 700.0)),
-            Self::Overlay => None,
+            Self::Overlay(_) => None,
         };
     }
 
     fn min_size(&self) -> Option<(f64, f64)> {
         return match self {
             Self::Main => Some((880.0, 700.0)),
-            Self::Overlay => None,
+            Self::Overlay(_) => None,
         };
     }
 
     pub fn get(&self, app: &AppHandle) -> Option<WebviewWindow> {
-        return app.get_webview_window(self.label());
-    }
-
-    pub fn is_focused(&self, app: &AppHandle) -> bool {
-        let Some(window) = self.get(app) else {
-            return false;
-        };
-
-        return window.is_focused().unwrap_or(false);
+        return app.get_webview_window(&self.label());
     }
 
     /// Returns the existing native window or builds it at the default window-local route.
@@ -103,18 +101,6 @@ impl AppWindow {
         };
     }
 
-    /// Replaces the route of an existing native window.
-    ///
-    /// This does not show, focus, resize, reposition, or build the window.
-    pub fn replace_url(&self, app: &AppHandle, local_route: &str) -> tauri::Result<()> {
-        let Some(window) = self.get(app) else {
-            return Ok(());
-        };
-
-        let full_route = self.resolve_full_route(local_route);
-        return self.navigate_to_route(&window, &full_route, true);
-    }
-
     /// Shows the native window at its current route or builds it at the default window-local route.
     ///
     /// This focuses the window and preserves the current route when the native window
@@ -129,12 +115,19 @@ impl AppWindow {
     /// Shows the native window after routing it to `local_route` under this window's base route.
     ///
     /// This focuses the window and navigates existing windows client-side.
-    #[allow(dead_code)]
     pub fn show_at(&self, app: &AppHandle, local_route: &str) -> tauri::Result<WebviewWindow> {
         let window = self.get_or_build_at(app, local_route)?;
         window.show()?;
         window.set_focus()?;
         return Ok(window);
+    }
+
+    pub fn hide(&self, app: &AppHandle) -> tauri::Result<()> {
+        let Some(window) = self.get(app) else {
+            return Ok(());
+        };
+
+        return window.hide();
     }
 
     /// Handles Tauri window events for app-owned windows.
@@ -152,31 +145,21 @@ impl AppWindow {
 
     fn handle_focus(window: &Window) {
         match window.label() {
-            label if label == Self::Main.label() => {
-                let Some(overlay) = Self::Overlay.get(window.app_handle()) else {
-                    return;
-                };
-
-                if let Err(error) = overlay.hide() {
-                    log::warn!(
-                        target: LOG_TARGET,
-                        "failed to hide overlay after focusing main window: {}",
-                        error
-                    );
-                }
+            label if label == Self::Main.label().as_str() => {
+                overlay_window::hide_all(window.app_handle());
             }
-            label if label == Self::Overlay.label() => {}
+            label if overlay_window::is_overlay_window_label(label) => {}
             _ => {}
         }
     }
 
     fn handle_close(label: &str, window: &Window, api: &CloseRequestApi) {
         match label {
-            label if label == Self::Main.label() => {
+            label if label == Self::Main.label().as_str() => {
                 api.prevent_close();
                 let _ = window.hide();
             }
-            label if label == Self::Overlay.label() => {
+            label if overlay_window::is_overlay_window_label(label) => {
                 api.prevent_close();
             }
             _ => {}
@@ -203,12 +186,12 @@ impl AppWindow {
                 let window = builder.build()?;
 
                 #[cfg(target_os = "macos")]
-                Self::apply_macos_liquid_glass(&window, self.label());
+                macos::apply_liquid_glass(&window, &self.label());
 
                 return Ok(window);
             }
-            Self::Overlay => {
-                let window = self
+            Self::Overlay(_) => {
+                return self
                     .base_builder(app, full_route)
                     .decorations(false)
                     .shadow(false)
@@ -221,12 +204,7 @@ impl AppWindow {
                     .focusable(true)
                     .visible(false)
                     .accept_first_mouse(true)
-                    .build()?;
-
-                #[cfg(target_os = "macos")]
-                Self::apply_macos_screen_overlay_behavior(&window, self.label());
-
-                return Ok(window);
+                    .build();
             }
         }
     }
@@ -251,7 +229,7 @@ impl AppWindow {
         return builder;
     }
 
-    fn resolve_full_route(&self, local_route: &str) -> String {
+    pub fn resolve_full_route(&self, local_route: &str) -> String {
         if local_route.starts_with("/window/") {
             log::warn!(
                 target: LOG_TARGET,
@@ -273,7 +251,7 @@ impl AppWindow {
         );
     }
 
-    fn navigate_to_route(
+    pub fn navigate_to_route(
         &self,
         window: &WebviewWindow,
         full_route: &str,
@@ -283,61 +261,6 @@ impl AppWindow {
             "window.__TAURI_ROUTER__?.navigate({{ href: {:?}, replace: {} }});",
             full_route, replace
         ));
-    }
-
-    #[cfg(target_os = "macos")]
-    fn apply_macos_liquid_glass(window: &WebviewWindow, window_label: &str) {
-        let Ok(window_ptr) = window.ns_window() else {
-            log::debug!(target: LOG_TARGET, "failed to access NSWindow for {}", window_label);
-            return;
-        };
-
-        if abstand_macos::apply_window_liquid_glass(window_ptr) {
-            return;
-        }
-
-        // Fall back to the built-in macOS window material when Liquid Glass is unavailable
-        let _ = window.set_effects(
-            EffectsBuilder::new()
-                .effect(Effect::WindowBackground)
-                .build(),
-        );
-
-        log::debug!(
-            target: LOG_TARGET,
-            "falling back to native window background for {}",
-            window_label
-        );
-    }
-
-    #[cfg(target_os = "macos")]
-    fn apply_macos_screen_overlay_behavior(window: &WebviewWindow, window_label: &str) {
-        let Ok(window_ptr) = window.ns_window() else {
-            log::debug!(target: LOG_TARGET, "failed to access NSWindow for {}", window_label);
-            return;
-        };
-
-        if !abstand_macos::apply_window_screen_overlay_behavior(window_ptr) {
-            log::debug!(
-                target: LOG_TARGET,
-                "failed to apply screen overlay behavior for {}",
-                window_label
-            );
-        }
-
-        if abstand_macos::apply_window_liquid_glass(window_ptr) {
-            return;
-        }
-
-        if abstand_macos::apply_window_transparency(window_ptr) {
-            return;
-        }
-
-        log::debug!(
-            target: LOG_TARGET,
-            "failed to apply native window transparency for {}",
-            window_label
-        );
     }
 }
 

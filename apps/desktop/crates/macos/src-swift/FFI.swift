@@ -11,6 +11,17 @@ public func abstandMacosApplyWindowTransparency(windowPtr: Int) -> Bool {
     return WindowTransparency.apply(windowPtr: windowPtr)
 }
 
+@_cdecl("abstand_macos_apply_window_normal_overlay_behavior")
+public func abstandMacosApplyWindowNormalOverlayBehavior(
+    windowPtr: Int,
+    orderFront: Bool
+) -> Bool {
+    return WindowOverlay.applyWindowNormalOverlayBehavior(
+        windowPtr: windowPtr,
+        orderFront: orderFront
+    )
+}
+
 @_cdecl("abstand_macos_apply_window_screen_overlay_behavior")
 public func abstandMacosApplyWindowScreenOverlayBehavior(windowPtr: Int) -> Bool
 {

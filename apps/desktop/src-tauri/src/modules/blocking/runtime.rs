@@ -7,7 +7,7 @@ use super::{
     },
 };
 use crate::{
-    app::window::AppWindow,
+    app::window::overlay_window,
     modules::{
         activity::{focus::ActivityFocus, monitor},
         scheduler,
@@ -54,7 +54,7 @@ pub async fn handle_activity_focus(app: &AppHandle, focus: ActivityFocus) {
             return;
         }
 
-        if AppWindow::Overlay.is_focused(app) {
+        if overlay_window::is_any_focused(app) {
             return;
         }
 

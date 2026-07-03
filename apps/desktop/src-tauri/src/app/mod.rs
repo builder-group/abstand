@@ -151,6 +151,7 @@ pub fn run() {
             process_signal::setup(app.handle());
             quit_policy::setup(app);
             scheduler::setup(app);
+            window::setup(app);
             catalog::setup(app);
             settings::setup(app);
             blocking::setup(app);
