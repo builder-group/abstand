@@ -10,6 +10,7 @@ pub struct ActivityFocus {
     pub source: ActivityFocusSource,
     pub pid: i32,
     pub app_name: Option<String>,
+    pub window_id: Option<u32>,
     pub target: ActivityTarget,
     pub window_bounds: Option<ActivityWindowBounds>,
     pub browser_content_bounds: Option<ActivityWindowBounds>,
@@ -23,6 +24,7 @@ impl ActivityFocus {
             },
             pid: app.pid,
             app_name: app.name,
+            window_id: None,
             target: ActivityTarget {
                 app_bundle_id: app.bundle_id,
                 website_hostname: None,
@@ -44,6 +46,7 @@ impl ActivityFocus {
             source: ActivityFocusSource::WindowChanged,
             pid: window.app.pid,
             app_name: window.app.name,
+            window_id: window.window_id,
             target: ActivityTarget {
                 app_bundle_id: window.app.bundle_id,
                 website_hostname: website_target
@@ -74,9 +77,12 @@ impl ActivityFocus {
 
     pub fn summary(&self) -> String {
         return format!(
-            "app={} bundle_id={} website={} path={}",
+            "app={} bundle_id={} window_id={} website={} path={}",
             self.app_name.as_deref().unwrap_or("Unknown"),
             self.target.app_bundle_id.as_deref().unwrap_or("unknown"),
+            self.window_id
+                .map(|window_id| window_id.to_string())
+                .unwrap_or_else(|| "none".to_string()),
             self.target.website_hostname.as_deref().unwrap_or("none"),
             self.target.website_path.as_deref().unwrap_or("none")
         );
