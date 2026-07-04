@@ -9,7 +9,10 @@ use super::{
 use crate::{
     app::window::overlay_window,
     modules::{
-        activity::{focus::ActivityFocus, monitor},
+        activity::{
+            focus::{ActivityFocus, ActivityWindowBounds},
+            monitor,
+        },
         scheduler,
     },
 };
@@ -131,8 +134,7 @@ pub async fn handle_activity_focus(app: &AppHandle, focus: ActivityFocus) {
 }
 
 pub struct BlockingRuntime {
-    active_violation: Option<BlockingViolation>,
-    overlay_paused_until: Option<Instant>,
+    active_violation: Option<ActiveViolation>,
     focus_generation: u64,
 }
 
@@ -140,13 +142,15 @@ impl BlockingRuntime {
     pub fn new() -> Self {
         return Self {
             active_violation: None,
-            overlay_paused_until: None,
             focus_generation: 0,
         };
     }
 
     pub fn active_violation(&self) -> Option<BlockingViolation> {
-        return self.active_violation.clone();
+        return self
+            .active_violation
+            .as_ref()
+            .map(|active_violation| active_violation.violation.clone());
     }
 
     fn handle_allowed_focus(&mut self, app: &AppHandle, focus: &ActivityFocus) {
@@ -167,7 +171,27 @@ impl BlockingRuntime {
             violation.intention_id,
             violation.intention_name
         );
-        self.set_active_violation(app, Some(violation.clone()));
+
+        let previous_violation = self
+            .active_violation
+            .as_ref()
+            .map(|active_violation| active_violation.violation.clone());
+        let paused_until = self
+            .active_violation
+            .as_ref()
+            .filter(|active_violation| active_violation.violation == violation)
+            .and_then(|active_violation| active_violation.paused_until);
+
+        self.active_violation = Some(ActiveViolation::from_blocked_focus(
+            focus,
+            violation.clone(),
+            paused_until,
+        ));
+
+        if previous_violation.as_ref() != Some(&violation) {
+            let _ = BlockingViolationChangedEvent(Some(violation.clone())).emit(app);
+        }
+
         if self.is_overlay_paused() {
             return;
         }
@@ -175,17 +199,12 @@ impl BlockingRuntime {
         overlay::show(app, focus, &violation);
     }
 
-    fn set_active_violation(&mut self, app: &AppHandle, violation: Option<BlockingViolation>) {
-        if violation == self.active_violation {
-            return;
+    pub fn clear_active_violation(&mut self, app: &AppHandle) {
+        if self.active_violation.is_some() {
+            self.active_violation = None;
+            let _ = BlockingViolationChangedEvent(None).emit(app);
         }
 
-        self.active_violation = violation.clone();
-        let _ = BlockingViolationChangedEvent(violation).emit(app);
-    }
-
-    pub fn clear_active_violation(&mut self, app: &AppHandle) {
-        self.set_active_violation(app, None);
         overlay::hide(app);
     }
 
@@ -194,15 +213,16 @@ impl BlockingRuntime {
             return;
         }
 
-        let Some(violation) = self.active_violation.as_ref() else {
+        let Some(active_violation) = self.active_violation.as_mut() else {
             return;
         };
 
-        if window.app.pid != violation.triggering_process_id {
+        if !active_violation.matches_process_id(window.app.pid) {
             return;
         }
 
-        overlay::handle_window_bounds_change(app, window, violation);
+        active_violation.update_window_bounds(window);
+        overlay::handle_window_bounds_change(app, window, &active_violation.violation);
     }
 
     fn handle_window_minimized_or_destroyed(
@@ -210,11 +230,11 @@ impl BlockingRuntime {
         app: &AppHandle,
         window: &WindowLifecycleChange,
     ) {
-        let Some(violation) = self.active_violation.as_ref() else {
+        let Some(active_violation) = self.active_violation.as_ref() else {
             return;
         };
 
-        if window.app.pid != violation.triggering_process_id {
+        if !active_violation.matches_process_id(window.app.pid) {
             return;
         }
 
@@ -223,10 +243,13 @@ impl BlockingRuntime {
     }
 
     pub fn pause_overlay(&mut self, app: AppHandle, pause_duration: Duration) {
-        self.overlay_paused_until = Some(Instant::now() + pause_duration);
-        match &self.active_violation {
-            Some(violation) => {
-                overlay::hide_for_temporary_pause(&app, violation.triggering_process_id)
+        match &mut self.active_violation {
+            Some(active_violation) => {
+                active_violation.paused_until = Some(Instant::now() + pause_duration);
+                overlay::hide_for_temporary_pause(
+                    &app,
+                    active_violation.violation.triggering_process_id,
+                )
             }
             None => overlay::hide(&app),
         }
@@ -252,7 +275,10 @@ impl BlockingRuntime {
     }
 
     fn is_overlay_paused(&mut self) -> bool {
-        let Some(paused_until) = self.overlay_paused_until else {
+        let Some(active_violation) = self.active_violation.as_mut() else {
+            return false;
+        };
+        let Some(paused_until) = active_violation.paused_until else {
             return false;
         };
 
@@ -260,7 +286,7 @@ impl BlockingRuntime {
             return true;
         }
 
-        self.overlay_paused_until = None;
+        active_violation.paused_until = None;
         return false;
     }
 
@@ -271,6 +297,76 @@ impl BlockingRuntime {
 
     fn is_current_focus_generation(&self, focus_generation: u64) -> bool {
         return self.focus_generation == focus_generation;
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+struct ActiveViolation {
+    key: ActiveViolationKey,
+    focus: ActivityFocus,
+    violation: BlockingViolation,
+    paused_until: Option<Instant>,
+}
+
+impl ActiveViolation {
+    fn from_blocked_focus(
+        focus: &ActivityFocus,
+        violation: BlockingViolation,
+        paused_until: Option<Instant>,
+    ) -> Self {
+        return Self {
+            key: ActiveViolationKey::from_focus(focus, &violation),
+            focus: focus.clone(),
+            violation,
+            paused_until,
+        };
+    }
+
+    fn matches_process_id(&self, pid: i32) -> bool {
+        if self.key.matches_process_id(pid) {
+            return true;
+        }
+
+        return self.violation.triggering_process_id == pid;
+    }
+
+    fn update_window_bounds(&mut self, window: &WindowBoundsChange) {
+        let Some(bounds) = window.bounds.as_ref() else {
+            return;
+        };
+
+        self.focus.window_bounds = Some(ActivityWindowBounds::from(bounds.clone()));
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+enum ActiveViolationKey {
+    Device,
+    Window { pid: i32, window_id: u32 },
+    AppProcess { pid: i32 },
+}
+
+impl ActiveViolationKey {
+    fn from_focus(focus: &ActivityFocus, violation: &BlockingViolation) -> Self {
+        if matches!(violation.blocked_target, BlockedTarget::Device { .. }) {
+            return Self::Device;
+        }
+
+        if let Some(window_id) = focus.window_id {
+            return Self::Window {
+                pid: focus.pid,
+                window_id,
+            };
+        }
+
+        return Self::AppProcess { pid: focus.pid };
+    }
+
+    fn matches_process_id(&self, process_id: i32) -> bool {
+        return match self {
+            Self::Device => false,
+            Self::Window { pid, .. } | Self::AppProcess { pid } => *pid == process_id,
+        };
     }
 }
 
