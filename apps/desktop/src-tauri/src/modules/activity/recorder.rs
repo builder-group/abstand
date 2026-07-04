@@ -43,7 +43,7 @@ impl ForegroundActivityRecorder {
     }
 
     pub fn enqueue_window_event(app: &AppHandle, event: WindowEvent, occurred_at: i64) {
-        if matches!(event, WindowEvent::WindowBoundsChanged { .. }) {
+        if should_skip_activity_recording(&event) {
             return;
         }
 
@@ -102,7 +102,7 @@ impl ForegroundActivityRecorder {
         &self,
         event: ForegroundActivityRecordEvent,
     ) -> Result<(), ForegroundActivityRecorderError> {
-        if matches!(event.event, WindowEvent::WindowBoundsChanged { .. }) {
+        if should_skip_activity_recording(&event.event) {
             return Ok(());
         }
 
@@ -158,7 +158,16 @@ async fn build_activity_input(
             ))
         }
         WindowEvent::WindowBoundsChanged { .. } => Ok(None),
+        WindowEvent::WindowMinimized { .. } | WindowEvent::WindowDestroyed { .. } => Ok(None),
+        WindowEvent::WindowRestored { .. } => Ok(None),
     };
+}
+
+fn should_skip_activity_recording(event: &WindowEvent) -> bool {
+    return matches!(
+        event,
+        WindowEvent::WindowBoundsChanged { .. } | WindowEvent::WindowRestored { .. }
+    );
 }
 
 fn build_app_activity_input(app_id: i64, started_at: i64) -> RecordForegroundActivityInput {

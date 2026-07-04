@@ -13,7 +13,7 @@ use crate::{
         scheduler,
     },
 };
-use mado::{WindowBoundsChange, WindowEvent};
+use mado::{WindowBoundsChange, WindowEvent, WindowLifecycleChange};
 use std::time::{Duration, Instant};
 use tauri::{AppHandle, Manager};
 use tauri_specta::Event;
@@ -33,6 +33,23 @@ pub async fn handle_window_event(app: &AppHandle, event: WindowEvent, expects_wi
             let mut runtime = runtime_state.lock().unwrap();
             runtime.handle_window_bounds_change(app, &window);
         }
+        WindowEvent::WindowMinimized { window } | WindowEvent::WindowDestroyed { window } => {
+            let runtime_state = app.state::<BlockingRuntimeState>();
+            let mut runtime = runtime_state.lock().unwrap();
+            runtime.handle_window_minimized_or_destroyed(app, &window);
+        }
+        WindowEvent::WindowRestored { .. } => match monitor::get_current_focus() {
+            Ok(focus) => {
+                handle_activity_focus(app, focus).await;
+            }
+            Err(error) => {
+                log::warn!(
+                    target: LOG_TARGET,
+                    "failed to resolve focus after window restore: {}",
+                    error
+                );
+            }
+        },
     }
 }
 
@@ -186,6 +203,23 @@ impl BlockingRuntime {
         }
 
         overlay::handle_window_bounds_change(app, window, violation);
+    }
+
+    fn handle_window_minimized_or_destroyed(
+        &mut self,
+        app: &AppHandle,
+        window: &WindowLifecycleChange,
+    ) {
+        let Some(violation) = self.active_violation.as_ref() else {
+            return;
+        };
+
+        if window.app.pid != violation.triggering_process_id {
+            return;
+        }
+
+        self.next_focus_generation();
+        self.clear_active_violation(app);
     }
 
     pub fn pause_overlay(&mut self, app: AppHandle, pause_duration: Duration) {
