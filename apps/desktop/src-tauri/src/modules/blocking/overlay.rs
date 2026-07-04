@@ -14,7 +14,12 @@ use mado::{QueryConfig, WindowBounds, WindowBoundsChange};
 use std::time::Duration;
 use tauri::AppHandle;
 
-pub fn show(app: &AppHandle, focus: &ActivityFocus, violation: &BlockingViolation) {
+pub fn show(
+    app: &AppHandle,
+    owner: OverlayWindowOwner,
+    focus: &ActivityFocus,
+    violation: &BlockingViolation,
+) {
     let placement = resolve_placement_for_violation(app, focus, violation);
 
     let should_retry_browser_content_bounds =
@@ -24,26 +29,26 @@ pub fn show(app: &AppHandle, focus: &ActivityFocus, violation: &BlockingViolatio
                 BlockingOverlayPlacementSource::WindowBounds
             );
     if should_retry_browser_content_bounds {
-        schedule_browser_content_bounds_retries(app, focus);
+        schedule_browser_content_bounds_retries(app, owner.clone(), focus);
     }
 
-    overlay_window::show(
-        app,
-        OverlayWindowOwner::new(BLOCKING_OVERLAY_OWNER_ID),
-        placement.config(),
-    );
+    overlay_window::show(app, owner, placement.config());
 }
 
-pub fn hide(app: &AppHandle) {
-    overlay_window::hide(app, OverlayWindowOwner::new(BLOCKING_OVERLAY_OWNER_ID));
+pub fn hide(app: &AppHandle, owner: OverlayWindowOwner) {
+    overlay_window::hide(app, owner);
 }
 
-pub fn hide_for_temporary_pause(app: &AppHandle, triggering_process_id: i32) {
+pub fn hide_for_temporary_pause(
+    app: &AppHandle,
+    owner: OverlayWindowOwner,
+    triggering_process_id: i32,
+) {
     let app = app.clone();
     if let Err(error) = app.clone().run_on_main_thread(move || {
         // Note: Hide immediately in this main-thread operation so app reactivation happens after
         // the overlay is hidden
-        overlay_window::hide_immediately(&app, OverlayWindowOwner::new(BLOCKING_OVERLAY_OWNER_ID));
+        overlay_window::hide_immediately(&app, owner);
 
         if !abstand_macos::activate_app_by_pid(triggering_process_id) {
             log::warn!(
@@ -63,6 +68,7 @@ pub fn hide_for_temporary_pause(app: &AppHandle, triggering_process_id: i32) {
 
 pub fn handle_window_bounds_change(
     app: &AppHandle,
+    owner: OverlayWindowOwner,
     window: &WindowBoundsChange,
     violation: &BlockingViolation,
 ) {
@@ -94,7 +100,7 @@ pub fn handle_window_bounds_change(
 
     overlay_window::update(
         app,
-        OverlayWindowOwner::new(BLOCKING_OVERLAY_OWNER_ID),
+        owner,
         OverlayWindowConfig::floating(
             local_route.map(str::to_string),
             Some(OverlayWindowBounds::from(bounds)),
@@ -290,13 +296,18 @@ fn resolve_monitor_bounds_for_focus(
 
 // MARK: - Browser Content
 
-fn schedule_browser_content_bounds_retries(app: &AppHandle, focus: &ActivityFocus) {
+fn schedule_browser_content_bounds_retries(
+    app: &AppHandle,
+    owner: OverlayWindowOwner,
+    focus: &ActivityFocus,
+) {
     if focus.browser_content_bounds.is_some() {
         return;
     }
 
     for delay in BROWSER_CONTENT_BOUNDS_RETRY_DELAYS {
         let focus = focus.clone();
+        let owner = owner.clone();
         scheduler::schedule_after(
             app,
             "blocking overlay browser content bounds retry",
@@ -312,7 +323,7 @@ fn schedule_browser_content_bounds_retries(app: &AppHandle, focus: &ActivityFocu
 
                 overlay_window::update(
                     &app,
-                    OverlayWindowOwner::new(BLOCKING_OVERLAY_OWNER_ID),
+                    owner,
                     OverlayWindowConfig::floating(
                         Some(BLOCKING_OVERLAY_ROUTE.to_string()),
                         Some(bounds),
@@ -368,7 +379,6 @@ fn matches_browser_hostname(url: Option<&str>, expected_hostname: Option<&str>) 
 }
 
 const LOG_TARGET: &str = "modules::blocking::overlay";
-const BLOCKING_OVERLAY_OWNER_ID: &str = "blocking";
 const BLOCKING_OVERLAY_ROUTE: &str = "/blocking";
 const BLOCKING_OVERLAY_MANUAL_CLOSE_ROUTE: &str = "/blocking?manualClose=true";
 // Note: Absolute delays from the initial window-bounds fallback, not intervals between retries

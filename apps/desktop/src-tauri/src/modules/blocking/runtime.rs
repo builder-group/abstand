@@ -7,7 +7,7 @@ use super::{
     },
 };
 use crate::{
-    app::window::overlay_window,
+    app::window::overlay_window::{self, types::OverlayWindowOwner},
     modules::{
         activity::{
             focus::{ActivityFocus, ActivityWindowBounds},
@@ -176,17 +176,34 @@ impl BlockingRuntime {
             .active_violation
             .as_ref()
             .map(|active_violation| active_violation.violation.clone());
+        let previous_owner = self
+            .active_violation
+            .as_ref()
+            .map(|active_violation| active_violation.overlay_owner());
+        // Note: Keep the temporary pause when focus refreshes for the same public violation,
+        // while a different blocked target should start unpaused
         let paused_until = self
             .active_violation
             .as_ref()
             .filter(|active_violation| active_violation.violation == violation)
             .and_then(|active_violation| active_violation.paused_until);
 
-        self.active_violation = Some(ActiveViolation::from_blocked_focus(
-            focus,
-            violation.clone(),
-            paused_until,
-        ));
+        let active_violation =
+            ActiveViolation::from_blocked_focus(focus, violation.clone(), paused_until);
+        let owner = active_violation.overlay_owner();
+
+        self.active_violation = Some(active_violation);
+
+        // Note: Until active violations are stored in a map, replacing the single active violation
+        // must hide the previous owner so we do not leave an untracked overlay visible.
+        if previous_owner
+            .as_ref()
+            .is_some_and(|old_owner| old_owner != &owner)
+        {
+            if let Some(previous_owner) = previous_owner {
+                overlay::hide(app, previous_owner);
+            }
+        }
 
         if previous_violation.as_ref() != Some(&violation) {
             let _ = BlockingViolationChangedEvent(Some(violation.clone())).emit(app);
@@ -196,16 +213,16 @@ impl BlockingRuntime {
             return;
         }
 
-        overlay::show(app, focus, &violation);
+        overlay::show(app, owner, focus, &violation);
     }
 
     pub fn clear_active_violation(&mut self, app: &AppHandle) {
-        if self.active_violation.is_some() {
-            self.active_violation = None;
-            let _ = BlockingViolationChangedEvent(None).emit(app);
-        }
+        let Some(active_violation) = self.active_violation.take() else {
+            return;
+        };
 
-        overlay::hide(app);
+        let _ = BlockingViolationChangedEvent(None).emit(app);
+        overlay::hide(app, active_violation.overlay_owner());
     }
 
     fn handle_window_bounds_change(&mut self, app: &AppHandle, window: &WindowBoundsChange) {
@@ -222,7 +239,12 @@ impl BlockingRuntime {
         }
 
         active_violation.update_window_bounds(window);
-        overlay::handle_window_bounds_change(app, window, &active_violation.violation);
+        overlay::handle_window_bounds_change(
+            app,
+            active_violation.overlay_owner(),
+            window,
+            &active_violation.violation,
+        );
     }
 
     fn handle_window_minimized_or_destroyed(
@@ -248,10 +270,11 @@ impl BlockingRuntime {
                 active_violation.paused_until = Some(Instant::now() + pause_duration);
                 overlay::hide_for_temporary_pause(
                     &app,
+                    active_violation.overlay_owner(),
                     active_violation.violation.triggering_process_id,
                 )
             }
-            None => overlay::hide(&app),
+            None => {}
         }
 
         scheduler::schedule_after(&app, "blocking overlay pause", pause_duration, move |app| {
@@ -330,6 +353,10 @@ impl ActiveViolation {
         return self.violation.triggering_process_id == pid;
     }
 
+    fn overlay_owner(&self) -> OverlayWindowOwner {
+        return self.key.overlay_owner();
+    }
+
     fn update_window_bounds(&mut self, window: &WindowBoundsChange) {
         let Some(bounds) = window.bounds.as_ref() else {
             return;
@@ -367,6 +394,16 @@ impl ActiveViolationKey {
             Self::Device => false,
             Self::Window { pid, .. } | Self::AppProcess { pid } => *pid == process_id,
         };
+    }
+
+    fn overlay_owner(&self) -> OverlayWindowOwner {
+        let owner_id = match self {
+            Self::Device => "blocking:device".to_string(),
+            Self::Window { pid, window_id } => format!("blocking:window:{pid}:{window_id}"),
+            Self::AppProcess { pid } => format!("blocking:app-process:{pid}"),
+        };
+
+        return OverlayWindowOwner::new(owner_id);
     }
 }
 
