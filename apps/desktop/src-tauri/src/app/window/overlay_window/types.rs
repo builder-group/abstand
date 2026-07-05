@@ -110,18 +110,8 @@ impl OverlayWindowPoolState {
         return pool.release(owner);
     }
 
-    pub fn release_all(&self) -> Vec<OverlayWindow> {
-        let mut pool = self.0.lock().unwrap();
-        return pool.release_all();
-    }
-
     pub fn finish_release(&self, overlay_window: OverlayWindow) {
         let mut pool = self.0.lock().unwrap();
         pool.finish_release(overlay_window);
-    }
-
-    pub fn labels(&self) -> Vec<String> {
-        let pool = self.0.lock().unwrap();
-        return pool.labels();
     }
 }

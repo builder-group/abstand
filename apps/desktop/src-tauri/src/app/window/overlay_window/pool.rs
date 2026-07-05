@@ -68,19 +68,6 @@ impl OverlayWindowPool {
         return Some(window.window);
     }
 
-    pub fn release_all(&mut self) -> Vec<OverlayWindow> {
-        return self
-            .windows
-            .iter_mut()
-            .filter_map(|window| {
-                window.owner.as_ref()?;
-                window.owner = None;
-                window.is_release_pending = true;
-                Some(window.window)
-            })
-            .collect();
-    }
-
     pub fn finish_release(&mut self, overlay_window: OverlayWindow) {
         let Some(window) = self
             .windows
@@ -93,14 +80,6 @@ impl OverlayWindowPool {
         if window.owner.is_none() {
             window.is_release_pending = false;
         }
-    }
-
-    pub fn labels(&self) -> Vec<String> {
-        return self
-            .windows
-            .iter()
-            .map(|window| window.window.label())
-            .collect();
     }
 }
 

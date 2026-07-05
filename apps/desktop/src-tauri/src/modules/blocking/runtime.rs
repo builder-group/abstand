@@ -7,7 +7,7 @@ use super::{
     },
 };
 use crate::{
-    app::window::overlay_window::{self, types::OverlayWindowOwner},
+    app::window::overlay_window::types::OverlayWindowOwner,
     modules::{
         activity::{
             focus::{ActivityFocus, ActivityWindowBounds},
@@ -70,21 +70,9 @@ pub async fn handle_activity_focus(app: &AppHandle, focus: ActivityFocus) {
         runtime.next_focus_generation()
     };
 
-    // Note: The main app is the control surface for active blocking. Clear
-    // visible blocking there, but keep overlay focus ignored because it
-    // represents the blocked external target.
+    // Note: App-owned windows are control surfaces for active blocking, not allowed targets.
+    // Keep existing overlays alive so blocked windows do not become interactable beside Abstand.
     if focus.is_own_process() {
-        if focus.is_waiting_for_window_details() {
-            return;
-        }
-
-        if overlay_window::is_any_focused(app) {
-            return;
-        }
-
-        let runtime_state = app.state::<BlockingRuntimeState>();
-        let mut runtime = runtime_state.lock().unwrap();
-        runtime.clear_all_violations(app);
         return;
     }
 
@@ -209,13 +197,6 @@ impl BlockingRuntime {
         }
 
         overlay::show(app, key.overlay_owner(), focus, &violation);
-    }
-
-    pub fn clear_all_violations(&mut self, app: &AppHandle) {
-        let keys = self.active_violations.keys().cloned().collect::<Vec<_>>();
-        for key in keys {
-            self.clear_violation(app, &key);
-        }
     }
 
     fn clear_violations_for_session_id(&mut self, app: &AppHandle, session_id: i64) {

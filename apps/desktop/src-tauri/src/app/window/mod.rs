@@ -133,22 +133,9 @@ impl AppWindow {
     /// Handles Tauri window events for app-owned windows.
     pub fn handle_event(window: &Window, event: &WindowEvent) {
         match event {
-            WindowEvent::Focused(true) => {
-                Self::handle_focus(window);
-            }
             WindowEvent::CloseRequested { api, .. } => {
                 Self::handle_close(window.label(), window, api);
             }
-            _ => {}
-        }
-    }
-
-    fn handle_focus(window: &Window) {
-        match window.label() {
-            label if label == Self::Main.label().as_str() => {
-                overlay_window::hide_all(window.app_handle());
-            }
-            label if overlay_window::is_overlay_window_label(label) => {}
             _ => {}
         }
     }

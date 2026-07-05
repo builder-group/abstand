@@ -122,26 +122,6 @@ pub fn hide_immediately(app: &AppHandle, owner: OverlayWindowOwner) {
     pool_state.finish_release(overlay_window);
 }
 
-pub fn hide_all(app: &AppHandle) {
-    let Some(pool_state) = app.try_state::<OverlayWindowPoolState>() else {
-        return;
-    };
-    let overlay_windows = pool_state.release_all();
-    hide_windows(app, overlay_windows);
-}
-
-pub fn is_any_focused(app: &AppHandle) -> bool {
-    let Some(pool_state) = app.try_state::<OverlayWindowPoolState>() else {
-        return false;
-    };
-
-    return pool_state.labels().into_iter().any(|label| {
-        app.get_webview_window(&label)
-            .and_then(|window| window.is_focused().ok())
-            .unwrap_or(false)
-    });
-}
-
 pub fn is_overlay_window_label(label: &str) -> bool {
     return label.starts_with(types::OVERLAY_WINDOW_LABEL_PREFIX);
 }
