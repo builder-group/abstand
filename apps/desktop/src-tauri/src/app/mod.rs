@@ -27,7 +27,6 @@ pub fn run() {
             commands::get_system_typography,
             commands::notify_frontend_ready,
             commands::restart_app,
-            commands::show_intention_in_main_window,
             commands::open_data_directory,
             commands::reveal_log_file,
             // CLI commands
@@ -57,6 +56,7 @@ pub fn run() {
             // Blocking commands
             blocking::commands::get_blocking_violation,
             blocking::commands::pause_blocking_overlay,
+            blocking::commands::show_blocking_intention,
             blocking::commands::quit_blocked_app_by_bundle_id,
             // Intention commands
             intentions::commands::get_intentions,

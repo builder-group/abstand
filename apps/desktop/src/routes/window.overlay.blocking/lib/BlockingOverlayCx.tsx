@@ -102,14 +102,16 @@ export class BlockingOverlayCx {
 	}
 
 	public async openIntention(): Promise<void> {
-		const violation = this.$violation.get();
-		if (violation == null) {
-			return;
-		}
-
 		this.$isOpeningIntention.set(true);
 		try {
-			await specta.commands.showIntentionInMainWindow(violation.intentionId);
+			const [isOpenOk, error] = toTuple(await specta.commands.showBlockingIntention(this._key));
+			if (!isOpenOk) {
+				this._toastsCx.add({
+					type: 'error',
+					title: 'Could not open intention',
+					description: error
+				});
+			}
 		} finally {
 			this.$isOpeningIntention.set(false);
 		}

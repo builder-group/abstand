@@ -39,6 +39,32 @@ pub fn apply_window_level(window: &Window, level: WindowLevel) {
     let applied_level = match level {
         WindowLevel::Normal => abstand_macos::apply_window_normal_level(window_ptr, false),
         WindowLevel::Floating => abstand_macos::apply_window_floating_level(window_ptr, true),
+        WindowLevel::ScreenSaver => {
+            abstand_macos::apply_window_screen_saver_level(window_ptr, true)
+        }
+    };
+    if !applied_level {
+        log::debug!(
+            target: LOG_TARGET,
+            "failed to apply window level for {}",
+            window_label
+        );
+    }
+}
+
+pub fn apply_webview_window_level(window: &WebviewWindow, level: WindowLevel) {
+    let window_label = window.label();
+    let Ok(window_ptr) = window.ns_window() else {
+        log::debug!(target: LOG_TARGET, "failed to access NSWindow for {}", window_label);
+        return;
+    };
+
+    let applied_level = match level {
+        WindowLevel::Normal => abstand_macos::apply_window_normal_level(window_ptr, false),
+        WindowLevel::Floating => abstand_macos::apply_window_floating_level(window_ptr, true),
+        WindowLevel::ScreenSaver => {
+            abstand_macos::apply_window_screen_saver_level(window_ptr, true)
+        }
     };
     if !applied_level {
         log::debug!(
@@ -53,6 +79,7 @@ pub fn apply_window_level(window: &Window, level: WindowLevel) {
 pub enum WindowLevel {
     Normal,
     Floating,
+    ScreenSaver,
 }
 
 pub fn apply_overlay_behavior(window: &WebviewWindow, config: &OverlayWindowConfig) {

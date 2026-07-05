@@ -1,8 +1,11 @@
 use super::{
     runtime,
-    types::{BlockedAppQuitTimedOutEvent, BlockingRuntimeState, BlockingViolation},
+    types::{BlockedAppQuitTimedOutEvent, BlockedTarget, BlockingRuntimeState, BlockingViolation},
 };
-use crate::environment::configs::app::AppConfig;
+use crate::{
+    app::window::main_window::{self, types::MainWindowFocusedLevel},
+    environment::configs::app::AppConfig,
+};
 use serde::Serialize;
 use std::time::{Duration, Instant};
 use tauri::{AppHandle, Manager};
@@ -35,6 +38,37 @@ pub fn pause_blocking_overlay(app: AppHandle, key: String, duration_ms: u64) -> 
     let runtime_state = app.state::<BlockingRuntimeState>();
     let mut blocking_runtime = runtime_state.lock().unwrap();
     return blocking_runtime.pause_overlay(&app, &key, pause_duration);
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn show_blocking_intention(app: AppHandle, key: String) -> Result<(), String> {
+    let key = key.trim();
+    if key.is_empty() {
+        return Err("Blocking overlay key is required".to_string());
+    }
+
+    let active_violation = {
+        let runtime_state = app.state::<BlockingRuntimeState>();
+        let runtime = runtime_state.lock().unwrap();
+        runtime.active_violation(key)
+    };
+    let Some(active_violation) = active_violation else {
+        return Err("Blocking overlay not found".to_string());
+    };
+
+    let violation = active_violation.violation();
+    let focused_level = match &violation.blocked_target {
+        // Note: Device blocks use screen-saver overlays, so Abstand must match that level while users edit the intention
+        #[cfg(target_os = "macos")]
+        BlockedTarget::Device { .. } => MainWindowFocusedLevel::ScreenSaver,
+        // Note: App and website blocks use floating overlays, so Abstand only needs to float while focused
+        _ => MainWindowFocusedLevel::Floating,
+    };
+    main_window::show_intention(&app, violation.intention_id, focused_level)
+        .map_err(|error| error.to_string())?;
+
+    return Ok(());
 }
 
 #[tauri::command]

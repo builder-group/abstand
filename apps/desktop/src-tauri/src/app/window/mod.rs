@@ -1,6 +1,6 @@
 #[cfg(target_os = "macos")]
 mod macos;
-mod main_window;
+pub mod main_window;
 pub mod overlay_window;
 
 use self::overlay_window::types::OverlayWindow;
@@ -13,6 +13,7 @@ use tauri::{
 };
 
 pub fn setup(app: &mut App) {
+    main_window::setup(app);
     overlay_window::setup(app);
 }
 

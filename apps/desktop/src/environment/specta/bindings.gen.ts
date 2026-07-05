@@ -9,7 +9,6 @@ export const commands = {
 	getSystemTypography: () => __TAURI_INVOKE<SystemTypographyDto>("get_system_typography"),
 	notifyFrontendReady: () => __TAURI_INVOKE<void>("notify_frontend_ready"),
 	restartApp: () => typedError<null, string>(__TAURI_INVOKE("restart_app")),
-	showIntentionInMainWindow: (intentionId: number) => typedError<null, string>(__TAURI_INVOKE("show_intention_in_main_window", { intentionId })),
 	openDataDirectory: () => typedError<null, string>(__TAURI_INVOKE("open_data_directory")),
 	revealLogFile: () => typedError<null, string>(__TAURI_INVOKE("reveal_log_file")),
 	getCliStatus: () => typedError<CliInstallStatus, string>(__TAURI_INVOKE("get_cli_status")),
@@ -40,6 +39,7 @@ export const commands = {
 	blockedTarget: BlockedTarget,
 } | null>("get_blocking_violation", { key }),
 	pauseBlockingOverlay: (key: string, durationMs: number) => typedError<null, string>(__TAURI_INVOKE("pause_blocking_overlay", { key, durationMs })),
+	showBlockingIntention: (key: string) => typedError<null, string>(__TAURI_INVOKE("show_blocking_intention", { key })),
 	quitBlockedAppByBundleId: (bundleId: string) => typedError<QuitBlockedAppByBundleIdResult, string>(__TAURI_INVOKE("quit_blocked_app_by_bundle_id", { bundleId })),
 	getIntentions: () => typedError<Intention[], string>(__TAURI_INVOKE("get_intentions")),
 	getIntention: (intentionId: number) => typedError<{

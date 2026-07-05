@@ -1,4 +1,3 @@
-use super::window::AppWindow;
 #[cfg(target_os = "macos")]
 use crate::cli;
 #[cfg(target_os = "macos")]
@@ -83,16 +82,6 @@ pub fn notify_frontend_ready(app: AppHandle) {
 #[specta::specta]
 pub fn restart_app(app: AppHandle) -> Result<(), String> {
     return request_restart(&app);
-}
-
-#[tauri::command]
-#[specta::specta]
-pub fn show_intention_in_main_window(app: AppHandle, intention_id: i64) -> Result<(), String> {
-    AppWindow::Main
-        .show_at(&app, &format!("/intentions/{}", intention_id))
-        .map_err(|error| error.to_string())?;
-
-    return Ok(());
 }
 
 #[tauri::command]
