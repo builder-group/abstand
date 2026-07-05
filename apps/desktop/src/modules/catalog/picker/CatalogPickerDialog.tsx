@@ -8,6 +8,8 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
+	HelpPopover,
+	InlineCode,
 	XCircleIcon
 } from '@/components';
 import { SettingsGroup, SettingsRowFrame } from '@/modules/settings';
@@ -44,7 +46,24 @@ const CatalogPickerDialog: React.FC<TCatalogPickerDialogProps> = (props) => {
 		>
 			<DialogContent className="max-w-xl">
 				<DialogHeader>
-					<DialogTitle>{title}</DialogTitle>
+					<div className="flex items-center gap-1.5">
+						<DialogTitle>{title}</DialogTitle>
+						<HelpPopover
+							ariaLabel="About selecting targets"
+							side="bottom"
+							description={
+								<>
+									Search for apps and websites, or type a website URL. Use{' '}
+									<InlineCode className="text-warning bg-base-50/10 font-semibold">*</InlineCode> as
+									a wildcard in a path, such as{' '}
+									<InlineCode className="text-base-50 bg-base-50/10">
+										youtube.com/@<span className="text-warning font-semibold">*</span>
+									</InlineCode>{' '}
+									for channel pages.
+								</>
+							}
+						/>
+					</div>
 				</DialogHeader>
 
 				<DialogBody className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
