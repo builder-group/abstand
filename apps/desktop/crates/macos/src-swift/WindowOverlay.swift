@@ -48,7 +48,7 @@ extension WindowOverlay {
     }
 
     static func applyWindowScreenOverlayBehavior(to window: NSWindow) {
-        WindowLevel.applyWindowScreenSaverLevel(to: window)
+        WindowLevel.applyWindowScreenSaverLevel(to: window, orderFront: false)
         applyCommonOverlayBehavior(to: window)
     }
 

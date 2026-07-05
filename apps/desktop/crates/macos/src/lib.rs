@@ -8,7 +8,8 @@ use ffi::{
     abstand_macos_apply_window_floating_level, abstand_macos_apply_window_floating_overlay_behavior,
     abstand_macos_apply_window_liquid_glass, abstand_macos_apply_window_normal_level,
     abstand_macos_apply_window_normal_overlay_behavior,
-    abstand_macos_apply_window_screen_overlay_behavior, abstand_macos_apply_window_transparency,
+    abstand_macos_apply_window_screen_overlay_behavior, abstand_macos_apply_window_screen_saver_level,
+    abstand_macos_apply_window_transparency,
     abstand_macos_get_small_system_font_size, abstand_macos_get_system_font_size,
     abstand_macos_is_app_running, abstand_macos_request_app_quit,
 };
@@ -87,6 +88,27 @@ pub fn apply_window_floating_level(window_ptr: *mut c_void, order_front: bool) -
 
         return unsafe {
             abstand_macos_apply_window_floating_level(window_ptr as Int, order_front.into())
+        };
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = window_ptr;
+        let _ = order_front;
+        return false;
+    }
+}
+
+/// Applies the screen-saver native window level.
+pub fn apply_window_screen_saver_level(window_ptr: *mut c_void, order_front: bool) -> bool {
+    #[cfg(target_os = "macos")]
+    {
+        if window_ptr.is_null() {
+            return false;
+        }
+
+        return unsafe {
+            abstand_macos_apply_window_screen_saver_level(window_ptr as Int, order_front.into())
         };
     }
 

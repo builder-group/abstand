@@ -33,6 +33,17 @@ public func abstandMacosApplyWindowFloatingLevel(
     )
 }
 
+@_cdecl("abstand_macos_apply_window_screen_saver_level")
+public func abstandMacosApplyWindowScreenSaverLevel(
+    windowPtr: Int,
+    orderFront: Bool
+) -> Bool {
+    return WindowLevel.applyWindowScreenSaverLevel(
+        windowPtr: windowPtr,
+        orderFront: orderFront
+    )
+}
+
 @_cdecl("abstand_macos_apply_window_normal_overlay_behavior")
 public func abstandMacosApplyWindowNormalOverlayBehavior(
     windowPtr: Int,

@@ -10,6 +10,10 @@ swift!(pub fn abstand_macos_apply_window_floating_level(
     window_ptr: Int,
     order_front: Bool
 ) -> Bool);
+swift!(pub fn abstand_macos_apply_window_screen_saver_level(
+    window_ptr: Int,
+    order_front: Bool
+) -> Bool);
 swift!(pub fn abstand_macos_apply_window_normal_overlay_behavior(
     window_ptr: Int,
     order_front: Bool

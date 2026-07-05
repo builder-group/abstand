@@ -18,6 +18,15 @@ enum WindowLevel {
             applyWindowFloatingLevel(to: window, orderFront: orderFront)
         }
     }
+
+    static func applyWindowScreenSaverLevel(
+        windowPtr: Int,
+        orderFront: Bool
+    ) -> Bool {
+        return WindowPointer.withWindow(windowPtr) { window in
+            applyWindowScreenSaverLevel(to: window, orderFront: orderFront)
+        }
+    }
 }
 
 @MainActor
@@ -39,7 +48,11 @@ extension WindowLevel {
         }
     }
 
-    static func applyWindowScreenSaverLevel(to window: NSWindow) {
+    static func applyWindowScreenSaverLevel(to window: NSWindow, orderFront: Bool) {
         window.level = .screenSaver
+
+        if orderFront {
+            window.orderFrontRegardless()
+        }
     }
 }
