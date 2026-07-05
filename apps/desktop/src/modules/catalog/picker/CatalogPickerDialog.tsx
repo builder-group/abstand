@@ -12,12 +12,11 @@ import {
 } from '@/components';
 import { SettingsGroup, SettingsRowFrame } from '@/modules/settings';
 import { CatalogItemIcon } from './CatalogItemIcon';
-import { CatalogItemTypeBadge } from './CatalogItemTypeBadge';
+import { CatalogItemBadges, CatalogItemSublabel } from './CatalogItemMeta';
 import {
 	CatalogPickerCx,
 	getCatalogItemKey,
 	getCatalogItemLabel,
-	getCatalogItemSublabel,
 	type TCatalogItem,
 	type TCatalogPickerItemDisabledStateFn,
 	type TCatalogPickerItemVisibleFn
@@ -99,10 +98,10 @@ const SelectedItemRow: React.FC<TSelectedItemRowProps> = (props) => {
 			<CatalogItemIcon item={item} />
 			<div className="flex min-w-0 flex-1 flex-col">
 				<span className="text-base-950 truncate text-sm">{getCatalogItemLabel(item)}</span>
-				<span className="text-base-400 truncate text-xs">{getCatalogItemSublabel(item)}</span>
+				<CatalogItemSublabel item={item} />
 			</div>
 			<div className="flex shrink-0 items-center gap-0 transition-[gap] group-focus-within/selected-item:gap-2 group-hover/selected-item:gap-2">
-				<CatalogItemTypeBadge item={item} />
+				<CatalogItemBadges item={item} />
 				<Button
 					variant="ghost"
 					size="icon-sm"

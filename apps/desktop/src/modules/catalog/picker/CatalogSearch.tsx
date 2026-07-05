@@ -15,11 +15,10 @@ import {
 } from '@/components';
 import { useDelayedValue } from '@/hooks';
 import { CatalogItemIcon } from './CatalogItemIcon';
-import { CatalogItemTypeBadge } from './CatalogItemTypeBadge';
+import { CatalogItemBadges, CatalogItemSublabel } from './CatalogItemMeta';
 import {
 	getCatalogItemKey,
 	getCatalogItemLabel,
-	getCatalogItemSublabel,
 	type CatalogPickerCx,
 	type TCatalogItem,
 	type TCatalogPickerItemDisabledState,
@@ -111,7 +110,7 @@ const CatalogSearchItem: React.FC<TCatalogSearchItemProps> = (props) => {
 			<CatalogItemIcon item={item} isSelected={isSelected} />
 			<div className="flex min-w-0 flex-1 flex-col">
 				<span className="truncate">{getCatalogItemLabel(item)}</span>
-				<span className="text-base-400 truncate text-xs">{getCatalogItemSublabel(item)}</span>
+				<CatalogItemSublabel item={item} />
 			</div>
 			{isSelected && (
 				<Badge variant="success">
@@ -120,7 +119,7 @@ const CatalogSearchItem: React.FC<TCatalogSearchItemProps> = (props) => {
 				</Badge>
 			)}
 			{disabledState != null && <Badge>{disabledState.message}</Badge>}
-			<CatalogItemTypeBadge item={item} />
+			<CatalogItemBadges item={item} />
 		</ComboboxItem>
 	);
 };
