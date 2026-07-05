@@ -181,17 +181,113 @@ fn hostname_matches_target(hostname: &str, target_hostname: &str) -> bool {
 }
 
 fn path_matches_target(covering_path: Option<&str>, candidate_path: Option<&str>) -> bool {
-    let Some(covering_path) = covering_path else {
-        return true;
-    };
-    let Some(candidate_path) = candidate_path else {
-        return false;
-    };
+    return WebsitePathRule::from_path(covering_path).matches(candidate_path);
+}
 
+enum WebsitePathRule<'a> {
+    Any,
+    Prefix(&'a str),
+    Wildcard(&'a str),
+}
+
+impl<'a> WebsitePathRule<'a> {
+    fn from_path(path: Option<&'a str>) -> Self {
+        let Some(path) = path else {
+            return Self::Any;
+        };
+
+        if path.contains('*') {
+            return Self::Wildcard(path);
+        }
+
+        return Self::Prefix(path);
+    }
+
+    fn matches(&self, candidate_path: Option<&str>) -> bool {
+        return match self {
+            Self::Any => true,
+            Self::Prefix(path) => candidate_path
+                .is_some_and(|candidate_path| path_prefix_matches_target(path, candidate_path)),
+            Self::Wildcard(pattern) => candidate_path.is_some_and(|candidate_path| {
+                path_wildcard_matches_target(pattern, candidate_path)
+            }),
+        };
+    }
+}
+
+fn path_prefix_matches_target(covering_path: &str, candidate_path: &str) -> bool {
     return candidate_path == covering_path
         || candidate_path
             .strip_prefix(covering_path)
             .is_some_and(|suffix| suffix.starts_with('/'));
+}
+
+fn path_wildcard_matches_target(covering_path: &str, candidate_path: &str) -> bool {
+    let covering_segments = path_segments(covering_path);
+    let candidate_segments = path_segments(candidate_path);
+    if covering_segments.len() > candidate_segments.len() {
+        return false;
+    }
+
+    return covering_segments.iter().zip(candidate_segments.iter()).all(
+        |(covering_segment, candidate_segment)| {
+            path_segment_matches_pattern(covering_segment, candidate_segment)
+        },
+    );
+}
+
+fn path_segments(path: &str) -> Vec<&str> {
+    return path.trim_start_matches('/').split('/').collect();
+}
+
+fn path_segment_matches_pattern(pattern: &str, value: &str) -> bool {
+    if !pattern.contains('*') {
+        return pattern == value;
+    }
+
+    let mut parts = pattern
+        .split('*')
+        .filter(|part| !part.is_empty())
+        .collect::<Vec<_>>();
+    if parts.is_empty() {
+        return true;
+    }
+
+    let starts_with_wildcard = pattern.starts_with('*');
+    let ends_with_wildcard = pattern.ends_with('*');
+    let mut remaining = value;
+
+    let search_parts = if starts_with_wildcard {
+        parts.as_slice()
+    } else {
+        let first_part = parts.remove(0);
+        let Some(next_remaining) = remaining.strip_prefix(first_part) else {
+            return false;
+        };
+        remaining = next_remaining;
+        parts.as_slice()
+    };
+
+    let middle_part_count = if ends_with_wildcard {
+        search_parts.len()
+    } else {
+        search_parts.len().saturating_sub(1)
+    };
+    for part in &search_parts[..middle_part_count] {
+        let Some(part_start) = remaining.find(part) else {
+            return false;
+        };
+        remaining = &remaining[part_start + part.len()..];
+    }
+
+    if ends_with_wildcard {
+        return true;
+    }
+
+    let Some(last_part) = search_parts.last() else {
+        return remaining.is_empty();
+    };
+    return remaining.ends_with(last_part);
 }
 
 #[cfg(test)]
@@ -232,6 +328,80 @@ mod tests {
         assert!(watch_target.covers(&watch_child));
         assert!(!watch_target.covers(&watching));
         assert!(!watch_target.covers(&BlockPolicyTarget::website("www.youtube.com", None)));
+    }
+
+    #[test]
+    fn website_targets_cover_path_wildcards_within_segments() {
+        let team_target = BlockPolicyTarget::website("example.com", Some("/team-*".to_string()));
+        let team = BlockPolicyTarget::website("app.example.com", Some("/team-alpha".to_string()));
+        let team_child =
+            BlockPolicyTarget::website("app.example.com", Some("/team-alpha/members".to_string()));
+        let dashboard =
+            BlockPolicyTarget::website("app.example.com", Some("/dashboard".to_string()));
+
+        assert!(team_target.covers(&team));
+        assert!(team_target.covers(&team_child));
+        assert!(!team_target.covers(&dashboard));
+    }
+
+    #[test]
+    fn website_targets_cover_path_wildcard_middle_segments() {
+        let reports_target =
+            BlockPolicyTarget::website("example.com", Some("/*/reports".to_string()));
+        let reports =
+            BlockPolicyTarget::website("app.example.com", Some("/finance/reports".to_string()));
+        let reports_child = BlockPolicyTarget::website(
+            "app.example.com",
+            Some("/finance/reports/2026".to_string()),
+        );
+        let nested_reports = BlockPolicyTarget::website(
+            "app.example.com",
+            Some("/teams/finance/reports".to_string()),
+        );
+
+        assert!(reports_target.covers(&reports));
+        assert!(reports_target.covers(&reports_child));
+        assert!(!reports_target.covers(&nested_reports));
+    }
+
+    #[test]
+    fn website_targets_do_not_let_path_wildcards_cross_segments() {
+        let team_reports_target =
+            BlockPolicyTarget::website("example.com", Some("/team-*/reports".to_string()));
+        let direct_reports =
+            BlockPolicyTarget::website("app.example.com", Some("/team-alpha/reports".to_string()));
+        let nested_reports = BlockPolicyTarget::website(
+            "app.example.com",
+            Some("/team-alpha/archive/reports".to_string()),
+        );
+
+        assert!(team_reports_target.covers(&direct_reports));
+        assert!(!team_reports_target.covers(&nested_reports));
+    }
+
+    #[test]
+    fn path_segments_match_wildcard_patterns() {
+        let cases = [
+            ("*", "", true),
+            ("*", "team-alpha", true),
+            ("team-*", "team-alpha", true),
+            ("team-*", "team-", true),
+            ("team-*", "team", false),
+            ("*-reports", "finance-reports", true),
+            ("*-reports", "reports-finance", false),
+            ("team-*-reports", "team-alpha-reports", true),
+            ("team-*-reports", "team-alpha-monthly-reports", true),
+            ("team-*-reports", "team-reports-alpha", false),
+            ("team-*report*", "team-monthly-report-2026", true),
+        ];
+
+        for (pattern, value, expected) in cases {
+            assert_eq!(
+                path_segment_matches_pattern(pattern, value),
+                expected,
+                "pattern={pattern} value={value}"
+            );
+        }
     }
 
     #[test]

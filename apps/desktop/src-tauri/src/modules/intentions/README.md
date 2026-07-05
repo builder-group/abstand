@@ -26,6 +26,16 @@ Block intentions store absolute target actions: `block` or `allow`. The selected
 
 Policy evaluation checks exceptions before the base set. The scope default applies only when no saved target matches. Target identities stay unique across both sets: a saved target has one action within an Intention. Broader and narrower target overlaps are allowed, and exception precedence resolves them.
 
+### How do website path targets match?
+
+Website targets can include an optional path. A target with no path covers the whole hostname and its subdomains.
+
+Paths without `*` use segment-safe prefix matching: `/watch` covers `/watch` and `/watch/abc`, but not `/watching`.
+
+Paths with `*` use path wildcard matching. Matching starts at the first path segment, and `*` matches zero or more characters inside one segment only. Wildcard paths still cover child paths after the matched segments: `/@*` covers `/@jeff` and `/@jeff/videos`, while `/*/videos` covers `/@jeff/videos` but not `/a/b/videos`.
+
+Query strings and fragments are not part of website path matching.
+
 ### Why does the runtime reevaluate from the database instead of trusting scheduled jobs?
 
 Scheduled jobs are process-local and can become stale after edits, deletes, app restarts, or session changes. Reevaluate-from-DB keeps the runtime aligned with persisted state and makes stale wakeups harmless.
