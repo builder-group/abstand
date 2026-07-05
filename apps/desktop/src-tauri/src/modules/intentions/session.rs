@@ -11,11 +11,7 @@ use super::{
 };
 #[cfg(target_os = "macos")]
 use crate::app::tray::AppTray;
-use crate::modules::{
-    activity::monitor,
-    blocking::{self, types::BlockingRuntimeState},
-    db::types::DatabaseState,
-};
+use crate::modules::{activity::monitor, blocking, db::types::DatabaseState};
 use std::fmt;
 use tauri::{AppHandle, Manager};
 use tauri_specta::Event;
@@ -105,7 +101,7 @@ pub async fn complete_session(
         session_id: session.id,
     }
     .emit(app);
-    clear_blocking(app, session.id);
+    clear_blocking_for_session(app, session.id);
     #[cfg(target_os = "macos")]
     AppTray::refresh_status_item(app).await;
 
@@ -143,26 +139,15 @@ pub async fn stop_session(
         session_id: session.id,
     }
     .emit(app);
-    clear_blocking(app, session.id);
+    clear_blocking_for_session(app, session.id);
     #[cfg(target_os = "macos")]
     AppTray::refresh_status_item(app).await;
 
     return Ok(session);
 }
 
-fn clear_blocking(app: &AppHandle, session_id: i64) {
-    let runtime_state = app.state::<BlockingRuntimeState>();
-    let mut runtime = runtime_state.lock().unwrap();
-    runtime.next_focus_generation();
-
-    let Some(active_violation) = runtime.active_violation() else {
-        return;
-    };
-    if active_violation.session_id != session_id {
-        return;
-    }
-
-    runtime.clear_active_violation(app);
+fn clear_blocking_for_session(app: &AppHandle, session_id: i64) {
+    blocking::runtime::clear_violations_for_session_id(app, session_id);
 }
 
 async fn refresh_blocking(app: &AppHandle) {

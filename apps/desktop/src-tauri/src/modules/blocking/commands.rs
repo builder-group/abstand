@@ -10,20 +10,47 @@ use tauri_specta::Event;
 
 #[tauri::command]
 #[specta::specta]
-pub fn get_blocking_violation(app: AppHandle) -> Option<BlockingViolation> {
+pub fn get_blocking_violations(app: AppHandle) -> Vec<ActiveBlockingViolation> {
     let runtime_state = app.state::<BlockingRuntimeState>();
-    return runtime_state.lock().unwrap().active_violation();
+    return runtime_state
+        .lock()
+        .unwrap()
+        .active_violations()
+        .into_iter()
+        .map(ActiveBlockingViolation::from)
+        .collect();
+}
+
+/// Describes one active blocking overlay.
+///
+/// Pass `key` back to commands that target a specific overlay.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, specta::Type)]
+#[serde(rename_all = "camelCase")]
+pub struct ActiveBlockingViolation {
+    pub key: String,
+    pub violation: BlockingViolation,
+}
+
+impl From<runtime::ActiveViolation> for ActiveBlockingViolation {
+    fn from(active_violation: runtime::ActiveViolation) -> Self {
+        return Self {
+            key: active_violation.key(),
+            violation: active_violation.violation(),
+        };
+    }
 }
 
 #[tauri::command]
 #[specta::specta]
-pub fn pause_blocking_overlay(app: AppHandle, duration_ms: u64) -> Result<(), String> {
+pub fn pause_blocking_overlay(app: AppHandle, key: String, duration_ms: u64) -> Result<(), String> {
+    if key.trim().is_empty() {
+        return Err("Blocking overlay key is required".to_string());
+    }
+
     let pause_duration = Duration::from_millis(duration_ms);
     let runtime_state = app.state::<BlockingRuntimeState>();
     let mut blocking_runtime = runtime_state.lock().unwrap();
-    blocking_runtime.pause_overlay(app.clone(), pause_duration);
-
-    return Ok(());
+    return blocking_runtime.pause_overlay(&app, &key, pause_duration);
 }
 
 #[tauri::command]
@@ -62,7 +89,7 @@ fn watch_blocked_app_quit(app: AppHandle, bundle_id: String) {
 
         loop {
             if !abstand_macos::is_app_running(&bundle_id, own_pid) {
-                runtime::clear_app_violation_for_bundle_id(&app, &bundle_id);
+                runtime::clear_violations_for_bundle_id(&app, &bundle_id);
                 return;
             }
 
