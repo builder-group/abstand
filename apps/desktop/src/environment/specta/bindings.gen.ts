@@ -30,7 +30,7 @@ export const commands = {
 	getSettings: () => __TAURI_INVOKE<AppSettings>("get_settings"),
 	setSettings: (settings: AppSettings) => typedError<null, string>(__TAURI_INVOKE("set_settings", { settings })),
 	resetSettings: () => typedError<AppSettings, string>(__TAURI_INVOKE("reset_settings")),
-	getBlockingViolation: () => __TAURI_INVOKE<{
+	getBlockingViolation: (key: string) => __TAURI_INVOKE<{
 	intentionId: number,
 	intentionName: string,
 	sessionId: number,
@@ -38,8 +38,8 @@ export const commands = {
 	sessionAutomaticEndAt: number | null,
 	triggeringProcessId: number,
 	blockedTarget: BlockedTarget,
-} | null>("get_blocking_violation"),
-	pauseBlockingOverlay: (durationMs: number) => typedError<null, string>(__TAURI_INVOKE("pause_blocking_overlay", { durationMs })),
+} | null>("get_blocking_violation", { key }),
+	pauseBlockingOverlay: (key: string, durationMs: number) => typedError<null, string>(__TAURI_INVOKE("pause_blocking_overlay", { key, durationMs })),
 	quitBlockedAppByBundleId: (bundleId: string) => typedError<QuitBlockedAppByBundleIdResult, string>(__TAURI_INVOKE("quit_blocked_app_by_bundle_id", { bundleId })),
 	getIntentions: () => typedError<Intention[], string>(__TAURI_INVOKE("get_intentions")),
 	getIntention: (intentionId: number) => typedError<{
@@ -83,9 +83,9 @@ export const commands = {
 
 /** Events */
 export const events = {
+	activeBlockingViolationChangedEvent: makeEvent<ActiveBlockingViolationChangedEvent>("active-blocking-violation-changed-event"),
 	appSettingsChangedEvent: makeEvent<AppSettingsChangedEvent>("app-settings-changed-event"),
 	blockedAppQuitTimedOutEvent: makeEvent<BlockedAppQuitTimedOutEvent>("blocked-app-quit-timed-out-event"),
-	blockingViolationChangedEvent: makeEvent<BlockingViolationChangedEvent>("blocking-violation-changed-event"),
 	catalogAssetLoadedEvent: makeEvent<CatalogAssetLoadedEvent>("catalog-asset-loaded-event"),
 	intentionCreatedEvent: makeEvent<IntentionCreatedEvent>("intention-created-event"),
 	intentionDeletedEvent: makeEvent<IntentionDeletedEvent>("intention-deleted-event"),
@@ -98,6 +98,10 @@ export const events = {
 };
 
 /* Types */
+export type ActiveBlockingViolationChangedEvent = {
+	key: string,
+};
+
 export type ActivityForegroundSettings = {
 	trackApps: boolean,
 	trackWindows: boolean,
@@ -170,8 +174,6 @@ export type BlockingViolation = {
 	triggeringProcessId: number,
 	blockedTarget: BlockedTarget,
 };
-
-export type BlockingViolationChangedEvent = BlockingViolation | null;
 
 export type CatalogAppSearchResultDto = {
 	stableId: string,

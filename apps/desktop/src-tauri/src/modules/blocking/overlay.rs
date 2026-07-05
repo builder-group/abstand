@@ -32,7 +32,7 @@ pub fn show(
         schedule_browser_content_bounds_retries(app, owner.clone(), focus);
     }
 
-    overlay_window::show(app, owner, placement.config());
+    overlay_window::show(app, owner.clone(), placement.config(&owner));
 }
 
 pub fn hide(app: &AppHandle, owner: OverlayWindowOwner) {
@@ -72,19 +72,13 @@ pub fn handle_window_bounds_change(
     window: &WindowBoundsChange,
     violation: &BlockingViolation,
 ) {
-    let (bounds, local_route) = match &violation.blocked_target {
+    let (bounds, show_manual_close) = match &violation.blocked_target {
         BlockedTarget::Website { hostname, .. } => {
             if let Some(bounds) = get_active_browser_content_bounds(window.app.pid, Some(hostname))
             {
-                (
-                    BlockingOverlayBounds::from(bounds),
-                    Some(BLOCKING_OVERLAY_ROUTE),
-                )
+                (BlockingOverlayBounds::from(bounds), false)
             } else if let Some(bounds) = window.bounds.as_ref() {
-                (
-                    BlockingOverlayBounds::from(bounds),
-                    Some(BLOCKING_OVERLAY_MANUAL_CLOSE_ROUTE),
-                )
+                (BlockingOverlayBounds::from(bounds), true)
             } else {
                 return;
             }
@@ -93,16 +87,16 @@ pub fn handle_window_bounds_change(
             let Some(bounds) = window.bounds.as_ref() else {
                 return;
             };
-            (BlockingOverlayBounds::from(bounds), None)
+            (BlockingOverlayBounds::from(bounds), false)
         }
         BlockedTarget::Device { .. } => return,
     };
 
     overlay_window::update(
         app,
-        owner,
+        owner.clone(),
         OverlayWindowConfig::floating(
-            local_route.map(str::to_string),
+            Some(blocking_overlay_route(&owner, show_manual_close)),
             Some(OverlayWindowBounds::from(bounds)),
         ),
     );
@@ -124,8 +118,8 @@ fn resolve_placement_for_violation(
         },
         BlockedTarget::Website { .. } => {
             // Note: App and website blocks use floating level as a deliberate compromise:
-            // it stays above the blocked focused window while mado keeps receiving move events,
-            // but it may appear above allowed apps until their focus event clears it.
+            // it stays above blocked windows while mado keeps receiving move events,
+            // but it can also appear above allowed windows that overlap a blocked window.
             if let Some(bounds) = focus.browser_content_bounds {
                 BlockingOverlayPlacement {
                     bounds: Some(BlockingOverlayBounds::from(bounds)),
@@ -188,13 +182,8 @@ struct BlockingOverlayPlacement {
 }
 
 impl BlockingOverlayPlacement {
-    fn config(&self) -> OverlayWindowConfig {
-        let route = if self.show_manual_close {
-            BLOCKING_OVERLAY_MANUAL_CLOSE_ROUTE
-        } else {
-            BLOCKING_OVERLAY_ROUTE
-        };
-        let route = Some(route.to_string());
+    fn config(&self, owner: &OverlayWindowOwner) -> OverlayWindowConfig {
+        let route = Some(blocking_overlay_route(owner, self.show_manual_close));
         let bounds = self.bounds.map(OverlayWindowBounds::from);
         return match self.level {
             OverlayWindowLevel::Normal => OverlayWindowConfig::normal(route, bounds),
@@ -323,9 +312,9 @@ fn schedule_browser_content_bounds_retries(
 
                 overlay_window::update(
                     &app,
-                    owner,
+                    owner.clone(),
                     OverlayWindowConfig::floating(
-                        Some(BLOCKING_OVERLAY_ROUTE.to_string()),
+                        Some(blocking_overlay_route(&owner, false)),
                         Some(bounds),
                     ),
                 );
@@ -378,9 +367,20 @@ fn matches_browser_hostname(url: Option<&str>, expected_hostname: Option<&str>) 
     return target.hostname == expected_hostname;
 }
 
+fn blocking_overlay_route(owner: &OverlayWindowOwner, manual_close: bool) -> String {
+    let manual_close_query = if manual_close {
+        "manualClose=true&"
+    } else {
+        ""
+    };
+    return format!(
+        "{BLOCKING_OVERLAY_ROUTE}?{manual_close_query}key={}",
+        owner.as_str()
+    );
+}
+
 const LOG_TARGET: &str = "modules::blocking::overlay";
 const BLOCKING_OVERLAY_ROUTE: &str = "/blocking";
-const BLOCKING_OVERLAY_MANUAL_CLOSE_ROUTE: &str = "/blocking?manualClose=true";
 // Note: Absolute delays from the initial window-bounds fallback, not intervals between retries
 const BROWSER_CONTENT_BOUNDS_RETRY_DELAYS: [Duration; 8] = [
     Duration::from_millis(200),

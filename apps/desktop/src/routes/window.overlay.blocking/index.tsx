@@ -20,23 +20,31 @@ import { BlockingOverlayCx, useCreateBlockingOverlayCx } from './lib';
 export const Route = createFileRoute('/window/overlay/blocking/')({
 	validateSearch: (search) => {
 		const result = SBlockingOverlayRouteSearch.safeParse(search);
-		return result.success ? result.data : { manualClose: false };
+		return result.success ? result.data : { key: '', manualClose: false };
 	},
-	loader: () => specta.commands.getBlockingViolation(),
+	loaderDeps: ({ search }) => ({ key: search.key }),
+	loader: async ({ deps }) => {
+		if (!deps.key.length) {
+			return null;
+		}
+
+		return specta.commands.getBlockingViolation(deps.key);
+	},
 	pendingComponent: BlockingOverlayLoading,
 	pendingMs: 150,
 	component: RouteComponent
 });
 
 const SBlockingOverlayRouteSearch = z.object({
+	key: z.string().catch(''),
 	manualClose: z.union([z.boolean(), z.stringbool()]).catch(false)
 });
 
 function RouteComponent() {
-	const initialViolation = Route.useLoaderData();
-	const { manualClose } = Route.useSearch();
+	const initialBlockingViolation = Route.useLoaderData();
+	const { key, manualClose } = Route.useSearch();
 	const toastsCx = useToastsCx();
-	const cx = useCreateBlockingOverlayCx(initialViolation, toastsCx);
+	const cx = useCreateBlockingOverlayCx(key, initialBlockingViolation, toastsCx);
 	const violation = useFeatureState(cx.$violation);
 
 	// MARK: - UI
@@ -45,13 +53,7 @@ function RouteComponent() {
 		return <BlockingOverlayLoading />;
 	}
 
-	return (
-		<BlockingOverlay
-			violation={violation}
-			manualClose={manualClose}
-			cx={cx}
-		/>
-	);
+	return <BlockingOverlay violation={violation} manualClose={manualClose} cx={cx} />;
 }
 
 const BlockingOverlay: React.FC<TBlockingOverlayProps> = (props) => {

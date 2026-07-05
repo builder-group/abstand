@@ -55,7 +55,7 @@ pub fn run() {
             settings::commands::set_settings,
             settings::commands::reset_settings,
             // Blocking commands
-            blocking::commands::get_blocking_violations,
+            blocking::commands::get_blocking_violation,
             blocking::commands::pause_blocking_overlay,
             blocking::commands::quit_blocked_app_by_bundle_id,
             // Intention commands
@@ -87,6 +87,7 @@ pub fn run() {
             // Settings events
             settings::types::AppSettingsChangedEvent,
             // Blocking events
+            blocking::types::ActiveBlockingViolationChangedEvent,
             blocking::types::BlockedAppQuitTimedOutEvent,
             // Intentions events
             intentions::types::IntentionCreatedEvent,

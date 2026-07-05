@@ -5,15 +5,16 @@ import { specta } from '@/environment';
 import { createMountLifecycle, toTuple } from '@/lib';
 
 export class BlockingOverlayCx {
-	private readonly toastsCx: ToastsCx;
+	private readonly _toastsCx: ToastsCx;
 
+	private readonly _key: string;
 	public readonly $violation = createState<specta.BlockingViolation | null>(null);
 	public readonly $isOpeningIntention = createState(false);
 	public readonly $isPausingOverlay = createState(false);
 
-	private readonly $blockedAppCloseState = createState<TBlockedAppCloseState | null>(null);
+	private readonly _blockedAppCloseState = createState<TBlockedAppCloseState | null>(null);
 	public readonly $blockedAppCloseStatus = createComputed(
-		[this.$violation, this.$blockedAppCloseState] as const,
+		[this.$violation, this._blockedAppCloseState] as const,
 		([violation, closeState]): TBlockedAppCloseStatus => {
 			if (violation == null || closeState == null) {
 				return 'idle';
@@ -24,9 +25,10 @@ export class BlockingOverlayCx {
 		}
 	);
 
-	constructor(initialViolation: specta.BlockingViolation | null, toastsCx: ToastsCx) {
+	constructor(key: string, initialViolation: specta.BlockingViolation | null, toastsCx: ToastsCx) {
+		this._key = key;
 		this.$violation.set(initialViolation);
-		this.toastsCx = toastsCx;
+		this._toastsCx = toastsCx;
 	}
 
 	public mount(): () => void {
@@ -34,8 +36,13 @@ export class BlockingOverlayCx {
 
 		void (async () => {
 			lifecycle.addCleanup(
-				await specta.events.blockingViolationChangedEvent.listen(({ payload }) => {
-					this.setViolation(payload);
+				await specta.events.activeBlockingViolationChangedEvent.listen(async ({ payload }) => {
+					if (payload.key !== this._key) {
+						return;
+					}
+					const violation = await specta.commands.getBlockingViolation(this._key);
+					if (lifecycle.isUnmounted()) return;
+					this._applyViolation(violation);
 				})
 			);
 
@@ -43,43 +50,52 @@ export class BlockingOverlayCx {
 
 			lifecycle.addCleanup(
 				await specta.events.blockedAppQuitTimedOutEvent.listen(({ payload }) => {
-					this.handleAppQuitTimedOut(payload);
+					this._handleAppQuitTimedOut(payload);
 				})
 			);
+
+			if (lifecycle.isUnmounted()) return;
+
+			// Fetch once after listeners are registered so changes between the route loader and subscription are not missed
+			if (this._key.length > 0) {
+				const violation = await specta.commands.getBlockingViolation(this._key);
+				if (lifecycle.isUnmounted()) return;
+				this._applyViolation(violation);
+			}
 		})();
 
 		return lifecycle.unmount;
 	}
 
 	public async quitBlockedApp(): Promise<void> {
-		const target = this.getCurrentBlockedAppTarget();
+		const target = this._getCurrentBlockedAppTarget();
 		if (target == null) {
 			return;
 		}
 
 		const targetKey = getBlockedTargetKey(target);
-		this.$blockedAppCloseState.set({ status: 'quitting', targetKey });
+		this._blockedAppCloseState.set({ status: 'quitting', targetKey });
 
 		const [isQuitOk, , quitResult] = toTuple(
 			await specta.commands.quitBlockedAppByBundleId(target.bundleId)
 		);
-		if (!this.isQuittingBlockedApp(targetKey)) {
+		if (!this._isQuittingBlockedApp(targetKey)) {
 			return;
 		}
 		if (!isQuitOk) {
-			this.requestManualAppClose(target);
+			this._requestManualAppClose(target);
 			return;
 		}
 
 		if (quitResult.status === 'failed' || quitResult.status === 'unsupported') {
-			this.requestManualAppClose(target);
+			this._requestManualAppClose(target);
 		}
 	}
 
 	public async pauseOverlayTemporarily(): Promise<void> {
 		this.$isPausingOverlay.set(true);
 		try {
-			await specta.commands.pauseBlockingOverlay(PAUSE_BLOCKING_OVERLAY_DURATION_MS);
+			await specta.commands.pauseBlockingOverlay(this._key, PAUSE_BLOCKING_OVERLAY_DURATION_MS);
 		} finally {
 			this.$isPausingOverlay.set(false);
 		}
@@ -99,53 +115,53 @@ export class BlockingOverlayCx {
 		}
 	}
 
-	private setViolation(violation: specta.BlockingViolation | null): void {
+	private _applyViolation(violation: specta.BlockingViolation | null): void {
 		this.$violation.set(violation);
 
-		const closeState = this.$blockedAppCloseState.get();
+		const closeState = this._blockedAppCloseState.get();
 		if (closeState == null) {
 			return;
 		}
 
 		const targetKey = violation != null ? getBlockedTargetKey(violation.blockedTarget) : null;
 		if (targetKey !== closeState.targetKey) {
-			this.$blockedAppCloseState.set(null);
+			this._blockedAppCloseState.set(null);
 		}
 	}
 
-	private handleAppQuitTimedOut(event: specta.BlockedAppQuitTimedOutEvent): void {
-		const target = this.getCurrentBlockedAppTarget();
+	private _handleAppQuitTimedOut(event: specta.BlockedAppQuitTimedOutEvent): void {
+		const target = this._getCurrentBlockedAppTarget();
 		if (target == null || target.bundleId !== event.bundleId) {
 			return;
 		}
 
 		const targetKey = getBlockedTargetKey(target);
-		if (!this.isQuittingBlockedApp(targetKey)) {
+		if (!this._isQuittingBlockedApp(targetKey)) {
 			return;
 		}
 
-		this.requestManualAppClose(target);
+		this._requestManualAppClose(target);
 	}
 
-	private requestManualAppClose(target: TBlockedAppTarget): void {
-		this.$blockedAppCloseState.set({
+	private _requestManualAppClose(target: TBlockedAppTarget): void {
+		this._blockedAppCloseState.set({
 			status: 'needsManualClose',
 			targetKey: getBlockedTargetKey(target)
 		});
-		this.toastsCx.add({
+		this._toastsCx.add({
 			type: 'warning',
 			title: `Could not quit ${target.displayName}`,
 			description: 'Use Pause 5s to quit it manually.'
 		});
 	}
 
-	private getCurrentBlockedAppTarget(): TBlockedAppTarget | null {
+	private _getCurrentBlockedAppTarget(): TBlockedAppTarget | null {
 		const target = this.$violation.get()?.blockedTarget;
 		return target?.type === 'app' ? target : null;
 	}
 
-	private isQuittingBlockedApp(targetKey: string): boolean {
-		const closeState = this.$blockedAppCloseState.get();
+	private _isQuittingBlockedApp(targetKey: string): boolean {
+		const closeState = this._blockedAppCloseState.get();
 		return closeState?.status === 'quitting' && closeState.targetKey === targetKey;
 	}
 }
@@ -171,12 +187,13 @@ function getBlockedTargetKey(target: specta.BlockedTarget): string {
 }
 
 export function useCreateBlockingOverlayCx(
+	key: string,
 	initialViolation: specta.BlockingViolation | null,
 	toastsCx: ToastsCx
 ): BlockingOverlayCx {
 	const cx = React.useMemo(
-		() => new BlockingOverlayCx(initialViolation, toastsCx),
-		[initialViolation, toastsCx]
+		() => new BlockingOverlayCx(key, initialViolation, toastsCx),
+		[key, initialViolation, toastsCx]
 	);
 
 	React.useEffect(() => {

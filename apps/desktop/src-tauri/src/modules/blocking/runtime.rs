@@ -2,7 +2,9 @@ use super::{
     enrichment::enrich_blocking_violation,
     overlay,
     policy::{evaluate_active_target, BlockingPolicyDecision},
-    types::{BlockedTarget, BlockingRuntimeState, BlockingViolation},
+    types::{
+        ActiveBlockingViolationChangedEvent, BlockedTarget, BlockingRuntimeState, BlockingViolation,
+    },
 };
 use crate::{
     app::window::overlay_window::{self, types::OverlayWindowOwner},
@@ -21,6 +23,7 @@ use std::{
     time::{Duration, Instant},
 };
 use tauri::{AppHandle, Manager};
+use tauri_specta::Event;
 
 pub async fn handle_window_event(app: &AppHandle, event: WindowEvent, expects_window_update: bool) {
     match event {
@@ -147,8 +150,12 @@ impl BlockingRuntime {
         };
     }
 
-    pub fn active_violations(&self) -> Vec<ActiveViolation> {
-        return self.active_violations.values().cloned().collect();
+    pub fn active_violation(&self, key: &str) -> Option<ActiveViolation> {
+        return self
+            .active_violations
+            .iter()
+            .find(|(active_key, _)| active_key.to_string() == key)
+            .map(|(_, active_violation)| active_violation.clone());
     }
 
     fn handle_allowed_focus(&mut self, app: &AppHandle, focus: &ActivityFocus) {
@@ -171,6 +178,11 @@ impl BlockingRuntime {
         );
 
         let key = ActiveViolationKey::from_blocked_focus(focus, &violation);
+        let violation_changed = self
+            .active_violations
+            .get(&key)
+            .map(|active_violation| &active_violation.violation)
+            != Some(&violation);
         let paused_until = self
             .active_violations
             .get(&key)
@@ -184,6 +196,13 @@ impl BlockingRuntime {
         };
 
         self.active_violations.insert(key.clone(), active_violation);
+
+        if violation_changed {
+            let _ = ActiveBlockingViolationChangedEvent {
+                key: key.to_string(),
+            }
+            .emit(app);
+        }
 
         if self.is_overlay_paused(&key) {
             return;
@@ -256,6 +275,11 @@ impl BlockingRuntime {
         let Some(active_violation) = self.active_violations.remove(key) else {
             return;
         };
+
+        let _ = ActiveBlockingViolationChangedEvent {
+            key: active_violation.key(),
+        }
+        .emit(app);
 
         overlay::hide(app, active_violation.overlay_owner());
     }

@@ -10,34 +10,18 @@ use tauri_specta::Event;
 
 #[tauri::command]
 #[specta::specta]
-pub fn get_blocking_violations(app: AppHandle) -> Vec<ActiveBlockingViolation> {
+pub fn get_blocking_violation(app: AppHandle, key: String) -> Option<BlockingViolation> {
+    let key = key.trim();
+    if key.is_empty() {
+        return None;
+    }
+
     let runtime_state = app.state::<BlockingRuntimeState>();
     return runtime_state
         .lock()
         .unwrap()
-        .active_violations()
-        .into_iter()
-        .map(ActiveBlockingViolation::from)
-        .collect();
-}
-
-/// Describes one active blocking overlay.
-///
-/// Pass `key` back to commands that target a specific overlay.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, specta::Type)]
-#[serde(rename_all = "camelCase")]
-pub struct ActiveBlockingViolation {
-    pub key: String,
-    pub violation: BlockingViolation,
-}
-
-impl From<runtime::ActiveViolation> for ActiveBlockingViolation {
-    fn from(active_violation: runtime::ActiveViolation) -> Self {
-        return Self {
-            key: active_violation.key(),
-            violation: active_violation.violation(),
-        };
-    }
+        .active_violation(key)
+        .map(|active_violation| active_violation.violation());
 }
 
 #[tauri::command]

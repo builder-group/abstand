@@ -57,6 +57,12 @@ impl Deref for BlockingRuntimeState {
 
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type, tauri_specta::Event)]
 #[serde(rename_all = "camelCase")]
+pub struct ActiveBlockingViolationChangedEvent {
+    pub key: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type, tauri_specta::Event)]
+#[serde(rename_all = "camelCase")]
 pub struct BlockedAppQuitTimedOutEvent {
     pub bundle_id: String,
 }
