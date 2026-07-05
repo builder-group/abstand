@@ -1,3 +1,4 @@
+import { useCompute } from 'feature-react/state';
 import React from 'react';
 import { Select } from '@/components';
 import { type specta } from '@/environment';
@@ -8,6 +9,7 @@ import {
 } from '@/modules/settings';
 import {
 	type BlockIntentionFormCx,
+	type TBlockIntentionConditionFormData,
 	type TBlockIntentionConditionMode
 } from '../../BlockIntentionFormCx';
 import { ConditionDetailRows } from './ConditionDetailRows';
@@ -16,7 +18,24 @@ import { useConditionRow } from './use-condition-row';
 
 export const WhenSection: React.FC<TWhenSectionProps> = (props) => {
 	const { formCx, isActive = false, isDisabled = false } = props;
-	const shouldShowActiveEditDescriptions = formCx.mode === 'edit' && isActive;
+	const hasChangedStartCondition = useCompute(
+		[formCx.$form.fields.conditions, formCx.$form.dirtyFields] as const,
+		([conditions, dirtyFields]) => {
+			if (!dirtyFields.conditions) {
+				return false;
+			}
+
+			const startCondition = conditions.find((condition) => condition.transition === 'start');
+			const defaultStartCondition = formCx.$form.fields.conditions.defaultValue.find(
+				(condition) => condition.transition === 'start'
+			);
+
+			return !areStartConditionsEqual(startCondition, defaultStartCondition);
+		},
+		[formCx]
+	);
+	const shouldShowActiveEditDescriptions =
+		formCx.mode === 'edit' && isActive && hasChangedStartCondition;
 
 	return (
 		<div className="space-y-2.5">
@@ -46,6 +65,31 @@ interface TWhenSectionProps {
 	formCx: BlockIntentionFormCx;
 	isActive?: boolean;
 	isDisabled?: boolean;
+}
+
+function areStartConditionsEqual(
+	a: TBlockIntentionConditionFormData | undefined,
+	b: TBlockIntentionConditionFormData | undefined
+): boolean {
+	if (a == null || b == null) {
+		return a == null && b == null;
+	}
+	if (a.mode !== b.mode) {
+		return false;
+	}
+
+	switch (a.mode) {
+		case 'atTime':
+			return a.dateEpochDays === b.dateEpochDays && a.timeOfDayMs === b.timeOfDayMs;
+		case 'afterDelay':
+		case 'afterDuration':
+			return a.offsetMs === b.offsetMs;
+		case 'repeats':
+			return a.timeOfDayMs === b.timeOfDayMs && a.weekdaysMask === b.weekdaysMask;
+		case 'manual':
+		case 'now':
+			return true;
+	}
 }
 
 const ConditionRowSet: React.FC<TConditionRowSetProps> = (props) => {
