@@ -1,5 +1,6 @@
 #[cfg(target_os = "macos")]
 mod macos;
+mod main_window;
 pub mod overlay_window;
 
 use self::overlay_window::types::OverlayWindow;
@@ -7,8 +8,8 @@ use crate::environment::configs::app::AppConfig;
 #[cfg(target_os = "macos")]
 use tauri::TitleBarStyle;
 use tauri::{
-    App, AppHandle, CloseRequestApi, LogicalPosition, Manager, WebviewUrl, WebviewWindow,
-    WebviewWindowBuilder, Window, WindowEvent,
+    App, AppHandle, LogicalPosition, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder,
+    Window, WindowEvent,
 };
 
 pub fn setup(app: &mut App) {
@@ -133,22 +134,21 @@ impl AppWindow {
     /// Handles Tauri window events for app-owned windows.
     pub fn handle_event(window: &Window, event: &WindowEvent) {
         match event {
-            WindowEvent::CloseRequested { api, .. } => {
-                Self::handle_close(window.label(), window, api);
-            }
-            _ => {}
-        }
-    }
-
-    fn handle_close(label: &str, window: &Window, api: &CloseRequestApi) {
-        match label {
-            label if label == Self::Main.label().as_str() => {
-                api.prevent_close();
-                let _ = window.hide();
-            }
-            label if overlay_window::is_overlay_window_label(label) => {
-                api.prevent_close();
-            }
+            WindowEvent::Focused(is_focused) => match window.label() {
+                label if label == Self::Main.label().as_str() => {
+                    main_window::handle_focus(window, *is_focused);
+                }
+                _ => {}
+            },
+            WindowEvent::CloseRequested { api, .. } => match window.label() {
+                label if label == Self::Main.label().as_str() => {
+                    main_window::handle_close(window, api);
+                }
+                label if overlay_window::is_overlay_window_label(label) => {
+                    overlay_window::handle_close(api);
+                }
+                _ => {}
+            },
             _ => {}
         }
     }
@@ -173,7 +173,7 @@ impl AppWindow {
                 let window = builder.build()?;
 
                 #[cfg(target_os = "macos")]
-                macos::apply_liquid_glass(&window, &self.label());
+                macos::apply_liquid_glass(&window);
 
                 return Ok(window);
             }

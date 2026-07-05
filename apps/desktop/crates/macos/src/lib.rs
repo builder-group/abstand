@@ -5,7 +5,8 @@ mod ffi;
 #[cfg(target_os = "macos")]
 use ffi::{
     abstand_macos_activate_app_by_pid, abstand_macos_apply_status_item_appearance,
-    abstand_macos_apply_window_floating_overlay_behavior, abstand_macos_apply_window_liquid_glass,
+    abstand_macos_apply_window_floating_level, abstand_macos_apply_window_floating_overlay_behavior,
+    abstand_macos_apply_window_liquid_glass, abstand_macos_apply_window_normal_level,
     abstand_macos_apply_window_normal_overlay_behavior,
     abstand_macos_apply_window_screen_overlay_behavior, abstand_macos_apply_window_transparency,
     abstand_macos_get_small_system_font_size, abstand_macos_get_system_font_size,
@@ -51,6 +52,48 @@ pub fn apply_window_transparency(window_ptr: *mut c_void) -> bool {
     #[cfg(not(target_os = "macos"))]
     {
         let _ = window_ptr;
+        return false;
+    }
+}
+
+/// Applies the normal native window level.
+pub fn apply_window_normal_level(window_ptr: *mut c_void, order_front: bool) -> bool {
+    #[cfg(target_os = "macos")]
+    {
+        if window_ptr.is_null() {
+            return false;
+        }
+
+        return unsafe {
+            abstand_macos_apply_window_normal_level(window_ptr as Int, order_front.into())
+        };
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = window_ptr;
+        let _ = order_front;
+        return false;
+    }
+}
+
+/// Applies the floating native window level.
+pub fn apply_window_floating_level(window_ptr: *mut c_void, order_front: bool) -> bool {
+    #[cfg(target_os = "macos")]
+    {
+        if window_ptr.is_null() {
+            return false;
+        }
+
+        return unsafe {
+            abstand_macos_apply_window_floating_level(window_ptr as Int, order_front.into())
+        };
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = window_ptr;
+        let _ = order_front;
         return false;
     }
 }

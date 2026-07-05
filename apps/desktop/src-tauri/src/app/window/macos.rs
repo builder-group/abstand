@@ -1,10 +1,11 @@
 use super::overlay_window::types::{OverlayWindowConfig, OverlayWindowLevel};
 use tauri::{
     window::{Effect, EffectsBuilder},
-    WebviewWindow,
+    WebviewWindow, Window,
 };
 
-pub fn apply_liquid_glass(window: &WebviewWindow, window_label: &str) {
+pub fn apply_liquid_glass(window: &WebviewWindow) {
+    let window_label = window.label();
     let Ok(window_ptr) = window.ns_window() else {
         log::debug!(target: LOG_TARGET, "failed to access NSWindow for {}", window_label);
         return;
@@ -28,11 +29,34 @@ pub fn apply_liquid_glass(window: &WebviewWindow, window_label: &str) {
     );
 }
 
-pub fn apply_overlay_behavior(
-    window: &WebviewWindow,
-    config: &OverlayWindowConfig,
-    window_label: &str,
-) {
+pub fn apply_window_level(window: &Window, level: WindowLevel) {
+    let window_label = window.label();
+    let Ok(window_ptr) = window.ns_window() else {
+        log::debug!(target: LOG_TARGET, "failed to access NSWindow for {}", window_label);
+        return;
+    };
+
+    let applied_level = match level {
+        WindowLevel::Normal => abstand_macos::apply_window_normal_level(window_ptr, false),
+        WindowLevel::Floating => abstand_macos::apply_window_floating_level(window_ptr, true),
+    };
+    if !applied_level {
+        log::debug!(
+            target: LOG_TARGET,
+            "failed to apply window level for {}",
+            window_label
+        );
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WindowLevel {
+    Normal,
+    Floating,
+}
+
+pub fn apply_overlay_behavior(window: &WebviewWindow, config: &OverlayWindowConfig) {
+    let window_label = window.label();
     let Ok(window_ptr) = window.ns_window() else {
         log::debug!(target: LOG_TARGET, "failed to access NSWindow for {}", window_label);
         return;

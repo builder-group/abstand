@@ -15,7 +15,10 @@ enum WindowOverlay {
         orderFront: Bool
     ) -> Bool {
         return WindowPointer.withWindow(windowPtr) { window in
-            applyWindowFloatingOverlayBehavior(to: window, orderFront: orderFront)
+            applyWindowFloatingOverlayBehavior(
+                to: window,
+                orderFront: orderFront
+            )
         }
     }
 
@@ -32,28 +35,20 @@ extension WindowOverlay {
         to window: NSWindow,
         orderFront: Bool
     ) {
-        window.level = .normal
+        WindowLevel.applyWindowNormalLevel(to: window, orderFront: orderFront)
         applyCommonOverlayBehavior(to: window)
-
-        if orderFront {
-            window.orderFrontRegardless()
-        }
     }
 
     static func applyWindowFloatingOverlayBehavior(
         to window: NSWindow,
         orderFront: Bool
     ) {
-        window.level = .floating
+        WindowLevel.applyWindowFloatingLevel(to: window, orderFront: orderFront)
         applyCommonOverlayBehavior(to: window)
-
-        if orderFront {
-            window.orderFrontRegardless()
-        }
     }
 
     static func applyWindowScreenOverlayBehavior(to window: NSWindow) {
-        window.level = .screenSaver
+        WindowLevel.applyWindowScreenSaverLevel(to: window)
         applyCommonOverlayBehavior(to: window)
     }
 

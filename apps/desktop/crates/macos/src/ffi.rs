@@ -2,6 +2,14 @@ use swift_rs::{swift, Bool, Double, Int, SRString};
 
 swift!(pub fn abstand_macos_apply_window_liquid_glass(window_ptr: Int) -> Bool);
 swift!(pub fn abstand_macos_apply_window_transparency(window_ptr: Int) -> Bool);
+swift!(pub fn abstand_macos_apply_window_normal_level(
+    window_ptr: Int,
+    order_front: Bool
+) -> Bool);
+swift!(pub fn abstand_macos_apply_window_floating_level(
+    window_ptr: Int,
+    order_front: Bool
+) -> Bool);
 swift!(pub fn abstand_macos_apply_window_normal_overlay_behavior(
     window_ptr: Int,
     order_front: Bool

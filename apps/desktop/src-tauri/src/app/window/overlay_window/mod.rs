@@ -5,10 +5,16 @@ pub mod types;
 
 use self::types::{OverlayWindow, OverlayWindowConfig, OverlayWindowOwner, OverlayWindowPoolState};
 use super::AppWindow;
-use tauri::{App, AppHandle, LogicalPosition, LogicalSize, Manager, WebviewWindow};
+use tauri::{
+    App, AppHandle, CloseRequestApi, LogicalPosition, LogicalSize, Manager, WebviewWindow,
+};
 
 pub fn setup(app: &mut App) {
     app.manage(OverlayWindowPoolState::new());
+}
+
+pub fn handle_close(api: &CloseRequestApi) {
+    api.prevent_close();
 }
 
 pub fn show(app: &AppHandle, owner: OverlayWindowOwner, config: OverlayWindowConfig) {
@@ -195,12 +201,7 @@ fn apply_config(
     }
 
     #[cfg(target_os = "macos")]
-    super::macos::apply_overlay_behavior(window, config, window_label);
-
-    #[cfg(not(target_os = "macos"))]
-    {
-        let _ = window_label;
-    }
+    super::macos::apply_overlay_behavior(window, config);
 
     return Ok(());
 }
