@@ -22,14 +22,23 @@ pub fn show(
 ) {
     let placement = resolve_placement_for_violation(app, focus, violation);
 
-    let should_retry_browser_content_bounds =
-        matches!(&violation.blocked_target, BlockedTarget::Website { .. })
-            && matches!(
-                placement.source,
-                BlockingOverlayPlacementSource::WindowBounds
+    if focus.browser_content_bounds.is_none()
+        && matches!(
+            placement.source,
+            BlockingOverlayPlacementSource::WindowBounds
+        )
+    {
+        if let BlockedTarget::Website { hostname, .. } = &violation.blocked_target {
+            schedule_browser_content_bounds_update(
+                app,
+                owner.clone(),
+                focus.pid,
+                focus.window_id,
+                hostname.clone(),
+                20,
+                Duration::from_millis(200),
             );
-    if should_retry_browser_content_bounds {
-        schedule_browser_content_bounds_retries(app, owner.clone(), focus);
+        }
     }
 
     overlay_window::show(app, owner.clone(), placement.config(&owner));
@@ -74,14 +83,23 @@ pub fn handle_window_bounds_change(
 ) {
     let (bounds, show_manual_close) = match &violation.blocked_target {
         BlockedTarget::Website { hostname, .. } => {
-            if let Some(bounds) = get_active_browser_content_bounds(window.app.pid, Some(hostname))
-            {
-                (BlockingOverlayBounds::from(bounds), false)
-            } else if let Some(bounds) = window.bounds.as_ref() {
-                (BlockingOverlayBounds::from(bounds), true)
-            } else {
+            let Some(bounds) = window.bounds.as_ref() else {
                 return;
-            }
+            };
+            // Note: Browser content bounds can lag native resize events, and there is no reliable
+            // freshness signal for when they catch up. Cover each resize immediately, then do one
+            // delayed refinement. We do not cancel refinements because a newer resize covers the
+            // window again and schedules another refinement.
+            schedule_browser_content_bounds_update(
+                app,
+                owner.clone(),
+                window.app.pid,
+                window.window_id,
+                hostname.clone(),
+                1,
+                Duration::from_millis(500),
+            );
+            (BlockingOverlayBounds::from(bounds), true)
         }
         BlockedTarget::App { .. } => {
             let Some(bounds) = window.bounds.as_ref() else {
@@ -129,6 +147,7 @@ fn resolve_placement_for_violation(
                 }
             } else if let Some(bounds) = get_active_browser_content_bounds(
                 focus.pid,
+                focus.window_id,
                 focus.target.website_hostname.as_deref(),
             ) {
                 BlockingOverlayPlacement {
@@ -285,46 +304,57 @@ fn resolve_monitor_bounds_for_focus(
 
 // MARK: - Browser Content
 
-fn schedule_browser_content_bounds_retries(
+fn schedule_browser_content_bounds_update(
     app: &AppHandle,
     owner: OverlayWindowOwner,
-    focus: &ActivityFocus,
+    expected_pid: i32,
+    expected_window_id: Option<u32>,
+    expected_hostname: String,
+    attempts_remaining: usize,
+    delay: Duration,
 ) {
-    if focus.browser_content_bounds.is_some() {
+    if attempts_remaining == 0 {
         return;
     }
 
-    for delay in BROWSER_CONTENT_BOUNDS_RETRY_DELAYS {
-        let focus = focus.clone();
-        let owner = owner.clone();
-        scheduler::schedule_after(
-            app,
-            "blocking overlay browser content bounds retry",
-            delay,
-            move |app| {
-                let Some(bounds) = get_active_browser_content_bounds(
-                    focus.pid,
-                    focus.target.website_hostname.as_deref(),
-                ) else {
-                    return;
-                };
-                let bounds = OverlayWindowBounds::from(BlockingOverlayBounds::from(bounds));
-
-                overlay_window::update(
+    scheduler::schedule_after(
+        app,
+        "blocking overlay browser content bounds update",
+        delay,
+        move |app| {
+            let Some(bounds) = get_active_browser_content_bounds(
+                expected_pid,
+                expected_window_id,
+                Some(&expected_hostname),
+            ) else {
+                schedule_browser_content_bounds_update(
                     &app,
-                    owner.clone(),
-                    OverlayWindowConfig::floating(
-                        Some(blocking_overlay_route(&owner, false)),
-                        Some(bounds),
-                    ),
+                    owner,
+                    expected_pid,
+                    expected_window_id,
+                    expected_hostname,
+                    attempts_remaining - 1,
+                    delay,
                 );
-            },
-        );
-    }
+                return;
+            };
+            let bounds = OverlayWindowBounds::from(BlockingOverlayBounds::from(bounds));
+
+            overlay_window::update(
+                &app,
+                owner.clone(),
+                OverlayWindowConfig::floating(
+                    Some(blocking_overlay_route(&owner, false)),
+                    Some(bounds),
+                ),
+            );
+        },
+    );
 }
 
 fn get_active_browser_content_bounds(
-    pid: i32,
+    expected_pid: i32,
+    expected_window_id: Option<u32>,
     expected_hostname: Option<&str>,
 ) -> Option<ActivityWindowBounds> {
     let window = match mado::get_active_window_with_config(QueryConfig {
@@ -342,8 +372,13 @@ fn get_active_browser_content_bounds(
         }
     };
 
-    if window.app.pid != pid {
+    if window.app.pid != expected_pid {
         return None;
+    }
+    if let Some(expected_window_id) = expected_window_id {
+        if window.window_id != Some(expected_window_id) {
+            return None;
+        }
     }
 
     let browser = window.browser?;
@@ -381,14 +416,3 @@ fn blocking_overlay_route(owner: &OverlayWindowOwner, manual_close: bool) -> Str
 
 const LOG_TARGET: &str = "modules::blocking::overlay";
 const BLOCKING_OVERLAY_ROUTE: &str = "/blocking";
-// Note: Absolute delays from the initial window-bounds fallback, not intervals between retries
-const BROWSER_CONTENT_BOUNDS_RETRY_DELAYS: [Duration; 8] = [
-    Duration::from_millis(200),
-    Duration::from_millis(400),
-    Duration::from_millis(800),
-    Duration::from_millis(1_200),
-    Duration::from_millis(1_600),
-    Duration::from_millis(2_400),
-    Duration::from_millis(3_200),
-    Duration::from_millis(5_000),
-];
