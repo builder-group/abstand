@@ -83,13 +83,10 @@ pub fn handle_window_bounds_change(
 ) {
     let (bounds, show_manual_close) = match &violation.blocked_target {
         BlockedTarget::Website { hostname, .. } => {
-            let Some(bounds) = window.bounds.as_ref() else {
-                return;
-            };
             // Note: Browser content bounds can lag native resize events, and there is no reliable
-            // freshness signal for when they catch up. Cover each resize immediately, then do one
-            // delayed refinement. We do not cancel refinements because a newer resize covers the
-            // window again and schedules another refinement.
+            // freshness signal for when they catch up. Apply the immediate verified content bounds,
+            // then retry once after resize settles. Delayed refinements are not cancelled because a
+            // newer resize applies its own immediate bounds and schedules another refinement.
             schedule_browser_content_bounds_update(
                 app,
                 owner.clone(),
@@ -99,7 +96,15 @@ pub fn handle_window_bounds_change(
                 1,
                 Duration::from_millis(500),
             );
-            (BlockingOverlayBounds::from(bounds), true)
+            if let Some(bounds) =
+                get_active_browser_content_bounds(window.app.pid, window.window_id, Some(hostname))
+            {
+                (BlockingOverlayBounds::from(bounds), false)
+            } else if let Some(bounds) = window.bounds.as_ref() {
+                (BlockingOverlayBounds::from(bounds), true)
+            } else {
+                return;
+            }
         }
         BlockedTarget::App { .. } => {
             let Some(bounds) = window.bounds.as_ref() else {
