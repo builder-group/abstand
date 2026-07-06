@@ -150,6 +150,11 @@ impl AppWindow {
                 }
                 _ => {}
             },
+            WindowEvent::Moved(_) | WindowEvent::Resized(_) => {
+                if overlay_window::is_overlay_window_label(window.label()) {
+                    overlay_window::handle_move_or_resize(window);
+                }
+            }
             _ => {}
         }
     }

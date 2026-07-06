@@ -1,4 +1,4 @@
-use super::types::{OverlayWindow, OverlayWindowOwner};
+use super::types::{OverlayWindow, OverlayWindowBounds, OverlayWindowOwner};
 
 pub struct OverlayWindowPool {
     max_windows: usize,
@@ -30,6 +30,7 @@ impl OverlayWindowPool {
             .find(|window| window.owner.is_none() && !window.is_release_pending)
         {
             window.owner = Some(owner);
+            window.intended_bounds = None;
             return Some(window.window);
         }
 
@@ -43,6 +44,7 @@ impl OverlayWindowPool {
             window: OverlayWindow::new(id),
             owner: Some(owner),
             is_release_pending: false,
+            intended_bounds: None,
         };
         let overlay_window = window.window;
         self.windows.push(window);
@@ -65,6 +67,7 @@ impl OverlayWindowPool {
 
         window.owner = None;
         window.is_release_pending = true;
+        window.intended_bounds = None;
         return Some(window.window);
     }
 
@@ -81,12 +84,40 @@ impl OverlayWindowPool {
             window.is_release_pending = false;
         }
     }
+
+    pub fn set_intended_bounds(
+        &mut self,
+        overlay_window: OverlayWindow,
+        bounds: Option<OverlayWindowBounds>,
+    ) {
+        let Some(window) = self
+            .windows
+            .iter_mut()
+            .find(|window| window.window == overlay_window)
+        else {
+            return;
+        };
+
+        window.intended_bounds = bounds;
+    }
+
+    pub fn intended_bounds_for_label(&self, label: &str) -> Option<OverlayWindowBounds> {
+        return self
+            .windows
+            .iter()
+            .find(|window| window.owner.is_some() && window.window.label() == label)
+            .and_then(|window| window.intended_bounds);
+    }
 }
 
 struct PooledOverlayWindow {
     window: OverlayWindow,
     owner: Option<OverlayWindowOwner>,
     is_release_pending: bool,
+    // Last bounds assigned by the app for this overlay window.
+    // Needed because external window managers can still move overlays through Accessibility APIs, so move/resize
+    // events use these bounds to restore the intended frame.
+    intended_bounds: Option<OverlayWindowBounds>,
 }
 
 const MAX_OVERLAY_WINDOWS: usize = 5;

@@ -114,4 +114,18 @@ impl OverlayWindowPoolState {
         let mut pool = self.0.lock().unwrap();
         pool.finish_release(overlay_window);
     }
+
+    pub fn set_intended_bounds(
+        &self,
+        overlay_window: OverlayWindow,
+        bounds: Option<OverlayWindowBounds>,
+    ) {
+        let mut pool = self.0.lock().unwrap();
+        pool.set_intended_bounds(overlay_window, bounds);
+    }
+
+    pub fn intended_bounds_for_label(&self, label: &str) -> Option<OverlayWindowBounds> {
+        let pool = self.0.lock().unwrap();
+        return pool.intended_bounds_for_label(label);
+    }
 }
