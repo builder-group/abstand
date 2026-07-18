@@ -2,7 +2,7 @@ use super::{
     app_identity::resolve_app_identity, matcher::fuzzy_match, predefined::PREDEFINED_SERVICES,
 };
 use crate::common::url::extract_website_target;
-use mado::{get_installed_apps, InstalledAppsConfig};
+use mado::{get_installed_app, get_installed_apps, InstalledApp, InstalledAppsConfig};
 use std::collections::HashSet;
 
 pub struct CatalogSearch {
@@ -18,15 +18,34 @@ impl CatalogSearch {
         };
     }
 
-    /// Searches cached catalog items by query.
+    /// Searches cached catalog items, installed apps by bundle ID, and custom websites.
     pub fn search(&self, query: &str, limit: usize) -> Vec<CatalogSearchResult> {
         let trimmed_query = query.trim();
         if trimmed_query.is_empty() {
             return Vec::new();
         }
 
-        let query_website_target = extract_website_target(trimmed_query);
+        let is_known_app = self.apps.iter().any(|item| {
+            return item
+                .bundle_id()
+                .is_some_and(|bundle_id| bundle_id.eq_ignore_ascii_case(trimmed_query));
+        });
+        let custom_app = if is_known_app {
+            None
+        } else {
+            get_installed_app(
+                trimmed_query,
+                InstalledAppsConfig {
+                    include_icon: false,
+                    include_app_color: false,
+                    icon_size: 0,
+                },
+            )
+            .map(Self::searchable_app)
+        };
+        let has_exact_app_match = is_known_app || custom_app.is_some();
 
+        let query_website_target = extract_website_target(trimmed_query);
         let custom_website = query_website_target.as_ref().and_then(|target| {
             let is_known_website = self
                 .websites
@@ -35,16 +54,24 @@ impl CatalogSearch {
             return (!is_known_website)
                 .then(|| SearchableItem::custom_hostname(target.hostname.clone()));
         });
+
         let items = self
             .apps
             .iter()
+            .chain(custom_app.iter())
             .chain(self.websites.iter())
-            .chain(custom_website.iter());
+            .chain(custom_website.iter())
+            // Note: Bundle IDs can look like hostnames, so an exact app match excludes website results
+            .filter(|item| !has_exact_app_match || item.is_app());
 
-        let fuzzy_match_query = query_website_target
-            .as_ref()
-            .map(|target| target.hostname.as_str())
-            .unwrap_or(trimmed_query);
+        let fuzzy_match_query = if has_exact_app_match {
+            trimmed_query
+        } else {
+            query_website_target
+                .as_ref()
+                .map(|target| target.hostname.as_str())
+                .unwrap_or(trimmed_query)
+        };
         let matches = fuzzy_match(items, fuzzy_match_query);
 
         let mut seen_ids = HashSet::<String>::new();
@@ -82,16 +109,18 @@ impl CatalogSearch {
 
         return get_installed_apps(config)
             .into_iter()
-            .map(|app| {
-                let identity = resolve_app_identity(&app.bundle_id, &app.name, &app.path);
-                SearchableItem::app(SearchableApp {
-                    stable_id: identity.stable_id,
-                    name: Some(app.name),
-                    bundle_id: identity.bundle_id,
-                    process_path: Some(app.path),
-                })
-            })
+            .map(Self::searchable_app)
             .collect();
+    }
+
+    fn searchable_app(app: InstalledApp) -> SearchableItem {
+        let identity = resolve_app_identity(&app.bundle_id, &app.name, &app.path);
+        return SearchableItem::app(SearchableApp {
+            stable_id: identity.stable_id,
+            name: Some(app.name),
+            bundle_id: identity.bundle_id,
+            process_path: Some(app.path),
+        });
     }
 
     /// Loads searchable website items from predefined services.
@@ -175,6 +204,17 @@ impl SearchableItem {
         };
     }
 
+    fn bundle_id(&self) -> Option<&str> {
+        return match self {
+            Self::App { app, .. } => app.bundle_id.as_deref(),
+            Self::Website { .. } => None,
+        };
+    }
+
+    fn is_app(&self) -> bool {
+        return matches!(self, Self::App { .. });
+    }
+
     pub fn display_name(&self) -> &str {
         return match self {
             Self::App { app, .. } => app
@@ -220,4 +260,92 @@ pub struct SearchableApp {
 pub struct SearchableWebsite {
     pub hostname: String,
     pub name: Option<String>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn catalog_search() -> CatalogSearch {
+        return CatalogSearch {
+            apps: vec![SearchableItem::app(SearchableApp {
+                stable_id: "com.example.Reader".to_string(),
+                name: Some("Reader".to_string()),
+                bundle_id: Some("com.example.Reader".to_string()),
+                process_path: Some("/Applications/Reader.app".to_string()),
+            })],
+            websites: vec![SearchableItem::website(
+                SearchableWebsite {
+                    hostname: "docs.example.com".to_string(),
+                    name: Some("Example Docs".to_string()),
+                },
+                vec!["docs.example.com".to_string()],
+            )],
+        };
+    }
+
+    #[test]
+    fn finds_catalog_app_by_bundle_id() {
+        let results = catalog_search().search("com.example.Reader", 20);
+
+        assert_eq!(results.len(), 1);
+        let CatalogSearchResult::App { app, .. } = &results[0] else {
+            panic!("catalog app query should resolve as an app");
+        };
+        assert_eq!(app.bundle_id.as_deref(), Some("com.example.Reader"));
+    }
+
+    #[test]
+    fn finds_catalog_website_by_hostname() {
+        let results = catalog_search().search("docs.example.com", 20);
+
+        assert_eq!(results.len(), 1);
+        let CatalogSearchResult::Website { website, path, .. } = &results[0] else {
+            panic!("catalog website query should resolve as a website");
+        };
+        assert_eq!(website.hostname, "docs.example.com");
+        assert_eq!(website.name.as_deref(), Some("Example Docs"));
+        assert_eq!(path, &None);
+    }
+
+    #[test]
+    fn returns_custom_website_with_path() {
+        let results = catalog_search().search("https://outside.example/reference/", 20);
+
+        assert_eq!(results.len(), 1);
+        let CatalogSearchResult::Website { website, path, .. } = &results[0] else {
+            panic!("custom URL should resolve as a website");
+        };
+        assert_eq!(website.hostname, "outside.example");
+        assert_eq!(website.name, None);
+        assert_eq!(path.as_deref(), Some("/reference"));
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn returns_installed_app_missing_from_catalog() {
+        let search = CatalogSearch {
+            apps: Vec::new(),
+            websites: Vec::new(),
+        };
+
+        let results = search.search("com.apple.finder", 20);
+
+        assert_eq!(results.len(), 1);
+        let CatalogSearchResult::App { app, .. } = &results[0] else {
+            panic!("installed bundle ID should resolve as an app");
+        };
+        assert_eq!(app.bundle_id.as_deref(), Some("com.apple.finder"));
+        assert!(app
+            .process_path
+            .as_deref()
+            .is_some_and(|path| path.ends_with("/Finder.app")));
+    }
+
+    #[test]
+    fn returns_no_results_for_unmatched_query() {
+        let results = catalog_search().search("zzzz-unmatched", 20);
+
+        assert!(results.is_empty());
+    }
 }
