@@ -9,49 +9,38 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as WindowOverlayRouteRouteImport } from './routes/window.overlay/route'
 import { Route as WindowMainRouteRouteImport } from './routes/window.main/route'
+import { Route as WindowOverlayRouteRouteImport } from './routes/window.overlay/route'
 import { Route as WindowMainSidebarRouteRouteImport } from './routes/window.main._sidebar/route'
-import { Route as WindowOverlayBlockingIndexRouteImport } from './routes/window.overlay.blocking/index'
-import { Route as WindowMainSplashIndexRouteImport } from './routes/window.main.splash/index'
 import { Route as WindowMainOnboardingIndexRouteImport } from './routes/window.main.onboarding/index'
-import { Route as WindowMainSidebarTodayIndexRouteImport } from './routes/window.main._sidebar.today/index'
-import { Route as WindowMainSidebarSettingsIndexRouteImport } from './routes/window.main._sidebar.settings/index'
+import { Route as WindowMainSplashIndexRouteImport } from './routes/window.main.splash/index'
+import { Route as WindowOverlayBlockingIndexRouteImport } from './routes/window.overlay.blocking/index'
 import { Route as WindowMainSidebarIntentionsNewRouteRouteImport } from './routes/window.main._sidebar.intentions.new/route'
-import { Route as WindowMainSidebarSettingsShortcutsIndexRouteImport } from './routes/window.main._sidebar.settings.shortcuts/index'
-import { Route as WindowMainSidebarSettingsGeneralIndexRouteImport } from './routes/window.main._sidebar.settings.general/index'
-import { Route as WindowMainSidebarSettingsDeveloperIndexRouteImport } from './routes/window.main._sidebar.settings.developer/index'
-import { Route as WindowMainSidebarSettingsAutomationIndexRouteImport } from './routes/window.main._sidebar.settings.automation/index'
-import { Route as WindowMainSidebarSettingsActivityIndexRouteImport } from './routes/window.main._sidebar.settings.activity/index'
-import { Route as WindowMainSidebarSettingsAboutIndexRouteImport } from './routes/window.main._sidebar.settings.about/index'
-import { Route as WindowMainSidebarIntentionsNewIndexRouteImport } from './routes/window.main._sidebar.intentions.new/index'
+import { Route as WindowMainSidebarSettingsIndexRouteImport } from './routes/window.main._sidebar.settings/index'
+import { Route as WindowMainSidebarTodayIndexRouteImport } from './routes/window.main._sidebar.today/index'
 import { Route as WindowMainSidebarIntentionsIntentionIdIndexRouteImport } from './routes/window.main._sidebar.intentions.$intentionId/index'
-import { Route as WindowMainSidebarSettingsDeveloperUiPlaygroundIndexRouteImport } from './routes/window.main._sidebar.settings.developer.ui-playground/index'
+import { Route as WindowMainSidebarIntentionsNewIndexRouteImport } from './routes/window.main._sidebar.intentions.new/index'
+import { Route as WindowMainSidebarSettingsAboutIndexRouteImport } from './routes/window.main._sidebar.settings.about/index'
+import { Route as WindowMainSidebarSettingsActivityIndexRouteImport } from './routes/window.main._sidebar.settings.activity/index'
+import { Route as WindowMainSidebarSettingsAutomationIndexRouteImport } from './routes/window.main._sidebar.settings.automation/index'
+import { Route as WindowMainSidebarSettingsDeveloperIndexRouteImport } from './routes/window.main._sidebar.settings.developer/index'
+import { Route as WindowMainSidebarSettingsGeneralIndexRouteImport } from './routes/window.main._sidebar.settings.general/index'
+import { Route as WindowMainSidebarSettingsShortcutsIndexRouteImport } from './routes/window.main._sidebar.settings.shortcuts/index'
 import { Route as WindowMainSidebarIntentionsNewBlockIndexRouteImport } from './routes/window.main._sidebar.intentions.new.block/index'
+import { Route as WindowMainSidebarSettingsDeveloperUiPlaygroundIndexRouteImport } from './routes/window.main._sidebar.settings.developer.ui-playground/index'
 
-const WindowOverlayRouteRoute = WindowOverlayRouteRouteImport.update({
-  id: '/window/overlay',
-  path: '/window/overlay',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const WindowMainRouteRoute = WindowMainRouteRouteImport.update({
   id: '/window/main',
   path: '/window/main',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WindowOverlayRouteRoute = WindowOverlayRouteRouteImport.update({
+  id: '/window/overlay',
+  path: '/window/overlay',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WindowMainSidebarRouteRoute = WindowMainSidebarRouteRouteImport.update({
   id: '/_sidebar',
-  getParentRoute: () => WindowMainRouteRoute,
-} as any)
-const WindowOverlayBlockingIndexRoute =
-  WindowOverlayBlockingIndexRouteImport.update({
-    id: '/blocking/',
-    path: '/blocking/',
-    getParentRoute: () => WindowOverlayRouteRoute,
-  } as any)
-const WindowMainSplashIndexRoute = WindowMainSplashIndexRouteImport.update({
-  id: '/splash/',
-  path: '/splash/',
   getParentRoute: () => WindowMainRouteRoute,
 } as any)
 const WindowMainOnboardingIndexRoute =
@@ -60,10 +49,21 @@ const WindowMainOnboardingIndexRoute =
     path: '/onboarding/',
     getParentRoute: () => WindowMainRouteRoute,
   } as any)
-const WindowMainSidebarTodayIndexRoute =
-  WindowMainSidebarTodayIndexRouteImport.update({
-    id: '/today/',
-    path: '/today/',
+const WindowMainSplashIndexRoute = WindowMainSplashIndexRouteImport.update({
+  id: '/splash/',
+  path: '/splash/',
+  getParentRoute: () => WindowMainRouteRoute,
+} as any)
+const WindowOverlayBlockingIndexRoute =
+  WindowOverlayBlockingIndexRouteImport.update({
+    id: '/blocking/',
+    path: '/blocking/',
+    getParentRoute: () => WindowOverlayRouteRoute,
+  } as any)
+const WindowMainSidebarIntentionsNewRouteRoute =
+  WindowMainSidebarIntentionsNewRouteRouteImport.update({
+    id: '/intentions/new',
+    path: '/intentions/new',
     getParentRoute: () => WindowMainSidebarRouteRoute,
   } as any)
 const WindowMainSidebarSettingsIndexRoute =
@@ -72,46 +72,16 @@ const WindowMainSidebarSettingsIndexRoute =
     path: '/settings/',
     getParentRoute: () => WindowMainSidebarRouteRoute,
   } as any)
-const WindowMainSidebarIntentionsNewRouteRoute =
-  WindowMainSidebarIntentionsNewRouteRouteImport.update({
-    id: '/intentions/new',
-    path: '/intentions/new',
+const WindowMainSidebarTodayIndexRoute =
+  WindowMainSidebarTodayIndexRouteImport.update({
+    id: '/today/',
+    path: '/today/',
     getParentRoute: () => WindowMainSidebarRouteRoute,
   } as any)
-const WindowMainSidebarSettingsShortcutsIndexRoute =
-  WindowMainSidebarSettingsShortcutsIndexRouteImport.update({
-    id: '/settings/shortcuts/',
-    path: '/settings/shortcuts/',
-    getParentRoute: () => WindowMainSidebarRouteRoute,
-  } as any)
-const WindowMainSidebarSettingsGeneralIndexRoute =
-  WindowMainSidebarSettingsGeneralIndexRouteImport.update({
-    id: '/settings/general/',
-    path: '/settings/general/',
-    getParentRoute: () => WindowMainSidebarRouteRoute,
-  } as any)
-const WindowMainSidebarSettingsDeveloperIndexRoute =
-  WindowMainSidebarSettingsDeveloperIndexRouteImport.update({
-    id: '/settings/developer/',
-    path: '/settings/developer/',
-    getParentRoute: () => WindowMainSidebarRouteRoute,
-  } as any)
-const WindowMainSidebarSettingsAutomationIndexRoute =
-  WindowMainSidebarSettingsAutomationIndexRouteImport.update({
-    id: '/settings/automation/',
-    path: '/settings/automation/',
-    getParentRoute: () => WindowMainSidebarRouteRoute,
-  } as any)
-const WindowMainSidebarSettingsActivityIndexRoute =
-  WindowMainSidebarSettingsActivityIndexRouteImport.update({
-    id: '/settings/activity/',
-    path: '/settings/activity/',
-    getParentRoute: () => WindowMainSidebarRouteRoute,
-  } as any)
-const WindowMainSidebarSettingsAboutIndexRoute =
-  WindowMainSidebarSettingsAboutIndexRouteImport.update({
-    id: '/settings/about/',
-    path: '/settings/about/',
+const WindowMainSidebarIntentionsIntentionIdIndexRoute =
+  WindowMainSidebarIntentionsIntentionIdIndexRouteImport.update({
+    id: '/intentions/$intentionId/',
+    path: '/intentions/$intentionId/',
     getParentRoute: () => WindowMainSidebarRouteRoute,
   } as any)
 const WindowMainSidebarIntentionsNewIndexRoute =
@@ -120,16 +90,40 @@ const WindowMainSidebarIntentionsNewIndexRoute =
     path: '/',
     getParentRoute: () => WindowMainSidebarIntentionsNewRouteRoute,
   } as any)
-const WindowMainSidebarIntentionsIntentionIdIndexRoute =
-  WindowMainSidebarIntentionsIntentionIdIndexRouteImport.update({
-    id: '/intentions/$intentionId/',
-    path: '/intentions/$intentionId/',
+const WindowMainSidebarSettingsAboutIndexRoute =
+  WindowMainSidebarSettingsAboutIndexRouteImport.update({
+    id: '/settings/about/',
+    path: '/settings/about/',
     getParentRoute: () => WindowMainSidebarRouteRoute,
   } as any)
-const WindowMainSidebarSettingsDeveloperUiPlaygroundIndexRoute =
-  WindowMainSidebarSettingsDeveloperUiPlaygroundIndexRouteImport.update({
-    id: '/settings/developer/ui-playground/',
-    path: '/settings/developer/ui-playground/',
+const WindowMainSidebarSettingsActivityIndexRoute =
+  WindowMainSidebarSettingsActivityIndexRouteImport.update({
+    id: '/settings/activity/',
+    path: '/settings/activity/',
+    getParentRoute: () => WindowMainSidebarRouteRoute,
+  } as any)
+const WindowMainSidebarSettingsAutomationIndexRoute =
+  WindowMainSidebarSettingsAutomationIndexRouteImport.update({
+    id: '/settings/automation/',
+    path: '/settings/automation/',
+    getParentRoute: () => WindowMainSidebarRouteRoute,
+  } as any)
+const WindowMainSidebarSettingsDeveloperIndexRoute =
+  WindowMainSidebarSettingsDeveloperIndexRouteImport.update({
+    id: '/settings/developer/',
+    path: '/settings/developer/',
+    getParentRoute: () => WindowMainSidebarRouteRoute,
+  } as any)
+const WindowMainSidebarSettingsGeneralIndexRoute =
+  WindowMainSidebarSettingsGeneralIndexRouteImport.update({
+    id: '/settings/general/',
+    path: '/settings/general/',
+    getParentRoute: () => WindowMainSidebarRouteRoute,
+  } as any)
+const WindowMainSidebarSettingsShortcutsIndexRoute =
+  WindowMainSidebarSettingsShortcutsIndexRouteImport.update({
+    id: '/settings/shortcuts/',
+    path: '/settings/shortcuts/',
     getParentRoute: () => WindowMainSidebarRouteRoute,
   } as any)
 const WindowMainSidebarIntentionsNewBlockIndexRoute =
@@ -137,6 +131,12 @@ const WindowMainSidebarIntentionsNewBlockIndexRoute =
     id: '/block/',
     path: '/block/',
     getParentRoute: () => WindowMainSidebarIntentionsNewRouteRoute,
+  } as any)
+const WindowMainSidebarSettingsDeveloperUiPlaygroundIndexRoute =
+  WindowMainSidebarSettingsDeveloperUiPlaygroundIndexRouteImport.update({
+    id: '/settings/developer/ui-playground/',
+    path: '/settings/developer/ui-playground/',
+    getParentRoute: () => WindowMainSidebarRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -270,18 +270,18 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/window/overlay': {
-      id: '/window/overlay'
-      path: '/window/overlay'
-      fullPath: '/window/overlay'
-      preLoaderRoute: typeof WindowOverlayRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/window/main': {
       id: '/window/main'
       path: '/window/main'
       fullPath: '/window/main'
       preLoaderRoute: typeof WindowMainRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/window/overlay': {
+      id: '/window/overlay'
+      path: '/window/overlay'
+      fullPath: '/window/overlay'
+      preLoaderRoute: typeof WindowOverlayRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/window/main/_sidebar': {
@@ -291,12 +291,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WindowMainSidebarRouteRouteImport
       parentRoute: typeof WindowMainRouteRoute
     }
-    '/window/overlay/blocking/': {
-      id: '/window/overlay/blocking/'
-      path: '/blocking'
-      fullPath: '/window/overlay/blocking/'
-      preLoaderRoute: typeof WindowOverlayBlockingIndexRouteImport
-      parentRoute: typeof WindowOverlayRouteRoute
+    '/window/main/onboarding/': {
+      id: '/window/main/onboarding/'
+      path: '/onboarding'
+      fullPath: '/window/main/onboarding/'
+      preLoaderRoute: typeof WindowMainOnboardingIndexRouteImport
+      parentRoute: typeof WindowMainRouteRoute
     }
     '/window/main/splash/': {
       id: '/window/main/splash/'
@@ -305,18 +305,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WindowMainSplashIndexRouteImport
       parentRoute: typeof WindowMainRouteRoute
     }
-    '/window/main/onboarding/': {
-      id: '/window/main/onboarding/'
-      path: '/onboarding'
-      fullPath: '/window/main/onboarding/'
-      preLoaderRoute: typeof WindowMainOnboardingIndexRouteImport
-      parentRoute: typeof WindowMainRouteRoute
+    '/window/overlay/blocking/': {
+      id: '/window/overlay/blocking/'
+      path: '/blocking'
+      fullPath: '/window/overlay/blocking/'
+      preLoaderRoute: typeof WindowOverlayBlockingIndexRouteImport
+      parentRoute: typeof WindowOverlayRouteRoute
     }
-    '/window/main/_sidebar/today/': {
-      id: '/window/main/_sidebar/today/'
-      path: '/today'
-      fullPath: '/window/main/today/'
-      preLoaderRoute: typeof WindowMainSidebarTodayIndexRouteImport
+    '/window/main/_sidebar/intentions/new': {
+      id: '/window/main/_sidebar/intentions/new'
+      path: '/intentions/new'
+      fullPath: '/window/main/intentions/new'
+      preLoaderRoute: typeof WindowMainSidebarIntentionsNewRouteRouteImport
       parentRoute: typeof WindowMainSidebarRouteRoute
     }
     '/window/main/_sidebar/settings/': {
@@ -326,53 +326,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WindowMainSidebarSettingsIndexRouteImport
       parentRoute: typeof WindowMainSidebarRouteRoute
     }
-    '/window/main/_sidebar/intentions/new': {
-      id: '/window/main/_sidebar/intentions/new'
-      path: '/intentions/new'
-      fullPath: '/window/main/intentions/new'
-      preLoaderRoute: typeof WindowMainSidebarIntentionsNewRouteRouteImport
+    '/window/main/_sidebar/today/': {
+      id: '/window/main/_sidebar/today/'
+      path: '/today'
+      fullPath: '/window/main/today/'
+      preLoaderRoute: typeof WindowMainSidebarTodayIndexRouteImport
       parentRoute: typeof WindowMainSidebarRouteRoute
     }
-    '/window/main/_sidebar/settings/shortcuts/': {
-      id: '/window/main/_sidebar/settings/shortcuts/'
-      path: '/settings/shortcuts'
-      fullPath: '/window/main/settings/shortcuts/'
-      preLoaderRoute: typeof WindowMainSidebarSettingsShortcutsIndexRouteImport
-      parentRoute: typeof WindowMainSidebarRouteRoute
-    }
-    '/window/main/_sidebar/settings/general/': {
-      id: '/window/main/_sidebar/settings/general/'
-      path: '/settings/general'
-      fullPath: '/window/main/settings/general/'
-      preLoaderRoute: typeof WindowMainSidebarSettingsGeneralIndexRouteImport
-      parentRoute: typeof WindowMainSidebarRouteRoute
-    }
-    '/window/main/_sidebar/settings/developer/': {
-      id: '/window/main/_sidebar/settings/developer/'
-      path: '/settings/developer'
-      fullPath: '/window/main/settings/developer/'
-      preLoaderRoute: typeof WindowMainSidebarSettingsDeveloperIndexRouteImport
-      parentRoute: typeof WindowMainSidebarRouteRoute
-    }
-    '/window/main/_sidebar/settings/automation/': {
-      id: '/window/main/_sidebar/settings/automation/'
-      path: '/settings/automation'
-      fullPath: '/window/main/settings/automation/'
-      preLoaderRoute: typeof WindowMainSidebarSettingsAutomationIndexRouteImport
-      parentRoute: typeof WindowMainSidebarRouteRoute
-    }
-    '/window/main/_sidebar/settings/activity/': {
-      id: '/window/main/_sidebar/settings/activity/'
-      path: '/settings/activity'
-      fullPath: '/window/main/settings/activity/'
-      preLoaderRoute: typeof WindowMainSidebarSettingsActivityIndexRouteImport
-      parentRoute: typeof WindowMainSidebarRouteRoute
-    }
-    '/window/main/_sidebar/settings/about/': {
-      id: '/window/main/_sidebar/settings/about/'
-      path: '/settings/about'
-      fullPath: '/window/main/settings/about/'
-      preLoaderRoute: typeof WindowMainSidebarSettingsAboutIndexRouteImport
+    '/window/main/_sidebar/intentions/$intentionId/': {
+      id: '/window/main/_sidebar/intentions/$intentionId/'
+      path: '/intentions/$intentionId'
+      fullPath: '/window/main/intentions/$intentionId/'
+      preLoaderRoute: typeof WindowMainSidebarIntentionsIntentionIdIndexRouteImport
       parentRoute: typeof WindowMainSidebarRouteRoute
     }
     '/window/main/_sidebar/intentions/new/': {
@@ -382,18 +347,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WindowMainSidebarIntentionsNewIndexRouteImport
       parentRoute: typeof WindowMainSidebarIntentionsNewRouteRoute
     }
-    '/window/main/_sidebar/intentions/$intentionId/': {
-      id: '/window/main/_sidebar/intentions/$intentionId/'
-      path: '/intentions/$intentionId'
-      fullPath: '/window/main/intentions/$intentionId/'
-      preLoaderRoute: typeof WindowMainSidebarIntentionsIntentionIdIndexRouteImport
+    '/window/main/_sidebar/settings/about/': {
+      id: '/window/main/_sidebar/settings/about/'
+      path: '/settings/about'
+      fullPath: '/window/main/settings/about/'
+      preLoaderRoute: typeof WindowMainSidebarSettingsAboutIndexRouteImport
       parentRoute: typeof WindowMainSidebarRouteRoute
     }
-    '/window/main/_sidebar/settings/developer/ui-playground/': {
-      id: '/window/main/_sidebar/settings/developer/ui-playground/'
-      path: '/settings/developer/ui-playground'
-      fullPath: '/window/main/settings/developer/ui-playground/'
-      preLoaderRoute: typeof WindowMainSidebarSettingsDeveloperUiPlaygroundIndexRouteImport
+    '/window/main/_sidebar/settings/activity/': {
+      id: '/window/main/_sidebar/settings/activity/'
+      path: '/settings/activity'
+      fullPath: '/window/main/settings/activity/'
+      preLoaderRoute: typeof WindowMainSidebarSettingsActivityIndexRouteImport
+      parentRoute: typeof WindowMainSidebarRouteRoute
+    }
+    '/window/main/_sidebar/settings/automation/': {
+      id: '/window/main/_sidebar/settings/automation/'
+      path: '/settings/automation'
+      fullPath: '/window/main/settings/automation/'
+      preLoaderRoute: typeof WindowMainSidebarSettingsAutomationIndexRouteImport
+      parentRoute: typeof WindowMainSidebarRouteRoute
+    }
+    '/window/main/_sidebar/settings/developer/': {
+      id: '/window/main/_sidebar/settings/developer/'
+      path: '/settings/developer'
+      fullPath: '/window/main/settings/developer/'
+      preLoaderRoute: typeof WindowMainSidebarSettingsDeveloperIndexRouteImport
+      parentRoute: typeof WindowMainSidebarRouteRoute
+    }
+    '/window/main/_sidebar/settings/general/': {
+      id: '/window/main/_sidebar/settings/general/'
+      path: '/settings/general'
+      fullPath: '/window/main/settings/general/'
+      preLoaderRoute: typeof WindowMainSidebarSettingsGeneralIndexRouteImport
+      parentRoute: typeof WindowMainSidebarRouteRoute
+    }
+    '/window/main/_sidebar/settings/shortcuts/': {
+      id: '/window/main/_sidebar/settings/shortcuts/'
+      path: '/settings/shortcuts'
+      fullPath: '/window/main/settings/shortcuts/'
+      preLoaderRoute: typeof WindowMainSidebarSettingsShortcutsIndexRouteImport
       parentRoute: typeof WindowMainSidebarRouteRoute
     }
     '/window/main/_sidebar/intentions/new/block/': {
@@ -402,6 +395,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/window/main/intentions/new/block/'
       preLoaderRoute: typeof WindowMainSidebarIntentionsNewBlockIndexRouteImport
       parentRoute: typeof WindowMainSidebarIntentionsNewRouteRoute
+    }
+    '/window/main/_sidebar/settings/developer/ui-playground/': {
+      id: '/window/main/_sidebar/settings/developer/ui-playground/'
+      path: '/settings/developer/ui-playground'
+      fullPath: '/window/main/settings/developer/ui-playground/'
+      preLoaderRoute: typeof WindowMainSidebarSettingsDeveloperUiPlaygroundIndexRouteImport
+      parentRoute: typeof WindowMainSidebarRouteRoute
     }
   }
 }
