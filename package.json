@@ -24,11 +24,11 @@
 		"update:latest": "turbo run update:latest --force --concurrency=1 && pnpm update --latest '!typescript' && pnpm build"
 	},
 	"devDependencies": {
-		"@blgc/config": "^0.1.0",
-		"eslint": "^10.7.0",
-		"prettier": "^3.9.5",
+		"@blgc/config": "^0.1.1",
+		"eslint": "^10.8.0",
+		"prettier": "^3.9.6",
 		"shx": "^0.4.0",
-		"turbo": "^2.10.5",
+		"turbo": "^2.10.7",
 		"typescript": "^6.0.3",
 		"vite": "^8.1.5",
 		"vitest": "^4.1.10"
