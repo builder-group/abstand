@@ -147,6 +147,7 @@ async fn build_activity_input(
 
             Ok(Some(build_app_activity_input(app_id, started_at)))
         }
+        WindowEvent::AppTerminated { .. } => Ok(None),
         WindowEvent::WindowChanged { window } => {
             let Some(app_id) = ensure_app(app, &window.app).await? else {
                 return Ok(None);
@@ -166,7 +167,9 @@ async fn build_activity_input(
 fn should_skip_activity_recording(event: &WindowEvent) -> bool {
     return matches!(
         event,
-        WindowEvent::WindowBoundsChanged { .. } | WindowEvent::WindowRestored { .. }
+        WindowEvent::AppTerminated { .. }
+            | WindowEvent::WindowBoundsChanged { .. }
+            | WindowEvent::WindowRestored { .. }
     );
 }
 

@@ -31,6 +31,11 @@ pub async fn handle_window_event(app: &AppHandle, event: WindowEvent, expects_wi
             let focus = ActivityFocus::from_app_info(app_info, expects_window_update);
             handle_activity_focus(app, focus).await;
         }
+        WindowEvent::AppTerminated { app: app_info } => {
+            let runtime_state = app.state::<BlockingRuntimeState>();
+            let mut runtime = runtime_state.lock().unwrap();
+            runtime.handle_app_terminated(app, app_info.pid);
+        }
         WindowEvent::WindowChanged { window } => {
             let focus = ActivityFocus::from_window_info(window);
             handle_activity_focus(app, focus).await;
@@ -67,7 +72,7 @@ pub async fn handle_activity_focus(app: &AppHandle, focus: ActivityFocus) {
     let focus_generation = {
         let runtime_state = app.state::<BlockingRuntimeState>();
         let mut runtime = runtime_state.lock().unwrap();
-        runtime.next_focus_generation()
+        runtime.begin_focus_evaluation(focus.pid)
     };
 
     // Note: App-owned windows are control surfaces for active blocking, not allowed targets.
@@ -128,6 +133,7 @@ pub async fn handle_activity_focus(app: &AppHandle, focus: ActivityFocus) {
 pub struct BlockingRuntime {
     active_violations: HashMap<ActiveViolationKey, ActiveViolation>,
     focus_generation: u64,
+    current_focus_pid: Option<i32>,
 }
 
 impl BlockingRuntime {
@@ -135,6 +141,7 @@ impl BlockingRuntime {
         return Self {
             active_violations: HashMap::new(),
             focus_generation: 0,
+            current_focus_pid: None,
         };
     }
 
@@ -304,6 +311,23 @@ impl BlockingRuntime {
         }
     }
 
+    fn handle_app_terminated(&mut self, app: &AppHandle, pid: i32) {
+        if self.current_focus_pid == Some(pid) {
+            self.current_focus_pid = None;
+            self.next_focus_generation();
+        }
+
+        let keys = self
+            .active_violations
+            .keys()
+            .filter(|key| key.is_owned_by_process(pid))
+            .cloned()
+            .collect::<Vec<_>>();
+        for key in keys {
+            self.clear_violation(app, &key);
+        }
+    }
+
     pub fn pause_overlay(
         &mut self,
         app: &AppHandle,
@@ -355,6 +379,11 @@ impl BlockingRuntime {
             return false;
         };
         return active_violation.is_paused();
+    }
+
+    fn begin_focus_evaluation(&mut self, pid: i32) -> u64 {
+        self.current_focus_pid = Some(pid);
+        return self.next_focus_generation();
     }
 
     pub fn next_focus_generation(&mut self) -> u64 {
@@ -466,6 +495,16 @@ impl ActiveViolationKey {
                 None,
             ) => *active_pid == pid,
             (Self::AppProcess { pid: active_pid }, _) => *active_pid == pid,
+        };
+    }
+
+    fn is_owned_by_process(&self, pid: i32) -> bool {
+        return match self {
+            Self::Device => false,
+            Self::Window {
+                pid: active_pid, ..
+            }
+            | Self::AppProcess { pid: active_pid } => *active_pid == pid,
         };
     }
 
