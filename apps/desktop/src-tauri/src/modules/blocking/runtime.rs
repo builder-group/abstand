@@ -75,9 +75,9 @@ pub async fn handle_activity_focus(app: &AppHandle, focus: ActivityFocus) {
         runtime.begin_focus_evaluation(focus.pid)
     };
 
-    // Note: App-owned windows are control surfaces for active blocking, not allowed targets.
-    // Keep existing overlays alive so blocked windows do not become interactable beside Abstand.
-    if focus.is_own_process() {
+    // Note: App-owned windows and loginwindow transitions are not blocking targets.
+    // Keep existing overlays alive so transient focus changes do not clear active violations.
+    if focus.is_own_process() || focus.is_login_window() {
         return;
     }
 

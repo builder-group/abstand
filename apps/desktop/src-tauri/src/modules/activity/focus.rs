@@ -66,6 +66,10 @@ impl ActivityFocus {
         return self.pid == std::process::id() as i32;
     }
 
+    pub fn is_login_window(&self) -> bool {
+        return self.target.app_bundle_id.as_deref() == Some(MACOS_LOGIN_WINDOW_BUNDLE_ID);
+    }
+
     pub fn is_waiting_for_window_details(&self) -> bool {
         return matches!(
             self.source,
@@ -88,6 +92,8 @@ impl ActivityFocus {
         );
     }
 }
+
+const MACOS_LOGIN_WINDOW_BUNDLE_ID: &str = "com.apple.loginwindow";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ActivityFocusSource {
