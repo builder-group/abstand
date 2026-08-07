@@ -39,11 +39,7 @@ export class BlockIntentionFormCx {
 			fields: {
 				name: {
 					defaultValue: initialData.name,
-					validator: z
-						.string()
-						.trim()
-						.min(1, 'Enter a name')
-						.max(80, 'Use 80 characters or less')
+					validator: z.string().trim().min(1, 'Enter a name').max(80, 'Use 80 characters or less')
 				},
 				scope: {
 					defaultValue: initialData.scope,
