@@ -68,42 +68,42 @@ impl BlockPolicySubject {
         block_targets: &BTreeSet<BlockPolicyTarget>,
         allow_targets: &BTreeSet<BlockPolicyTarget>,
     ) -> Option<BlockPolicyTarget> {
-        let block_match = self.matching_target(block_targets);
-        let allow_match = self.matching_target(allow_targets);
+        if scope == IntentionBlockScope::WholeDevice {
+            return Some(BlockPolicyTarget::device());
+        }
 
-        return match scope {
-            IntentionBlockScope::WholeDevice => Some(BlockPolicyTarget::device()),
-            IntentionBlockScope::BlockTargets if allow_match.is_some() => None,
-            IntentionBlockScope::BlockTargets => block_match,
-            IntentionBlockScope::AllowTargets if block_match.is_some() => block_match,
-            IntentionBlockScope::AllowTargets if allow_match.is_some() => None,
-            IntentionBlockScope::AllowTargets => Some(self.most_specific_target()),
+        // Note: Keep app and website decisions separate so allowing a browser does not
+        // implicitly allow every website opened in it
+        let target_is_blocked = |target: &&BlockPolicyTarget| {
+            let matches_block = target.is_covered_by(block_targets);
+            let matches_allow = target.is_covered_by(allow_targets);
+
+            return match scope {
+                IntentionBlockScope::BlockTargets => matches_block && !matches_allow,
+                IntentionBlockScope::AllowTargets => matches_block || !matches_allow,
+                IntentionBlockScope::WholeDevice => unreachable!(),
+            };
         };
-    }
 
-    fn matching_target(
-        &self,
-        covering_targets: &BTreeSet<BlockPolicyTarget>,
-    ) -> Option<BlockPolicyTarget> {
-        return self
+        let blocked_target = self
             .app
             .as_ref()
-            .filter(|target| target.is_covered_by(covering_targets))
+            .filter(target_is_blocked)
             .cloned()
-            .or_else(|| {
-                self.website
-                    .as_ref()
-                    .filter(|target| target.is_covered_by(covering_targets))
-                    .cloned()
-            });
-    }
+            .or_else(|| self.website.as_ref().filter(target_is_blocked).cloned());
+        if blocked_target.is_some() {
+            return blocked_target;
+        }
 
-    fn most_specific_target(&self) -> BlockPolicyTarget {
-        return self
-            .website
-            .clone()
-            .or_else(|| self.app.clone())
-            .unwrap_or_else(BlockPolicyTarget::device);
+        // Note: Allow selected fails closed when no app or website identity is available
+        if scope == IntentionBlockScope::AllowTargets
+            && self.app.is_none()
+            && self.website.is_none()
+        {
+            return Some(BlockPolicyTarget::device());
+        }
+
+        return None;
     }
 }
 
@@ -527,33 +527,86 @@ mod tests {
     }
 
     #[test]
-    fn subject_lets_website_exception_override_app_base() {
+    fn exceptions_only_override_targets_in_the_same_layer() {
         let mut block_targets = BTreeSet::new();
         block_targets.insert(BlockPolicyTarget::app("com.apple.Safari"));
         let mut allow_targets = BTreeSet::new();
         allow_targets.insert(BlockPolicyTarget::website("example.com", None));
         let subject = BlockPolicySubject::app_and_website("com.apple.Safari", "example.com", None);
 
-        assert!(!subject.is_blocked_by(
-            IntentionBlockScope::BlockTargets,
-            &block_targets,
-            &allow_targets,
-        ));
-    }
+        assert_eq!(
+            subject.blocked_target(
+                IntentionBlockScope::BlockTargets,
+                &block_targets,
+                &allow_targets,
+            ),
+            Some(BlockPolicyTarget::app("com.apple.Safari"))
+        );
 
-    #[test]
-    fn subject_lets_website_exception_override_app_allow_base() {
         let mut block_targets = BTreeSet::new();
         block_targets.insert(BlockPolicyTarget::website("example.com", None));
         let mut allow_targets = BTreeSet::new();
         allow_targets.insert(BlockPolicyTarget::app("com.apple.Safari"));
-        let subject = BlockPolicySubject::app_and_website("com.apple.Safari", "example.com", None);
 
-        assert!(subject.is_blocked_by(
-            IntentionBlockScope::AllowTargets,
-            &block_targets,
-            &allow_targets,
-        ));
+        assert_eq!(
+            subject.blocked_target(
+                IntentionBlockScope::BlockTargets,
+                &block_targets,
+                &allow_targets,
+            ),
+            Some(BlockPolicyTarget::website("example.com", None))
+        );
+    }
+
+    #[test]
+    fn allow_target_scope_requires_app_and_website_matches() {
+        let block_targets = BTreeSet::new();
+        let mut allow_targets = BTreeSet::new();
+        allow_targets.insert(BlockPolicyTarget::app("com.apple.Safari"));
+        allow_targets.insert(BlockPolicyTarget::website("example.com", None));
+
+        assert_eq!(
+            BlockPolicySubject::app_and_website("com.apple.Safari", "example.com", None)
+                .blocked_target(
+                    IntentionBlockScope::AllowTargets,
+                    &block_targets,
+                    &allow_targets,
+                ),
+            None
+        );
+        assert_eq!(
+            BlockPolicySubject::app_and_website("com.google.Chrome", "example.com", None)
+                .blocked_target(
+                    IntentionBlockScope::AllowTargets,
+                    &block_targets,
+                    &allow_targets,
+                ),
+            Some(BlockPolicyTarget::app("com.google.Chrome"))
+        );
+        assert_eq!(
+            BlockPolicySubject::app_and_website("com.apple.Safari", "other.com", None)
+                .blocked_target(
+                    IntentionBlockScope::AllowTargets,
+                    &block_targets,
+                    &allow_targets,
+                ),
+            Some(BlockPolicyTarget::website("other.com", None))
+        );
+    }
+
+    #[test]
+    fn subjects_without_identity_follow_scope_defaults() {
+        let targets = BTreeSet::new();
+        let subject = BlockPolicySubject::device();
+
+        assert_eq!(
+            subject.blocked_target(IntentionBlockScope::BlockTargets, &targets, &targets),
+            None
+        );
+        assert_eq!(
+            subject.blocked_target(IntentionBlockScope::AllowTargets, &targets, &targets),
+            Some(BlockPolicyTarget::device())
+        );
     }
 
     #[test]

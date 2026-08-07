@@ -24,7 +24,14 @@ Block intentions store absolute target actions: `block` or `allow`. The selected
 - `allow_targets`: base targets are allowed, exceptions are blocked
 - `whole_device`: target rows are ignored
 
-Policy evaluation checks exceptions before the base set. The scope default applies only when no saved target matches. Target identities stay unique across both sets: a saved target has one action within an Intention. Broader and narrower target overlaps are allowed, and exception precedence resolves them.
+Policy evaluation treats app and website identities as separate layers. Within each layer, exceptions take priority over the base set:
+
+- `block_targets` blocks when either applicable layer is blocked
+- `allow_targets` allows only when every applicable layer is allowed
+
+For browser activity, the app layer controls the browser itself and the website layer controls the active URL. Allowing a browser keeps its interface available without allowing unlisted websites. Allowing a website does not make it available inside an unlisted browser.
+
+Target identities stay unique across both sets: a saved target has one action within an Intention. Broader and narrower website overlaps are allowed, and exception precedence resolves them within the website layer.
 
 ### How do website path targets match?
 

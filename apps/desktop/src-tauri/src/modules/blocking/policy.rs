@@ -271,7 +271,7 @@ mod tests {
     }
 
     #[test]
-    fn allows_website_exception_over_app_base_in_block_target_scope() {
+    fn website_exception_does_not_override_app_block_in_block_target_scope() {
         let intention = ActiveBlockIntention {
             id: 1,
             name: "Deep Work".to_string(),
@@ -294,7 +294,7 @@ mod tests {
 
         assert_eq!(
             evaluate_target(&website_target("example.com", None), &[intention]),
-            BlockingPolicyDecision::Allowed
+            blocked_app_decision(1, "Deep Work".to_string(), "com.apple.Safari".to_string())
         );
     }
 
@@ -355,7 +355,10 @@ mod tests {
             session_automatic_end_at: TEST_SESSION_AUTOMATIC_END_AT,
             block: block(
                 IntentionBlockScope::AllowTargets,
-                vec![],
+                vec![app_target_rule(
+                    IntentionBlockTargetAction::Allow,
+                    app("com.apple.Safari"),
+                )],
                 vec![website_target_rule(
                     IntentionBlockTargetAction::Allow,
                     website("docs.rs"),
@@ -395,7 +398,35 @@ mod tests {
     }
 
     #[test]
-    fn allows_listed_websites_in_allow_target_scope() {
+    fn allows_listed_website_in_listed_app_in_allow_target_scope() {
+        let intention = ActiveBlockIntention {
+            id: 1,
+            name: "Deep Work".to_string(),
+            session_id: TEST_SESSION_ID,
+            session_started_at: TEST_SESSION_STARTED_AT,
+            session_automatic_end_at: TEST_SESSION_AUTOMATIC_END_AT,
+            block: block(
+                IntentionBlockScope::AllowTargets,
+                vec![app_target_rule(
+                    IntentionBlockTargetAction::Allow,
+                    app("com.apple.Safari"),
+                )],
+                vec![website_target_rule(
+                    IntentionBlockTargetAction::Allow,
+                    website("docs.rs"),
+                    None,
+                )],
+            ),
+        };
+
+        assert_eq!(
+            evaluate_target(&website_target("docs.rs", None), &[intention]),
+            BlockingPolicyDecision::Allowed
+        );
+    }
+
+    #[test]
+    fn blocks_listed_website_in_unlisted_app_in_allow_target_scope() {
         let intention = ActiveBlockIntention {
             id: 1,
             name: "Deep Work".to_string(),
@@ -414,7 +445,35 @@ mod tests {
         };
 
         assert_eq!(
-            evaluate_target(&website_target("std.docs.rs", None), &[intention]),
+            evaluate_target(&website_target("docs.rs", None), &[intention]),
+            blocked_app_decision(1, "Deep Work".to_string(), "com.apple.Safari".to_string())
+        );
+    }
+
+    #[test]
+    fn allows_listed_browser_without_a_website_in_allow_target_scope() {
+        let intention = ActiveBlockIntention {
+            id: 1,
+            name: "Deep Work".to_string(),
+            session_id: TEST_SESSION_ID,
+            session_started_at: TEST_SESSION_STARTED_AT,
+            session_automatic_end_at: TEST_SESSION_AUTOMATIC_END_AT,
+            block: block(
+                IntentionBlockScope::AllowTargets,
+                vec![app_target_rule(
+                    IntentionBlockTargetAction::Allow,
+                    app("com.apple.Safari"),
+                )],
+                vec![website_target_rule(
+                    IntentionBlockTargetAction::Allow,
+                    website("docs.rs"),
+                    None,
+                )],
+            ),
+        };
+
+        assert_eq!(
+            evaluate_target(&app_target("com.apple.Safari"), &[intention]),
             BlockingPolicyDecision::Allowed
         );
     }
@@ -429,7 +488,10 @@ mod tests {
             session_automatic_end_at: TEST_SESSION_AUTOMATIC_END_AT,
             block: block(
                 IntentionBlockScope::AllowTargets,
-                vec![],
+                vec![app_target_rule(
+                    IntentionBlockTargetAction::Allow,
+                    app("com.apple.Safari"),
+                )],
                 vec![
                     website_target_rule(
                         IntentionBlockTargetAction::Allow,

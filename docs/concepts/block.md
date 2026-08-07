@@ -21,6 +21,8 @@ The goal is to remove access to known distractions before the moment of temptati
 
 **Whole device:** the entire computer is locked behind a full-screen immersive overlay. This suits Intentions like overnight screen limits or deep focus windows where no access at all is the goal.
 
+Apps and websites are separate layers. Block selected blocks browser activity when either the browser app or the website is selected. Allow selected requires both layers: a website is available only inside a browser that is also allowed. Allowing the browser keeps its interface available, but does not allow websites that are not selected.
+
 ## Enforcement
 
 Enforcement controls whether the Abstand can be ended early or weakened, and how quitting behaves while it is running. Weakening means reducing the enforcement level while the Intention keeps running.

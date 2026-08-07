@@ -490,7 +490,7 @@ mod tests {
     }
 
     #[test]
-    fn adding_website_allow_exception_over_app_base_weakens_block_target_scope() {
+    fn adding_website_allow_exception_does_not_weaken_app_block() {
         let current = block_with_targets(
             IntentionBlockScope::BlockTargets,
             vec![app_target(
@@ -503,6 +503,31 @@ mod tests {
             IntentionBlockScope::BlockTargets,
             vec![write_app_target(
                 IntentionBlockTargetAction::Block,
+                "com.apple.Safari",
+            )],
+            vec![write_website_target(
+                IntentionBlockTargetAction::Allow,
+                "example.com",
+                None,
+            )],
+        );
+
+        assert!(!weakens_block(&current, &proposed));
+    }
+
+    #[test]
+    fn allowing_app_weakens_website_only_allow_target_scope() {
+        let current = block(
+            IntentionBlockScope::AllowTargets,
+            vec![website_target(
+                IntentionBlockTargetAction::Allow,
+                "example.com",
+            )],
+        );
+        let proposed = write_block_with_targets(
+            IntentionBlockScope::AllowTargets,
+            vec![write_app_target(
+                IntentionBlockTargetAction::Allow,
                 "com.apple.Safari",
             )],
             vec![write_website_target(
