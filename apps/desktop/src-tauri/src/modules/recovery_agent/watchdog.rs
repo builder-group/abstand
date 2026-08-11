@@ -11,7 +11,7 @@ use std::{
 /// Runs the long-lived recovery agent process.
 ///
 /// This process is started by launchd, not Tauri. It only relaunches Abstand
-/// when a Strict Enforcement block is active and the main app process is gone.
+/// when Balanced or Strict Enforcement is active and the main app process is gone.
 pub fn run() -> Result<(), Box<dyn Error>> {
     let current_exe = std::env::current_exe()?;
     let launch_target = AppLaunchTarget::resolve(&current_exe);

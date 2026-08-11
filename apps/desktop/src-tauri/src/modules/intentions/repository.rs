@@ -1059,26 +1059,23 @@ impl IntentionSessionRepository {
             .collect::<Result<Vec<_>, _>>();
     }
 
-    pub async fn has_active_block_session_with_enforcement(
+    pub async fn get_active_block_intention_ids_with_enforcement(
         pool: &Pool<Sqlite>,
         enforcement_mode: IntentionEnforcementMode,
-    ) -> Result<bool, IntentionSessionRepositoryError> {
-        let exists = sqlx::query_scalar::<_, i64>(
-            "SELECT EXISTS (
-                SELECT 1
-                FROM intention_session session
-                INNER JOIN intention_block block
-                    ON block.intention_id = session.intention_id
-                WHERE session.status = 'active'
-                    AND block.enforcement_mode = ?
-                LIMIT 1
-            )",
+    ) -> Result<Vec<i64>, IntentionSessionRepositoryError> {
+        return sqlx::query_scalar::<_, i64>(
+            "SELECT session.intention_id
+            FROM intention_session session
+            INNER JOIN intention_block block
+                ON block.intention_id = session.intention_id
+            WHERE session.status = 'active'
+                AND block.enforcement_mode = ?
+            ORDER BY session.started_at ASC, session.id ASC",
         )
         .bind(enforcement_mode.as_str())
-        .fetch_one(pool)
-        .await?;
-
-        return Ok(exists != 0);
+        .fetch_all(pool)
+        .await
+        .map_err(IntentionSessionRepositoryError::from);
     }
 
     pub async fn get_max_active_balanced_block_delay_ms(

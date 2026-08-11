@@ -25,8 +25,9 @@ export const AppRuntimeBridge: React.FC = () => {
 						case 'activeBalancedBlock':
 							toastsCx.add({
 								type: 'warning',
-								title: 'Quit delayed',
-								description: 'Balanced Enforcement requires a pause before quitting.',
+								title: 'End early and quit',
+								description:
+									'Balanced Enforcement requires a pause before ending all active Balanced Abstands early and quitting.',
 								timeout: payload.durationMs + 5_000,
 								data: {
 									action: <DelayedQuitAction durationMs={payload.durationMs} toastsCx={toastsCx} />
@@ -63,7 +64,7 @@ const DelayedQuitAction: React.FC<TDelayedQuitActionProps> = (props) => {
 			if (!isQuitOk) {
 				toastsCx.add({
 					type: 'error',
-					title: 'Could not quit',
+					title: 'Could not end and quit',
 					description: quitErr
 				});
 			}
@@ -93,9 +94,9 @@ interface TDelayedQuitActionProps {
 
 function getDelayedQuitActionLabel(remainingMs: number): string {
 	if (remainingMs <= 0) {
-		return 'Quit';
+		return 'End & Quit';
 	}
 
 	const remainingSeconds = Math.ceil(remainingMs / 1_000);
-	return `Quit in ${remainingSeconds}s`;
+	return `End & Quit in ${remainingSeconds}s`;
 }

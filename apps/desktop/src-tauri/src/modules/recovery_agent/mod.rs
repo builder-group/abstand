@@ -1,4 +1,4 @@
-//! Manages the recovery agent that reopens Abstand during active Strict Enforcement.
+//! Manages the recovery agent that reopens Abstand during Balanced or Strict Enforcement.
 
 pub mod agent;
 pub mod commands;

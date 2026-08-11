@@ -16,7 +16,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-/// Installs and controls the agent that reopens Abstand during active Strict Enforcement.
+/// Installs and controls the agent that reopens Abstand during Balanced or Strict Enforcement.
 pub struct RecoveryAgent {
     user_launch_agent: UserLaunchAgent,
 }
@@ -43,16 +43,16 @@ impl RecoveryAgent {
         return Ok(());
     }
 
-    /// Disables the recovery agent unless Strict Enforcement is currently active.
+    /// Disables the recovery agent unless Balanced or Strict Enforcement is active.
     pub fn disable(&self) -> Result<(), Box<dyn Error>> {
         if recovery_condition::should_recover_app_blocking()? {
-            return Err("Strict Enforcement is active".into());
+            return Err("Balanced or Strict Enforcement is active".into());
         }
 
         return self.disable_unchecked();
     }
 
-    /// Disables the recovery agent without checking active Strict Enforcement.
+    /// Disables the recovery agent without checking active enforcement.
     pub fn disable_unchecked(&self) -> Result<(), Box<dyn Error>> {
         self.user_launch_agent.disable()?;
         return Ok(());

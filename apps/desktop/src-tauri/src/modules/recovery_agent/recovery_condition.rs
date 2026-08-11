@@ -36,12 +36,29 @@ impl RecoveryConditionProbe {
             .database
             .as_ref()
             .ok_or("recovery condition database unavailable")?;
-        return IntentionSessionRepository::has_active_block_session_with_enforcement(
-            &database.pool,
-            IntentionEnforcementMode::Strict,
-        )
-        .await
-        .map_err(|error| error.to_string().into());
+        let active_strict_intention_ids =
+            IntentionSessionRepository::get_active_block_intention_ids_with_enforcement(
+                &database.pool,
+                IntentionEnforcementMode::Strict,
+            )
+            .await
+            .map_err(|error| error.to_string())?;
+        if !active_strict_intention_ids.is_empty() {
+            return Ok(true);
+        }
+
+        let active_balanced_intention_ids =
+            IntentionSessionRepository::get_active_block_intention_ids_with_enforcement(
+                &database.pool,
+                IntentionEnforcementMode::Balanced,
+            )
+            .await
+            .map_err(|error| error.to_string())?;
+        if !active_balanced_intention_ids.is_empty() {
+            return Ok(true);
+        }
+
+        return Ok(false);
     }
 }
 

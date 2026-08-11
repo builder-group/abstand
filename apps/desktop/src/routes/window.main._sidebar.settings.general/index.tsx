@@ -444,6 +444,9 @@ const RecoveryAgentStartupRecoveryRow: React.FC = () => {
 	const isUnmountedRef = React.useRef(false);
 
 	const hasActiveStrictBlockSession = useFeatureState(intentionsCx.$hasActiveStrictBlockSession);
+	const hasActiveBalancedBlockSession = useFeatureState(
+		intentionsCx.$hasActiveBalancedBlockSession
+	);
 
 	const [status, setStatus] = React.useState<specta.RecoveryAgentStatus | null>(null);
 	const [hasStatusLoadError, setHasStatusLoadError] = React.useState(false);
@@ -451,7 +454,8 @@ const RecoveryAgentStartupRecoveryRow: React.FC = () => {
 	const [isUpdating, setIsUpdating] = React.useState(false);
 
 	const isEnabled = status?.isEnabled ?? false;
-	const isPreventedByActiveStrictBlock = isEnabled && hasActiveStrictBlockSession;
+	const isDisablePreventedByActiveBlock =
+		isEnabled && (hasActiveBalancedBlockSession || hasActiveStrictBlockSession);
 
 	// MARK: - Actions
 
@@ -523,12 +527,13 @@ const RecoveryAgentStartupRecoveryRow: React.FC = () => {
 	const description = getRecoveryAgentDescription(
 		status,
 		hasActiveStrictBlockSession,
+		hasActiveBalancedBlockSession,
 		hasStatusLoadError
 	);
 
 	return (
 		<SettingsRow
-			label="Reopen Abstand during Strict Enforcement"
+			label="Reopen Abstand during Balanced or Strict Enforcement"
 			labelAccessory={
 				<HelpPopover description="A background process that watches Abstand and relaunches it automatically if it closes unexpectedly." />
 			}
@@ -538,7 +543,7 @@ const RecoveryAgentStartupRecoveryRow: React.FC = () => {
 			{status != null ? (
 				<Switch
 					checked={isEnabled}
-					disabled={isStatusPending || isUpdating || isPreventedByActiveStrictBlock}
+					disabled={isStatusPending || isUpdating || isDisablePreventedByActiveBlock}
 					onCheckedChange={handleToggle}
 				/>
 			) : isStatusPending ? (
@@ -553,6 +558,7 @@ const RecoveryAgentStartupRecoveryRow: React.FC = () => {
 function getRecoveryAgentDescription(
 	status: specta.RecoveryAgentStatus | null,
 	hasActiveStrictBlockSession: boolean,
+	hasActiveBalancedBlockSession: boolean,
 	hasStatusLoadError: boolean
 ): TSettingsRowDescription {
 	if (hasStatusLoadError) {
@@ -577,16 +583,25 @@ function getRecoveryAgentDescription(
 		};
 	}
 
+	if (status.isEnabled && hasActiveBalancedBlockSession) {
+		return {
+			content:
+				'Abstand will reopen during this Balanced Enforcement session. Cannot be turned off until it ends.',
+			variant: 'default'
+		};
+	}
+
 	if (status.isConfigured && !status.isLoaded) {
 		return {
 			content:
-				'Recovery stopped working. Turn this on again before your next Strict Enforcement session.',
+				'Recovery stopped working. Turn this on again before your next Balanced or Strict Enforcement session.',
 			variant: 'error'
 		};
 	}
 
 	return {
-		content: 'Automatically relaunch Abstand if it closes during a Strict Enforcement session.',
+		content:
+			'Automatically relaunch Abstand if it closes during a Balanced or Strict Enforcement session.',
 		variant: 'default'
 	};
 }
@@ -597,6 +612,9 @@ const LaunchAtLoginStartupRecoveryRow: React.FC = () => {
 	const isUnmountedRef = React.useRef(false);
 
 	const hasActiveStrictBlockSession = useFeatureState(intentionsCx.$hasActiveStrictBlockSession);
+	const hasActiveBalancedBlockSession = useFeatureState(
+		intentionsCx.$hasActiveBalancedBlockSession
+	);
 
 	const [status, setStatus] = React.useState<specta.LaunchAtLoginStatus | null>(null);
 	const [hasStatusLoadError, setHasStatusLoadError] = React.useState(false);
@@ -604,7 +622,8 @@ const LaunchAtLoginStartupRecoveryRow: React.FC = () => {
 	const [isUpdating, setIsUpdating] = React.useState(false);
 
 	const isEnabled = status?.isEnabled ?? false;
-	const isPreventedByActiveStrictBlock = isEnabled && hasActiveStrictBlockSession;
+	const isDisablePreventedByActiveBlock =
+		isEnabled && (hasActiveBalancedBlockSession || hasActiveStrictBlockSession);
 
 	// MARK: - Actions
 
@@ -678,6 +697,7 @@ const LaunchAtLoginStartupRecoveryRow: React.FC = () => {
 	const description = getLaunchAtLoginDescription(
 		status,
 		hasActiveStrictBlockSession,
+		hasActiveBalancedBlockSession,
 		hasStatusLoadError
 	);
 
@@ -690,7 +710,7 @@ const LaunchAtLoginStartupRecoveryRow: React.FC = () => {
 			{status != null ? (
 				<Switch
 					checked={isEnabled}
-					disabled={isStatusPending || isUpdating || isPreventedByActiveStrictBlock}
+					disabled={isStatusPending || isUpdating || isDisablePreventedByActiveBlock}
 					onCheckedChange={handleToggle}
 				/>
 			) : isStatusPending ? (
@@ -705,6 +725,7 @@ const LaunchAtLoginStartupRecoveryRow: React.FC = () => {
 function getLaunchAtLoginDescription(
 	status: specta.LaunchAtLoginStatus | null,
 	hasActiveStrictBlockSession: boolean,
+	hasActiveBalancedBlockSession: boolean,
 	hasStatusLoadError: boolean
 ): TSettingsRowDescription {
 	if (hasStatusLoadError) {
@@ -725,6 +746,14 @@ function getLaunchAtLoginDescription(
 		return {
 			content:
 				'Abstand opens at login during this Strict Enforcement session. Cannot be turned off until it ends.',
+			variant: 'default'
+		};
+	}
+
+	if (status.isEnabled && hasActiveBalancedBlockSession) {
+		return {
+			content:
+				'Abstand opens at login during this Balanced Enforcement session. Cannot be turned off until it ends.',
 			variant: 'default'
 		};
 	}

@@ -11,6 +11,7 @@ export class IntentionsCx {
 	private readonly _activeSessions: Record<number, TState<specta.IntentionSession | null, []>> = {};
 	public readonly $activeIntentionIds = createState<number[]>([]);
 	public readonly $hasActiveStrictBlockSession = createState(false);
+	public readonly $hasActiveBalancedBlockSession = createState(false);
 
 	public readonly $hasLoaded = createState(false);
 
@@ -230,7 +231,7 @@ export class IntentionsCx {
 			this.$intentionIds.set([...intentionIds, intention.id]);
 		}
 
-		this._syncHasActiveStrictBlockSession();
+		this._syncActiveBlockEnforcement();
 	}
 
 	private _removeIntention(intentionId: number): void {
@@ -244,7 +245,7 @@ export class IntentionsCx {
 			this.$intentionIds.set(intentionIds.filter((id) => id !== intentionId));
 		}
 
-		this._syncHasActiveStrictBlockSession();
+		this._syncActiveBlockEnforcement();
 	}
 
 	private _upsertActiveSession(session: specta.IntentionSession): void {
@@ -255,7 +256,7 @@ export class IntentionsCx {
 			this.$activeIntentionIds.set([...activeIntentionIds, session.intentionId]);
 		}
 
-		this._syncHasActiveStrictBlockSession();
+		this._syncActiveBlockEnforcement();
 	}
 
 	private _removeActiveSession(intentionId: number): void {
@@ -269,18 +270,29 @@ export class IntentionsCx {
 			this.$activeIntentionIds.set(activeIntentionIds.filter((id) => id !== intentionId));
 		}
 
-		this._syncHasActiveStrictBlockSession();
+		this._syncActiveBlockEnforcement();
 	}
 
-	private _syncHasActiveStrictBlockSession(): void {
-		const hasActiveStrictBlockSession = this.$activeIntentionIds.get().some((intentionId) => {
+	private _syncActiveBlockEnforcement(): void {
+		let hasActiveStrictBlockSession = false;
+		let hasActiveBalancedBlockSession = false;
+
+		for (const intentionId of this.$activeIntentionIds.get()) {
 			const intention = this._intentions[intentionId]?.get();
-			return (
-				intention?.behavior.type === 'block' && intention.behavior.enforcementMode === 'strict'
-			);
-		});
+			if (intention?.behavior.type !== 'block') {
+				continue;
+			}
+
+			if (intention.behavior.enforcementMode === 'strict') {
+				hasActiveStrictBlockSession = true;
+			}
+			if (intention.behavior.enforcementMode === 'balanced') {
+				hasActiveBalancedBlockSession = true;
+			}
+		}
 
 		this.$hasActiveStrictBlockSession.set(hasActiveStrictBlockSession);
+		this.$hasActiveBalancedBlockSession.set(hasActiveBalancedBlockSession);
 	}
 }
 

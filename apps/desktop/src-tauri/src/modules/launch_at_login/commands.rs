@@ -1,7 +1,13 @@
-use crate::environment::path::get_user_launch_agents_dir;
+use crate::{
+    environment::path::get_user_launch_agents_dir,
+    modules::{
+        db::types::DatabaseState,
+        intentions::{intention::IntentionEnforcementMode, repository::IntentionSessionRepository},
+    },
+};
 use serde::Serialize;
 use std::path::PathBuf;
-use tauri::AppHandle;
+use tauri::{AppHandle, Manager};
 use tauri_plugin_autostart::ManagerExt;
 use tauri_plugin_opener::OpenerExt;
 
@@ -22,11 +28,45 @@ pub fn enable_launch_at_login(app: AppHandle) -> Result<LaunchAtLoginStatus, Str
 
 #[tauri::command]
 #[specta::specta]
-pub fn disable_launch_at_login(app: AppHandle) -> Result<LaunchAtLoginStatus, String> {
-    app.autolaunch()
-        .disable()
+pub async fn disable_launch_at_login(app: AppHandle) -> Result<LaunchAtLoginStatus, String> {
+    require_disable_allowed(&app).await?;
+
+    return tauri::async_runtime::spawn_blocking(move || {
+        app.autolaunch()
+            .disable()
+            .map_err(|error| error.to_string())?;
+        return status(&app);
+    })
+    .await
+    .map_err(|error| error.to_string())?;
+}
+
+async fn require_disable_allowed(app: &AppHandle) -> Result<(), String> {
+    let database_state = app.state::<DatabaseState>();
+
+    let active_strict_intention_ids =
+        IntentionSessionRepository::get_active_block_intention_ids_with_enforcement(
+            &database_state.pool,
+            IntentionEnforcementMode::Strict,
+        )
+        .await
         .map_err(|error| error.to_string())?;
-    return status(&app);
+    if !active_strict_intention_ids.is_empty() {
+        return Err("Strict Enforcement is active".to_string());
+    }
+
+    let active_balanced_intention_ids =
+        IntentionSessionRepository::get_active_block_intention_ids_with_enforcement(
+            &database_state.pool,
+            IntentionEnforcementMode::Balanced,
+        )
+        .await
+        .map_err(|error| error.to_string())?;
+    if !active_balanced_intention_ids.is_empty() {
+        return Err("Balanced Enforcement is active".to_string());
+    }
+
+    return Ok(());
 }
 
 fn status(app: &AppHandle) -> Result<LaunchAtLoginStatus, String> {

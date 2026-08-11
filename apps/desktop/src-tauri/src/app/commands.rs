@@ -6,14 +6,12 @@ use crate::environment::{
     logger::Logger,
     path::get_app_data_dir,
 };
-use crate::modules::quit_policy::policy::request_restart;
 #[cfg(target_os = "macos")]
-use crate::modules::quit_policy::types::QuitPreventedEvent;
+use crate::modules::quit_policy::policy::handle_recovery_relaunch;
+use crate::modules::quit_policy::policy::request_restart;
 use serde::Serialize;
 use tauri::AppHandle;
 use tauri_plugin_opener::OpenerExt;
-#[cfg(target_os = "macos")]
-use tauri_specta::Event;
 
 #[tauri::command]
 #[specta::specta]
@@ -69,12 +67,12 @@ pub struct SystemTypographyDto {
 
 #[tauri::command]
 #[specta::specta]
-pub fn notify_frontend_ready(app: AppHandle) {
+pub async fn notify_frontend_ready(app: AppHandle) {
     // If the watchdog relaunched the app, wait until the frontend has mounted before
-    // emitting the existing quit-prevented event so the toast listener can receive it
+    // reassessing the quit policy so any resulting event reaches the toast listener
     #[cfg(target_os = "macos")]
     if cli::subcommands::recovery_agent::consume_relaunched_by_agent_arg() {
-        let _ = QuitPreventedEvent::active_strict_block().emit(&app);
+        handle_recovery_relaunch(&app).await;
     }
 }
 

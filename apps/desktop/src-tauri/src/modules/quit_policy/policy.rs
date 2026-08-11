@@ -5,7 +5,10 @@ use crate::{
     modules::{
         activity::recorder::ForegroundActivityRecorder,
         db::types::DatabaseState,
-        intentions::{intention::IntentionEnforcementMode, repository::IntentionSessionRepository},
+        intentions::{
+            intention::IntentionEnforcementMode, repository::IntentionSessionRepository,
+            types::IntentionRuntimeState,
+        },
     },
 };
 use tauri::{AppHandle, ExitRequestApi, Manager};
@@ -49,6 +52,17 @@ pub fn request_restart(app: &AppHandle) -> Result<(), String> {
 pub async fn confirm_balanced_quit(app: &AppHandle) -> Result<(), String> {
     match assess_quit(app, QuitAssessmentMode::ConfirmedBalanced).await {
         QuitDecision::Allowed => {
+            // Note: Quitting is app-wide, so confirmation ends every active Balanced Abstand
+            stop_active_balanced_intentions(app).await?;
+
+            // Note: Reassess because each stop reevaluates schedules and may start another Intention
+            if let QuitDecision::Denied { reason } =
+                assess_quit(app, QuitAssessmentMode::Unconfirmed).await
+            {
+                handle_quit_denial(app, reason);
+                return Err(reason.message().to_string());
+            }
+
             approve_next_exit_request(app)?;
             app.exit(0);
             return Ok(());
@@ -57,6 +71,40 @@ pub async fn confirm_balanced_quit(app: &AppHandle) -> Result<(), String> {
             handle_quit_denial(app, reason);
             return Err(reason.message().to_string());
         }
+    }
+}
+
+async fn stop_active_balanced_intentions(app: &AppHandle) -> Result<(), String> {
+    let database_state = app
+        .try_state::<DatabaseState>()
+        .ok_or_else(|| "Database state unavailable".to_string())?;
+    let runtime_state = app
+        .try_state::<IntentionRuntimeState>()
+        .ok_or_else(|| "Intention runtime state unavailable".to_string())?;
+    let intention_ids =
+        IntentionSessionRepository::get_active_block_intention_ids_with_enforcement(
+            &database_state.pool,
+            IntentionEnforcementMode::Balanced,
+        )
+        .await
+        .map_err(|error| error.to_string())?;
+
+    for intention_id in intention_ids {
+        runtime_state
+            .stop_intention(app, intention_id)
+            .await
+            .map_err(|error| error.to_string())?;
+    }
+
+    return Ok(());
+}
+
+pub async fn handle_recovery_relaunch(app: &AppHandle) {
+    log::debug!(target: LOG_TARGET, "handling recovery-agent relaunch");
+
+    if let QuitDecision::Denied { reason } = assess_quit(app, QuitAssessmentMode::Unconfirmed).await
+    {
+        handle_quit_denial(app, reason);
     }
 }
 
@@ -109,18 +157,18 @@ async fn assess_quit(app: &AppHandle, mode: QuitAssessmentMode) -> QuitDecision 
     };
     let pool = database_state.pool.clone();
 
-    match IntentionSessionRepository::has_active_block_session_with_enforcement(
+    match IntentionSessionRepository::get_active_block_intention_ids_with_enforcement(
         &pool,
         IntentionEnforcementMode::Strict,
     )
     .await
     {
-        Ok(true) => {
+        Ok(intention_ids) if !intention_ids.is_empty() => {
             return QuitDecision::Denied {
                 reason: QuitPreventedReason::ActiveStrictBlock,
             };
         }
-        Ok(false) => {}
+        Ok(_) => {}
         Err(error) => {
             log::error!(target: LOG_TARGET, "failed to assess quit policy: {}", error);
             return QuitDecision::Allowed;
