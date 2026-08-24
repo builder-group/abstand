@@ -20,7 +20,8 @@ impl AppTray {
     }
 
     pub fn setup(app: &mut App) -> tauri::Result<()> {
-        // Note: Accessory mode gives Abstand tray-app behavior without a Dock or Cmd-Tab entry
+        // Note: `tauri dev` launches the binary directly, so apply the runtime
+        // policy to match the packaged LSUIElement behavior
         app.set_activation_policy(tauri::ActivationPolicy::Accessory);
 
         Self::build(app.handle())?;
