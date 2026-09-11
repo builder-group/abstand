@@ -42,9 +42,8 @@ pub fn try_run_from_args() -> Option<i32> {
         subcommands::recovery_agent::COMMAND => {
             Some(exit_code(subcommands::recovery_agent::run(command_args)))
         }
-        // Treat unknown top-level flags as app-launch metadata rather than CLI errors.
-        // macOS/Tauri/packaging may pass flags like `-psn_...`, and this executable is
-        // primarily the desktop app launch target. Known CLI flags must be matched above.
+        // Note: Unknown flags may be app-launch metadata such as macOS's -psn_...
+        // Let Tauri handle them so normal app startup still works
         command if command.starts_with("-") => None,
         _ => Some(exit_code(Err(CliError::unknown_command(
             "top-level",

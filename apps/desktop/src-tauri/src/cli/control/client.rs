@@ -2,19 +2,24 @@ use super::{
     protocol::{
         read_frame, write_frame, ControlRequest, ControlResponse, ControlResult, MAX_RESPONSE_BYTES,
     },
-    socket_path,
+    socket_path, validate_socket_directory,
 };
+use crate::cli::command_name;
 use std::{os::unix::net::UnixStream, time::Duration};
 
 pub fn send(request: &ControlRequest) -> Result<ControlResult, String> {
-    let path = socket_path()?;
-    let mut stream = UnixStream::connect(&path).map_err(|error| {
-        format!(
-            "Cannot connect to Abstand: {}. Run `abs app start`, then retry. Socket: {}",
-            error,
-            path.display()
-        )
-    })?;
+    let path = socket_path();
+    let directory = path.parent().ok_or("CLI socket directory unavailable")?;
+    let mut stream = validate_socket_directory(directory)
+        .and_then(|_| UnixStream::connect(&path).map_err(|error| error.to_string()))
+        .map_err(|error| {
+            format!(
+                "Cannot connect to Abstand: {}. Run `{} app start`, then retry. Socket: {}",
+                error,
+                command_name(),
+                path.display()
+            )
+        })?;
     stream
         .set_read_timeout(Some(Duration::from_secs(30)))
         .map_err(|error| error.to_string())?;

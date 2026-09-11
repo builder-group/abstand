@@ -126,13 +126,13 @@ See the [recovery-agent module](../modules/recovery_agent/README.md) for its lif
 
 Activity, status, and successful Intention commands print pretty JSON to standard output. App and recovery-agent management commands print short text results.
 
-| Command | JSON output |
-| --- | --- |
-| `intention list` | Array of Intentions |
-| `intention show`, `intention create` | Intention |
-| `intention start`, `intention stop` | Session |
-| `intention delete` | `{ "deleted": <id> }` |
-| `status` | `version`, `pid`, and an array of active `sessions` |
+| Command                              | JSON output                                         |
+| ------------------------------------ | --------------------------------------------------- |
+| `intention list`                     | Array of Intentions                                 |
+| `intention show`, `intention create` | Intention                                           |
+| `intention start`, `intention stop`  | Session                                             |
+| `intention delete`                   | `{ "deleted": <id> }`                               |
+| `status`                             | `version`, `pid`, and an array of active `sessions` |
 
 Starting an active Intention returns its existing session. When no sessions are active, `status` returns an empty `sessions` array.
 
@@ -147,10 +147,12 @@ Commands that require live app state use the local control transport. Status and
 The running app listens on:
 
 ```text
-~/Library/Application Support/<bundle-id>/cli/control.sock
+/tmp/abstand-<uid>/<bundle-id>.sock
 ```
 
-The socket directory uses owner-only mode `0700`. The socket uses owner-only read/write mode `0600`. Development and production builds use their respective bundle identifiers. No TCP port is opened.
+The short path avoids macOS's 103-byte Unix socket pathname limit, regardless of the home directory. The directory uses the effective user ID and owner-only mode `0700`. Both client and server reject a directory that is a symlink, belongs to another user, or has different permissions. The socket uses owner-only read/write mode `0600`. No TCP port is opened.
+
+The socket filename uses the bundle identifier from the merged Tauri build configuration. Development and production app identifiers stay separate, including when the development app uses a release build.
 
 Each connection carries one newline-delimited JSON request and one response. Messages have bounded sizes and I/O timeouts. The app handles requests sequentially on a dedicated thread and reclaims a stale socket only when it refuses a connection. It never replaces a non-socket path.
 

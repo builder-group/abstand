@@ -79,7 +79,7 @@ impl AppLaunchTarget {
         match self {
             Self::AppBundle(app_bundle_path) => {
                 let status = Command::new("open")
-                    // Note: The watchdog shares the app bundle identifier, so force a new instance
+                    // Note: Force a new instance because the watchdog shares the app's bundle identifier
                     .arg("-n")
                     .arg(app_bundle_path)
                     .arg("--args")

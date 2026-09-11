@@ -23,6 +23,7 @@ pub enum ControlRequest {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+// Note: Untagged results need distinct shapes because decoding picks the first match
 #[serde(untagged)]
 pub enum ControlResult {
     Status(ControlStatus),
@@ -55,6 +56,7 @@ pub(super) fn write_frame(writer: &mut impl Write, value: &impl Serialize) -> Re
 
 pub(super) fn read_frame(reader: &mut impl Read, limit: usize) -> Result<Vec<u8>, String> {
     let mut frame = Vec::new();
+    // Note: Read one extra byte to distinguish an oversized frame from a frame at the limit
     BufReader::new(reader.take((limit + 1) as u64))
         .read_until(b'\n', &mut frame)
         .map_err(|error| error.to_string())?;

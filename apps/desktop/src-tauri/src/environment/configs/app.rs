@@ -17,14 +17,9 @@ impl AppConfig {
         return format!("v{}{}", Self::version(), suffix);
     }
 
-    /// Rust-side mirror of Tauri's identifier for code that runs before `AppHandle` exists.
-    ///
-    /// Prefer reading the identifier from Tauri config when app state is available.
+    /// Returns the Tauri bundle identifier embedded by `build.rs`, without initializing the app.
     pub fn bundle_identifier() -> &'static str {
-        if cfg!(debug_assertions) {
-            return "com.buildergroup.abstand.dev";
-        }
-        return "com.buildergroup.abstand";
+        return env!("ABSTAND_BUNDLE_IDENTIFIER");
     }
 
     pub fn tray_tooltip() -> &'static str {

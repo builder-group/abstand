@@ -17,10 +17,10 @@ use super::{
     },
 };
 use crate::{
-    common::time::{
-        local_datetime_from_unix_ms, to_local_datetime, unix_ms_now, DateOnly, TimeOnly,
+    common::{
+        time::{local_datetime_from_unix_ms, to_local_datetime, unix_ms_now, DateOnly, TimeOnly},
+        url::WebsiteTarget,
     },
-    common::url::WebsiteTarget,
     modules::{
         catalog::repository::{UpsertAppInput, UpsertWebsiteInput},
         db::types::DatabaseState,
@@ -518,7 +518,7 @@ fn build_conditions(
                     })
                 }
                 WriteIntentionConditionRuleParams::AfterTransition(rule) => {
-                    // Offsets must remain representable when added to a session timestamp
+                    // Note: Offsets must remain representable when added to a session timestamp
                     unix_ms_now()
                         .checked_add(rule.offset_ms)
                         .and_then(local_datetime_from_unix_ms)

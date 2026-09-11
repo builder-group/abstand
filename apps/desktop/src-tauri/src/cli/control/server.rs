@@ -3,7 +3,7 @@ use super::{
         read_frame, write_frame, ControlRequest, ControlResponse, ControlResult, ControlStatus,
         MAX_REQUEST_BYTES,
     },
-    socket_path,
+    socket_path, validate_socket_directory, CONTROL_DIRECTORY_MODE,
 };
 use crate::{
     environment::configs::app::AppConfig,
@@ -27,26 +27,17 @@ use std::{
 use tauri::{AppHandle, Manager};
 
 pub fn setup(app: &AppHandle) -> Result<(), String> {
-    let path = socket_path()?;
+    let path = socket_path();
     let directory = path.parent().ok_or("CLI socket directory unavailable")?;
-    match fs::symlink_metadata(directory) {
-        Ok(metadata) if !metadata.file_type().is_dir() => {
-            return Err("CLI socket directory must be a real directory".into());
-        }
-        Ok(_) => {}
-        Err(error) if error.kind() == io::ErrorKind::NotFound => {
-            fs::DirBuilder::new()
-                .mode(CONTROL_DIRECTORY_MODE)
-                .create(directory)
-                .map_err(|error| error.to_string())?;
-        }
+    match fs::DirBuilder::new()
+        .mode(CONTROL_DIRECTORY_MODE)
+        .create(directory)
+    {
+        Ok(()) => {}
+        Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {}
         Err(error) => return Err(error.to_string()),
     }
-    fs::set_permissions(
-        directory,
-        fs::Permissions::from_mode(CONTROL_DIRECTORY_MODE),
-    )
-    .map_err(|error| error.to_string())?;
+    validate_socket_directory(directory)?;
 
     match fs::symlink_metadata(&path) {
         Ok(metadata) => {
@@ -56,6 +47,7 @@ pub fn setup(app: &AppHandle) -> Result<(), String> {
             match UnixStream::connect(&path) {
                 Ok(_) => return Err("Another Abstand CLI server is already running".into()),
                 Err(error) if error.kind() == io::ErrorKind::ConnectionRefused => {
+                    // Note: A crashed app can leave a socket file without a listener
                     fs::remove_file(&path).map_err(|error| error.to_string())?;
                 }
                 Err(error) => return Err(error.to_string()),
@@ -113,7 +105,7 @@ fn serve_connection(app: &AppHandle, mut stream: UnixStream) -> Result<(), Strin
 }
 
 async fn dispatch(app: &AppHandle, request: ControlRequest) -> Result<ControlResult, String> {
-    // Keep CLI requests on the desktop command path so policy checks and side effects stay aligned
+    // Note: Reuse desktop handlers so validation and session events stay consistent
     let database_state = app.state::<DatabaseState>();
     let runtime_state = app.state::<IntentionRuntimeState>();
     return match request {
@@ -174,6 +166,7 @@ async fn require_no_balanced_confirmation(
         return Ok(());
     };
     if block.enforcement_mode == IntentionEnforcementMode::Balanced {
+        // Note: Balanced confirmation lives in the UI, so CLI requests cannot complete it
         return Err(
             "Ending or deleting an active Balanced Intention requires confirmation in the desktop app"
                 .into(),
@@ -183,6 +176,4 @@ async fn require_no_balanced_confirmation(
     return Ok(());
 }
 
-// Restrict access to the owner because CLI requests can change app state
-const CONTROL_DIRECTORY_MODE: u32 = 0o700;
 const CONTROL_SOCKET_MODE: u32 = 0o600;

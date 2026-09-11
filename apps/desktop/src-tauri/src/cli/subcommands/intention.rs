@@ -1,12 +1,10 @@
-//! Parses Intention commands and sends them to the running app.
-
 use crate::{
     cli::{
         args::ensure_no_args,
         command_name,
         control::{self, ControlRequest},
-        error::CliError,
         time_range::parse_duration_ms,
+        CliError,
     },
     modules::intentions::{
         commands::{

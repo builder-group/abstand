@@ -52,7 +52,7 @@ fn start() -> Result<(), CliError> {
     let executable_path = env::current_exe().map_err(CliError::from_display)?;
     if let Some(app_bundle_path) = app_bundle_for_executable(&executable_path) {
         let status = Command::new("open")
-            // Note: The CLI shares the bundle identity, so macOS could activate this exiting process
+            // Note: Force a new instance because the CLI shares the app's bundle identifier
             .arg("-n")
             .arg(app_bundle_path)
             .status()
