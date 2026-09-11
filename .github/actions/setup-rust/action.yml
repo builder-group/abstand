@@ -1,0 +1,24 @@
+name: Setup Rust
+description: Install Rust targets and configure Rust build caching.
+
+inputs:
+  cargo-workspace:
+    description: Cargo workspace root to cache.
+    required: false
+    default: .
+
+runs:
+  using: composite
+  steps:
+    - name: Install Rust toolchain
+      shell: bash
+      run: |
+        rustup toolchain install --no-self-update
+        rustup show active-toolchain
+        rustc --version --verbose
+
+    - name: Restore Rust cache
+      uses: swatinem/rust-cache@v2
+      with:
+        workspaces: ${{ inputs.cargo-workspace }} -> target
+        cache-on-failure: true

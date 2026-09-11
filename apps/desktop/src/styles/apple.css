@@ -1,0 +1,43 @@
+/* https://developer.apple.com/design/human-interface-guidelines/color */
+
+@theme {
+	/* Apple system colors */
+	--color-apple-red: rgb(255 56 60);
+	--color-apple-red-dark: rgb(255 66 69);
+	--color-apple-orange: rgb(255 141 40);
+	--color-apple-orange-dark: rgb(255 146 48);
+	--color-apple-yellow: rgb(255 204 0);
+	--color-apple-yellow-dark: rgb(255 214 0);
+	--color-apple-green: rgb(52 199 89);
+	--color-apple-green-dark: rgb(48 209 88);
+	--color-apple-mint: rgb(0 200 179);
+	--color-apple-mint-dark: rgb(0 218 195);
+	--color-apple-teal: rgb(0 195 208);
+	--color-apple-teal-dark: rgb(0 210 224);
+	--color-apple-cyan: rgb(0 192 232);
+	--color-apple-cyan-dark: rgb(60 211 254);
+	--color-apple-blue: rgb(0 136 255);
+	--color-apple-blue-dark: rgb(0 145 255);
+	--color-apple-indigo: rgb(97 85 245);
+	--color-apple-indigo-dark: rgb(109 124 255);
+	--color-apple-purple: rgb(203 48 224);
+	--color-apple-purple-dark: rgb(219 52 242);
+	--color-apple-pink: rgb(255 45 85);
+	--color-apple-pink-dark: rgb(255 55 95);
+	--color-apple-brown: rgb(172 127 94);
+	--color-apple-brown-dark: rgb(183 138 102);
+
+	/* Apple system grays */
+	--color-apple-gray: rgb(142 142 147);
+	--color-apple-gray-dark: rgb(142 142 147);
+	--color-apple-gray-2: rgb(174 174 178);
+	--color-apple-gray-dark-2: rgb(99 99 102);
+	--color-apple-gray-3: rgb(199 199 204);
+	--color-apple-gray-dark-3: rgb(72 72 74);
+	--color-apple-gray-4: rgb(209 209 214);
+	--color-apple-gray-dark-4: rgb(58 58 60);
+	--color-apple-gray-5: rgb(229 229 234);
+	--color-apple-gray-dark-5: rgb(44 44 46);
+	--color-apple-gray-6: rgb(242 242 247);
+	--color-apple-gray-dark-6: rgb(28 28 30);
+}

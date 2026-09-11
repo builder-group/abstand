@@ -1,0 +1,91 @@
+@import 'tailwindcss';
+@import './apple.css';
+
+:root {
+	/* MARK: - Typography */
+	--app-font-size-small: 11px;
+	--app-font-size-base: 13px;
+}
+
+/* Desktop app convention: use arrow cursor for all clickable elements */
+a {
+	cursor: default;
+}
+
+/* MARK: - Theme */
+
+@theme {
+	--text-xs: var(--app-font-size-small);
+	--text-sm: var(--app-font-size-base);
+
+	--color-base-0: #ffffff;
+	--color-base-50: var(--color-apple-gray-6);
+	--color-base-100: var(--color-apple-gray-5);
+	--color-base-200: var(--color-apple-gray-4);
+	--color-base-300: var(--color-apple-gray-3);
+	--color-base-400: var(--color-apple-gray-2);
+	--color-base-500: var(--color-apple-gray);
+	--color-base-600: var(--color-apple-gray-dark-2);
+	--color-base-700: var(--color-apple-gray-dark-3);
+	--color-base-800: var(--color-apple-gray-dark-4);
+	--color-base-900: var(--color-apple-gray-dark-5);
+	--color-base-950: var(--color-apple-gray-dark-6);
+
+	/* Semantic aliases */
+	--color-primary: var(--color-apple-blue);
+	--color-primary-content: #ffffff;
+	--color-secondary: var(--color-apple-indigo);
+	--color-secondary-content: #ffffff;
+	--color-accent: var(--color-apple-teal);
+	--color-accent-content: #1c1c1e;
+	--color-info: var(--color-apple-cyan);
+	--color-info-content: #1c1c1e;
+	--color-success: var(--color-apple-green);
+	--color-success-content: #ffffff;
+	--color-warning: var(--color-apple-orange);
+	--color-warning-content: #ffffff;
+	--color-error: var(--color-apple-red);
+	--color-error-content: #ffffff;
+}
+
+/* Dark mode */
+.dark {
+	--color-base-0: #000000;
+	--color-base-50: var(--color-apple-gray-dark-6);
+	--color-base-100: var(--color-apple-gray-dark-5);
+	--color-base-200: var(--color-apple-gray-dark-4);
+	--color-base-300: var(--color-apple-gray-dark-3);
+	--color-base-400: var(--color-apple-gray-dark-2);
+	--color-base-500: var(--color-apple-gray-dark);
+	--color-base-600: var(--color-apple-gray-2);
+	--color-base-700: var(--color-apple-gray-3);
+	--color-base-800: var(--color-apple-gray-4);
+	--color-base-900: var(--color-apple-gray-5);
+	--color-base-950: var(--color-apple-gray-6);
+
+	--color-primary: var(--color-apple-blue-dark);
+	--color-secondary: var(--color-apple-indigo-dark);
+	--color-accent: var(--color-apple-teal-dark);
+	--color-info: var(--color-apple-cyan-dark);
+	--color-success: var(--color-apple-green-dark);
+	--color-warning: var(--color-apple-orange-dark);
+	--color-error: var(--color-apple-red-dark);
+}
+
+/* MARK: - Utilities */
+
+@utility focus-ring {
+	@apply focus-visible:border-primary focus-visible:ring-primary/30 outline-none focus-visible:ring-2;
+}
+
+@utility peer-focus-ring {
+	@apply peer-focus-visible:border-primary peer-focus-visible:ring-primary/30 peer-focus-visible:ring-2;
+}
+
+@utility invalid-ring {
+	@apply aria-invalid:border-error aria-invalid:ring-error/20 aria-invalid:ring-2;
+}
+
+@utility peer-invalid-ring {
+	@apply peer-aria-invalid:border-error peer-aria-invalid:ring-error/20 peer-aria-invalid:ring-2;
+}

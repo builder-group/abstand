@@ -1,0 +1,5 @@
+.secrets
+*.p12
+*.cer
+*.certSigningRequest
+certificate-base64.txt

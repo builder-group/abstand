@@ -1,0 +1,322 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: Release channel.
+        type: choice
+        required: true
+        default: draft
+        options:
+          - draft
+          - beta
+          - stable
+      version_bump:
+        description: Version bump.
+        type: choice
+        required: true
+        default: none
+        options:
+          - none
+          - patch
+          - minor
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  validate-ref:
+    name: Validate release ref
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require develop branch
+        shell: bash
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/develop" ]; then
+            echo "Release workflow must run from develop. Selected ref: $GITHUB_REF"
+            exit 1
+          fi
+
+  resolve-release:
+    name: Resolve release intent
+    runs-on: ubuntu-latest
+    needs: validate-ref
+    timeout-minutes: 10
+    outputs:
+      current-version: ${{ steps.version.outputs.current-version }}
+      version: ${{ steps.version.outputs.next-version }}
+      tag: ${{ steps.version.outputs.tag }}
+      target-sha: ${{ steps.release.outputs.target-sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Resolve release version
+        id: version
+        uses: ./.github/actions/resolve-release-version
+        with:
+          app-directory: apps/desktop
+          channel: ${{ inputs.channel }}
+          version-bump: ${{ inputs.version_bump }}
+
+      - name: Check release target
+        id: release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release already exists: $TAG"
+            exit 1
+          fi
+
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "Release tag already exists: $TAG"
+            exit 1
+          fi
+
+          printf 'target-sha=%s\n' "$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+
+  ci:
+    name: CI
+    runs-on: ubuntu-latest
+    needs: resolve-release
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.resolve-release.outputs.target-sha }}
+
+      - name: Run CI
+        uses: ./.github/actions/ci
+        with:
+          app-directory: apps/desktop
+          build-script: ui:build
+
+  write-release-version:
+    name: Write release version
+    runs-on: ubuntu-latest
+    needs: [resolve-release, ci]
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    outputs:
+      target-sha: ${{ steps.target.outputs.target-sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.resolve-release.outputs.target-sha }}
+
+      - name: Write release version
+        id: apply
+        if: needs.resolve-release.outputs.version != needs.resolve-release.outputs.current-version
+        uses: ./.github/actions/apply-tauri-version
+        with:
+          app-directory: apps/desktop
+          version: ${{ needs.resolve-release.outputs.version }}
+
+      - name: Commit release version
+        id: target
+        shell: bash
+        env:
+          VERSION: ${{ needs.resolve-release.outputs.version }}
+          CHANGED_FILES: ${{ steps.apply.outputs.changed-files }}
+        run: |
+          if [ -z "$CHANGED_FILES" ] || [ "$CHANGED_FILES" = "[]" ]; then
+            printf 'target-sha=%s\n' "$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          node <<'NODE'
+          const { execFileSync } = require('node:child_process');
+
+          const changedFiles = JSON.parse(process.env.CHANGED_FILES);
+
+          if (!Array.isArray(changedFiles) || changedFiles.length === 0) {
+            process.exit(0);
+          }
+
+          execFileSync('git', ['add', ...changedFiles], { stdio: 'inherit' });
+          NODE
+
+          git commit -m "#develop prepare Abstand $VERSION"
+          git push origin HEAD:develop
+
+          printf 'target-sha=%s\n' "$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    needs: [resolve-release, write-release-version]
+    environment: release-signing
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS Apple Silicon
+            runner: macos-26
+            target: aarch64-apple-darwin
+            artifact: macos-aarch64
+          - name: macOS Intel
+            runner: macos-26-intel
+            target: x86_64-apple-darwin
+            artifact: macos-x64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.write-release-version.outputs.target-sha }}
+
+      - name: Build desktop app
+        uses: ./.github/actions/build-tauri-macos
+        with:
+          app-directory: apps/desktop
+          target: ${{ matrix.target }}
+          apple-certificate: ${{ secrets.APPLE_CERTIFICATE }}
+          apple-certificate-password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          apple-id: ${{ secrets.APPLE_ID }}
+          apple-password: ${{ secrets.APPLE_PASSWORD }}
+          apple-team-id: ${{ secrets.APPLE_TEAM_ID }}
+          tauri-signing-private-key: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          tauri-signing-private-key-password: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: abstand-${{ matrix.artifact }}
+          path: release-bundle/${{ matrix.target }}/*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+  create-release:
+    name: Create ${{ inputs.channel }} release
+    runs-on: ubuntu-latest
+    needs: [resolve-release, write-release-version, build]
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.write-release-version.outputs.target-sha }}
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v7
+        with:
+          pattern: abstand-macos-*
+          path: release-artifacts
+
+      - name: Stage release assets
+        shell: bash
+        env:
+          VERSION: ${{ needs.resolve-release.outputs.version }}
+          TAG: ${{ needs.resolve-release.outputs.tag }}
+        run: |
+          stage_arch() {
+            local artifact_dir="$1"
+            local arch="$2"
+
+            shopt -s nullglob
+            local dmgs=("$artifact_dir"/*.dmg)
+            local updater_bundles=("$artifact_dir"/*.app.tar.gz)
+            local updater_signatures=("$artifact_dir"/*.app.tar.gz.sig)
+
+            if [ "${#dmgs[@]}" -ne 1 ] || [ "${#updater_bundles[@]}" -ne 1 ] || [ "${#updater_signatures[@]}" -ne 1 ]; then
+              echo "Expected one DMG, one updater bundle, and one updater signature in $artifact_dir."
+              find "$artifact_dir" -maxdepth 1 -type f -print
+              exit 1
+            fi
+
+            cp "${dmgs[0]}" "release-assets/Abstand_${VERSION}_${arch}.dmg"
+            cp "${updater_bundles[0]}" "release-assets/Abstand_${arch}.app.tar.gz"
+            cp "${updater_signatures[0]}" "release-assets/Abstand_${arch}.app.tar.gz.sig"
+          }
+
+          rm -rf release-assets
+          mkdir -p release-assets
+
+          stage_arch "release-artifacts/abstand-macos-aarch64" "aarch64"
+          stage_arch "release-artifacts/abstand-macos-x64" "x64"
+
+      - name: Generate updater metadata
+        shell: bash
+        env:
+          VERSION: ${{ needs.resolve-release.outputs.version }}
+          TAG: ${{ needs.resolve-release.outputs.tag }}
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+
+          const version = process.env.VERSION;
+          const tag = process.env.TAG;
+          const repository = process.env.GITHUB_REPOSITORY;
+          const baseUrl = `https://github.com/${repository}/releases/download/${tag}`;
+          const signature = (arch) => fs.readFileSync(`release-assets/Abstand_${arch}.app.tar.gz.sig`, 'utf8').trim();
+
+          const latest = {
+            version,
+            pub_date: new Date().toISOString(),
+            platforms: {
+              'darwin-aarch64': {
+                signature: signature('aarch64'),
+                url: `${baseUrl}/Abstand_aarch64.app.tar.gz`
+              },
+              'darwin-x86_64': {
+                signature: signature('x64'),
+                url: `${baseUrl}/Abstand_x64.app.tar.gz`
+              }
+            }
+          };
+
+          fs.writeFileSync('release-assets/latest.json', `${JSON.stringify(latest, null, 2)}\n`);
+          NODE
+
+      - name: Create GitHub release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.resolve-release.outputs.tag }}
+          VERSION: ${{ needs.resolve-release.outputs.version }}
+          CHANNEL: ${{ inputs.channel }}
+          TARGET_SHA: ${{ needs.write-release-version.outputs.target-sha }}
+        run: |
+          shopt -s nullglob
+          files=(release-assets/*)
+          release_args=()
+
+          case "$CHANNEL" in
+            draft)
+              release_args+=(--draft)
+              ;;
+            beta)
+              release_args+=(--prerelease)
+              ;;
+            stable)
+              ;;
+            *)
+              echo "Unsupported release channel: $CHANNEL"
+              exit 1
+              ;;
+          esac
+
+          gh release create "$TAG" "${files[@]}" \
+            "${release_args[@]}" \
+            --target "$TARGET_SHA" \
+            --title "Abstand $TAG" \
+            --notes "macOS $CHANNEL release for Abstand $VERSION."

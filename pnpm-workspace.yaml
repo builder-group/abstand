@@ -1,3 +1,11 @@
+# https://pnpm.io/pnpm-workspace_yaml
 packages:
-  - "apps/*"
-  - "packages/*"
+  - 'apps/*'
+  - 'packages/*'
+
+allowBuilds:
+  # Required by Vite and Vitest tooling
+  esbuild: true
+
+# Avoid auto-installing before clean scripts that remove node_modules
+verifyDepsBeforeRun: false

@@ -11,30 +11,29 @@
 		"type": "git",
 		"url": "https://github.com/builder-group/abstand.git"
 	},
-	"license": "ELv2",
+	"license": "AGPL-3.0-only",
 	"author": "@bennobuilder",
 	"scripts": {
 		"build": "turbo run build",
 		"clean": "turbo run clean --force && shx rm -rf .turbo && shx rm -rf node_modules",
-		"format": "prettier --write \"**/*.{ts,tsx,md,json,js,jsx,css}\"",
-		"install:clean": "pnpm clean && pnpm install && pnpm build",
+		"format": "prettier --write \"**/*.{ts,tsx,js,jsx,cjs,mjs,md,mdx,json,css,html}\"",
+		"install:clean": "pnpm run clean && pnpm install && pnpm build",
 		"lint": "turbo run lint",
+		"lint:fix": "turbo run lint --force -- --fix",
 		"test": "turbo run test",
-		"update:latest": "turbo run update:latest --force && pnpm update --latest '!eslint' '!@eslint/js' && pnpm build"
+		"update:latest": "turbo run update:latest --force --concurrency=1 && pnpm update --latest '!typescript' && pnpm build"
 	},
 	"devDependencies": {
-		"@blgc/config": "^0.0.41",
-		"@eslint/js": "^9.39.2",
-		"@ianvs/prettier-plugin-sort-imports": "^4.7.1",
-		"eslint": "^9.39.2",
-		"prettier": "^3.8.1",
+		"@blgc/config": "^0.1.1",
+		"eslint": "^10.8.0",
+		"prettier": "^3.9.6",
 		"shx": "^0.4.0",
-		"turbo": "^2.9.5",
-		"typescript": "^6.0.2",
-		"vite": "^8.0.7",
-		"vitest": "^4.1.3"
+		"turbo": "^2.10.7",
+		"typescript": "^6.0.3",
+		"vite": "^8.1.5",
+		"vitest": "^4.1.10"
 	},
-	"packageManager": "pnpm@10.33.0",
+	"packageManager": "pnpm@11.9.0",
 	"engines": {
 		"node": ">=24"
 	}

@@ -1,0 +1,41 @@
+name: Resolve Release Version
+description: Resolves the release version and tag from a release channel and version bump.
+
+inputs:
+  app-directory:
+    description: App directory that contains the package.json version.
+    required: true
+  channel:
+    description: 'Release channel: draft, beta, or stable.'
+    required: true
+  version-bump:
+    description: 'Version bump: none, patch, or minor.'
+    required: true
+
+outputs:
+  current-version:
+    description: Version read from the app package.json.
+    value: ${{ steps.resolve.outputs.current-version }}
+  next-version:
+    description: Resolved release version.
+    value: ${{ steps.resolve.outputs.next-version }}
+  tag:
+    description: Release tag for the resolved version.
+    value: ${{ steps.resolve.outputs.tag }}
+  version-changed:
+    description: Whether the resolved version differs from the current version.
+    value: ${{ steps.resolve.outputs.version-changed }}
+
+runs:
+  using: composite
+  steps:
+    - name: Resolve release version
+      id: resolve
+      shell: bash
+      env:
+        APP_DIRECTORY: ${{ inputs.app-directory }}
+        CHANNEL: ${{ inputs.channel }}
+        VERSION_BUMP: ${{ inputs.version-bump }}
+      run: |
+        set -euo pipefail
+        node "$GITHUB_ACTION_PATH/resolve-release-version.mjs"

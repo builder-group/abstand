@@ -1,6 +1,6 @@
 # Tuple Result Rules
 
-Use `tuple-result` as the default Result pattern when working with repo code that returns results.
+Use `tuple-result` for packages that depend on, expose, or integrate with tuple-result contracts.
 
 ## Enforce
 
@@ -11,7 +11,7 @@ Use `tuple-result` as the default Result pattern when working with repo code tha
 - Treat the first slot as the primary branch condition
 - Handle the error branch explicitly before using the value
 - Use `Ok(...)` and `Err(...)` to construct results
-- Use helpers like `mapOk`, `mapErr`, `match`, `unwrapOr`, and `tAsync` when they make the code simpler
+- Use helpers like `t`, `tAsync`, `mapOk`, `mapErr`, `match`, and `unwrapOr` when they make the code simpler
 
 ## Avoid
 
@@ -20,6 +20,7 @@ Use `tuple-result` as the default Result pattern when working with repo code tha
 - Do not unwrap eagerly when normal branching keeps control flow clearer
 - Do not churn unrelated old code only to migrate result style
 - Do not mix many result-handling styles in the same module without a reason
+- Do not replace Standard Schema, validation-library, framework-required, or package-specific result shapes with tuple-result just for consistency
 
 ## Example
 
@@ -27,7 +28,7 @@ Use `tuple-result` as the default Result pattern when working with repo code tha
 const configResult = await loadConfig();
 const [isConfigOk, configErr, config] = configResult;
 if (!isConfigOk) {
-	throw new AppError('Failed to load config', { cause: configErr });
+  throw new AppError('Failed to load config', { cause: configErr });
 }
 
 return config;

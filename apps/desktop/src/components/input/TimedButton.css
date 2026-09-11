@@ -1,0 +1,17 @@
+.timed-button-progress {
+	transform: scaleX(0);
+	transform-origin: left;
+	animation-timing-function: linear;
+	animation-fill-mode: forwards;
+	animation-name: timed-button-progress-fill;
+}
+
+@keyframes timed-button-progress-fill {
+	from {
+		transform: scaleX(0);
+	}
+
+	to {
+		transform: scaleX(1);
+	}
+}

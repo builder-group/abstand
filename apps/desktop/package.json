@@ -1,0 +1,64 @@
+{
+	"name": "@repo/desktop",
+	"version": "0.1.25",
+	"private": true,
+	"description": "",
+	"keywords": [],
+	"bugs": {
+		"url": "https://github.com/builder-group/abstand/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/builder-group/abstand.git"
+	},
+	"license": "AGPL-3.0-only",
+	"author": "@bennobuilder",
+	"type": "module",
+	"scripts": {
+		"build": "tauri build",
+		"build:prod": "tauri build --config src-tauri/tauri.prod.conf.json",
+		"clean": "shx rm -rf target && shx rm -rf dist && shx rm -rf .tanstack && shx rm -rf .turbo && shx rm -rf node_modules",
+		"db:check": "node scripts/db-schema.mjs check",
+		"db:hash": "node scripts/db-schema.mjs hash",
+		"db:inspect": "node scripts/db-schema.mjs inspect -w",
+		"db:migrate": "node scripts/db-schema.mjs migrate",
+		"install:clean": "pnpm run clean && pnpm install",
+		"lint": "eslint .",
+		"start:dev": "tauri dev",
+		"test": "echo \"🧪 No tests defined yet.\"",
+		"typecheck": "tsc --noEmit",
+		"ui:build": "pnpm typecheck && vite build",
+		"ui:start:dev": "vite dev",
+		"update:latest": "pnpm update --latest"
+	},
+	"dependencies": {
+		"@base-ui/react": "^1.6.0",
+		"@tanstack/react-router": "^1.170.18",
+		"@tanstack/react-router-devtools": "^1.167.0",
+		"@tauri-apps/api": "^2.11.1",
+		"@tauri-apps/plugin-opener": "^2.5.4",
+		"@tauri-apps/plugin-os": "^2.3.2",
+		"class-variance-authority": "^0.7.1",
+		"clsx": "^2.1.1",
+		"feature-form": "^0.1.0",
+		"feature-react": "^0.1.0",
+		"feature-state": "^0.1.0",
+		"lucide-react": "^1.27.0",
+		"react": "^19.2.8",
+		"react-dom": "^19.2.8",
+		"tailwind-merge": "^3.6.0",
+		"tuple-result": "^0.1.0",
+		"zod": "^4.4.3"
+	},
+	"devDependencies": {
+		"@blgc/config": "^0.1.1",
+		"@tailwindcss/vite": "^4.3.3",
+		"@tanstack/router-plugin": "^1.168.23",
+		"@tauri-apps/cli": "^2.11.4",
+		"@types/node": "^26.1.2",
+		"@types/react": "^19.2.17",
+		"@types/react-dom": "^19.2.3",
+		"@vitejs/plugin-react": "^6.0.4",
+		"tailwindcss": "^4.3.3"
+	}
+}

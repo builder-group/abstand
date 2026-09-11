@@ -1,0 +1,31 @@
+name: Apply Tauri Version
+description: Applies a resolved version to a Tauri app package and Rust app metadata.
+
+inputs:
+  app-directory:
+    description: App directory that contains package.json and src-tauri.
+    required: true
+  version:
+    description: Version to apply.
+    required: true
+
+outputs:
+  changed:
+    description: Whether applying the version changed files.
+    value: ${{ steps.apply.outputs.changed }}
+  changed-files:
+    description: JSON array of files changed by this action.
+    value: ${{ steps.apply.outputs.changed-files }}
+
+runs:
+  using: composite
+  steps:
+    - name: Apply Tauri version
+      id: apply
+      shell: bash
+      env:
+        APP_DIRECTORY: ${{ inputs.app-directory }}
+        VERSION: ${{ inputs.version }}
+      run: |
+        set -euo pipefail
+        node "$GITHUB_ACTION_PATH/apply-tauri-version.mjs"

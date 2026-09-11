@@ -5,11 +5,12 @@ Use `feature-fetch` as the typed API layer. Prefer consistent client setup and e
 ## Enforce
 
 - Create clients in dedicated environment or library files, not inside components
-- Use generated or declared API types for paths, params, and responses
+- Use generated `paths` types for `createOpenApiFetchClient(...)`
+- Use declared response, error, body, and params types for `createApiFetchClient(...)` call sites where generated API types do not exist
 - Compose only the features you need, in a clear order
 - Handle `tuple-result` values explicitly; prefer the tuple pattern from `.agent/rules/tuple-result.md`
 - Distinguish network failures from request failures when behavior differs
-- Keep request configuration explicit: base URL, headers, timeout, auth
+- Keep request configuration explicit: base URL, headers, and auth; use `signal` for cancellation
 - Keep GraphQL operations in dedicated files and use `gql`
 
 ## Avoid
@@ -22,19 +23,17 @@ Use `feature-fetch` as the typed API layer. Prefer consistent client setup and e
 ## Example
 
 ```ts
-const itemId = 'item-123';
-const itemResult = await apiClient.get('/items/{itemId}', {
-	pathParams: { itemId }
+const [isItemOk, itemErr, item] = await api.get<Item>('/items/{itemId}', {
+  pathParams: { itemId }
 });
 
-const [isItemOk, itemErr, item] = itemResult;
 if (!isItemOk) {
-	if (itemErr instanceof NetworkError) {
-		throw new AppError('Failed to connect', { cause: itemErr });
-	}
+  if (itemErr instanceof NetworkError) {
+    throw new AppError('Failed to connect', { cause: itemErr });
+  }
 
-	throw itemErr;
+  throw itemErr;
 }
 
-return item.data;
+return item;
 ```

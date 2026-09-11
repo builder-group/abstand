@@ -1,5 +1,6 @@
 {
 	// Editor settings
+	"editor.rulers": [100],
 	"editor.formatOnSave": true,
 	"editor.formatOnPaste": false,
 	"editor.codeActionsOnSave": {
@@ -34,22 +35,71 @@
 
 	// File nesting in explorer
 	"explorer.fileNesting.enabled": true,
+	"explorer.fileNesting.expand": false,
 	"explorer.fileNesting.patterns": {
-		"*.ts": "${capture}.js, ${capture}.test.ts, ${capture}.md",
-		"*.js": "${capture}.js.map, ${capture}.min.js, ${capture}.d.ts, ${capture}.test.js, ${capture}.md",
-		"*.jsx": "${capture}.js, ${capture}.md",
-		"*.tsx": "${capture}.ts, ${capture}.stories.tsx, ${capture}.md",
-		".npmrc": ".nvmrc",
-		".gitignore": ".eslintignore, .prettierignore, .dockerignore",
+		"*.ts": "${capture}.js, ${capture}.d.ts, ${capture}.js.map, ${capture}.test.ts, ${capture}.spec.ts, ${capture}.test-d.ts, ${capture}.gen.ts, ${capture}.generated.ts, ${capture}.md",
+		"*.js": "${capture}.js.map, ${capture}.min.js, ${capture}.d.ts, ${capture}.test.js, ${capture}.spec.js, ${capture}.md",
+		"*.tsx": "${capture}.ts, ${capture}.test.tsx, ${capture}.spec.tsx, ${capture}.css, ${capture}.module.css, ${capture}.scss, ${capture}.module.scss, ${capture}.md",
+		"*.jsx": "${capture}.js, ${capture}.test.jsx, ${capture}.spec.jsx, ${capture}.css, ${capture}.module.css, ${capture}.scss, ${capture}.module.scss, ${capture}.md",
+		".env.example": ".env, .env.*, .envrc",
+		".gitignore": ".gitattributes, .gitmodules, .prettierignore, .eslintignore, .dockerignore",
+		".npmrc": ".nvmrc, .node-version",
 		"README.md": "CONTRIBUTING.md, CODE_OF_CONDUCT.md, LICENSE",
-		"package.json": "package-lock.json, pnpm-lock.yaml, pnpm-workspace.yaml",
-		"tsconfig.json": "tsconfig.*.json"
+		"package.json": "package-lock.json, pnpm-lock.yaml, pnpm-workspace.yaml, yarn.lock, bun.lock, bun.lockb",
+		"tsconfig.json": "tsconfig.*.json",
+		"Cargo.toml": "Cargo.lock"
 	},
 
-	// TypeScript settings
-	// https://stackoverflow.com/questions/74642723/how-do-i-force-visual-studio-code-to-always-use-my-workspaces-version-of-typesc
-	"typescript.tsdk": "./node_modules/typescript/lib",
-	"typescript.enablePromptUseWorkspaceTsdk": true,
+	// JavaScript and TypeScript settings
+	"js/ts.tsdk.path": "./node_modules/typescript/lib",
+	"js/ts.tsdk.promptToUseWorkspaceVersion": true,
+	"[javascript]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode",
+		"editor.codeActionsOnSave": {
+			"source.fixAll.eslint": "explicit",
+			"source.organizeImports": "never"
+		}
+	},
+	"[javascriptreact]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode",
+		"editor.codeActionsOnSave": {
+			"source.fixAll.eslint": "explicit",
+			"source.organizeImports": "never"
+		}
+	},
+	"[typescript]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode",
+		"editor.codeActionsOnSave": {
+			"source.fixAll.eslint": "explicit",
+			"source.organizeImports": "never"
+		}
+	},
+	"[typescriptreact]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode",
+		"editor.codeActionsOnSave": {
+			"source.fixAll.eslint": "explicit",
+			"source.organizeImports": "never"
+		}
+	},
+
+	// JSON settings
+	"[json]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"[jsonc]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+
+	// CSS settings
+	"[css]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"[postcss]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"[scss]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
 
 	// Rust settings
 	"[rust]": {
@@ -64,8 +114,5 @@
 	],
 
 	// Tailwind CSS settings
-	"tailwindCSS.experimental.classRegex": [
-		["(?<=cva\\([\\s\\S]*?)[\"']([^\"']+)[\"']"],
-		["(?:cn|cx)\\(([^)]*)\\)", "[\"'`]([^\"'`]*)[\"'`]"]
-	]
+	"tailwindCSS.classFunctions": ["clsx", "cn", "cx", "cva"]
 }
