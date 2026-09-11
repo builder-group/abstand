@@ -6,9 +6,9 @@ public func abstandMacosApplyWindowLiquidGlass(windowPtr: Int) -> Bool {
     return WindowLiquidGlass.apply(windowPtr: windowPtr)
 }
 
-@_cdecl("abstand_macos_apply_window_transparency")
-public func abstandMacosApplyWindowTransparency(windowPtr: Int) -> Bool {
-    return WindowTransparency.apply(windowPtr: windowPtr)
+@_cdecl("abstand_macos_apply_window_opaque_background")
+public func abstandMacosApplyWindowOpaqueBackground(windowPtr: Int) -> Bool {
+    return WindowOverlay.applyOpaqueBackground(windowPtr: windowPtr)
 }
 
 @_cdecl("abstand_macos_apply_window_normal_level")

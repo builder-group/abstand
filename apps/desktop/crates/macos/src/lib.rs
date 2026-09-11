@@ -5,13 +5,14 @@ mod ffi;
 #[cfg(target_os = "macos")]
 use ffi::{
     abstand_macos_activate_app_by_pid, abstand_macos_apply_status_item_appearance,
-    abstand_macos_apply_window_floating_level, abstand_macos_apply_window_floating_overlay_behavior,
-    abstand_macos_apply_window_liquid_glass, abstand_macos_apply_window_normal_level,
-    abstand_macos_apply_window_normal_overlay_behavior,
-    abstand_macos_apply_window_screen_overlay_behavior, abstand_macos_apply_window_screen_saver_level,
-    abstand_macos_apply_window_transparency,
-    abstand_macos_get_small_system_font_size, abstand_macos_get_system_font_size,
-    abstand_macos_is_app_running, abstand_macos_request_app_quit,
+    abstand_macos_apply_window_floating_level,
+    abstand_macos_apply_window_floating_overlay_behavior, abstand_macos_apply_window_liquid_glass,
+    abstand_macos_apply_window_normal_level, abstand_macos_apply_window_normal_overlay_behavior,
+    abstand_macos_apply_window_opaque_background,
+    abstand_macos_apply_window_screen_overlay_behavior,
+    abstand_macos_apply_window_screen_saver_level, abstand_macos_get_small_system_font_size,
+    abstand_macos_get_system_font_size, abstand_macos_is_app_running,
+    abstand_macos_request_app_quit,
 };
 #[cfg(target_os = "macos")]
 use swift_rs::{Int, SRString};
@@ -37,17 +38,17 @@ pub fn apply_window_liquid_glass(window_ptr: *mut c_void) -> bool {
     }
 }
 
-/// Makes the native window background transparent and requests hosted WKWebView transparency.
+/// Applies an opaque system background and requests hosted WKWebView transparency.
 ///
 /// Returns `false` if the window pointer is invalid or the platform is unsupported.
-pub fn apply_window_transparency(window_ptr: *mut c_void) -> bool {
+pub fn apply_window_opaque_background(window_ptr: *mut c_void) -> bool {
     #[cfg(target_os = "macos")]
     {
         if window_ptr.is_null() {
             return false;
         }
 
-        return unsafe { abstand_macos_apply_window_transparency(window_ptr as Int) };
+        return unsafe { abstand_macos_apply_window_opaque_background(window_ptr as Int) };
     }
 
     #[cfg(not(target_os = "macos"))]

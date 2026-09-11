@@ -1,6 +1,16 @@
 import AppKit
 
 enum WindowOverlay {
+    static func applyOpaqueBackground(windowPtr: Int) -> Bool {
+        return WindowPointer.withWindow(windowPtr) { window in
+            // Note: Without Liquid Glass, an opaque background keeps blocked content out of view
+            window.isOpaque = true
+            window.backgroundColor = .windowBackgroundColor
+            window.invalidateShadow()
+            _ = WindowTransparency.applyWebviewTransparency(to: window)
+        }
+    }
+
     static func applyWindowNormalOverlayBehavior(
         windowPtr: Int,
         orderFront: Bool

@@ -112,13 +112,13 @@ pub fn apply_overlay_behavior(window: &WebviewWindow, config: &OverlayWindowConf
         return;
     }
 
-    if abstand_macos::apply_window_transparency(window_ptr) {
+    if abstand_macos::apply_window_opaque_background(window_ptr) {
         return;
     }
 
     log::debug!(
         target: LOG_TARGET,
-        "failed to apply native window transparency for {}",
+        "failed to apply native overlay background for {}",
         window_label
     );
 }

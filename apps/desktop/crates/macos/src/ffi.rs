@@ -1,7 +1,7 @@
 use swift_rs::{swift, Bool, Double, Int, SRString};
 
 swift!(pub fn abstand_macos_apply_window_liquid_glass(window_ptr: Int) -> Bool);
-swift!(pub fn abstand_macos_apply_window_transparency(window_ptr: Int) -> Bool);
+swift!(pub fn abstand_macos_apply_window_opaque_background(window_ptr: Int) -> Bool);
 swift!(pub fn abstand_macos_apply_window_normal_level(
     window_ptr: Int,
     order_front: Bool
