@@ -2,6 +2,8 @@
 
 pub mod args;
 pub mod commands;
+#[cfg(target_os = "macos")]
+pub mod control;
 pub mod error;
 mod installer;
 pub mod subcommands;
@@ -29,12 +31,19 @@ pub fn try_run_from_args() -> Option<i32> {
         }
         subcommands::activity::COMMAND => Some(exit_code(subcommands::activity::run(command_args))),
         #[cfg(target_os = "macos")]
+        subcommands::app::COMMAND => Some(exit_code(subcommands::app::run(command_args))),
+        #[cfg(target_os = "macos")]
+        subcommands::intention::COMMAND => {
+            Some(exit_code(subcommands::intention::run(command_args)))
+        }
+        #[cfg(target_os = "macos")]
+        "status" => Some(exit_code(subcommands::app::status(command_args))),
+        #[cfg(target_os = "macos")]
         subcommands::recovery_agent::COMMAND => {
             Some(exit_code(subcommands::recovery_agent::run(command_args)))
         }
-        // Treat unknown top-level flags as app-launch metadata rather than CLI errors.
-        // macOS/Tauri/packaging may pass flags like `-psn_...`, and this executable is
-        // primarily the desktop app launch target. Known CLI flags must be matched above.
+        // Note: Unknown flags may be app-launch metadata such as macOS's -psn_...
+        // Let Tauri handle them so normal app startup still works
         command if command.starts_with("-") => None,
         _ => Some(exit_code(Err(CliError::unknown_command(
             "top-level",
@@ -60,7 +69,12 @@ fn print_help() {
         "  version           Print the Abstand CLI version.",
     ];
     #[cfg(target_os = "macos")]
-    commands.push("  recovery-agent    Manage the recovery agent.");
+    commands.extend([
+        "  app               Start the desktop app.",
+        "  intention         List, create, start, stop, or delete Intentions.",
+        "  status            Print live app and session status as JSON.",
+        "  recovery-agent    Manage the recovery agent.",
+    ]);
 
     println!(
         "Usage:\n  {} <command> [options]\n\nCommands:\n{}",

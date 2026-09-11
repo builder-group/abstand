@@ -17,8 +17,10 @@ use super::{
     },
 };
 use crate::{
-    common::time::{to_local_datetime, unix_ms_now, DateOnly, TimeOnly},
-    common::url::WebsiteTarget,
+    common::{
+        time::{local_datetime_from_unix_ms, to_local_datetime, unix_ms_now, DateOnly, TimeOnly},
+        url::WebsiteTarget,
+    },
     modules::{
         catalog::repository::{UpsertAppInput, UpsertWebsiteInput},
         db::types::DatabaseState,
@@ -144,7 +146,7 @@ pub async fn create_intention(
     return Ok(intention);
 }
 
-#[derive(Debug, Clone, Deserialize, specta::Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateIntentionParams {
     pub name: String,
@@ -516,6 +518,11 @@ fn build_conditions(
                     })
                 }
                 WriteIntentionConditionRuleParams::AfterTransition(rule) => {
+                    // Note: Offsets must remain representable when added to a session timestamp
+                    unix_ms_now()
+                        .checked_add(rule.offset_ms)
+                        .and_then(local_datetime_from_unix_ms)
+                        .ok_or("Condition offset is too large")?;
                     IntentionConditionRule::AfterTransition(rule)
                 }
                 WriteIntentionConditionRuleParams::Manual => IntentionConditionRule::Manual,
@@ -556,14 +563,14 @@ fn validate_write_intention_input(input: &WriteIntentionInput) -> Result<(), Str
     return Ok(());
 }
 
-#[derive(Debug, Clone, Deserialize, specta::Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum WriteIntentionBehaviorParams {
     Block(WriteIntentionBlockParams),
     Break,
 }
 
-#[derive(Debug, Clone, Deserialize, specta::Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct WriteIntentionBlockParams {
     pub enforcement_mode: IntentionEnforcementMode,
@@ -572,14 +579,14 @@ pub struct WriteIntentionBlockParams {
     pub targets: Vec<WriteIntentionBlockTargetParams>,
 }
 
-#[derive(Debug, Clone, Deserialize, specta::Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum WriteIntentionBlockTargetParams {
     App(WriteIntentionBlockAppTargetParams),
     Website(WriteIntentionBlockWebsiteTargetParams),
 }
 
-#[derive(Debug, Clone, Deserialize, specta::Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct WriteIntentionBlockAppTargetParams {
     pub action: IntentionBlockTargetAction,
@@ -591,7 +598,7 @@ pub struct WriteIntentionBlockAppTargetParams {
     pub color: Option<String>,
 }
 
-#[derive(Debug, Clone, Deserialize, specta::Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct WriteIntentionBlockWebsiteTargetParams {
     pub action: IntentionBlockTargetAction,
@@ -602,14 +609,14 @@ pub struct WriteIntentionBlockWebsiteTargetParams {
     pub color: Option<String>,
 }
 
-#[derive(Debug, Clone, Deserialize, specta::Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct WriteIntentionConditionParams {
     pub transition: IntentionConditionTransition,
     pub rule: WriteIntentionConditionRuleParams,
 }
 
-#[derive(Debug, Clone, Deserialize, specta::Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum WriteIntentionConditionRuleParams {
     Schedule(IntentionConditionScheduleRule),
@@ -618,7 +625,7 @@ pub enum WriteIntentionConditionRuleParams {
     Manual,
 }
 
-#[derive(Debug, Clone, Deserialize, specta::Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct WriteIntentionConditionDateTimeRuleParams {
     pub date_epoch_days: DateOnly,
@@ -626,3 +633,25 @@ pub struct WriteIntentionConditionDateTimeRuleParams {
 }
 
 const LOG_TARGET: &str = "modules::intentions::commands";
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn condition_offsets_must_produce_representable_timestamps() {
+        for (offset_ms, valid) in [(1_800_000, true), (i64::MAX, false), (i64::MAX / 2, false)] {
+            let result = build_conditions(vec![WriteIntentionConditionParams {
+                transition: IntentionConditionTransition::End,
+                rule: WriteIntentionConditionRuleParams::AfterTransition(
+                    IntentionConditionAfterTransitionRule {
+                        anchor_transition: IntentionConditionTransition::Start,
+                        offset_ms,
+                    },
+                ),
+            }]);
+
+            assert_eq!(result.is_ok(), valid, "offset: {}", offset_ms);
+        }
+    }
+}

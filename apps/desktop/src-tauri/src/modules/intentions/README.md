@@ -12,7 +12,7 @@ query timed conditions -> evaluate due and next -> apply due -> reevaluate if st
 
 The scheduler does not own intention state. It stores one in-memory wakeup for the closest known timed condition. When that wakeup fires, the runtime reevaluates the database again before applying anything.
 
-Manual activation does not go through timed scheduling. Frontend commands call `start_intention`, `complete_intention`, or `stop_intention`, and the runtime reevaluates timed conditions after the session transition.
+Manual activation does not go through timed scheduling. Desktop commands call `start_intention`, `complete_intention`, or `stop_intention`, and the runtime reevaluates timed conditions after the session transition.
 
 ## Design decisions
 

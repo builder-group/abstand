@@ -66,6 +66,7 @@ The word is German for distance. That is exactly what it creates.
 - Block apps, websites, or the whole Mac
 - Choose casual, balanced, or strict enforcement
 - Keep Abstand data on your device
+- Manage blocks and inspect activity from the [command line](apps/desktop/src-tauri/src/cli/README.md)
 - Open source under AGPL v3
 
 ## How it works

@@ -180,7 +180,7 @@ fn parse_local_date(value: &str) -> Result<NaiveDate, CliError> {
     });
 }
 
-fn parse_duration_ms(value: &str) -> Result<i64, CliError> {
+pub fn parse_duration_ms(value: &str) -> Result<i64, CliError> {
     let (amount, multiplier) = if let Some(amount) = value.strip_suffix("ms") {
         (amount, 1)
     } else if let Some(amount) = value.strip_suffix('s') {

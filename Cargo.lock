@@ -14,6 +14,7 @@ version = "0.1.25"
 dependencies = [
  "abstand-macos",
  "chrono",
+ "libc",
  "log",
  "mado",
  "nucleo-matcher",
@@ -24,6 +25,7 @@ dependencies = [
  "sqlx",
  "tauri",
  "tauri-build",
+ "tauri-codegen",
  "tauri-plugin-autostart",
  "tauri-plugin-log",
  "tauri-plugin-opener",
