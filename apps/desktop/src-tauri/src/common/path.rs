@@ -26,6 +26,27 @@ pub fn paths_equal(left: &Path, right: &Path) -> bool {
     return left.is_some() && left == right;
 }
 
+/// Returns the surrounding macOS app bundle for an executable in `Contents/MacOS`.
+#[cfg(target_os = "macos")]
+pub fn app_bundle_for_executable(executable_path: &Path) -> Option<PathBuf> {
+    let macos_dir = executable_path.parent()?;
+    if macos_dir.file_name()? != "MacOS" {
+        return None;
+    }
+
+    let contents_dir = macos_dir.parent()?;
+    if contents_dir.file_name()? != "Contents" {
+        return None;
+    }
+
+    let app_bundle_path = contents_dir.parent()?;
+    if app_bundle_path.extension()? != "app" {
+        return None;
+    }
+
+    return Some(app_bundle_path.to_path_buf());
+}
+
 /// Creates a symlink from `link` to `target`.
 #[cfg(unix)]
 pub fn create_symlink(target: &Path, link: &Path) -> io::Result<()> {
@@ -45,6 +66,8 @@ pub fn create_symlink(_target: &Path, _link: &Path) -> io::Result<()> {
 mod tests {
     use super::{paths_equal, resolve_link_target};
     use std::path::Path;
+    #[cfg(target_os = "macos")]
+    use std::path::PathBuf;
 
     #[test]
     fn resolves_absolute_link_targets_as_is() {
@@ -79,5 +102,25 @@ mod tests {
             Path::new("/definitely/missing/abstand-a"),
             Path::new("/definitely/missing/abstand-b")
         ));
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn resolves_app_bundle_for_packaged_executable() {
+        assert_eq!(
+            super::app_bundle_for_executable(Path::new(
+                "/Applications/Abstand.app/Contents/MacOS/Abstand"
+            )),
+            Some(PathBuf::from("/Applications/Abstand.app"))
+        );
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn ignores_executables_outside_an_app_bundle() {
+        assert_eq!(
+            super::app_bundle_for_executable(Path::new("/Users/test/target/debug/abstand")),
+            None
+        );
     }
 }

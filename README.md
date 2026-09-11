@@ -66,6 +66,7 @@ The word is German for distance. That is exactly what it creates.
 - Block apps, websites, or the whole Mac
 - Choose casual, balanced, or strict enforcement
 - Keep Abstand data on your device
+- Manage blocks and inspect activity from the [command line](apps/desktop/src-tauri/src/cli/README.md)
 - Open source under AGPL v3
 
 ## How it works
@@ -82,20 +83,6 @@ The word is German for distance. That is exactly what it creates.
 - **Evening wind-down:** block your whole Mac from 8:00 PM so the workday actually ends
 - **Digital detox:** block social media apps and websites every day for 30 days
 - **Journaling:** allow only Notion for a 10-minute manual session
-
-## Command Line (macOS)
-
-Enable the command line tool in Settings and keep the desktop app running:
-
-```sh
-abs intention create --name "Study" --duration 30m --allow-app md.obsidian
-abs intention list
-abs intention start 1
-abs status
-abs intention stop 1
-```
-
-Use the ID returned by `create`. Creating an Intention does not start it. The CLI supports JSON configuration, updates, and deletion, and respects active enforcement rules. See the [CLI guide](apps/desktop/src-tauri/src/cli/README.md) for all commands and the local control protocol.
 
 ## Tech Stack
 

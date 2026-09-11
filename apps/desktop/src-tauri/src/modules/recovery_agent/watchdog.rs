@@ -1,5 +1,5 @@
 use super::recovery_condition::RecoveryConditionProbe;
-use crate::{cli, environment::configs::app::AppConfig};
+use crate::{cli, common::path::app_bundle_for_executable, environment::configs::app::AppConfig};
 use std::{
     error::Error,
     path::{Path, PathBuf},
@@ -68,7 +68,7 @@ impl AppLaunchTarget {
     /// Prefers the `.app` bundle so macOS applies normal app activation semantics,
     /// and falls back to the executable path for dev builds.
     fn resolve(executable_path: &Path) -> Self {
-        if let Some(app_bundle_path) = app_bundle_path_for_executable(executable_path) {
+        if let Some(app_bundle_path) = app_bundle_for_executable(executable_path) {
             return Self::AppBundle(app_bundle_path);
         }
 
@@ -98,47 +98,5 @@ impl AppLaunchTarget {
         }
 
         return Ok(());
-    }
-}
-
-/// Returns the `.app` bundle path for executables inside `Contents/MacOS`.
-fn app_bundle_path_for_executable(executable_path: &Path) -> Option<PathBuf> {
-    let macos_dir = executable_path.parent()?;
-    if macos_dir.file_name()? != "MacOS" {
-        return None;
-    }
-
-    let contents_dir = macos_dir.parent()?;
-    if contents_dir.file_name()? != "Contents" {
-        return None;
-    }
-
-    let app_bundle_path = contents_dir.parent()?;
-    if app_bundle_path.extension()? != "app" {
-        return None;
-    }
-
-    return Some(app_bundle_path.to_path_buf());
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn resolves_app_bundle_path_for_packaged_executable() {
-        let executable_path = Path::new("/Applications/Abstand.app/Contents/MacOS/Abstand");
-
-        assert_eq!(
-            app_bundle_path_for_executable(executable_path),
-            Some(PathBuf::from("/Applications/Abstand.app"))
-        );
-    }
-
-    #[test]
-    fn returns_none_for_non_app_bundle_executable() {
-        let executable_path = Path::new("/Users/test/abstand/target/debug/abstand");
-
-        assert_eq!(app_bundle_path_for_executable(executable_path), None);
     }
 }

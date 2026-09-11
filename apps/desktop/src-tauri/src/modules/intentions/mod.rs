@@ -3,7 +3,7 @@
 pub mod block_policy;
 pub mod commands;
 pub mod condition_timing;
-pub(crate) mod edit_policy;
+mod edit_policy;
 pub mod intention;
 pub mod repository;
 pub mod runtime;

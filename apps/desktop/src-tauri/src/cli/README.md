@@ -1,105 +1,173 @@
 # CLI
 
-The CLI entry point runs before Tauri starts. It handles command-line workflows without opening the desktop UI.
+Abstand ships a command-line interface as part of the desktop executable. The user-facing command is `abs`.
 
-## Install Path
+The executable handles CLI arguments before Tauri starts. Commands that need live enforcement state communicate with the running desktop app. Activity reporting reads persisted data without launching the app.
 
-The in-app "Command line tool" setting installs a symlink in:
+## Installation
+
+Enable the command-line tool in Abstand's settings. The app installs a symlink at:
 
 ```text
-~/.local/bin
+~/.local/bin/abs
 ```
 
-This is intentional. It is user-owned, reversible from a normal settings toggle, and does not require admin privileges.
+The install is user-owned and reversible without administrator privileges. Abstand does not write to `/usr/local/bin`. If `~/.local/bin` is not on `PATH`, the settings UI provides shell setup instructions.
 
-We do not install to `/usr/local/bin` from the app. That location is common for package managers and privileged installers, but it is often root-owned on macOS. Writing there from a settings toggle would require a separate privileged flow or a `sudo` instruction.
+Verify the installation with:
 
-If `~/.local/bin` is not on `PATH`, the frontend offers setup instructions after install. The copied instructions are written for humans and agents so they can configure the shell environment explicitly.
+```sh
+abs version
+abs help
+```
 
-## Intention Control (macOS)
+## Commands
 
-The running desktop app accepts Intention commands over a local Unix socket. Start the app before using these commands. The CLI and desktop app must come from a build that includes Intention control. Installing a newer CLI alone does not add control to an older running app.
+```text
+abs help
+abs version
+abs app start
+abs status
+abs activity foreground [options]
+abs intention <command>
+abs recovery-agent <command>
+```
+
+Run `abs help` or append `--help` to a command group for its syntax. `--help` and `-h` also print top-level usage. `--version` and `-V` print the CLI version.
+
+App, status, Intention, and recovery-agent commands are macOS-only.
+
+### App
+
+```sh
+abs app start
+```
+
+Starts the desktop app or shows the main window of an existing instance. The command returns after requesting the launch. Wait for the app to initialize before running a command that requires it.
+
+### Status
+
+```sh
+abs status
+```
+
+Prints the running app version, process ID, and active Intention sessions as JSON. The command fails when the desktop app is not running.
+
+### Activity
+
+```sh
+abs activity foreground
+abs activity foreground --since 30m
+abs activity foreground --today
+abs activity foreground --date 2026-09-11
+abs activity foreground --from <unix-ms> --to <unix-ms>
+```
+
+`activity foreground` prints foreground activity intervals as JSON. It reads the existing database without starting the desktop app and never writes to it.
+
+Without a time option, the command returns the last 24 hours. Use only one time mode:
+
+- `--since`: a positive duration ending now, with the suffix `ms`, `s`, `m`, `h`, or `d`
+- `--today`: the current local calendar day
+- `--date`: one local calendar day in `yyyy-mm-dd` format
+- `--from` and `--to`: an explicit Unix millisecond range
+
+Returned intervals are clipped to the requested range and the time at which the report was generated. See the [activity module](../modules/activity/README.md) for recording behavior and stored detail levels.
+
+### Intentions
+
+The desktop app must be running for Intention commands.
 
 ```sh
 abs intention list
-abs status
+abs intention show <id>
 abs intention create --name "Study" --duration 30m --allow-app md.obsidian
-abs intention show 1
-abs intention start 1
-abs intention stop 1
-abs intention delete 1
+abs intention start <id>
+abs intention stop <id>
+abs intention delete <id>
 ```
 
-Use the ID returned by `create` in subsequent commands. Creating an Intention saves it without starting a session. The flag-based create command uses a manual start, a timed end, and Casual enforcement by default. `--mode` also accepts `balanced` and `strict`.
+Creating an Intention saves it with a manual start and a timed end. It does not start a session. Durations use a positive integer with `ms`, `s`, `m`, `h`, or `d`. The app rejects durations beyond its supported timestamp range.
 
-Targets are repeatable: `--allow-app`, `--block-app`, `--allow-site`, and `--block-site`. Apps use bundle IDs, such as `md.obsidian`, rather than display names or executable paths. If allow and block targets are mixed, specify `--scope allow` or `--scope block` to identify the base policy. Website targets use hostnames; use the JSON format for path-specific exceptions.
+Casual Enforcement is the default. Use `--mode balanced` or `--mode strict` to choose another mode. CLI-created Balanced Intentions use a 15-second confirmation pause.
 
-Durations require a positive integer and a suffix: `ms`, `s`, `m`, `h`, or `d`. Successful commands write JSON to stdout. Failures write a diagnostic to stderr and return exit code 1. Run `abs intention --help` for usage.
+Targets can be repeated:
 
-### Structured Configuration
+```text
+--allow-app <bundle-id>
+--block-app <bundle-id>
+--allow-site <hostname>
+--block-site <hostname>
+```
 
-Use the same create/update payload shape as the desktop commands for schedules and other advanced conditions:
+App targets use bundle identifiers such as `md.obsidian`. Website targets use hostnames and include subdomains.
+
+The CLI selects `--scope allow` when all targets allow access, or `--scope block` when all targets block access. When mixing actions, specify the scope explicitly. Targets with the opposite action act as exceptions.
+
+Apps and websites are separate layers: in allow scope, a website is accessible only when its browser app is also allowed. See the [Intention module](../modules/intentions/README.md) for target precedence. Use the desktop UI to edit Intentions or configure other start and end conditions.
+
+The CLI uses the same validation and lifecycle operations as the desktop UI. Active Strict block Intentions cannot be stopped or deleted. Actions that require Balanced confirmation must be completed in the UI. There is no force option.
+
+### Recovery Agent
 
 ```sh
-abs intention create --file intention.json
-abs intention update 1 --file intention.json
-cat intention.json | abs intention create --file -
+abs recovery-agent status
+abs recovery-agent install
+abs recovery-agent uninstall
+abs recovery-agent plist-path
+abs recovery-agent run
 ```
 
-`update` replaces the configuration; it is not a partial patch. Its ID comes from the command line. Example `intention.json`:
+When enabled, the recovery agent keeps Abstand running while Balanced or Strict Enforcement is active. These commands inspect or manage its per-user LaunchAgent. `recovery-agent run` is the watchdog entry point used by launchd and is not intended for normal interactive use.
 
-```json
-{
-  "name": "Study",
-  "behavior": {
-    "type": "block",
-    "enforcementMode": "casual",
-    "balancedDelayMs": 15000,
-    "scope": "allowTargets",
-    "targets": [
-      {
-        "type": "app",
-        "action": "allow",
-        "stableId": "md.obsidian",
-        "bundleId": "md.obsidian",
-        "name": "Obsidian"
-      }
-    ]
-  },
-  "conditions": [
-    { "transition": "start", "rule": { "type": "manual" } },
-    {
-      "transition": "end",
-      "rule": {
-        "type": "afterTransition",
-        "anchorTransition": "start",
-        "offsetMs": 1800000
-      }
-    }
-  ]
-}
+See the [recovery-agent module](../modules/recovery_agent/README.md) for its lifecycle and enforcement contract.
+
+## Output and Errors
+
+Activity, status, and successful Intention commands print pretty JSON to standard output. App and recovery-agent management commands print short text results.
+
+| Command | JSON output |
+| --- | --- |
+| `intention list` | Array of Intentions |
+| `intention show`, `intention create` | Intention |
+| `intention start`, `intention stop` | Session |
+| `intention delete` | `{ "deleted": <id> }` |
+| `status` | `version`, `pid`, and an array of active `sessions` |
+
+Starting an active Intention returns its existing session. When no sessions are active, `status` returns an empty `sessions` array.
+
+The CLI writes argument errors and runtime failures to standard error and returns exit code `1`. Help and successful commands return exit code `0`.
+
+A lost response does not prove that a mutation failed. Check `abs status` or `abs intention list` before retrying a start, stop, create, or delete operation.
+
+## Local Control Transport
+
+Commands that require live app state use the local control transport. Status and Intention commands currently use it. `activity foreground` reads persisted data directly.
+
+The running app listens on:
+
+```text
+~/Library/Application Support/<bundle-id>/cli/control.sock
 ```
 
-### Runtime and Enforcement
+The socket directory uses owner-only mode `0700`. The socket uses owner-only read/write mode `0600`. Development and production builds use their respective bundle identifiers. No TCP port is opened.
 
-The server calls the existing desktop command handlers. Validation, database writes, scheduler reevaluation, tray refreshes, and frontend events use the same path as GUI actions. The CLI never writes the database directly.
+Each connection carries one newline-delimited JSON request and one response. Messages have bounded sizes and I/O timeouts. The app handles requests sequentially on a dedicated thread and reclaims a stale socket only when it refuses a connection. It never replaces a non-socket path.
 
-Active Strict Intentions retain the backend restrictions on stopping, deleting, or weakening them. Operations requiring a Balanced confirmation must be performed in the GUI. Casual sessions can be stopped immediately. There is no force option.
+The protocol is private to the matching app and CLI build. Restart the desktop app after updating the executable so both use the same protocol.
 
-App and website blocking still use Abstand's existing mechanism. An allowlist is not a network firewall and does not disconnect the Mac or prevent all network requests from an allowed app.
+## Development
 
-### Transport
+The CLI implementation lives in this directory:
 
-The socket is `~/Library/Application Support/<bundle-id>/cli/control.sock`. The directory is mode `0700`, and the socket is mode `0600`. Development and production builds use their respective bundle IDs. Requests are newline-delimited JSON with a 1 MiB limit, and the server serializes CLI operations on a dedicated worker thread. Incomplete input and idle connections are bounded by read limits and timeouts. No TCP port is opened.
+- `mod.rs`: top-level routing before Tauri startup
+- `subcommands/`: command parsing and execution
+- `control/`: typed local-control protocol, client, and app-hosted server
+- `installer.rs`: `~/.local/bin/abs` symlink management
 
-A stale socket is reclaimed on startup only when the old server refuses a connection. Other files are never replaced. Connection failures are reported without silently starting a second app. A lost response does not imply that a mutation failed: inspect `status` and `intention list` before retrying.
-
-### Validation
+For Rust-only CLI changes, run:
 
 ```sh
 cargo test -p abstand --lib
-cargo build -p abstand
-python3 apps/desktop/scripts/cli-smoke-test.py target/debug/abstand
+cargo check -p abstand --bin abstand
 ```
-
-The smoke test requires the matching desktop build to be running. It creates uniquely named temporary Intentions targeting a nonexistent test app, exercises session transitions and enforcement, and deletes its test Intentions afterward. It does not block a real app or modify existing Intentions.

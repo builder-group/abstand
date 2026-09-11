@@ -31,9 +31,13 @@ pub fn try_run_from_args() -> Option<i32> {
         }
         subcommands::activity::COMMAND => Some(exit_code(subcommands::activity::run(command_args))),
         #[cfg(target_os = "macos")]
-        "intention" => Some(exit_code(subcommands::intention::run(command_args))),
+        subcommands::app::COMMAND => Some(exit_code(subcommands::app::run(command_args))),
         #[cfg(target_os = "macos")]
-        "status" => Some(exit_code(subcommands::intention::status(command_args))),
+        subcommands::intention::COMMAND => {
+            Some(exit_code(subcommands::intention::run(command_args)))
+        }
+        #[cfg(target_os = "macos")]
+        "status" => Some(exit_code(subcommands::app::status(command_args))),
         #[cfg(target_os = "macos")]
         subcommands::recovery_agent::COMMAND => {
             Some(exit_code(subcommands::recovery_agent::run(command_args)))
@@ -67,7 +71,8 @@ fn print_help() {
     ];
     #[cfg(target_os = "macos")]
     commands.extend([
-        "  intention         List, create, update, start, stop, or delete Intentions.",
+        "  app               Start the desktop app.",
+        "  intention         List, create, start, stop, or delete Intentions.",
         "  status            Print live app and session status as JSON.",
         "  recovery-agent    Manage the recovery agent.",
     ]);

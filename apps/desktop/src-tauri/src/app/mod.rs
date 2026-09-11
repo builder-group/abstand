@@ -160,6 +160,7 @@ pub fn run() {
             #[cfg(target_os = "macos")]
             tray::AppTray::setup(app)?;
             #[cfg(target_os = "macos")]
+            // Note: CLI control is optional, so setup failure must not prevent app startup
             if let Err(error) = cli::control::setup(app.handle()) {
                 log::error!("CLI control unavailable: {}", error);
             }
