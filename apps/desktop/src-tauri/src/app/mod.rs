@@ -159,6 +159,10 @@ pub fn run() {
             activity::setup(app);
             #[cfg(target_os = "macos")]
             tray::AppTray::setup(app)?;
+            #[cfg(target_os = "macos")]
+            if let Err(error) = cli::control::setup(app.handle()) {
+                log::error!("CLI control unavailable: {}", error);
+            }
 
             if !launch_at_login::cli::was_launched_at_login() {
                 let _ = window::AppWindow::Main.show(app.handle());
