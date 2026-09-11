@@ -77,7 +77,12 @@ extension TrayStatusItemAppearance {
     private static func activeDotLayer(for button: NSStatusBarButton)
         -> CALayer?
     {
-        return button.layer?.sublayers?.first { $0.name == activeDotLayerName }
+        for layer in button.layer?.sublayers ?? [] {
+            if layer.name == activeDotLayerName {
+                return layer
+            }
+        }
+        return nil
     }
 
     private static let activeDotLayerName = "AbstandActiveDot"
