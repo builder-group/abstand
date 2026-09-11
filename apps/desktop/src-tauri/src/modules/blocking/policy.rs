@@ -1,5 +1,5 @@
+use super::observation::ObservedTarget;
 use crate::modules::{
-    activity::focus::ActivityTarget,
     db::types::DatabaseState,
     intentions::{
         block_policy::{BlockPolicySubject, BlockPolicyTarget},
@@ -21,7 +21,7 @@ use tauri::{AppHandle, Manager};
 
 pub async fn evaluate_active_target(
     app: &AppHandle,
-    target: &ActivityTarget,
+    target: &ObservedTarget,
 ) -> Result<BlockingPolicyDecision, BlockingPolicyError> {
     let database_state = app.state::<DatabaseState>();
 
@@ -84,7 +84,7 @@ pub struct BlockingPolicyViolation {
 }
 
 fn evaluate_target(
-    target: &ActivityTarget,
+    target: &ObservedTarget,
     active_blocks: &[ActiveBlockIntention],
 ) -> BlockingPolicyDecision {
     // Note: Whole-device blocks represent the broadest active boundary, so they take priority
@@ -131,7 +131,7 @@ struct ActiveBlockIntention {
 
 fn blocked_target_for_block(
     block: &IntentionBlock,
-    target: &ActivityTarget,
+    target: &ObservedTarget,
 ) -> Option<BlockPolicyTarget> {
     let subject = subject_from_activity(target);
     let block_targets = target_set_from_block(block, IntentionBlockTargetAction::Block);
@@ -140,7 +140,7 @@ fn blocked_target_for_block(
     return subject.blocked_target(block.scope, &block_targets, &allow_targets);
 }
 
-fn subject_from_activity(target: &ActivityTarget) -> BlockPolicySubject {
+fn subject_from_activity(target: &ObservedTarget) -> BlockPolicySubject {
     return match (
         target.app_bundle_id.as_deref(),
         target.website_hostname.as_deref(),
@@ -209,10 +209,9 @@ impl From<IntentionSessionRepositoryError> for BlockingPolicyError {
 mod tests {
     use super::{
         evaluate_target, ActiveBlockIntention, BlockPolicyTarget, BlockingPolicyDecision,
-        BlockingPolicyViolation, IntentionBlock, IntentionBlockScope,
+        BlockingPolicyViolation, IntentionBlock, IntentionBlockScope, ObservedTarget,
     };
     use crate::modules::{
-        activity::focus::ActivityTarget,
         catalog::types::{App, Website},
         intentions::intention::{
             IntentionBlockAppTarget, IntentionBlockTargetAction, IntentionBlockWebsiteTarget,
@@ -627,16 +626,16 @@ mod tests {
         };
     }
 
-    fn website_target(hostname: &str, path: Option<&str>) -> ActivityTarget {
-        return ActivityTarget {
+    fn website_target(hostname: &str, path: Option<&str>) -> ObservedTarget {
+        return ObservedTarget {
             app_bundle_id: Some("com.apple.Safari".to_string()),
             website_hostname: Some(hostname.to_string()),
             website_path: path.map(str::to_string),
         };
     }
 
-    fn app_target(bundle_id: &str) -> ActivityTarget {
-        return ActivityTarget {
+    fn app_target(bundle_id: &str) -> ObservedTarget {
+        return ObservedTarget {
             app_bundle_id: Some(bundle_id.to_string()),
             website_hostname: None,
             website_path: None,

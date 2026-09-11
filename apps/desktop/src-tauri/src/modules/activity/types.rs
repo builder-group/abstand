@@ -1,26 +1,33 @@
+use super::recorder::ForegroundActivityRecorderError;
 use mado::WindowEvent;
-use tokio::sync::mpsc;
+use tokio::sync::{mpsc, oneshot};
 
 // MARK: - State
 
 pub struct ForegroundActivityRecorderState {
-    sender: mpsc::UnboundedSender<ForegroundActivityRecordEvent>,
+    sender: mpsc::UnboundedSender<ForegroundActivityRecorderMessage>,
 }
 
 impl ForegroundActivityRecorderState {
-    pub fn new(sender: mpsc::UnboundedSender<ForegroundActivityRecordEvent>) -> Self {
+    pub fn new(sender: mpsc::UnboundedSender<ForegroundActivityRecorderMessage>) -> Self {
         return Self { sender };
     }
 
     pub fn enqueue(
         &self,
-        event: ForegroundActivityRecordEvent,
-    ) -> Result<(), mpsc::error::SendError<ForegroundActivityRecordEvent>> {
+        event: ForegroundActivityRecorderMessage,
+    ) -> Result<(), mpsc::error::SendError<ForegroundActivityRecorderMessage>> {
         return self.sender.send(event);
     }
 }
 
-pub struct ForegroundActivityRecordEvent {
-    pub event: WindowEvent,
-    pub occurred_at: i64,
+pub enum ForegroundActivityRecorderMessage {
+    Window {
+        event: WindowEvent,
+        occurred_at: i64,
+    },
+    Close {
+        ended_at: i64,
+        reply: oneshot::Sender<Result<(), ForegroundActivityRecorderError>>,
+    },
 }

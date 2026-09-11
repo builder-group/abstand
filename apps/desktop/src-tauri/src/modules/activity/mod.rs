@@ -1,6 +1,5 @@
-//! Observes focused app, window, and browser activity.
+//! Observes app and window changes and records foreground activity.
 
-pub mod focus;
 pub mod foreground;
 mod heartbeat;
 pub mod monitor;

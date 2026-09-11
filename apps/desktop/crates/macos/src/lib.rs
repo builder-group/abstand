@@ -19,9 +19,14 @@ use swift_rs::{Int, SRString};
 
 /// Applies native Liquid Glass and requests hosted WKWebView transparency.
 ///
-/// Returns `false` if the window pointer is invalid, the platform is unsupported,
+/// Returns `false` if the window pointer is null, the platform is unsupported,
 /// or Liquid Glass is unavailable.
-pub fn apply_window_liquid_glass(window_ptr: *mut c_void) -> bool {
+///
+/// # Safety
+///
+/// On macOS, a non-null `window_ptr` must reference a live `NSWindow` that remains
+/// valid until this synchronous call returns.
+pub unsafe fn apply_window_liquid_glass(window_ptr: *mut c_void) -> bool {
     #[cfg(target_os = "macos")]
     {
         if window_ptr.is_null() {
@@ -40,8 +45,13 @@ pub fn apply_window_liquid_glass(window_ptr: *mut c_void) -> bool {
 
 /// Applies an opaque system background and requests hosted WKWebView transparency.
 ///
-/// Returns `false` if the window pointer is invalid or the platform is unsupported.
-pub fn apply_window_opaque_background(window_ptr: *mut c_void) -> bool {
+/// Returns `false` if the window pointer is null or the platform is unsupported.
+///
+/// # Safety
+///
+/// On macOS, a non-null `window_ptr` must reference a live `NSWindow` that remains
+/// valid until this synchronous call returns.
+pub unsafe fn apply_window_opaque_background(window_ptr: *mut c_void) -> bool {
     #[cfg(target_os = "macos")]
     {
         if window_ptr.is_null() {
@@ -59,7 +69,12 @@ pub fn apply_window_opaque_background(window_ptr: *mut c_void) -> bool {
 }
 
 /// Applies the normal native window level.
-pub fn apply_window_normal_level(window_ptr: *mut c_void, order_front: bool) -> bool {
+///
+/// # Safety
+///
+/// On macOS, a non-null `window_ptr` must reference a live `NSWindow` that remains
+/// valid until this synchronous call returns.
+pub unsafe fn apply_window_normal_level(window_ptr: *mut c_void, order_front: bool) -> bool {
     #[cfg(target_os = "macos")]
     {
         if window_ptr.is_null() {
@@ -80,7 +95,12 @@ pub fn apply_window_normal_level(window_ptr: *mut c_void, order_front: bool) -> 
 }
 
 /// Applies the floating native window level.
-pub fn apply_window_floating_level(window_ptr: *mut c_void, order_front: bool) -> bool {
+///
+/// # Safety
+///
+/// On macOS, a non-null `window_ptr` must reference a live `NSWindow` that remains
+/// valid until this synchronous call returns.
+pub unsafe fn apply_window_floating_level(window_ptr: *mut c_void, order_front: bool) -> bool {
     #[cfg(target_os = "macos")]
     {
         if window_ptr.is_null() {
@@ -101,7 +121,12 @@ pub fn apply_window_floating_level(window_ptr: *mut c_void, order_front: bool) -
 }
 
 /// Applies the screen-saver native window level.
-pub fn apply_window_screen_saver_level(window_ptr: *mut c_void, order_front: bool) -> bool {
+///
+/// # Safety
+///
+/// On macOS, a non-null `window_ptr` must reference a live `NSWindow` that remains
+/// valid until this synchronous call returns.
+pub unsafe fn apply_window_screen_saver_level(window_ptr: *mut c_void, order_front: bool) -> bool {
     #[cfg(target_os = "macos")]
     {
         if window_ptr.is_null() {
@@ -122,7 +147,15 @@ pub fn apply_window_screen_saver_level(window_ptr: *mut c_void, order_front: boo
 }
 
 /// Applies native behavior for overlay windows that should stay at the normal app level.
-pub fn apply_window_normal_overlay_behavior(window_ptr: *mut c_void, order_front: bool) -> bool {
+///
+/// # Safety
+///
+/// On macOS, a non-null `window_ptr` must reference a live `NSWindow` that remains
+/// valid until this synchronous call returns.
+pub unsafe fn apply_window_normal_overlay_behavior(
+    window_ptr: *mut c_void,
+    order_front: bool,
+) -> bool {
     #[cfg(target_os = "macos")]
     {
         if window_ptr.is_null() {
@@ -146,7 +179,15 @@ pub fn apply_window_normal_overlay_behavior(window_ptr: *mut c_void, order_front
 }
 
 /// Applies native behavior for overlay windows that should stay above normal app windows.
-pub fn apply_window_floating_overlay_behavior(window_ptr: *mut c_void, order_front: bool) -> bool {
+///
+/// # Safety
+///
+/// On macOS, a non-null `window_ptr` must reference a live `NSWindow` that remains
+/// valid until this synchronous call returns.
+pub unsafe fn apply_window_floating_overlay_behavior(
+    window_ptr: *mut c_void,
+    order_front: bool,
+) -> bool {
     #[cfg(target_os = "macos")]
     {
         if window_ptr.is_null() {
@@ -170,7 +211,12 @@ pub fn apply_window_floating_overlay_behavior(window_ptr: *mut c_void, order_fro
 }
 
 /// Applies native behavior for overlay windows that must appear above fullscreen spaces and the menu bar.
-pub fn apply_window_screen_overlay_behavior(window_ptr: *mut c_void) -> bool {
+///
+/// # Safety
+///
+/// On macOS, a non-null `window_ptr` must reference a live `NSWindow` that remains
+/// valid until this synchronous call returns.
+pub unsafe fn apply_window_screen_overlay_behavior(window_ptr: *mut c_void) -> bool {
     #[cfg(target_os = "macos")]
     {
         if window_ptr.is_null() {
@@ -329,4 +375,96 @@ pub struct TrayStatusItemAppearance {
 #[cfg(target_os = "macos")]
 fn borrowed_native_object_ptr<T>(object: &T) -> *mut c_void {
     return std::ptr::from_ref(object).cast_mut().cast();
+}
+
+/// Maintains an overlay above its target at the target's window level until detached.
+///
+/// Insets use logical points measured from the target's edges. The native tracker
+/// follows geometry and hides the overlay while its target is off screen.
+///
+/// # Safety
+///
+/// On macOS, a non-null `window_ptr` must reference a live `NSWindow` that remains
+/// valid until this synchronous call returns.
+pub unsafe fn order_overlay_above_target(
+    window_ptr: *mut c_void,
+    target_window_id: u32,
+    target_process_id: i32,
+    top: f64,
+    left: f64,
+    bottom: f64,
+    right: f64,
+) -> bool {
+    #[cfg(target_os = "macos")]
+    {
+        if window_ptr.is_null() {
+            return false;
+        }
+        return unsafe {
+            ffi::abstand_macos_order_overlay_above_target(
+                window_ptr as Int,
+                target_window_id,
+                target_process_id,
+                top,
+                left,
+                bottom,
+                right,
+            )
+        };
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = (
+            window_ptr,
+            target_window_id,
+            target_process_id,
+            top,
+            left,
+            bottom,
+            right,
+        );
+        return false;
+    }
+}
+
+/// Stops following an overlay's target before the overlay is hidden or reused.
+///
+/// # Safety
+///
+/// On macOS, a non-null `window_ptr` must reference a live `NSWindow` that remains
+/// valid until this synchronous call returns.
+pub unsafe fn detach_overlay(window_ptr: *mut c_void) {
+    #[cfg(target_os = "macos")]
+    if !window_ptr.is_null() {
+        unsafe {
+            ffi::abstand_macos_detach_overlay(window_ptr as Int);
+        }
+    }
+    #[cfg(not(target_os = "macos"))]
+    let _ = window_ptr;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn window_operations_reject_null_pointers() {
+        let window = std::ptr::null_mut();
+        // Note: Null is an accepted failure case in the native window contract
+        unsafe {
+            assert!(!apply_window_liquid_glass(window));
+            assert!(!apply_window_opaque_background(window));
+            assert!(!apply_window_screen_overlay_behavior(window));
+            assert!(!apply_window_normal_level(window, false));
+            assert!(!apply_window_floating_level(window, false));
+            assert!(!apply_window_screen_saver_level(window, false));
+            assert!(!apply_window_normal_overlay_behavior(window, false));
+            assert!(!apply_window_floating_overlay_behavior(window, false));
+            assert!(!order_overlay_above_target(
+                window, 1, 1, 0.0, 0.0, 0.0, 0.0
+            ));
+            detach_overlay(window);
+        }
+    }
 }

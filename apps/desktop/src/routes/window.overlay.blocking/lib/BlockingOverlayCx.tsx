@@ -33,6 +33,14 @@ export class BlockingOverlayCx {
 
 	public mount(): () => void {
 		const lifecycle = createMountLifecycle();
+		let latestRequestId = 0;
+		const refreshViolation = async () => {
+			const requestId = ++latestRequestId;
+			const violation = await specta.commands.getBlockingViolation(this._key);
+			// Note: Overlapping refreshes can finish out of order
+			if (lifecycle.isUnmounted() || requestId !== latestRequestId) return;
+			this._applyViolation(violation);
+		};
 
 		void (async () => {
 			lifecycle.addCleanup(
@@ -40,9 +48,7 @@ export class BlockingOverlayCx {
 					if (payload.key !== this._key) {
 						return;
 					}
-					const violation = await specta.commands.getBlockingViolation(this._key);
-					if (lifecycle.isUnmounted()) return;
-					this._applyViolation(violation);
+					await refreshViolation();
 				})
 			);
 
@@ -58,9 +64,7 @@ export class BlockingOverlayCx {
 
 			// Fetch once after listeners are registered so changes between the route loader and subscription are not missed
 			if (this._key.length > 0) {
-				const violation = await specta.commands.getBlockingViolation(this._key);
-				if (lifecycle.isUnmounted()) return;
-				this._applyViolation(violation);
+				await refreshViolation();
 			}
 		})();
 
@@ -95,7 +99,16 @@ export class BlockingOverlayCx {
 	public async pauseOverlayTemporarily(): Promise<void> {
 		this.$isPausingOverlay.set(true);
 		try {
-			await specta.commands.pauseBlockingOverlay(this._key, PAUSE_BLOCKING_OVERLAY_DURATION_MS);
+			const [isPauseOk, pauseErr] = toTuple(
+				await specta.commands.pauseBlockingOverlay(this._key, PAUSE_BLOCKING_OVERLAY_DURATION_MS)
+			);
+			if (!isPauseOk) {
+				this._toastsCx.add({
+					type: 'error',
+					title: 'Could not pause overlay',
+					description: pauseErr
+				});
+			}
 		} finally {
 			this.$isPausingOverlay.set(false);
 		}

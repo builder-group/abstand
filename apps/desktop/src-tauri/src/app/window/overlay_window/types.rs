@@ -24,6 +24,7 @@ pub struct OverlayWindowConfig {
     pub bounds: Option<OverlayWindowBounds>,
     pub level: OverlayWindowLevel,
     pub order_front: bool,
+    pub target: Option<OverlayWindowTarget>,
 }
 
 impl OverlayWindowConfig {
@@ -33,6 +34,7 @@ impl OverlayWindowConfig {
             bounds,
             level: OverlayWindowLevel::Normal,
             order_front: true,
+            target: None,
         };
     }
 
@@ -42,6 +44,7 @@ impl OverlayWindowConfig {
             bounds,
             level: OverlayWindowLevel::Floating,
             order_front: true,
+            target: None,
         };
     }
 
@@ -51,8 +54,16 @@ impl OverlayWindowConfig {
             bounds,
             level: OverlayWindowLevel::ScreenSaver,
             order_front: false,
+            target: None,
         };
     }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct OverlayWindowTarget {
+    pub process_id: i32,
+    pub window_id: u32,
+    pub bounds: OverlayWindowBounds,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -95,7 +106,7 @@ impl OverlayWindowPoolState {
         return Self(Mutex::new(OverlayWindowPool::new()));
     }
 
-    pub fn acquire(&self, owner: OverlayWindowOwner) -> Option<OverlayWindow> {
+    pub fn acquire(&self, owner: OverlayWindowOwner) -> OverlayWindow {
         let mut pool = self.0.lock().unwrap();
         return pool.acquire(owner);
     }

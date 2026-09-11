@@ -39,3 +39,15 @@ swift!(pub fn abstand_macos_apply_status_item_appearance(
     status_item_ptr: Int,
     active_dot_visible: Bool
 ) -> Bool);
+
+swift!(pub fn abstand_macos_order_overlay_above_target(
+    window_ptr: Int,
+    target_window_id: u32,
+    target_process_id: i32,
+    top: Double,
+    left: Double,
+    bottom: Double,
+    right: Double
+) -> Bool);
+
+swift!(pub fn abstand_macos_detach_overlay(window_ptr: Int) -> Bool);

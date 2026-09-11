@@ -1,19 +1,16 @@
-use super::{focus::ActivityFocus, recorder};
+use super::recorder;
 use crate::{common::time::unix_ms_now, modules::blocking};
-use mado::{
-    MonitorConfig, QueryConfig, WindowEvent, WindowListener, WindowMonitor as MadoWindowMonitor,
-};
+use mado::{MonitorConfig, WindowEvent, WindowListener, WindowMonitor as MadoWindowMonitor};
 use tauri::AppHandle;
 
 pub fn start_monitoring(app: AppHandle) {
-    let tracks_window_changes = !cfg!(feature = "app-store") && mado::is_accessibility_trusted();
-    let listener = ActivityWindowListener::new(app, tracks_window_changes);
+    let tracks_window_changes = !cfg!(feature = "app-store");
+    let listener = ActivityWindowListener::new(app);
     let monitor = MadoWindowMonitor::with_config(
         listener,
         MonitorConfig {
-            // Note: mado fails without Accessibility here. If permission is granted later,
-            // window tracking starts after the monitor is rebuilt, which currently
-            // requires app restart.
+            // Note: Reconciliation recovers missed AX events and newly granted permission
+            reconcile_interval_ms: 2_000,
             track_window_changes: tracks_window_changes,
             track_window_bounds_changes: tracks_window_changes,
             include_browser_info: tracks_window_changes,
@@ -29,17 +26,12 @@ pub fn start_monitoring(app: AppHandle) {
         .spawn(move || {
             log::info!(
                 target: LOG_TARGET,
-                "Activity monitor started with window tracking {}",
+                "Activity monitor started with window tracking {} (requires Accessibility access)",
                 if tracks_window_changes { "enabled" } else { "disabled" }
             );
 
             if !tracks_window_changes {
-                let reason = if cfg!(feature = "app-store") {
-                    "Activity monitor cannot track focused windows or browser URLs in app-store builds"
-                } else {
-                    "Activity monitor cannot track focused windows or browser URLs without Accessibility permission"
-                };
-                log::warn!(target: LOG_TARGET, "{}", reason);
+                log::warn!(target: LOG_TARGET, "App Store builds support app activity only");
             }
 
             match monitor.run() {
@@ -58,40 +50,35 @@ pub fn start_monitoring(app: AppHandle) {
 
 struct ActivityWindowListener {
     app: AppHandle,
-    tracks_window_changes: bool,
+    blocking_events: tokio::sync::mpsc::UnboundedSender<WindowEvent>,
 }
 
 impl ActivityWindowListener {
-    fn new(app: AppHandle, tracks_window_changes: bool) -> Self {
+    fn new(app: AppHandle) -> Self {
+        let (blocking_events, mut events) = tokio::sync::mpsc::unbounded_channel();
+        let blocking_app = app.clone();
+        tauri::async_runtime::spawn(async move {
+            // Note: Preserve native event order across asynchronous policy checks
+            while let Some(event) = events.recv().await {
+                blocking::runtime::handle_window_event(&blocking_app, event).await;
+            }
+        });
         return Self {
             app,
-            tracks_window_changes,
+            blocking_events,
         };
     }
 }
 
 impl WindowListener for ActivityWindowListener {
     fn on_focus_change(&self, event: WindowEvent) {
-        let app = self.app.clone();
-        let blocking_event = event.clone();
-        let expects_window_update = self.tracks_window_changes;
-        tauri::async_runtime::spawn(async move {
-            blocking::runtime::handle_window_event(&app, blocking_event, expects_window_update)
-                .await;
-        });
+        if self.blocking_events.send(event.clone()).is_err() {
+            log::error!(target: LOG_TARGET, "Blocking event consumer stopped");
+        }
 
         // Note: Queue activity recording so async database writes do not reorder foreground intervals
         recorder::ForegroundActivityRecorder::enqueue_window_event(&self.app, event, unix_ms_now());
     }
-}
-
-pub fn get_current_focus() -> Result<ActivityFocus, mado::Error> {
-    let window = mado::get_active_window_with_config(QueryConfig {
-        include_browser_info: true,
-        ..Default::default()
-    })?;
-
-    return Ok(ActivityFocus::from_window_info(window));
 }
 
 const LOG_TARGET: &str = "modules::activity::monitor";

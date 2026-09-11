@@ -11,7 +11,7 @@ enum WindowPointer {
     }
 
     /// Resolves the window pointer and runs the action on the main thread.
-    /// Returns `false` if the pointer is invalid.
+    /// Returns `false` for a null pointer. Non-null pointers must reference a live NSWindow.
     static func withWindow(
         _ windowPtr: Int,
         perform action: @MainActor @escaping (NSWindow) -> Void

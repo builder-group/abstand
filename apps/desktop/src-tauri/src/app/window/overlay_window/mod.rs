@@ -48,17 +48,18 @@ pub fn handle_move_or_resize(window: &Window) {
 
 pub fn show(app: &AppHandle, owner: OverlayWindowOwner, config: OverlayWindowConfig) {
     let pool_state = app.state::<OverlayWindowPoolState>();
-    let Some(overlay_window) = pool_state.acquire(owner.clone()) else {
-        log::warn!(
-            target: LOG_TARGET,
-            "no overlay window available for owner {}",
-            owner.as_str()
-        );
-        return;
-    };
+    let overlay_window = pool_state.acquire(owner.clone());
 
     let app = app.clone();
     if let Err(error) = app.clone().run_on_main_thread(move || {
+        // Note: The owner may have released this window while the main-thread task was queued
+        if app
+            .state::<OverlayWindowPoolState>()
+            .window_for_owner(&owner)
+            != Some(overlay_window)
+        {
+            return;
+        }
         let app_window = AppWindow::Overlay(overlay_window);
         let window_label = overlay_window.label();
         let result: tauri::Result<()> = (|| {
@@ -71,10 +72,20 @@ pub fn show(app: &AppHandle, owner: OverlayWindowOwner, config: OverlayWindowCon
             )?;
 
             let pool_state = app.state::<OverlayWindowPoolState>();
-            pool_state.set_intended_bounds(overlay_window, config.bounds);
+            pool_state.set_intended_bounds(
+                overlay_window,
+                if config.target.is_some() {
+                    None
+                } else {
+                    config.bounds
+                },
+            );
             apply_config(&app_window, &window, &config, false, &window_label)?;
 
-            window.show()?;
+            // Note: Tauri's show makes the window key. Native attachment shows it without stealing browser focus.
+            if config.target.is_none() {
+                window.show()?;
+            }
             return Ok(());
         })();
 
@@ -103,6 +114,13 @@ pub fn update(app: &AppHandle, owner: OverlayWindowOwner, config: OverlayWindowC
 
     let app = app.clone();
     if let Err(error) = app.clone().run_on_main_thread(move || {
+        if app
+            .state::<OverlayWindowPoolState>()
+            .window_for_owner(&owner)
+            != Some(overlay_window)
+        {
+            return;
+        }
         let app_window = AppWindow::Overlay(overlay_window);
         let window_label = overlay_window.label();
         let result: tauri::Result<()> = (|| {
@@ -111,7 +129,14 @@ pub fn update(app: &AppHandle, owner: OverlayWindowOwner, config: OverlayWindowC
             };
 
             let pool_state = app.state::<OverlayWindowPoolState>();
-            pool_state.set_intended_bounds(overlay_window, config.bounds);
+            pool_state.set_intended_bounds(
+                overlay_window,
+                if config.target.is_some() {
+                    None
+                } else {
+                    config.bounds
+                },
+            );
             apply_config(&app_window, &window, &config, true, &window_label)?;
 
             return Ok(());
@@ -140,65 +165,39 @@ pub fn hide(app: &AppHandle, owner: OverlayWindowOwner) {
         return;
     };
 
-    hide_windows(app, vec![overlay_window]);
-}
-
-/// Hides the owner's overlay window immediately without scheduling another main-thread task.
-///
-/// Call this only from work already running on the main thread when the next operation must happen
-/// after the native hide attempt.
-pub fn hide_immediately(app: &AppHandle, owner: OverlayWindowOwner) {
-    let pool_state = app.state::<OverlayWindowPoolState>();
-    let Some(overlay_window) = pool_state.release(&owner) else {
-        return;
-    };
-
-    if let Err(error) = AppWindow::Overlay(overlay_window).hide(app) {
-        log::warn!(
+    let app_for_hide = app.clone();
+    if let Err(error) = app.run_on_main_thread(move || {
+        detach_overlay(&app_for_hide, overlay_window);
+        if let Err(error) = AppWindow::Overlay(overlay_window).hide(&app_for_hide) {
+            log::warn!(
+                target: LOG_TARGET,
+                "failed to hide overlay window {}: {}",
+                overlay_window.label(),
+                error
+            );
+        }
+        app_for_hide
+            .state::<OverlayWindowPoolState>()
+            .finish_release(overlay_window);
+    }) {
+        log::error!(
             target: LOG_TARGET,
-            "failed to hide overlay window {}: {}",
-            overlay_window.label(),
+            "failed to schedule overlay window hide: {}",
             error
         );
     }
-    pool_state.finish_release(overlay_window);
 }
 
 pub fn is_overlay_window_label(label: &str) -> bool {
     return label.starts_with(types::OVERLAY_WINDOW_LABEL_PREFIX);
 }
 
-fn hide_windows(app: &AppHandle, overlay_windows: Vec<OverlayWindow>) {
-    if overlay_windows.is_empty() {
-        return;
-    }
-
-    let released_windows = overlay_windows.clone();
-    let app_for_hide = app.clone();
-    let app_for_schedule = app.clone();
-    if let Err(error) = app_for_schedule.run_on_main_thread(move || {
-        let pool_state = app_for_hide.state::<OverlayWindowPoolState>();
-        for overlay_window in overlay_windows {
-            if let Err(error) = AppWindow::Overlay(overlay_window).hide(&app_for_hide) {
-                log::warn!(
-                    target: LOG_TARGET,
-                    "failed to hide overlay window {}: {}",
-                    overlay_window.label(),
-                    error
-                );
-            }
-            pool_state.finish_release(overlay_window);
+fn detach_overlay(app: &AppHandle, overlay_window: OverlayWindow) {
+    #[cfg(target_os = "macos")]
+    if let Some(window) = AppWindow::Overlay(overlay_window).get(app) {
+        if let Ok(window_ptr) = window.ns_window() {
+            unsafe { abstand_macos::detach_overlay(window_ptr) };
         }
-    }) {
-        let pool_state = app.state::<OverlayWindowPoolState>();
-        for overlay_window in released_windows {
-            pool_state.finish_release(overlay_window);
-        }
-        log::error!(
-            target: LOG_TARGET,
-            "failed to schedule overlay window hide: {}",
-            error
-        );
     }
 }
 
@@ -209,7 +208,8 @@ fn apply_config(
     replace_route: bool,
     window_label: &str,
 ) -> tauri::Result<()> {
-    if let Some(bounds) = config.bounds {
+    // Note: Attached overlays use current native geometry with insets derived from observed bounds
+    if let Some(bounds) = config.bounds.filter(|_| config.target.is_none()) {
         if let Err(error) = window.set_position(LogicalPosition::new(bounds.x, bounds.y)) {
             log::warn!(
                 target: LOG_TARGET,

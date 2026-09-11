@@ -13,23 +13,23 @@ use tauri_specta::Event;
 
 #[tauri::command]
 #[specta::specta]
-pub fn get_blocking_violation(app: AppHandle, key: String) -> Option<BlockingViolation> {
+pub async fn get_blocking_violation(app: AppHandle, key: String) -> Option<BlockingViolation> {
     let key = key.trim();
     if key.is_empty() {
         return None;
     }
 
     let runtime_state = app.state::<BlockingRuntimeState>();
-    return runtime_state
-        .lock()
-        .unwrap()
-        .active_violation(key)
-        .map(|active_violation| active_violation.violation());
+    return runtime_state.lock().unwrap().violation(key);
 }
 
 #[tauri::command]
 #[specta::specta]
-pub fn pause_blocking_overlay(app: AppHandle, key: String, duration_ms: u64) -> Result<(), String> {
+pub async fn pause_blocking_overlay(
+    app: AppHandle,
+    key: String,
+    duration_ms: u64,
+) -> Result<(), String> {
     if key.trim().is_empty() {
         return Err("Blocking overlay key is required".to_string());
     }
@@ -42,62 +42,69 @@ pub fn pause_blocking_overlay(app: AppHandle, key: String, duration_ms: u64) -> 
 
 #[tauri::command]
 #[specta::specta]
-pub fn show_blocking_intention(app: AppHandle, key: String) -> Result<(), String> {
-    let key = key.trim();
-    if key.is_empty() {
-        return Err("Blocking overlay key is required".to_string());
-    }
+pub async fn show_blocking_intention(app: AppHandle, key: String) -> Result<(), String> {
+    return tauri::async_runtime::spawn_blocking(move || {
+        let key = key.trim();
+        if key.is_empty() {
+            return Err("Blocking overlay key is required".to_string());
+        }
 
-    let active_violation = {
-        let runtime_state = app.state::<BlockingRuntimeState>();
-        let runtime = runtime_state.lock().unwrap();
-        runtime.active_violation(key)
-    };
-    let Some(active_violation) = active_violation else {
-        return Err("Blocking overlay not found".to_string());
-    };
+        let violation = {
+            let runtime_state = app.state::<BlockingRuntimeState>();
+            let runtime = runtime_state.lock().unwrap();
+            runtime.violation(key)
+        };
+        let Some(violation) = violation else {
+            return Err("Blocking overlay not found".to_string());
+        };
 
-    let violation = active_violation.violation();
-    let focused_level = match &violation.blocked_target {
-        // Note: Device blocks use screen-saver overlays, so Abstand must match that level while users edit the intention
-        #[cfg(target_os = "macos")]
-        BlockedTarget::Device { .. } => MainWindowFocusedLevel::ScreenSaver,
-        // Note: App and website blocks use floating overlays, so Abstand only needs to float while focused
-        _ => MainWindowFocusedLevel::Floating,
-    };
-    main_window::show_intention(&app, violation.intention_id, focused_level)
-        .map_err(|error| error.to_string())?;
+        let focused_level = match &violation.blocked_target {
+            // Note: Device blocks use screen-saver overlays, so Abstand must match that level while users edit the intention
+            #[cfg(target_os = "macos")]
+            BlockedTarget::Device { .. } => MainWindowFocusedLevel::ScreenSaver,
+            // Note: Floating while focused keeps Intention controls above ordinary target overlays
+            _ => MainWindowFocusedLevel::Floating,
+        };
+        main_window::show_intention(&app, violation.intention_id, focused_level)
+            .map_err(|error| error.to_string())?;
 
-    return Ok(());
+        return Ok(());
+    })
+    .await
+    .map_err(|error| error.to_string())?;
 }
 
 #[tauri::command]
 #[specta::specta]
-pub fn quit_blocked_app_by_bundle_id(
+pub async fn quit_blocked_app_by_bundle_id(
     app: AppHandle,
     bundle_id: String,
 ) -> Result<QuitBlockedAppByBundleIdResult, String> {
-    let bundle_id = bundle_id.trim();
-    if bundle_id.is_empty() {
-        return Err("Bundle id is required".to_string());
-    }
+    return tauri::async_runtime::spawn_blocking(move || {
+        let bundle_id = bundle_id.trim();
+        if bundle_id.is_empty() {
+            return Err("Bundle id is required".to_string());
+        }
 
-    if bundle_id == AppConfig::bundle_identifier() {
-        return Err("Cannot quit Abstand".to_string());
-    }
+        if bundle_id == AppConfig::bundle_identifier() {
+            return Err("Cannot quit Abstand".to_string());
+        }
 
-    let result = abstand_macos::request_app_quit(bundle_id);
-    if matches!(
-        result,
-        abstand_macos::AppQuitRequestResult::NotRunning
-            | abstand_macos::AppQuitRequestResult::Requested { .. }
-    ) {
-        // Note: terminate() only confirms the quit request was accepted.
-        // Clear the overlay after the process actually exits.
-        watch_blocked_app_quit(app, bundle_id.to_string());
-    }
+        let result = abstand_macos::request_app_quit(bundle_id);
+        if matches!(
+            result,
+            abstand_macos::AppQuitRequestResult::NotRunning
+                | abstand_macos::AppQuitRequestResult::Requested { .. }
+        ) {
+            // Note: terminate() only confirms the quit request was accepted.
+            // Clear the overlay after the process actually exits.
+            watch_blocked_app_quit(app, bundle_id.to_string());
+        }
 
-    return Ok(result.into());
+        return Ok(result.into());
+    })
+    .await
+    .map_err(|error| error.to_string())?;
 }
 
 fn watch_blocked_app_quit(app: AppHandle, bundle_id: String) {

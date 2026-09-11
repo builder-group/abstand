@@ -1,5 +1,4 @@
 import AppKit
-import ObjectiveC
 
 enum TrayStatusItemAppearance {
     static func apply(statusItemPtr: Int, activeDotVisible: Bool) -> Bool {
@@ -67,37 +66,21 @@ extension TrayStatusItemAppearance {
         if layer.superlayer == nil {
             buttonLayer.addSublayer(layer)
         }
-        setActiveDotLayer(layer, for: button)
 
         return true
     }
 
     private static func removeActiveDot(from button: NSStatusBarButton) {
         activeDotLayer(for: button)?.removeFromSuperlayer()
-        setActiveDotLayer(nil, for: button)
     }
 
     private static func activeDotLayer(for button: NSStatusBarButton)
         -> CALayer?
     {
-        return objc_getAssociatedObject(button, &activeDotLayerAssociationKey)
-            as? CALayer
-    }
-
-    private static func setActiveDotLayer(
-        _ layer: CALayer?,
-        for button: NSStatusBarButton
-    ) {
-        objc_setAssociatedObject(
-            button,
-            &activeDotLayerAssociationKey,
-            layer,
-            .OBJC_ASSOCIATION_RETAIN_NONATOMIC
-        )
+        return button.layer?.sublayers?.first { $0.name == activeDotLayerName }
     }
 
     private static let activeDotLayerName = "AbstandActiveDot"
     private static let activeDotSize: CGFloat = 5
     private static let activeDotInset: CGFloat = 3
-    private static var activeDotLayerAssociationKey: UInt8 = 0
 }

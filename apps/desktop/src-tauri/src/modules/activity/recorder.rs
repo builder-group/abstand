@@ -3,7 +3,7 @@ use super::heartbeat::ForegroundActivityHeartbeat;
 use super::repository::{
     ForegroundActivityRepository, ForegroundActivityRepositoryError, RecordForegroundActivityInput,
 };
-use super::types::{ForegroundActivityRecordEvent, ForegroundActivityRecorderState};
+use super::types::{ForegroundActivityRecorderMessage, ForegroundActivityRecorderState};
 use crate::{
     common::url::extract_hostname,
     modules::{
@@ -20,11 +20,11 @@ use crate::{
 use mado::{AppInfo, BrowserInfo, WindowEvent, WindowInfo};
 use std::fmt;
 use tauri::{App, AppHandle, Manager};
-use tokio::sync::mpsc;
+use tokio::sync::{mpsc, oneshot};
 
 pub struct ForegroundActivityRecorder {
     app: AppHandle,
-    receiver: mpsc::UnboundedReceiver<ForegroundActivityRecordEvent>,
+    receiver: mpsc::UnboundedReceiver<ForegroundActivityRecorderMessage>,
 }
 
 impl ForegroundActivityRecorder {
@@ -53,7 +53,7 @@ impl ForegroundActivityRecorder {
         };
 
         if recorder_state
-            .enqueue(ForegroundActivityRecordEvent { event, occurred_at })
+            .enqueue(ForegroundActivityRecorderMessage::Window { event, occurred_at })
             .is_err()
         {
             log::warn!(target: LOG_TARGET, "foreground activity recorder unavailable");
@@ -64,7 +64,21 @@ impl ForegroundActivityRecorder {
         app: &AppHandle,
         ended_at: i64,
     ) -> Result<(), ForegroundActivityRecorderError> {
-        let database_state = app.state::<DatabaseState>();
+        let recorder_state = app
+            .try_state::<ForegroundActivityRecorderState>()
+            .ok_or(ForegroundActivityRecorderError::Unavailable)?;
+        let (reply, completed) = oneshot::channel();
+        // Note: Close after pending writes so disabling recording cannot reopen the interval
+        recorder_state
+            .enqueue(ForegroundActivityRecorderMessage::Close { ended_at, reply })
+            .map_err(|_| ForegroundActivityRecorderError::Unavailable)?;
+        return completed
+            .await
+            .map_err(|_| ForegroundActivityRecorderError::Unavailable)?;
+    }
+
+    async fn close_interval(&self, ended_at: i64) -> Result<(), ForegroundActivityRecorderError> {
+        let database_state = self.app.state::<DatabaseState>();
         ForegroundActivityRepository::close_active(&database_state.pool, ended_at).await?;
         return Ok(());
     }
@@ -72,7 +86,7 @@ impl ForegroundActivityRecorder {
     async fn run(mut self) {
         let stale_activity_ended_at =
             ForegroundActivityHeartbeat::stale_activity_ended_at(&self.app).await;
-        if let Err(error) = Self::close_active(&self.app, stale_activity_ended_at).await {
+        if let Err(error) = self.close_interval(stale_activity_ended_at).await {
             log::warn!(target: LOG_TARGET, "failed to close stale foreground activity: {}", error);
         }
 
@@ -87,8 +101,15 @@ impl ForegroundActivityRecorder {
 
                     ForegroundActivityHeartbeat::record(&self.app).await;
 
-                    if let Err(error) = self.record_window_event(event).await {
-                        log::warn!(target: LOG_TARGET, "failed to record foreground activity: {}", error);
+                    match event {
+                        ForegroundActivityRecorderMessage::Window { event, occurred_at } => {
+                            if let Err(error) = self.record_window_event(event, occurred_at).await {
+                                log::warn!(target: LOG_TARGET, "failed to record foreground activity: {}", error);
+                            }
+                        }
+                        ForegroundActivityRecorderMessage::Close { ended_at, reply } => {
+                            let _ = reply.send(self.close_interval(ended_at).await);
+                        }
                     }
                 }
                 _ = heartbeat.tick() => {
@@ -100,9 +121,10 @@ impl ForegroundActivityRecorder {
 
     async fn record_window_event(
         &self,
-        event: ForegroundActivityRecordEvent,
+        event: WindowEvent,
+        occurred_at: i64,
     ) -> Result<(), ForegroundActivityRecorderError> {
-        if should_skip_activity_recording(&event.event) {
+        if should_skip_activity_recording(&event) {
             return Ok(());
         }
 
@@ -115,15 +137,10 @@ impl ForegroundActivityRecorder {
             return Ok(());
         }
 
-        let next_activity = build_activity_input(
-            &self.app,
-            &event.event,
-            settings.foreground,
-            event.occurred_at,
-        )
-        .await?;
+        let next_activity =
+            build_activity_input(&self.app, &event, settings.foreground, occurred_at).await?;
         let Some(next_activity) = next_activity else {
-            Self::close_active(&self.app, event.occurred_at).await?;
+            self.close_interval(occurred_at).await?;
             return Ok(());
         };
 
@@ -158,18 +175,17 @@ async fn build_activity_input(
                     .await?,
             ))
         }
-        WindowEvent::WindowBoundsChanged { .. } => Ok(None),
+        WindowEvent::WindowBoundsChanged { .. } | WindowEvent::WindowUpdated { .. } => Ok(None),
         WindowEvent::WindowMinimized { .. } | WindowEvent::WindowDestroyed { .. } => Ok(None),
         WindowEvent::WindowRestored { .. } => Ok(None),
     };
 }
 
 fn should_skip_activity_recording(event: &WindowEvent) -> bool {
-    return matches!(
+    // Note: Lifecycle events also describe background windows and must not end foreground activity
+    return !matches!(
         event,
-        WindowEvent::AppTerminated { .. }
-            | WindowEvent::WindowBoundsChanged { .. }
-            | WindowEvent::WindowRestored { .. }
+        WindowEvent::AppActivated { .. } | WindowEvent::WindowChanged { .. }
     );
 }
 
@@ -354,6 +370,7 @@ async fn ensure_browser_website(
 
 #[derive(Debug)]
 pub enum ForegroundActivityRecorderError {
+    Unavailable,
     Catalog(CatalogRepositoryError),
     Repository(ForegroundActivityRepositoryError),
 }
@@ -361,6 +378,7 @@ pub enum ForegroundActivityRecorderError {
 impl fmt::Display for ForegroundActivityRecorderError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         return match self {
+            Self::Unavailable => write!(f, "Foreground activity recorder unavailable"),
             Self::Catalog(error) => write!(f, "{}", error),
             Self::Repository(error) => write!(f, "{}", error),
         };
@@ -380,3 +398,59 @@ impl From<ForegroundActivityRepositoryError> for ForegroundActivityRecorderError
 }
 
 const LOG_TARGET: &str = "modules::activity::recorder";
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use mado::{WindowBoundsChange, WindowLifecycleChange};
+
+    #[test]
+    fn only_foreground_events_change_recorded_activity() {
+        let app = AppInfo {
+            pid: 42,
+            name: None,
+            bundle_id: None,
+            process_path: None,
+            icon: None,
+        };
+        let window = WindowInfo {
+            app: app.clone(),
+            window_id: Some(7),
+            title: None,
+            bounds: None,
+            browser: None,
+        };
+        let lifecycle = WindowLifecycleChange {
+            app: app.clone(),
+            window_id: Some(7),
+        };
+        for event in [
+            WindowEvent::AppActivated { app: app.clone() },
+            WindowEvent::WindowChanged {
+                window: window.clone(),
+            },
+        ] {
+            assert!(!should_skip_activity_recording(&event), "{event:?}");
+        }
+        for event in [
+            WindowEvent::AppTerminated { app: app.clone() },
+            WindowEvent::WindowUpdated { window },
+            WindowEvent::WindowBoundsChanged {
+                window: WindowBoundsChange {
+                    app,
+                    window_id: Some(7),
+                    bounds: None,
+                },
+            },
+            WindowEvent::WindowMinimized {
+                window: lifecycle.clone(),
+            },
+            WindowEvent::WindowRestored {
+                window: lifecycle.clone(),
+            },
+            WindowEvent::WindowDestroyed { window: lifecycle },
+        ] {
+            assert!(should_skip_activity_recording(&event), "{event:?}");
+        }
+    }
+}

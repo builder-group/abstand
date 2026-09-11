@@ -1,7 +1,8 @@
-//! Evaluates and applies block intention decisions from activity focus events.
+//! Evaluates and applies block intention decisions from app and window observations.
 
 pub mod commands;
 mod enrichment;
+mod observation;
 mod overlay;
 mod policy;
 pub mod runtime;

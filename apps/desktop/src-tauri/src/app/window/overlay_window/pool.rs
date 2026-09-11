@@ -1,7 +1,6 @@
 use super::types::{OverlayWindow, OverlayWindowBounds, OverlayWindowOwner};
 
 pub struct OverlayWindowPool {
-    max_windows: usize,
     next_id: u32,
     windows: Vec<PooledOverlayWindow>,
 }
@@ -9,19 +8,18 @@ pub struct OverlayWindowPool {
 impl OverlayWindowPool {
     pub fn new() -> Self {
         return Self {
-            max_windows: MAX_OVERLAY_WINDOWS,
             next_id: 0,
             windows: Vec::new(),
         };
     }
 
-    pub fn acquire(&mut self, owner: OverlayWindowOwner) -> Option<OverlayWindow> {
+    pub fn acquire(&mut self, owner: OverlayWindowOwner) -> OverlayWindow {
         if let Some(window) = self
             .windows
             .iter()
             .find(|window| window.owner.as_ref() == Some(&owner))
         {
-            return Some(window.window);
+            return window.window;
         }
 
         if let Some(window) = self
@@ -31,11 +29,7 @@ impl OverlayWindowPool {
         {
             window.owner = Some(owner);
             window.intended_bounds = None;
-            return Some(window.window);
-        }
-
-        if self.windows.len() >= self.max_windows {
-            return None;
+            return window.window;
         }
 
         let id = self.next_id;
@@ -48,7 +42,7 @@ impl OverlayWindowPool {
         };
         let overlay_window = window.window;
         self.windows.push(window);
-        return Some(overlay_window);
+        return overlay_window;
     }
 
     pub fn window_for_owner(&self, owner: &OverlayWindowOwner) -> Option<OverlayWindow> {
@@ -120,4 +114,66 @@ struct PooledOverlayWindow {
     intended_bounds: Option<OverlayWindowBounds>,
 }
 
-const MAX_OVERLAY_WINDOWS: usize = 5;
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashSet;
+
+    #[test]
+    fn every_active_owner_gets_a_distinct_overlay() {
+        let mut pool = OverlayWindowPool::new();
+        let windows = (0..12)
+            .map(|id| pool.acquire(OverlayWindowOwner::new(format!("window-{id}"))))
+            .collect::<HashSet<_>>();
+        assert_eq!(windows.len(), 12);
+    }
+
+    #[test]
+    fn reuses_only_after_the_previous_hide_finishes() {
+        let mut pool = OverlayWindowPool::new();
+        let owner = OverlayWindowOwner::new("first");
+        let first = pool.acquire(owner.clone());
+        assert_eq!(pool.acquire(owner.clone()), first);
+        assert_eq!(pool.release(&owner), Some(first));
+        assert_ne!(pool.acquire(OverlayWindowOwner::new("second")), first);
+        pool.finish_release(first);
+        assert_eq!(pool.acquire(OverlayWindowOwner::new("third")), first);
+    }
+
+    #[test]
+    fn reacquiring_owner_does_not_reclaim_a_window_waiting_to_hide() {
+        let mut pool = OverlayWindowPool::new();
+        let owner = OverlayWindowOwner::new("target");
+        let first = pool.acquire(owner.clone());
+        pool.release(&owner);
+        assert_eq!(pool.window_for_owner(&owner), None);
+
+        let next = pool.acquire(owner.clone());
+        assert_ne!(next, first);
+        pool.finish_release(first);
+        assert_eq!(pool.window_for_owner(&owner), Some(next));
+    }
+
+    #[test]
+    fn released_windows_no_longer_restore_their_previous_bounds() {
+        let mut pool = OverlayWindowPool::new();
+        let owner = OverlayWindowOwner::new("target");
+        let window = pool.acquire(owner.clone());
+        let bounds = OverlayWindowBounds {
+            x: 10.0,
+            y: 20.0,
+            width: 300.0,
+            height: 200.0,
+        };
+        pool.set_intended_bounds(window, Some(bounds));
+        assert_eq!(
+            pool.intended_bounds_for_label(&window.label()),
+            Some(bounds)
+        );
+        pool.release(&owner);
+        assert_eq!(pool.intended_bounds_for_label(&window.label()), None);
+        pool.finish_release(window);
+        assert_eq!(pool.acquire(owner), window);
+        assert_eq!(pool.intended_bounds_for_label(&window.label()), None);
+    }
+}

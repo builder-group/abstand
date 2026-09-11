@@ -144,3 +144,26 @@ public func abstandMacosApplyStatusItemAppearance(
         activeDotVisible: activeDotVisible
     )
 }
+
+@_cdecl("abstand_macos_order_overlay_above_target")
+public func abstandMacosOrderOverlayAboveTarget(
+    windowPtr: Int,
+    targetWindowId: UInt32,
+    targetProcessId: Int32,
+    top: Double,
+    left: Double,
+    bottom: Double,
+    right: Double
+) -> Bool {
+    return WindowOverlay.orderAboveTarget(
+        windowPtr: windowPtr,
+        targetWindowId: targetWindowId,
+        targetProcessId: targetProcessId,
+        inset: NSEdgeInsets(top: top, left: left, bottom: bottom, right: right)
+    )
+}
+
+@_cdecl("abstand_macos_detach_overlay")
+public func abstandMacosDetachOverlay(windowPtr: Int) -> Bool {
+    return WindowOverlay.detach(windowPtr: windowPtr)
+}

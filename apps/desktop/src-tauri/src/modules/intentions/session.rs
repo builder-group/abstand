@@ -11,7 +11,7 @@ use super::{
 };
 #[cfg(target_os = "macos")]
 use crate::app::tray::AppTray;
-use crate::modules::{activity::monitor, blocking, db::types::DatabaseState};
+use crate::modules::{blocking, db::types::DatabaseState};
 use std::fmt;
 use tauri::{AppHandle, Manager};
 use tauri_specta::Event;
@@ -61,7 +61,7 @@ pub async fn start_session(
         session_id: session.id,
     }
     .emit(app);
-    refresh_blocking(app).await;
+    refresh_blocking();
     #[cfg(target_os = "macos")]
     AppTray::refresh_status_item(app).await;
 
@@ -148,20 +148,13 @@ pub async fn stop_session(
 
 fn clear_blocking_for_session(app: &AppHandle, session_id: i64) {
     blocking::runtime::clear_violations_for_session_id(app, session_id);
+    refresh_blocking();
 }
 
-async fn refresh_blocking(app: &AppHandle) {
-    match monitor::get_current_focus() {
-        Ok(focus) => {
-            blocking::runtime::handle_activity_focus(app, focus).await;
-        }
-        Err(error) => {
-            log::warn!(
-                target: LOG_TARGET,
-                "failed to refresh blocking after session start: {}",
-                error
-            );
-        }
+fn refresh_blocking() {
+    // Note: Refresh unchanged background windows so remaining sessions can still block them
+    if let Err(error) = mado::WindowMonitor::refresh() {
+        log::warn!(target: LOG_TARGET, "failed to refresh blocking after session change: {}", error);
     }
 }
 

@@ -1,6 +1,23 @@
 import AppKit
 
 enum WindowOverlay {
+    static func orderAboveTarget(
+        windowPtr: Int, targetWindowId: UInt32, targetProcessId: Int32, inset: NSEdgeInsets
+    ) -> Bool {
+        return WindowPointer.withWindow(windowPtr) { window in
+            applyCommonOverlayBehavior(to: window)
+            OverlayAttachment.attach(
+                window, to: targetWindowId, processId: targetProcessId, inset: inset
+            )
+        }
+    }
+
+    static func detach(windowPtr: Int) -> Bool {
+        return WindowPointer.withWindow(windowPtr) { window in
+            OverlayAttachment.detach(window)
+        }
+    }
+
     static func applyOpaqueBackground(windowPtr: Int) -> Bool {
         return WindowPointer.withWindow(windowPtr) { window in
             // Note: Without Liquid Glass, an opaque background keeps blocked content out of view
@@ -73,5 +90,8 @@ extension WindowOverlay {
             .stationary,
             .ignoresCycle,
         ]
+        if #available(macOS 13.0, *) {
+            window.collectionBehavior.insert(.canJoinAllApplications)
+        }
     }
 }

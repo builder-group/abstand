@@ -195,6 +195,7 @@ impl AppWindow {
                     .visible_on_all_workspaces(true)
                     .skip_taskbar(true)
                     .focusable(true)
+                    .focused(false)
                     .visible(false)
                     .accept_first_mouse(true)
                     .build();
@@ -250,6 +251,14 @@ impl AppWindow {
         full_route: &str,
         replace: bool,
     ) -> tauri::Result<()> {
+        if let Ok(current_url) = window.url() {
+            if current_url
+                .join(full_route)
+                .is_ok_and(|url| url == current_url)
+            {
+                return Ok(());
+            }
+        }
         return window.eval(&format!(
             "window.__TAURI_ROUTER__?.navigate({{ href: {:?}, replace: {} }});",
             full_route, replace

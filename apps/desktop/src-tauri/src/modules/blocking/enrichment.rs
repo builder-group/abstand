@@ -1,16 +1,15 @@
 use super::{
+    observation::ObservedActivity,
     policy::BlockingPolicyViolation,
     types::{BlockedTarget, BlockingViolation},
 };
-use crate::modules::{
-    activity::focus::ActivityFocus, catalog::resolver, intentions::block_policy::BlockPolicyTarget,
-};
+use crate::modules::{catalog::resolver, intentions::block_policy::BlockPolicyTarget};
 use tauri::AppHandle;
 
 pub async fn enrich_blocking_violation(
     app: &AppHandle,
     policy_violation: &BlockingPolicyViolation,
-    focus: &ActivityFocus,
+    observation: &ObservedActivity,
 ) -> BlockingViolation {
     return BlockingViolation {
         intention_id: policy_violation.intention_id,
@@ -18,16 +17,18 @@ pub async fn enrich_blocking_violation(
         session_id: policy_violation.session_id,
         session_started_at: policy_violation.session_started_at,
         session_automatic_end_at: policy_violation.session_automatic_end_at,
-        triggering_process_id: focus.pid,
-        blocked_target: enrich_blocked_target(app, &policy_violation.blocked_target, focus).await,
+        triggering_process_id: observation.pid,
+        blocked_target: enrich_blocked_target(app, &policy_violation.blocked_target, observation)
+            .await,
     };
 }
 
 async fn enrich_blocked_target(
     app: &AppHandle,
     target: &BlockPolicyTarget,
-    focus: &ActivityFocus,
+    observation: &ObservedActivity,
 ) -> BlockedTarget {
+    // Note: Resolve cached assets only so network icon loading cannot delay enforcement
     return match target {
         BlockPolicyTarget::App { bundle_id } => {
             let catalog_app = match resolver::resolve_app_by_bundle_id(app, bundle_id).await {
@@ -42,12 +43,12 @@ async fn enrich_blocked_target(
                     None
                 }
             };
-            let display_name = focus
+            let display_name = observation
                 .target
                 .app_bundle_id
                 .as_deref()
                 .filter(|focused_bundle_id| *focused_bundle_id == bundle_id)
-                .and(focus.app_name.as_deref())
+                .and(observation.app_name.as_deref())
                 .or(catalog_app.as_ref().and_then(|app| app.name.as_deref()))
                 .unwrap_or(bundle_id)
                 .to_string();

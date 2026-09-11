@@ -2,7 +2,7 @@
 
 Activity records local foreground intervals from mado. The data is raw timeline data: reporting decides how to group, classify, hide, or score it.
 
-Blocking uses the same mado source, but runs separately so activity database work cannot delay enforcement.
+Blocking uses the same mado source through a separate event consumer. It does not wait for activity recording to finish.
 
 ## Foreground Intervals
 
@@ -22,16 +22,16 @@ mado can report an app activation before window or browser details. The reposito
 
 - `app`: foreground app only
 - `window`: app plus title, window id, or bounds
-- `browser`: window detail plus URL, website, or private-mode signal
+- `browser`: URL, website, or private-mode data, with any available window details
 
 Private browser windows are stored as app-level activity when private browser tracking is disabled.
 
 ## Recording Lifecycle
 
-The monitor queues focus events, and the recorder writes them sequentially so interval boundaries stay in focus-event order. The recorder reads settings per event; if tracking is disabled before a queued event is processed, the recorder skips it.
+The monitor queues foreground app and window events, and the recorder writes them sequentially so interval boundaries stay in focus-event order. Background content and window lifecycle events do not change the active interval. The recorder reads settings per event. If tracking is disabled before a queued event is processed, the recorder skips it.
 
-Disabling tracking and allowed app exit close the active row immediately because they are user-visible product boundaries.
+Disabling tracking and allowed app exit enqueue a close request and wait for it to finish. The request uses the time of that boundary and runs after pending writes, so an in-flight event cannot reopen the interval afterward.
 
 The recorder writes `activity.foreground_recorder.last_seen_at` to `runtime_state` while it runs. On startup, it closes any stale active row at that heartbeat time so crashes, force quits, and killed processes do not extend the previous activity until the next launch.
 
-Lock and sleep stay raw. In the tested macOS lock/sleep path, mado reports `com.apple.loginwindow`, and the recorder stores it as its own interval. Reporting should decide whether system activity counts as away, neutral, or hidden.
+When mado reports `com.apple.loginwindow`, the recorder stores it as its own interval. Reporting decides whether system activity counts as away, neutral, or hidden.
