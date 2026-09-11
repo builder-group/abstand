@@ -1,24 +1,45 @@
-# Window overlays
+# Window Overlays
 
-App and website blocks follow their target windows. A blocked window stays covered when it loses focus, because macOS allows scrolling in background windows. An allowed window placed above it should cover both the target and its overlay.
+Date: 2026-09-11
+Status: accepted
 
-## Native placement
+## Context
 
-The macOS bridge places each overlay at its target's window level immediately above it with `NSWindow.order(_:relativeTo:)`. The compositor handles partial occlusion.
+Abstand needs to block apps and websites while explaining the active Intention and letting users act on it. Immediately quitting an app interrupts the user's work. An overlay can present the block while leaving the app open.
 
-Relative ordering is not a permanent attachment. App activation requests immediate reconciliation. One native timer also reconciles target geometry and stacking every 200 ms while attachments exist. It reads window metadata, not screenshots, and changes frames or order only when needed. A target absent from the on-screen window list hides its overlay. Detaching the final overlay stops the timer and removes the activation observer.
+Website blocking extends the existing app overlay approach to browser content. Blocked content can remain visible after its window loses focus, and macOS allows scrolling in background windows. Coverage must remain in place while allowing other windows to appear above the blocked window.
 
-Website overlays use insets from the browser's content bounds. Target and content bounds must come from the same observation to avoid movement drift. The native tracker owns attached frames and levels. Rust does not reapply observed frames. When content bounds are unavailable, the overlay covers the window and offers the temporary escape control. Without a usable target window, foreground app blocks use a display-sized overlay. Background blocks require a window ID and bounds to avoid covering unrelated apps. Whole-device blocks use a screen-level overlay.
+## Options Considered
 
-On macOS versions without Liquid Glass, an opaque system background keeps blocked content out of view.
+### Immediate App Termination
 
-## Observation and policy
+Quit an app as soon as it is blocked. This interrupts the user's work and, for a browser, affects allowed tabs as well as blocked content. It also removes the place to explain the block and offer an intentional next action.
 
-Abstand enables `mado` reconciliation every two seconds to recover missed notifications and stale browser metadata. Browser content bounds, including sidebar changes, follow this schedule when no Accessibility notification arrives. The native 200 ms timer only follows outer geometry and stacking. Background content updates do not count as foreground activity.
+### Browser Extensions
 
-The blocking consumer processes events in order. Clearing a session invalidates pending policy reads so they cannot restore cleared violations. Missing browser metadata does not clear a known website block, and a failed policy read preserves existing coverage. Policy enrichment reads cached icons instead of waiting for network requests. Starting or ending a session requests fresh monitor events, including unchanged observed background windows, so remaining sessions can keep blocking their targets.
+Handle website blocking inside the browser. This gives access to tab and navigation events without relying on external window placement. It requires extension installation, browser-specific integration, and communication with Abstand's policy state. App blocking still needs a separate mechanism.
 
-## Platform limits
+### Network Blocking
+
+Use DNS or firewall rules to restrict network access. This requires a separate enforcement mechanism and does not provide the in-app explanation or cover content that is already loaded. DNS rules also operate on hostnames, not individual website paths.
+
+### Window Overlays
+
+Reuse the app blocking UI for windows and browser content. This keeps Intention controls in one place and leaves the blocked app open. It depends on Accessibility metadata and native window ordering, with reconciliation needed to keep coverage aligned.
+
+## Decision
+
+Use overlays for app and website blocking. Place them directly above their target windows at the same window level, with reconciliation while attachments exist. Keep placement in the macOS bridge and blocking policy in Rust.
+
+## Why This Is The Current Call
+
+Overlays preserve the user's app state and provide a consistent place to explain a block and show Intention controls. Reusing the app overlay approach avoids a separate browser extension or network enforcement system.
+
+That reuse reduces integration work, but window tracking and placement still add complexity. Relative placement lets macOS handle partial visibility while other windows cover the target. Foreground-only coverage would leave background content exposed, and floating overlays could obscure unrelated windows.
+
+The tradeoff is reliance on Accessibility metadata, ongoing reconciliation, and brief placement delays during native transitions. Live validation must establish whether that behavior is reliable enough. Revisit browser or network integration if these limits prevent acceptable blocking behavior.
+
+## Platform Limits
 
 Accessibility and browser content bounds are best-effort data. The monitor discovers windows through focus. Windows never observed while focused are outside its background tracking. Reconciliation can recover missed notifications but cannot make placement atomic during window-server animations. Mission Control previews, Stage Manager, full-screen transitions, and third-party window managers need live regression testing. Overlays are not an OS security boundary.
 
