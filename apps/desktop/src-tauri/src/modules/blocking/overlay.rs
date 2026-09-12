@@ -31,7 +31,7 @@ pub fn show(
                 bounds: OverlayWindowBounds::from(bounds),
             });
     }
-    overlay_window::show(app, owner.clone(), config);
+    overlay_window::show(app, owner, config);
 }
 
 pub fn hide(app: &AppHandle, owner: OverlayWindowOwner) {

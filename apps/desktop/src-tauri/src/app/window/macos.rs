@@ -97,8 +97,24 @@ pub fn apply_overlay_behavior(window: &WebviewWindow, config: &OverlayWindowConf
         return;
     };
 
-    let applied_level = if config.target.is_some() {
-        attach_overlay(window, config)
+    let applied_level = if let Some(target) = config.target {
+        if let Some(bounds) = config.bounds {
+            // Note: Use frames from one observation to avoid drift while the target moves
+            unsafe {
+                abstand_macos::order_overlay_above_target(
+                    window_ptr,
+                    target.window_id,
+                    target.process_id,
+                    bounds.y - target.bounds.y,
+                    bounds.x - target.bounds.x,
+                    target.bounds.y + target.bounds.height - bounds.y - bounds.height,
+                    target.bounds.x + target.bounds.width - bounds.x - bounds.width,
+                )
+            }
+        } else {
+            unsafe { abstand_macos::detach_overlay(window_ptr) };
+            false
+        }
     } else {
         unsafe { abstand_macos::detach_overlay(window_ptr) };
         match config.level {
@@ -137,28 +153,6 @@ pub fn apply_overlay_behavior(window: &WebviewWindow, config: &OverlayWindowConf
         "failed to apply native overlay background for {}",
         window_label
     );
-}
-
-fn attach_overlay(window: &WebviewWindow, config: &OverlayWindowConfig) -> bool {
-    let Ok(window_ptr) = window.ns_window() else {
-        return false;
-    };
-    let (Some(target), Some(bounds)) = (config.target, config.bounds) else {
-        unsafe { abstand_macos::detach_overlay(window_ptr) };
-        return false;
-    };
-    // Note: Use frames from one observation to avoid drift while the target moves
-    return unsafe {
-        abstand_macos::order_overlay_above_target(
-            window_ptr,
-            target.window_id,
-            target.process_id,
-            bounds.y - target.bounds.y,
-            bounds.x - target.bounds.x,
-            target.bounds.y + target.bounds.height - bounds.y - bounds.height,
-            target.bounds.x + target.bounds.width - bounds.x - bounds.width,
-        )
-    };
 }
 
 const LOG_TARGET: &str = "app::window::macos";
