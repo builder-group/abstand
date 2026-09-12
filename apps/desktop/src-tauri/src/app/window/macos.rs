@@ -99,7 +99,7 @@ pub fn apply_overlay_behavior(window: &WebviewWindow, config: &OverlayWindowConf
 
     let applied_level = if let Some(target) = config.target {
         if let Some(bounds) = config.bounds {
-            // Note: Use frames from one observation to avoid drift while the target moves
+            // Note: Calculate insets from paired window and content bounds so movement does not change the offsets
             unsafe {
                 abstand_macos::order_overlay_above_target(
                     window_ptr,

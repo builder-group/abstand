@@ -68,7 +68,7 @@ impl ForegroundActivityRecorder {
             .try_state::<ForegroundActivityRecorderState>()
             .ok_or(ForegroundActivityRecorderError::Unavailable)?;
         let (reply, completed) = oneshot::channel();
-        // Note: Close after pending writes so disabling recording cannot reopen the interval
+        // Note: Queue the close after earlier activity events so they cannot reopen an interval after recording stops
         recorder_state
             .enqueue(ForegroundActivityRecorderMessage::Close { ended_at, reply })
             .map_err(|_| ForegroundActivityRecorderError::Unavailable)?;

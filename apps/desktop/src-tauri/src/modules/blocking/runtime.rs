@@ -46,7 +46,7 @@ pub async fn handle_window_event(app: &AppHandle, event: WindowEvent) {
             let mut runtime = runtime_state.lock().unwrap();
             runtime.handle_window_destroyed(app, &window);
         }
-        // Note: Native attachment hides absent targets and restores their coverage without changing focus
+        // Note: Native attachment hides overlays for minimized targets and shows them again when targets return on screen
         WindowEvent::WindowMinimized { .. } | WindowEvent::WindowRestored { .. } => {}
     }
 }
@@ -81,7 +81,7 @@ async fn evaluate_window(app: &AppHandle, observation: ObservedActivity, is_fore
 
     let next_violation = match decision {
         Ok(BlockingPolicyDecision::Blocked(policy_violation)) => {
-            // Note: Background coverage needs bounds so a fallback overlay cannot cover other apps
+            // Note: Without window bounds, a background block could create a display-sized overlay over other apps
             if !is_foreground && observation.window_bounds.is_none() {
                 return;
             }
@@ -208,7 +208,7 @@ impl BlockingRuntime {
         let paused_until_unix_ms = self
             .active_violations
             .get(&key)
-            // Note: Refined browser metadata can change the block target without ending the window's pause
+            // Note: A pause belongs to the window and session, even if later metadata changes an app block to a website block
             .filter(|active_violation| {
                 active_violation.violation.session_id == violation.session_id
                     && active_violation.violation.triggering_process_id
@@ -262,8 +262,7 @@ impl BlockingRuntime {
             .active_violations
             .iter()
             .filter_map(|(key, active_violation)| {
-                // Note: Device-wide violations also keep the observation that triggered them.
-                // That observation bundle id does not make them owned by the app.
+                // Note: Closing an app must not clear a device block that was first observed while that app was focused
                 if matches!(
                     active_violation.violation.blocked_target,
                     BlockedTarget::Device { .. }
@@ -326,7 +325,7 @@ impl BlockingRuntime {
     }
 
     fn handle_window_destroyed(&mut self, app: &AppHandle, window: &WindowLifecycleChange) {
-        // Note: An unidentified close can clear a process fallback but cannot identify sibling windows
+        // Note: Without a window ID, a close event can clear the process fallback but must preserve individually tracked windows
         let keys = self
             .active_violations
             .keys()
@@ -366,7 +365,7 @@ impl BlockingRuntime {
         };
         let active_key = active_key.clone();
 
-        // Note: The pause check and scheduler share wall time so sleep cannot consume the resume callback early
+        // Note: The scheduler and pause check use the same clock so system sleep cannot make them disagree about expiry
         let deadline = i64::try_from(pause_duration.as_millis())
             .ok()
             .and_then(|duration_ms| unix_ms_now().checked_add(duration_ms))
@@ -416,7 +415,7 @@ impl ActiveViolation {
     }
 
     fn update_window_bounds(&mut self, window: &WindowBoundsChange) {
-        // Note: Native attachment handles movement while preserving paired window/content bounds
+        // Note: Updating only the window bounds would mix them with older content bounds and produce incorrect insets
         if matches!(self.violation.blocked_target, BlockedTarget::Website { .. }) {
             return;
         }
@@ -529,7 +528,7 @@ pub fn clear_violations_for_bundle_id(app: &AppHandle, bundle_id: &str) {
         runtime.policy_generation = runtime.policy_generation.wrapping_add(1);
         runtime.clear_violations_for_bundle_id(app, bundle_id);
     }
-    // Note: Global invalidation can discard another window's pending decision, so replay unchanged observations
+    // Note: Changing policy_generation also discards pending decisions for other windows, so request fresh observations
     if let Err(error) = mado::WindowMonitor::refresh() {
         log::warn!(target: LOG_TARGET, "failed to refresh blocking after app quit: {}", error);
     }

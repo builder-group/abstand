@@ -88,7 +88,7 @@ final class OverlayAttachment {
             if window.frame != targetFrameInset {
                 window.setFrame(targetFrameInset, display: true)
             }
-            // Note: Relative ordering is a snapshot, not a permanent window-server attachment
+            // Note: Raising the target can move it above the overlay, so restore their relative order when needed
             if !window.isVisible || index == 0 || windowId(windows[index - 1]) != UInt32(id) {
                 window.order(.above, relativeTo: Int(attachment.targetId))
             }
