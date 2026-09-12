@@ -2464,8 +2464,6 @@ checksum = "c41e0c4fef86961ac6d6f8a82609f55f31b05e4fce149ac5710e439df7619ba4"
 [[package]]
 name = "mado"
 version = "0.0.20"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aceb80e94cc32983506f580159d45f12c4bc81a0973122a7e2e92086cd9fa3b7"
 dependencies = [
  "serde",
  "serde_json",

@@ -8,7 +8,7 @@ Use this file first when working in this repository. It defines the default agen
 - Abstand is a Tauri app with a React/TanStack frontend in `apps/desktop/src` and Rust backend code in `apps/desktop/src-tauri`
 - macOS-native bridge code lives in `apps/desktop/crates/macos` and its Swift sources
 - TypeScript workspaces are managed with pnpm and Turbo across `apps/*` and any future `packages/*`
-- Rust workspace members live under `apps/*/src-tauri`; app-local Rust crates may live under an app's `crates/*`
+- Rust workspace members live under `apps/*/src-tauri` and `crates/*`; app-local Rust crates may live under an app's `crates/*`
 - Product concepts and language live in `docs/project-spec.md` and `docs/concepts/`; use those terms when changing product behavior or UI copy
 
 ## Working Model
