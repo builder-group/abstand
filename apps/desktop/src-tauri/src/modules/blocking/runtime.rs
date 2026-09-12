@@ -208,7 +208,12 @@ impl BlockingRuntime {
         let paused_until_unix_ms = self
             .active_violations
             .get(&key)
-            .filter(|active_violation| active_violation.violation == violation)
+            // Note: Refined browser metadata can change the block target without ending the window's pause
+            .filter(|active_violation| {
+                active_violation.violation.session_id == violation.session_id
+                    && active_violation.violation.triggering_process_id
+                        == violation.triggering_process_id
+            })
             .and_then(|active_violation| active_violation.paused_until_unix_ms);
         let active_violation = ActiveViolation {
             key: key.clone(),
@@ -546,7 +551,10 @@ mod tests {
     #[test]
     fn overlay_pause_expires_at_its_scheduled_wall_time() {
         let mut active = ActiveViolation {
-            key: ActiveViolationKey::Device,
+            key: ActiveViolationKey::Window {
+                pid: 42,
+                window_id: 7,
+            },
             observation: ObservedActivity::from_app_info(mado::AppInfo {
                 pid: 42,
                 name: None,
@@ -561,8 +569,11 @@ mod tests {
                 session_started_at: 0,
                 session_automatic_end_at: None,
                 triggering_process_id: 42,
-                blocked_target: BlockedTarget::Device {
-                    display_name: "This device".into(),
+                blocked_target: BlockedTarget::App {
+                    bundle_id: "com.example.browser".into(),
+                    display_name: "Browser".into(),
+                    icon: None,
+                    color: None,
                 },
             },
             paused_until_unix_ms: Some(5_000),
