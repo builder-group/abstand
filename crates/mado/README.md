@@ -1,6 +1,6 @@
 # mado (窓)
 
-`mado` provides macOS app and window monitoring for Abstand. It wraps native macOS APIs through Swift, listens to app, window, and bounds changes, and enriches browser windows with URL and website metadata.
+`mado` provides macOS app and window monitoring. It wraps native macOS APIs through Swift, listens to app, window, and bounds changes, and can enrich browser windows with URL and website metadata.
 
 - Query the active app or focused window when you need a snapshot
 - Listen to app lifecycle, focused-window, title, and opt-in window bounds changes with optional reconciliation for missed notifications
@@ -67,24 +67,22 @@ fn main() -> Result<(), mado::Error> {
 }
 ```
 
-## Integration
-
-The desktop backend uses this internal crate through a local path dependency:
+## Install
 
 ```toml
 [dependencies]
-mado = { path = "../../../crates/mado" }
+mado = "0.0.21"
 ```
 
 ## Requirements
 
 `mado` currently targets macOS.
 
-| Platform | Status    | Notes                                |
-| -------- | --------- | ------------------------------------ |
-| macOS    | Supported | macOS 10.15+ with a Swift toolchain  |
-| Linux    | Planned   | APIs return a platform error for now |
-| Windows  | Planned   | APIs return a platform error for now |
+| Platform | Status      | Notes                                |
+| -------- | ----------- | ------------------------------------ |
+| macOS    | Supported   | macOS 10.15+ with Swift 6.1+         |
+| Linux    | Unsupported | APIs return a platform error for now |
+| Windows  | Unsupported | APIs return a platform error for now |
 
 Window focus, window title, window bounds, and browser URL extraction require macOS Accessibility permission. Active app queries, installed app scans, app icons, and app display colors do not require that permission.
 

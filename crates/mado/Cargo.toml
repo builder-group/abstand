@@ -1,13 +1,15 @@
 [package]
 name = "mado"
-version = "0.0.20"
-publish = false
+version = "0.0.21"
 description = "macOS active app and window monitoring with browser metadata"
 authors = { workspace = true }
 license = "MIT"
 edition = { workspace = true }
 repository = { workspace = true }
 readme = "README.md"
+homepage = "https://github.com/builder-group/abstand/tree/develop/crates/mado"
+keywords = ["macos", "window", "monitoring", "browser", "accessibility"]
+categories = ["api-bindings", "os::macos-apis"]
 
 [dependencies]
 thiserror = "2.0.20"

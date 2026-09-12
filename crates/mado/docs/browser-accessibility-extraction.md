@@ -80,7 +80,7 @@ Check `BrowserInfo.findAddressBar` too, so observation reaches the browser's URL
 | Microsoft Edge | `com.microsoft.edgemac`      | `chromium` | Found                    | Found               |
 | Opera          | `com.operasoftware.Opera`    | `chromium` | Found                    | Not observed        |
 | Arc            | `company.thebrowser.Browser` | `chromium` | Found                    | Found               |
-| Vivaldi        | `com.vivaldi.Vivaldi`        | `vivaldi` | Found                    | Found               |
+| Vivaldi        | `com.vivaldi.Vivaldi`        | `vivaldi`  | Found                    | Found               |
 | Safari         | `com.apple.Safari`           | `safari`   | Found                    | Found               |
 | Firefox        | `org.mozilla.firefox`        | `gecko`    | Found (`AXComboBox`)     | Found               |
 | Zen            | `app.zen-browser.zen`        | `gecko`    | Not observed             | Found               |
