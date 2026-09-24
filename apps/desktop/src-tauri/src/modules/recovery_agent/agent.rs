@@ -43,6 +43,14 @@ impl RecoveryAgent {
         return Ok(());
     }
 
+    #[cfg(all(target_os = "macos", not(debug_assertions), not(feature = "app-store")))]
+    pub fn restart_if_enabled(&self) -> Result<(), Box<dyn Error>> {
+        if self.status()?.is_enabled {
+            self.user_launch_agent.restart()?;
+        }
+        return Ok(());
+    }
+
     /// Disables the recovery agent unless Balanced or Strict Enforcement is active.
     pub fn disable(&self) -> Result<(), Box<dyn Error>> {
         if recovery_condition::should_recover_app_blocking()? {

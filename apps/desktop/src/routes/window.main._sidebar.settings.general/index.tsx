@@ -796,7 +796,7 @@ const UpdatesSection: React.FC = () => {
 				if (!isInstallOk) {
 					toastsCx.add({
 						type: 'error',
-						title: 'Could not install update',
+						title: 'Could not complete update',
 						description: installErr
 					});
 				}

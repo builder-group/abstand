@@ -73,6 +73,13 @@ impl UserLaunchAgent {
         return Ok(output.status.success());
     }
 
+    /// Restarts the loaded job without unloading it from launchd.
+    #[cfg(all(target_os = "macos", not(debug_assertions), not(feature = "app-store")))]
+    pub fn restart(&self) -> Result<(), Box<dyn Error>> {
+        let service = format!("{}/{}", launchctl_domain()?, self.label);
+        return launchctl(&["kickstart", "-k", &service]);
+    }
+
     pub fn plist_path(&self) -> &Path {
         return &self.plist_path;
     }

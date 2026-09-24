@@ -1,4 +1,8 @@
 #[cfg(all(desktop, not(debug_assertions), not(feature = "app-store")))]
+use crate::modules::quit_policy::policy::request_restart;
+#[cfg(all(target_os = "macos", not(debug_assertions), not(feature = "app-store")))]
+use crate::modules::recovery_agent::agent::RecoveryAgent;
+#[cfg(all(desktop, not(debug_assertions), not(feature = "app-store")))]
 use tauri_plugin_updater::UpdaterExt;
 
 use serde::Serialize;
@@ -53,7 +57,20 @@ pub async fn install_update(app: AppHandle) -> Result<(), String> {
             .await
             .map_err(|error| error.to_string())?;
 
-        app.restart();
+        #[cfg(target_os = "macos")]
+        tauri::async_runtime::spawn_blocking(|| -> Result<(), String> {
+            let agent = RecoveryAgent::for_current_app().map_err(|error| error.to_string())?;
+            return agent
+                .restart_if_enabled()
+                .map_err(|error| error.to_string());
+        })
+        .await
+        .map_err(|error| error.to_string())?
+        .map_err(|error| {
+            format!("Update installed, but the recovery agent could not restart: {error}")
+        })?;
+
+        return request_restart(&app);
     }
 
     #[cfg(not(all(desktop, not(debug_assertions), not(feature = "app-store"))))]

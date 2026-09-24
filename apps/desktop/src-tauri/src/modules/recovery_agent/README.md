@@ -20,8 +20,11 @@ The watchdog loop:
 
 1. opens its own read-only SQLite connection
 2. checks whether an active Balanced or Strict block session exists
-3. checks whether the main Abstand app process is running
-4. relaunches Abstand when Balanced or Strict Enforcement is active and the app is gone
+3. checks whether the main Abstand app process or its control socket is available
+4. gives an app restart a brief chance to appear, then relaunches Abstand when both checks remain negative
+5. waits up to 30 seconds for the launched app to appear before attempting another relaunch
+
+After an in-app update installs a new binary, Abstand restarts an enabled recovery agent so the watchdog runs the new version. The agent stays loaded in launchd during this restart.
 
 When the agent relaunches the app, it passes:
 

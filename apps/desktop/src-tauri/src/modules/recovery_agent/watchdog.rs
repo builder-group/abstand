@@ -5,7 +5,7 @@ use std::{
     path::{Path, PathBuf},
     process::Command,
     thread,
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 /// Runs the long-lived recovery agent process.
@@ -38,26 +38,38 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             continue;
         }
 
-        // NSWorkspace can briefly miss a running app, so confirm through its live socket
-        if !abstand_macos::is_app_running(AppConfig::bundle_identifier(), std::process::id())
-            && !cli::control::is_control_server_reachable()
-        {
-            println!("Recovery agent restarting Abstand");
-            if let Err(error) = launch_target.launch() {
-                eprintln!("Recovery agent failed to restart Abstand: {}", error);
-                thread::sleep(IDLE_CHECK_INTERVAL);
-                continue;
+        if !is_main_app_running() {
+            // Note: Give a planned app restart time to appear before recovering it
+            thread::sleep(RELAUNCH_GRACE_PERIOD);
+            if !is_main_app_running() {
+                println!("Recovery agent restarting Abstand");
+                if let Err(error) = launch_target.launch() {
+                    eprintln!("Recovery agent failed to restart Abstand: {}", error);
+                    thread::sleep(IDLE_CHECK_INTERVAL);
+                    continue;
+                }
+
+                // Note: `open -n` can succeed before Launch Services starts the app
+                let launched_at = Instant::now();
+                while !is_main_app_running() && launched_at.elapsed() < RELAUNCH_STARTUP_TIMEOUT {
+                    thread::sleep(ACTIVE_CHECK_INTERVAL);
+                }
             }
-            thread::sleep(RELAUNCH_SETTLE_INTERVAL);
         }
 
         thread::sleep(ACTIVE_CHECK_INTERVAL);
     }
 }
 
+fn is_main_app_running() -> bool {
+    return abstand_macos::is_app_running(AppConfig::bundle_identifier(), std::process::id())
+        || cli::control::is_control_server_reachable();
+}
+
 const IDLE_CHECK_INTERVAL: Duration = Duration::from_secs(10);
 const ACTIVE_CHECK_INTERVAL: Duration = Duration::from_secs(2);
-const RELAUNCH_SETTLE_INTERVAL: Duration = Duration::from_secs(5);
+const RELAUNCH_GRACE_PERIOD: Duration = Duration::from_secs(2);
+const RELAUNCH_STARTUP_TIMEOUT: Duration = Duration::from_secs(30);
 
 #[derive(Debug, Clone)]
 enum AppLaunchTarget {
