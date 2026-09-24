@@ -12,8 +12,19 @@ use crate::environment::configs::app::AppConfig;
 use std::{
     fs,
     os::unix::fs::MetadataExt,
+    os::unix::net::UnixStream,
     path::{Path, PathBuf},
 };
+
+/// Returns whether the main app accepts connections on its CLI socket.
+pub fn is_control_server_reachable() -> bool {
+    let path = socket_path();
+    let Some(directory) = path.parent() else {
+        return false;
+    };
+
+    return validate_socket_directory(directory).is_ok() && UnixStream::connect(path).is_ok();
+}
 
 fn socket_path() -> PathBuf {
     let user_id = unsafe { libc::geteuid() };

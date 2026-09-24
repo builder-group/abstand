@@ -38,7 +38,10 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             continue;
         }
 
-        if !abstand_macos::is_app_running(AppConfig::bundle_identifier(), std::process::id()) {
+        // NSWorkspace can briefly miss a running app, so confirm through its live socket
+        if !abstand_macos::is_app_running(AppConfig::bundle_identifier(), std::process::id())
+            && !cli::control::is_control_server_reachable()
+        {
             println!("Recovery agent restarting Abstand");
             if let Err(error) = launch_target.launch() {
                 eprintln!("Recovery agent failed to restart Abstand: {}", error);

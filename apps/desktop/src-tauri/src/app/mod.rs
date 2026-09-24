@@ -115,10 +115,10 @@ pub fn run() {
 
     let builder = tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
-            if args
-                .iter()
-                .any(|arg| arg == launch_at_login::cli::LAUNCHED_AT_LOGIN_ARG)
-            {
+            if args.iter().any(|arg| {
+                arg == launch_at_login::cli::LAUNCHED_AT_LOGIN_ARG
+                    || arg == cli::subcommands::recovery_agent::RELAUNCHED_BY_AGENT_ARG
+            }) {
                 return;
             }
 
