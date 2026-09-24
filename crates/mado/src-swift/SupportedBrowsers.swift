@@ -18,6 +18,7 @@ enum SupportedBrowsers {
         "com.operasoftware.operadeveloper": .chromium,
         "com.operasoftware.operagx": .chromium,
         "company.thebrowser.browser": .chromium,
+        "company.thebrowser.dia": .chromium,
         "net.imput.helium": .chromium,
         "com.vivaldi.vivaldi": .vivaldi,
 
