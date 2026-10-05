@@ -13,8 +13,8 @@ permissions:
   contents: read
 
 jobs:
-  ci:
-    name: CI
+  desktop_ci:
+    name: Desktop CI
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -26,3 +26,16 @@ jobs:
         with:
           app-directory: apps/desktop
           build-script: ui:build
+
+  web_ci:
+    name: Web CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Run CI
+        uses: ./.github/actions/ci
+        with:
+          app-directory: apps/web

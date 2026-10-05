@@ -8,13 +8,13 @@ This directory contains GitHub workflows, composite actions, release secret refe
 
 Runs on pull request open, update, and reopen events.
 
-Runs desktop package checks before merge.
+Runs desktop UI and web package checks before merge.
 
 ### `develop.yml`
 
 Runs on pushes to `develop` and from manual dispatch.
 
-Runs desktop package checks on the main branch. Release artifacts are built only by `release.yml`.
+Runs desktop UI and web package checks on the main branch. Release artifacts are built only by `release.yml`.
 
 ### `release.yml`
 
