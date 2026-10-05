@@ -80,7 +80,7 @@ mado = "0.0.21"
 
 | Platform | Status      | Notes                                |
 | -------- | ----------- | ------------------------------------ |
-| macOS    | Supported   | macOS 10.15+ with Swift 6.1+         |
+| macOS    | Supported   | macOS 12.0+ with Swift 6.1+          |
 | Linux    | Unsupported | APIs return a platform error for now |
 | Windows  | Unsupported | APIs return a platform error for now |
 
