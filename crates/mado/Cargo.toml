@@ -12,10 +12,10 @@ keywords = ["macos", "window", "monitoring", "browser", "accessibility"]
 categories = ["api-bindings", "os::macos-apis"]
 
 [dependencies]
-thiserror = "2.0.20"
+thiserror = "2.0.21"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
-specta = { version = "2.0.0-rc.21", features = ["derive"] }
+specta = { version = "2.0.0-rc.25", features = ["derive"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 swift-rs = "1.0.8"

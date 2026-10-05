@@ -11,7 +11,7 @@ function LayoutComponent() {
 
 	// Hide sidebar during creation so the flow gets full focus, restore on exit
 	React.useEffect(() => {
-		const wasOpen = sidebarCx.$isOpen._v;
+		const wasOpen = sidebarCx.$isOpen.get();
 		sidebarCx.close();
 		return () => {
 			if (wasOpen) sidebarCx.open();

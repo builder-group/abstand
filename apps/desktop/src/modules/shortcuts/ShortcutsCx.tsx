@@ -18,7 +18,7 @@ export class ShortcutsCx {
 		const lifecycle = createMountLifecycle();
 
 		const onKeyDown = (e: KeyboardEvent) => {
-			for (const config of Object.values(this.$configs._v)) {
+			for (const config of Object.values(this.$configs.get())) {
 				if (config.isGlobal) continue;
 				if (config.shortcut == null) continue;
 				if (!this.matchesShortcut(e, config.shortcut)) continue;
@@ -54,12 +54,12 @@ export class ShortcutsCx {
 		shortcut: specta.KeyboardShortcut | null
 	): Promise<TResult<null, string>> {
 		return this.settingsCx.update({
-			shortcuts: { ...this.settingsCx.$appSettings._v.shortcuts, [action]: shortcut }
+			shortcuts: { ...this.settingsCx.$appSettings.get().shortcuts, [action]: shortcut }
 		});
 	}
 
 	public async resetShortcut(action: specta.ShortcutAction): Promise<TResult<null, string>> {
-		const { [action]: _, ...remainingShortcuts } = this.settingsCx.$appSettings._v.shortcuts;
+		const { [action]: _, ...remainingShortcuts } = this.settingsCx.$appSettings.get().shortcuts;
 		return this.settingsCx.update({ shortcuts: remainingShortcuts });
 	}
 

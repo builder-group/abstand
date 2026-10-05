@@ -29,7 +29,7 @@ export class SidebarCx {
 	}
 
 	public toggle(): void {
-		this.$isOpen.set(!this.$isOpen._v);
+		this.$isOpen.set((isOpen) => !isOpen);
 	}
 }
 

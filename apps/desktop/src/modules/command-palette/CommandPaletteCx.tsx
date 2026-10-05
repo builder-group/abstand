@@ -62,7 +62,7 @@ export class CommandPaletteCx {
 		this.$query.set('');
 	}
 
-	public filter(query: string, items = this.$items._v): TCommandItem[] {
+	public filter(query: string, items = this.$items.get()): TCommandItem[] {
 		const q = query.toLowerCase().trim();
 		if (q === '') return [...items];
 		return items.filter(
@@ -74,7 +74,7 @@ export class CommandPaletteCx {
 	}
 
 	private buildItems(): TCommandItem[] {
-		const { activity, automation, developer } = this.settingsCx.$appSettings._v;
+		const { activity, automation, developer } = this.settingsCx.$appSettings.get();
 		const items: TCommandItem[] = [
 			{
 				type: 'navigation',
@@ -207,7 +207,7 @@ export class CommandPaletteCx {
 	}
 
 	private async toggleTheme(): Promise<void> {
-		const currentTheme = this.settingsCx.$appSettings._v.appearance.theme;
+		const currentTheme = this.settingsCx.$appSettings.get().appearance.theme;
 
 		if (currentTheme === 'light') {
 			await this.settingsCx.update({ appearance: { theme: 'dark' } });

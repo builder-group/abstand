@@ -99,7 +99,7 @@ const AppearanceSection: React.FC = () => {
 			// Note: Mutate and notify immediately so subscribers (e.g. TypographyProvider) apply
 			// the new font scale live while dragging; persistence happens on commit
 			// eslint-disable-next-line react-hooks/immutability
-			settingsCx.$appSettings._v.appearance.fontScale = nextFontScale;
+			settingsCx.$appSettings.value.appearance.fontScale = nextFontScale;
 			settingsCx.$appSettings.notify();
 		},
 		[settingsCx]

@@ -147,11 +147,12 @@ export class UpdaterCx {
 	}
 
 	public async installUpdate(): Promise<TResult<null, string>> {
-		if (this.$updateState._v.type !== 'available') {
+		const updateState = this.$updateState.get();
+		if (updateState.type !== 'available') {
 			return Err('No update available');
 		}
 
-		const updateInfo = this.$updateState._v.updateInfo;
+		const updateInfo = updateState.updateInfo;
 		this.$updateState.set({
 			type: 'installing',
 			updateInfo

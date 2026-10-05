@@ -72,28 +72,27 @@ export class CatalogPickerCx {
 	}
 
 	public toggle(item: TCatalogItem): void {
-		const current = this.$selectedItems._v;
 		const itemKey = getCatalogItemKey(item);
-		const has = current.some((i) => getCatalogItemKey(i) === itemKey);
-		this.$selectedItems.set(
-			has ? current.filter((i) => getCatalogItemKey(i) !== itemKey) : [...current, item]
-		);
+		this.$selectedItems.set((items) => {
+			const has = items.some((i) => getCatalogItemKey(i) === itemKey);
+			return has ? items.filter((i) => getCatalogItemKey(i) !== itemKey) : [...items, item];
+		});
 	}
 
 	public remove(item: TCatalogItem): void {
-		this.$selectedItems.set(
-			this.$selectedItems._v.filter((i) => getCatalogItemKey(i) !== getCatalogItemKey(item))
+		this.$selectedItems.set((items) =>
+			items.filter((i) => getCatalogItemKey(i) !== getCatalogItemKey(item))
 		);
 	}
 
 	public confirm(): void {
-		this.$confirmedItems.set([...this.$selectedItems._v]);
-		this._hooks.onConfirm(this.$selectedItems._v);
+		this.$confirmedItems.set([...this.$selectedItems.get()]);
+		this._hooks.onConfirm(this.$selectedItems.get());
 		this.$isOpen.set(false);
 	}
 
 	public cancel(): void {
-		this.$selectedItems.set([...this.$confirmedItems._v]);
+		this.$selectedItems.set([...this.$confirmedItems.get()]);
 		this.$isOpen.set(false);
 	}
 

@@ -47,7 +47,7 @@ export const ThemeProvider: React.FC<TThemeProviderProps> = (props) => {
 		const currentWindow = getCurrentWindow();
 
 		const unlistenPromise = currentWindow.onThemeChanged(() => {
-			const currentTheme = settingsCx.$appSettings._v.appearance.theme;
+			const currentTheme = settingsCx.$appSettings.get().appearance.theme;
 			if (currentTheme === 'auto') {
 				applyTheme('auto');
 			}
