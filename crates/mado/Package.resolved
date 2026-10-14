@@ -1,12 +1,13 @@
 {
-  "originHash" : "321ed4ffff87f4b134b843cfe341a90f021a1e00763c791667d0ff44b4e58916",
+  "originHash" : "a98853869c289049c66563d113aaa5032d09f3c337df3080059edc4fb346e031",
   "pins" : [
     {
       "identity" : "swift-rs",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/brendonovich/swift-rs",
       "state" : {
-        "revision" : "e0b4a5f444a4204efa8e8270468318bc7836fcce"
+        "revision" : "207e4bfe5d36fdd0cc08f28d1849ff94ac7e24b8",
+        "version" : "1.0.9"
       }
     }
   ],

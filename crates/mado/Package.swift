@@ -24,7 +24,7 @@ let package = Package(
         // Dependencies declare other packages that this package depends on.
         .package(
             url: "https://github.com/brendonovich/swift-rs",
-            revision: "e0b4a5f444a4204efa8e8270468318bc7836fcce"
+            from: "1.0.9"
         )
     ],
     targets: [
