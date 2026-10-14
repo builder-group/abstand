@@ -1,6 +1,6 @@
 [package]
 name = "abstand"
-version = "0.1.36"
+version = "0.1.37"
 description = ""
 authors = { workspace = true }
 license = { workspace = true }
