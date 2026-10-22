@@ -29,7 +29,9 @@ requires the document URL for websites. A native Start Page with no web document
 is reported as `about:blank`. Missing metadata alone does not establish a Start Page.
 Chromium and Gecko fallback also requires the address
 bar to report that it is not focused. An unreadable focus attribute produces no
-fallback URL rather than treating an edit as the loaded page.
+fallback URL rather than treating an edit as the loaded page. Browsers can hide the
+scheme. `localhost`, bracketed IPv6, and dot-free `host:port` values are reported as `http`
+URLs, and other dotted values as `https` URLs.
 
 The monitor observes address-bar value changes as well as window titles to detect
 same-title tab switches. An address-bar notification does not establish that the
