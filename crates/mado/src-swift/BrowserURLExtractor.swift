@@ -74,11 +74,45 @@ enum BrowserURLExtractor {
             }
         }
 
-        if trimmed.contains(".") && !trimmed.contains(" ") {
+        if trimmed.contains(" ") {
+            return nil
+        }
+
+        // Note: Assume HTTP when reporting a local address without a scheme
+        if isLocalAddress(trimmed) {
+            return "http://\(trimmed)"
+        }
+
+        // Note: Assume HTTPS when reporting a dotted address without a scheme
+        if trimmed.contains(".") {
             return "https://\(trimmed)"
         }
 
         return nil
+    }
+
+    private static func isLocalAddress(_ value: String) -> Bool {
+        let authority = value.prefix { !["/", "?", "#"].contains($0) }
+
+        if authority.hasPrefix("[") {
+            guard let end = authority.firstIndex(of: "]") else { return false }
+            let host = authority[authority.index(after: authority.startIndex)..<end]
+            let rest = authority[authority.index(after: end)...]
+            guard !host.isEmpty, host.allSatisfy({ $0.isHexDigit || $0 == ":" || $0 == "." })
+            else { return false }
+            return rest.isEmpty || (rest.first == ":" && isPort(rest.dropFirst()))
+        }
+
+        guard !authority.contains(".") else { return false }
+        guard let colon = authority.lastIndex(of: ":") else { return authority == "localhost" }
+        return colon != authority.startIndex && isPort(authority[authority.index(after: colon)...])
+    }
+
+    private static func isPort(_ value: Substring) -> Bool {
+        guard !value.isEmpty, value.count <= 5, value.allSatisfy({ $0.isASCII && $0.isNumber }),
+            let port = Int(value)
+        else { return false }
+        return (1...65535).contains(port)
     }
 
     private static func isAddressBar(_ element: AXUIElement, role: String?) -> Bool {
@@ -87,7 +121,10 @@ enum BrowserURLExtractor {
         var identifier: CFTypeRef?
         AXUIElementCopyAttributeValue(element, kAXIdentifierAttribute as CFString, &identifier)
         if let identifier = getDOMIdentifier(from: element) ?? (identifier as? String),
-            ["urlbar-input", "urlbar", "omnibox", "urlFieldInput", "WEB_BROWSER_ADDRESS_AND_SEARCH_FIELD"].contains(
+            [
+                "urlbar-input", "urlbar", "omnibox", "urlFieldInput",
+                "WEB_BROWSER_ADDRESS_AND_SEARCH_FIELD",
+            ].contains(
                 identifier)
         {
             return true
