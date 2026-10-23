@@ -116,17 +116,23 @@ function getDelayedEndEarlyActionLabel(remainingMs: number): string {
 export function useIntentionEndEarlyDialog(
 	options: TUseIntentionEndEarlyDialogOptions
 ): TIntentionEndEarlyDialogHandle {
-	const { cx, isActive } = options;
+	const { cx, isActive, manualEndConditionId } = options;
 	const intentionsCx = useIntentionsCx();
 	const toastsCx = useToastsCx();
 	const [isOpen, setIsOpen] = React.useState(false);
 	const [isPending, setIsPending] = React.useState(false);
-	const endEarlyPolicy = cx.getEndEarlyPolicy({ isActive });
+	const endEarlyPolicy =
+		manualEndConditionId == null
+			? cx.getEndEarlyPolicy({ isActive })
+			: cx.getManualEndPolicy({ isActive });
 
 	const stopIntentionEarly = React.useCallback(async (): Promise<boolean> => {
 		setIsPending(true);
 		try {
-			const [isSessionOk, sessionErr] = await intentionsCx.stop(cx.intention.id);
+			const [isSessionOk, sessionErr] =
+				manualEndConditionId == null
+					? await intentionsCx.stop(cx.intention.id)
+					: await intentionsCx.complete(cx.intention.id, manualEndConditionId);
 			if (!isSessionOk) {
 				toastsCx.add({
 					type: 'error',
@@ -140,7 +146,7 @@ export function useIntentionEndEarlyDialog(
 		} finally {
 			setIsPending(false);
 		}
-	}, [cx.intention.id, intentionsCx, toastsCx]);
+	}, [cx.intention.id, intentionsCx, manualEndConditionId, toastsCx]);
 
 	const endEarly = React.useCallback(() => {
 		if (endEarlyPolicy.type === 'available') {
@@ -177,6 +183,7 @@ export function useIntentionEndEarlyDialog(
 interface TUseIntentionEndEarlyDialogOptions {
 	cx: EditBlockIntentionCx;
 	isActive: boolean;
+	manualEndConditionId: number | null;
 }
 
 interface TIntentionEndEarlyDialogHandle {

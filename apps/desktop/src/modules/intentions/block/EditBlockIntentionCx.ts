@@ -44,6 +44,14 @@ export class EditBlockIntentionCx {
 		return this.getActiveActionPolicy(options);
 	}
 
+	public getManualEndPolicy(
+		options: TEditBlockIntentionPolicyOptions
+	): TEditBlockIntentionActionPolicy {
+		const policy = this.getActiveActionPolicy(options);
+		// Note: Strict can end through its configured manual end condition
+		return policy.type === 'blocked' ? { type: 'available' } : policy;
+	}
+
 	public async getSavePolicy(): Promise<
 		TResult<specta.IntentionEditPolicyAssessment, TEditBlockIntentionSavePolicyError>
 	> {

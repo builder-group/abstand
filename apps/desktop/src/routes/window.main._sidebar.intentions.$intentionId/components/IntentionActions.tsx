@@ -48,7 +48,11 @@ export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 		dialog: endEarlyDialog,
 		endEarly,
 		isPending: isEndEarlyPending
-	} = useIntentionEndEarlyDialog({ cx, isActive });
+	} = useIntentionEndEarlyDialog({
+		cx,
+		isActive,
+		manualEndConditionId: manualEndCondition?.id ?? null
+	});
 
 	const [pendingSessionAction, setPendingSessionAction] =
 		React.useState<TPendingSessionAction | null>(null);
@@ -67,25 +71,7 @@ export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 
 	const handleSessionAction = React.useCallback(async () => {
 		if (isActive) {
-			if (manualEndCondition == null) {
-				endEarly();
-				return;
-			}
-
-			setPendingSessionAction('end');
-			const [isSessionOk, sessionErr] = await intentionsCx.complete(
-				cx.intention.id,
-				manualEndCondition.id
-			);
-			setPendingSessionAction(null);
-
-			if (!isSessionOk) {
-				toastsCx.add({
-					type: 'error',
-					title: 'Could not end Intention',
-					description: sessionErr
-				});
-			}
+			endEarly();
 			return;
 		}
 
@@ -104,15 +90,7 @@ export const IntentionActions: React.FC<TIntentionActionsProps> = (props) => {
 				description: sessionErr
 			});
 		}
-	}, [
-		cx.intention.id,
-		endEarly,
-		intentionsCx,
-		isActive,
-		manualStartCondition,
-		manualEndCondition,
-		toastsCx
-	]);
+	}, [cx.intention.id, endEarly, intentionsCx, isActive, manualStartCondition, toastsCx]);
 
 	const handlePauseAction = React.useCallback(async () => {
 		const nextAction = isPaused ? 'resume' : 'pause';
@@ -242,7 +220,7 @@ interface TIntentionActionsProps {
 }
 
 export type TIntentionAutoRunAction = 'end';
-type TPendingSessionAction = 'start' | 'end';
+type TPendingSessionAction = 'start';
 type TPendingPauseAction = 'pause' | 'resume';
 
 function getPauseActionLabel(options: { isActive: boolean; isPaused: boolean }): string {
