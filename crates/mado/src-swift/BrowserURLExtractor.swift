@@ -78,11 +78,12 @@ enum BrowserURLExtractor {
             return nil
         }
 
-        // Note: Browsers can hide the scheme, and dot-free local hosts would otherwise read as search text
+        // Note: Assume HTTP when reporting a local address without a scheme
         if isLocalAddress(trimmed) {
             return "http://\(trimmed)"
         }
 
+        // Note: Assume HTTPS when reporting a dotted address without a scheme
         if trimmed.contains(".") {
             return "https://\(trimmed)"
         }
@@ -90,7 +91,6 @@ enum BrowserURLExtractor {
         return nil
     }
 
-    /// Matches `localhost`, bracketed IPv6, and dot-free `host:port` authorities.
     private static func isLocalAddress(_ value: String) -> Bool {
         let authority = value.prefix { !["/", "?", "#"].contains($0) }
 
@@ -121,7 +121,10 @@ enum BrowserURLExtractor {
         var identifier: CFTypeRef?
         AXUIElementCopyAttributeValue(element, kAXIdentifierAttribute as CFString, &identifier)
         if let identifier = getDOMIdentifier(from: element) ?? (identifier as? String),
-            ["urlbar-input", "urlbar", "omnibox", "urlFieldInput", "WEB_BROWSER_ADDRESS_AND_SEARCH_FIELD"].contains(
+            [
+                "urlbar-input", "urlbar", "omnibox", "urlFieldInput",
+                "WEB_BROWSER_ADDRESS_AND_SEARCH_FIELD",
+            ].contains(
                 identifier)
         {
             return true
