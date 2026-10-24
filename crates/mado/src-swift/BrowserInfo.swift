@@ -33,6 +33,8 @@ struct BrowserInfo {
         }
         let page: BrowserPage?
         switch kind {
+        case .ego:
+            page = EgoWebContent.extract(from: windowElement)
         case .vivaldi:
             page = VivaldiWebContent.extract(from: windowElement)
         case .safari:
@@ -67,7 +69,7 @@ struct BrowserInfo {
         case .vivaldi:
             guard let interface = VivaldiWebContent.findInterface(in: window) else { return nil }
             return BrowserURLExtractor.findAddressBar(in: interface)
-        case .chromium, .gecko, .safari:
+        case .chromium, .ego, .gecko, .safari:
             return BrowserURLExtractor.findAddressBar(in: window)
         }
     }

@@ -19,6 +19,7 @@ enum SupportedBrowsers {
         "com.operasoftware.operagx": .chromium,
         "company.thebrowser.browser": .chromium,
         "company.thebrowser.dia": .chromium,
+        "com.citrolabs.ego.lite": .ego,
         "net.imput.helium": .chromium,
         "com.vivaldi.vivaldi": .vivaldi,
 
@@ -42,6 +43,7 @@ enum SupportedBrowsers {
 // Note: Browsers share family handling unless their Accessibility structure requires a distinct path
 enum BrowserKind: Equatable {
     case chromium
+    case ego
     case gecko
     case safari
     case vivaldi

@@ -6,48 +6,53 @@ engine does not guarantee the same Accessibility structure.
 
 ## Extraction Model
 
-`BrowserInfo` selects shared or browser-specific extraction and routes address-bar
-lookup for observation. Each extraction path returns a URL and optional content
-bounds. Browser-specific tree handling stays in its helper, while URL normalization,
-bounds clipping, and metadata assembly remain shared.
+`BrowserInfo` selects the extraction path and routes address-bar lookup for
+observation. Each path returns a URL and optional content bounds. Browser-specific
+helpers handle tree traversal. URL normalization, bounds clipping, and metadata
+assembly remain shared.
 
-Each supported browser maps to a browser kind:
+### Browser Families
 
-- `chromium` and `gecko`: read top-level web content, then fall back to an unfocused browser chrome URL field
-- `safari`: reads top-level web content and recognizes the native Start Page
-- `vivaldi`: reads the active page inside the browser interface
+- `chromium`: reads top-level web content, then falls back to an unfocused address field.
+- `gecko`: uses the same extraction path as Chromium, including the address-field fallback.
+- `safari`: requires the document URL because its shortened address field can omit
+  the page path. A recognized native Start Page with no web document is reported
+  as `about:blank`.
 
-An `AXTextField` or `AXComboBox` can expose the address bar value. Top-level `AXWebArea.AXURL`
-or `AXDocument.AXURL` can expose the loaded document URL. Address bar and
-web-content values can differ in canonical form. The document URL takes precedence so typing
-an address does not change the reported website before navigation. Stable Accessibility or DOM
-identifiers identify known address bars independently of localized labels.
+Shared web-content traversal stops at the nearest `AXWebArea` or `AXDocument`.
+Nested web areas can represent embedded pages rather than the active tab.
 
-Safari's unfocused address bar can expose only a hostname: `example.com/articles`
-may appear as `example.com`. Using it would discard path information, so Safari
-requires the document URL for websites. A native Start Page with no web document
-is reported as `about:blank`. Missing metadata alone does not establish a Start Page.
-Chromium and Gecko fallback also requires the address
-bar to report that it is not focused. An unreadable focus attribute produces no
-fallback URL rather than treating an edit as the loaded page. Browsers can hide the
-scheme. `localhost`, bracketed IPv6, and dot-free `host:port` values are reported as `http`
-URLs, and other dotted values as `https` URLs.
+### Special Cases
 
-The monitor observes address-bar value changes as well as window titles to detect
+- `ego`: hit-tests the window center and follows parents to the outermost web
+  document inside that window, excluding iframe URLs. It requires the hit-tested
+  document's URL and has no address-bar fallback.
+- `vivaldi`: traverses the browser's interface web area to reach the active page,
+  excluding web panels and inactive tabs.
+
+### Shared Behavior
+
+An `AXTextField` or `AXComboBox` can expose the address bar value. `AXWebArea.AXURL`
+or `AXDocument.AXURL` can expose the loaded document URL. The document URL takes
+precedence so an uncommitted address edit does not change the reported website.
+Stable Accessibility or DOM identifiers identify known address fields independently
+of localized labels.
+
+Address-field fallback requires the field to report that it is not focused. An
+unreadable focus state produces no fallback URL. When no scheme is present,
+`localhost`, bracketed IPv6, and dot-free `host:port` values use HTTP. Other dotted
+values use HTTPS.
+
+The document URL and content bounds come from the same selected element. Bounds
+are clipped to the browser window. Accessibility reads are not atomic, but
+extraction does not select a second document for bounds. Bounds alone do not
+produce browser metadata, and missing metadata does not establish an internal page.
+
+The monitor observes address-bar value changes and window titles to detect
 same-title tab switches. An address-bar notification does not establish that the
 document URL has changed. Optional reconciliation recovers updates when no later
 notification arrives. If neither a URL nor a known internal page is available,
 extraction produces no browser metadata.
-
-The document URL and content bounds come from the same selected element. Bounds
-are clipped to the browser window. Accessibility reads are not atomic, but extraction
-does not select a second document for bounds. `BrowserInfo` remains anchored to a
-URL, including an eligible address-bar fallback: bounds alone do not produce metadata.
-
-Traversal stops at the nearest web-content node. Nested web areas can represent
-embedded pages rather than the active tab or viewport.
-Vivaldi's browser interface is a recognized exception: extraction traverses its
-internal web area to reach the active tab, excluding web panels and inactive tabs.
 
 ## Probe Workflow
 
@@ -82,6 +87,7 @@ Check `BrowserInfo.findAddressBar` too, so observation reaches the browser's URL
 | Microsoft Edge | `com.microsoft.edgemac`      | `chromium` | Found                    | Found               |
 | Opera          | `com.operasoftware.Opera`    | `chromium` | Found                    | Not observed        |
 | Arc            | `company.thebrowser.Browser` | `chromium` | Found                    | Found               |
+| ego lite       | `com.citrolabs.ego.lite`      | `ego`      | Found                    | Found               |
 | Vivaldi        | `com.vivaldi.Vivaldi`        | `vivaldi`  | Found                    | Found               |
 | Safari         | `com.apple.Safari`           | `safari`   | Found                    | Found               |
 | Firefox        | `org.mozilla.firefox`        | `gecko`    | Found (`AXComboBox`)     | Found               |
@@ -246,6 +252,66 @@ AXWindow
 > AXSplitGroup
 > AXWebArea
 ```
+
+### ego lite
+
+- Bundle ID: `com.citrolabs.ego.lite`
+- Browser kind: `ego`
+- Browser version: 0.6.0.20 (6.0.20)
+- Observed: 2026-10-24 on macOS 27.0.1 (26A434)
+
+Browser chrome URL field: Found.
+
+```text
+AXWindow
+> AXGroup
+> AXGroup
+> AXGroup
+> AXGroup
+> AXGroup
+> AXGroup
+> AXGroup
+> AXGroup
+> AXGroup
+> AXGroup
+> AXGroup
+> AXToolbar
+> AXGroup
+> AXTextField desc="Address and search bar" placeholder="Search Google or type a URL"
+```
+
+Web content `AXURL`: Found.
+
+```text
+AXWindow
+> AXGroup
+> AXGroup
+> AXGroup
+> AXGroup
+> AXGroup
+> AXGroup
+> AXGroup
+> AXGroup
+> AXGroup
+> AXGroup
+> AXGroup
+> AXGroup
+> AXScrollArea
+> AXWebArea
+```
+
+Inactive Spaces remain in the accessibility tree and can report the same bounds
+and focus state as the visible page. Tree order, bounds, and focus flags do not
+reliably identify the active Space.
+
+Extraction hit-tests the window center and follows parent elements to the
+outermost web document inside that window. The document supplies both URL and
+content bounds. Embedded iframe URLs are ignored, and missing hits or document
+URLs produce no browser metadata.
+
+Switching between Spaces selected the visible document. Editing the address
+without navigating preserved the loaded document URL. The Space overview produced
+no browser metadata.
 
 ### Vivaldi
 
