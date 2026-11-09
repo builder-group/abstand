@@ -39,7 +39,10 @@ struct BrowserInfo {
             page = VivaldiWebContent.extract(from: windowElement)
         case .safari:
             page = SafariWebContent.extract(from: windowElement)
-        case .chromium, .gecko:
+        case .chromium:
+            enableManualAccessibility(for: windowElement)
+            page = BrowserWebContent.extract(from: windowElement)
+        case .gecko:
             page = BrowserWebContent.extract(from: windowElement)
         }
         guard let page else { return nil }

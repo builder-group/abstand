@@ -59,6 +59,16 @@ func getFocusedWindow(from app: AXUIElement) -> AXUIElement? {
     return (windowRef as! AXUIElement)
 }
 
+func enableManualAccessibility(for element: AXUIElement) {
+    var pid: pid_t = 0
+    guard AXUIElementGetPid(element, &pid) == .success else { return }
+    AXUIElementSetAttributeValue(
+        AXUIElementCreateApplication(pid),
+        "AXManualAccessibility" as CFString,
+        kCFBooleanTrue
+    )
+}
+
 /// Get child elements from an accessibility element.
 func getChildren(from element: AXUIElement) -> [AXUIElement]? {
     var childrenRef: CFTypeRef?
