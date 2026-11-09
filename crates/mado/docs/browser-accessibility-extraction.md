@@ -14,6 +14,8 @@ assembly remain shared.
 ### Browser Families
 
 - `chromium`: reads top-level web content, then falls back to an unfocused address field.
+  Some Chromium-based apps expose only their browser chrome until a client sets
+  `AXManualAccessibility` on the application element, so extraction sets it first.
 - `gecko`: uses the same extraction path as Chromium, including the address-field fallback.
 - `safari`: requires the document URL because its shortened address field can omit
   the page path. A recognized native Start Page with no web document is reported
@@ -87,6 +89,7 @@ Check `BrowserInfo.findAddressBar` too, so observation reaches the browser's URL
 | Microsoft Edge | `com.microsoft.edgemac`      | `chromium` | Found                    | Found               |
 | Opera          | `com.operasoftware.Opera`    | `chromium` | Found                    | Not observed        |
 | Arc            | `company.thebrowser.Browser` | `chromium` | Found                    | Found               |
+| Dia            | `company.thebrowser.dia`     | `chromium` | Not observed             | Found               |
 | ego lite       | `com.citrolabs.ego.lite`      | `ego`      | Found                    | Found               |
 | Vivaldi        | `com.vivaldi.Vivaldi`        | `vivaldi`  | Found                    | Found               |
 | Safari         | `com.apple.Safari`           | `safari`   | Found                    | Found               |
@@ -250,6 +253,28 @@ Web content `AXURL`: Found.
 ```text
 AXWindow
 > AXSplitGroup
+> AXWebArea
+```
+
+### Dia
+
+- Bundle ID: `company.thebrowser.dia`
+- Browser kind: `chromium`
+- Browser version: 1.55.1 (89833)
+- Observed: 2026-10-30 on macOS 27.2 (26B123)
+
+Dia exposes only its navigation bar and tab strip until `AXManualAccessibility`
+is set on the application element. After that, the web content appears.
+
+Browser chrome URL field: Not observed. The address field is an `AXTextArea` with
+`AXIdentifier="navigationBarAssistantBarTextField"`, and its value is the bare hostname,
+so it is not used as a fallback.
+
+Web content `AXURL`: Found.
+
+```text
+AXWindow
+> AXScrollArea
 > AXWebArea
 ```
 
