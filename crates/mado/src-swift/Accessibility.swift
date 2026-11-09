@@ -59,6 +59,7 @@ func getFocusedWindow(from app: AXUIElement) -> AXUIElement? {
     return (windowRef as! AXUIElement)
 }
 
+/// Ask the app owning an element to expose its full Accessibility tree.
 func enableManualAccessibility(for element: AXUIElement) {
     var pid: pid_t = 0
     guard AXUIElementGetPid(element, &pid) == .success else { return }

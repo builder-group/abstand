@@ -31,6 +31,9 @@ struct BrowserInfo {
         guard let kind = SupportedBrowsers.kind(for: bundleId) else {
             return nil
         }
+        if SupportedBrowsers.requiresManualAccessibility(bundleId) {
+            enableManualAccessibility(for: windowElement)
+        }
         let page: BrowserPage?
         switch kind {
         case .ego:
@@ -39,10 +42,7 @@ struct BrowserInfo {
             page = VivaldiWebContent.extract(from: windowElement)
         case .safari:
             page = SafariWebContent.extract(from: windowElement)
-        case .chromium:
-            enableManualAccessibility(for: windowElement)
-            page = BrowserWebContent.extract(from: windowElement)
-        case .gecko:
+        case .chromium, .gecko:
             page = BrowserWebContent.extract(from: windowElement)
         }
         guard let page else { return nil }

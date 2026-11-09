@@ -15,7 +15,8 @@ assembly remain shared.
 
 - `chromium`: reads top-level web content, then falls back to an unfocused address field.
   Some Chromium-based apps expose only their browser chrome until a client sets
-  `AXManualAccessibility` on the application element, so extraction sets it first.
+  `AXManualAccessibility` on the application element. Extraction sets it first for browsers
+  where `SupportedBrowsers.requiresManualAccessibility` returns true.
 - `gecko`: uses the same extraction path as Chromium, including the address-field fallback.
 - `safari`: requires the document URL because its shortened address field can omit
   the page path. A recognized native Start Page with no web document is reported

@@ -34,6 +34,12 @@ final class SupportedBrowsersTests: XCTestCase {
         )
     }
 
+    func testRequiresManualAccessibilityOnlyForDia() {
+        XCTAssertTrue(SupportedBrowsers.requiresManualAccessibility("company.thebrowser.Dia"))
+        XCTAssertFalse(SupportedBrowsers.requiresManualAccessibility("com.google.Chrome"))
+        XCTAssertFalse(SupportedBrowsers.requiresManualAccessibility("company.thebrowser.Browser"))
+    }
+
     func testRejectsUnknownBundleIdentifier() {
         XCTAssertNil(SupportedBrowsers.kind(for: "com.example.browser"))
     }

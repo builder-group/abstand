@@ -34,9 +34,19 @@ enum SupportedBrowsers {
         "app.zen-browser.zen": .gecko,
     ]
 
+    // Note: These browsers expose only their browser chrome until a client sets AXManualAccessibility
+    private static let manualAccessibilityBundleIds: Set<String> = [
+        "company.thebrowser.dia"
+    ]
+
     /// Returns the browser kind for an explicitly supported browser.
     static func kind(for bundleId: String) -> BrowserKind? {
         return kindsByBundleId[bundleId.lowercased()]
+    }
+
+    /// Returns whether the browser hides its web content until AXManualAccessibility is set.
+    static func requiresManualAccessibility(_ bundleId: String) -> Bool {
+        return manualAccessibilityBundleIds.contains(bundleId.lowercased())
     }
 }
 
