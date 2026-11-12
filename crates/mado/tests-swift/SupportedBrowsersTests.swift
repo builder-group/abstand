@@ -21,6 +21,10 @@ final class SupportedBrowsersTests: XCTestCase {
             .chromium
         )
         XCTAssertEqual(
+            SupportedBrowsers.kind(for: "at.studio.AsideBrowser"),
+            .chromium
+        )
+        XCTAssertEqual(
             SupportedBrowsers.kind(for: "com.apple.Safari"),
             .safari
         )
