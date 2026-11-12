@@ -21,6 +21,7 @@ enum SupportedBrowsers {
         "company.thebrowser.dia": .chromium,
         "com.citrolabs.ego.lite": .ego,
         "net.imput.helium": .chromium,
+        "at.studio.asidebrowser": .chromium,
         "com.vivaldi.vivaldi": .vivaldi,
 
         // Safari

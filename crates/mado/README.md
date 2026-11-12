@@ -279,7 +279,7 @@ Supported browsers:
 
 - Chromium: Google Chrome (Beta, Dev, and Canary), Chromium, Brave (Beta and
   Nightly), Microsoft Edge (Beta, Dev, and Canary), Opera (Beta, Developer, and
-  GX), Arc, Dia, ego lite, Helium, and Vivaldi
+  GX), Arc, Dia, ego lite, Helium, Aside, and Vivaldi
 - Safari: Safari (Technology Preview)
 - Gecko: Firefox (Developer Edition and Nightly) and Zen
 
