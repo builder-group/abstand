@@ -42,7 +42,8 @@ fn resolve_end_rule_at(rule: &IntentionConditionRule, started_at: i64) -> Option
                 time_of_day_ms: &rule.time_of_day_ms,
                 weekdays_mask: rule.weekdays_mask.as_ref(),
                 search_from: started_at,
-                minimum_trigger_at: started_at,
+                // An end at the same wall-clock time belongs to the next matching day.
+                minimum_trigger_at: started_at.saturating_add(1),
             })
         }
         IntentionConditionRule::Manual => None,
@@ -89,4 +90,48 @@ fn includes_schedule_date(date: NaiveDate, weekdays_mask: Option<&WeekdayMask>) 
     };
 
     return weekdays_mask.contains_weekday(date.weekday());
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::modules::intentions::intention::IntentionConditionScheduleRule;
+
+    #[test]
+    fn midnight_end_waits_until_the_following_local_day() {
+        let midnight = TimeOnly::from_millis_since_midnight(0).unwrap();
+        let date = NaiveDate::from_ymd_opt(2026, 11, 16).unwrap();
+        let started_at = local_unix_ms_from_date_and_time(date, &midnight).unwrap();
+        let expected_end =
+            local_unix_ms_from_date_and_time(date.succ_opt().unwrap(), &midnight).unwrap();
+
+        for weekdays_mask in [
+            None,
+            Some(WeekdayMask::from_bits(0b111_1111).unwrap()),
+            Some(WeekdayMask::from_bits(0b000_0110).unwrap()),
+        ] {
+            let rule = IntentionConditionRule::Schedule(IntentionConditionScheduleRule {
+                time_of_day_ms: midnight.clone(),
+                weekdays_mask,
+            });
+
+            assert_eq!(resolve_end_rule_at(&rule, started_at), Some(expected_end));
+        }
+    }
+
+    #[test]
+    fn sunday_all_day_block_ends_on_monday() {
+        let midnight = TimeOnly::from_millis_since_midnight(0).unwrap();
+        let sunday = NaiveDate::from_ymd_opt(2026, 11, 22).unwrap();
+        let started_at = local_unix_ms_from_date_and_time(sunday, &midnight).unwrap();
+        let rule = IntentionConditionRule::Schedule(IntentionConditionScheduleRule {
+            time_of_day_ms: midnight.clone(),
+            weekdays_mask: Some(WeekdayMask::from_bits(0b000_0001).unwrap()),
+        });
+
+        assert_eq!(
+            resolve_end_rule_at(&rule, started_at),
+            local_unix_ms_from_date_and_time(sunday.succ_opt().unwrap(), &midnight)
+        );
+    }
 }

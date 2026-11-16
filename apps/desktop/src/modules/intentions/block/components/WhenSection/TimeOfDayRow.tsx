@@ -13,6 +13,8 @@ export const TimeOfDayRow: React.FC<TTimeOfDayRowProps> = (props) => {
 		},
 		formCx,
 		ariaLabel,
+		children,
+		showTimeInput = true,
 		isDisabled = false
 	} = props;
 
@@ -30,19 +32,24 @@ export const TimeOfDayRow: React.FC<TTimeOfDayRowProps> = (props) => {
 			descriptionVariant={timeError != null ? 'error' : 'default'}
 			variant="compact"
 		>
-			<TimeInput
-				value={timeOfDayMs}
-				onValueChange={handleTimeChange}
-				ariaLabel={ariaLabel}
-				isInvalid={timeError != null}
-				isDisabled={isDisabled}
-			/>
+			{children}
+			{showTimeInput && (
+				<TimeInput
+					value={timeOfDayMs}
+					onValueChange={handleTimeChange}
+					ariaLabel={ariaLabel}
+					isInvalid={timeError != null}
+					isDisabled={isDisabled}
+				/>
+			)}
 		</SettingsRow>
 	);
 };
 
 interface TTimeOfDayRowProps extends TConditionRowsProps {
 	ariaLabel: string;
+	children?: React.ReactNode;
+	showTimeInput?: boolean;
 }
 
 const TimeInput: React.FC<TTimeInputProps> = (props) => {

@@ -257,6 +257,19 @@ export class BlockIntentionFormCx {
 						: []
 			},
 			conditions: formData.conditions.map((condition): specta.WriteIntentionConditionParams => {
+				if (startCondition?.mode === 'repeats' && startCondition.allDay) {
+					return {
+						transition: condition.transition,
+						rule: {
+							type: 'schedule',
+							timeOfDayMs: timeOnlyFromMs(0),
+							weekdaysMask:
+								condition.transition === 'start'
+									? startCondition.weekdaysMask
+									: getAllDayEndWeekdaysMask(startCondition.weekdaysMask)
+						}
+					};
+				}
 				switch (condition.mode) {
 					case 'manual': {
 						return {
@@ -373,6 +386,7 @@ export interface TBlockIntentionConditionFormData {
 	timeOfDayMs: specta.TimeOnly;
 	offsetMs: number;
 	weekdaysMask: specta.WeekdayMask | null;
+	allDay: boolean;
 }
 
 export type TBlockIntentionConditionMode =
@@ -388,6 +402,16 @@ function getFormDataFromIntention(intention: specta.Intention): TBlockIntentionF
 		return null;
 	}
 
+	const startRule = intention.conditions.find(
+		(condition) => condition.transition === 'start'
+	)?.rule;
+	const endRule = intention.conditions.find((condition) => condition.transition === 'end')?.rule;
+	const allDay =
+		startRule?.type === 'schedule' &&
+		startRule.timeOfDayMs === 0 &&
+		endRule?.type === 'schedule' &&
+		endRule.timeOfDayMs === 0 &&
+		endRule.weekdaysMask === getAllDayEndWeekdaysMask(startRule.weekdaysMask);
 	const block = intention.behavior;
 	const targetActions = getTargetActionsForScope(block.scope);
 	return {
@@ -429,12 +453,24 @@ function getFormDataFromIntention(intention: specta.Intention): TBlockIntentionF
 					return {
 						...defaultCondition,
 						mode: condition.transition === 'start' ? 'repeats' : 'atTime',
+						allDay: condition.transition === 'start' && allDay,
 						timeOfDayMs: condition.rule.timeOfDayMs,
 						weekdaysMask: condition.rule.weekdaysMask
 					};
 			}
 		})
 	};
+}
+
+function getAllDayEndWeekdaysMask(
+	weekdaysMask: specta.WeekdayMask | null
+): specta.WeekdayMask | null {
+	if (weekdaysMask == null) {
+		return null;
+	}
+
+	// Weekday bits run Monday to Sunday; each selected day ends at the next local midnight.
+	return (((weekdaysMask << 1) & 0b1111111) | (weekdaysMask >> 6)) as specta.WeekdayMask;
 }
 
 function getCatalogItemsForAction(
@@ -538,7 +574,8 @@ export function createDefaultBlockIntentionCondition(
 				? timeOnlyFromMs(9 * 60 * 60 * 1_000)
 				: timeOnlyFromMs(17 * 60 * 60 * 1_000),
 		offsetMs: 30 * 60_000,
-		weekdaysMask: null
+		weekdaysMask: null,
+		allDay: false
 	};
 }
 
@@ -570,6 +607,7 @@ function createConditionsValidator(
 			z.object({
 				transition: z.enum(['start', 'end']),
 				mode: z.enum(['now', 'atTime', 'afterDelay', 'afterDuration', 'repeats', 'manual']),
+				allDay: z.boolean(),
 				dateEpochDays: z
 					.custom<specta.DateOnly>(
 						(value) => typeof value === 'number' && isDateEpochDays(value),
@@ -620,6 +658,11 @@ function createConditionsValidator(
 				ctx.addIssue({ code: 'custom', message: 'Add an end condition' });
 			}
 			if (startCondition == null || endCondition == null) {
+				return;
+			}
+
+			// All-day schedules supply their own midnight start and end, ignoring hidden time fields.
+			if (startCondition.mode === 'repeats' && startCondition.allDay) {
 				return;
 			}
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Select, ToggleGroup, ToggleGroupItem, Tooltip } from '@/components';
+import { Select, Switch, ToggleGroup, ToggleGroupItem, Tooltip } from '@/components';
 import { isWeekday, weekdayMaskFromWeekdays, weekdaysFromWeekdayMask } from '@/lib';
 import { SettingsRow } from '@/modules/settings';
 import { blockIntentionFormConfig } from '../../BlockIntentionFormCx';
@@ -9,7 +9,7 @@ import { type TConditionRowsProps } from './types';
 export const RepeatsRows: React.FC<TConditionRowsProps> = (props) => {
 	const {
 		conditionRow: {
-			condition: { transition, weekdaysMask },
+			condition: { transition, weekdaysMask, allDay },
 			errors: { weekdaysMask: weekdaysError }
 		},
 		formCx,
@@ -30,7 +30,16 @@ export const RepeatsRows: React.FC<TConditionRowsProps> = (props) => {
 
 	return (
 		<>
-			<TimeOfDayRow {...props} ariaLabel="Repeat time" />
+			<TimeOfDayRow {...props} ariaLabel="Repeat time" showTimeInput={!allDay}>
+				<label className="text-base-950 flex items-center gap-2 text-sm">
+					All day
+					<Switch
+						checked={allDay}
+						disabled={isDisabled}
+						onCheckedChange={(checked) => formCx.updateCondition(transition, { allDay: checked })}
+					/>
+				</label>
+			</TimeOfDayRow>
 			<SettingsRow
 				label="Days"
 				description={weekdaysError}

@@ -18,6 +18,12 @@ import { useConditionRow } from './use-condition-row';
 
 export const WhenSection: React.FC<TWhenSectionProps> = (props) => {
 	const { formCx, isActive = false, isDisabled = false } = props;
+	const isAllDay = useCompute(formCx.$form.fields.conditions, (conditions) =>
+		conditions.some(
+			(condition) =>
+				condition.transition === 'start' && condition.mode === 'repeats' && condition.allDay
+		)
+	);
 	const hasChangedStartCondition = useCompute(
 		[formCx.$form.fields.conditions, formCx.$form.dirtyFields] as const,
 		([conditions, dirtyFields]) => {
@@ -55,7 +61,15 @@ export const WhenSection: React.FC<TWhenSectionProps> = (props) => {
 			</SettingsGroup>
 
 			<SettingsGroup>
-				<ConditionRowSet transition="end" label="Ends" formCx={formCx} isDisabled={isDisabled} />
+				{isAllDay ? (
+					<SettingsRow label="Ends" variant="compact">
+						<Select variant="ghost" value="manual" disabled={isDisabled} aria-label="Schedule end">
+							<option value="manual">Manually</option>
+						</Select>
+					</SettingsRow>
+				) : (
+					<ConditionRowSet transition="end" label="Ends" formCx={formCx} isDisabled={isDisabled} />
+				)}
 			</SettingsGroup>
 		</div>
 	);
@@ -85,7 +99,11 @@ function areStartConditionsEqual(
 		case 'afterDuration':
 			return a.offsetMs === b.offsetMs;
 		case 'repeats':
-			return a.timeOfDayMs === b.timeOfDayMs && a.weekdaysMask === b.weekdaysMask;
+			return (
+				a.allDay === b.allDay &&
+				(a.allDay || a.timeOfDayMs === b.timeOfDayMs) &&
+				a.weekdaysMask === b.weekdaysMask
+			);
 		case 'manual':
 		case 'now':
 			return true;

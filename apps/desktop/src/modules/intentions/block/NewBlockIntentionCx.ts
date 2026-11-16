@@ -34,9 +34,17 @@ export class NewBlockIntentionCx {
 	}
 
 	public shouldStartNow(): boolean {
-		return this.formCx.$form.fields.conditions
-			.get()
-			.some((condition) => condition.transition === 'start' && condition.mode === 'now');
+		const condition = this.formCx.getCondition('start');
+		if (condition?.mode === 'now') {
+			return true;
+		}
+		if (condition?.mode !== 'repeats' || !condition.allDay) {
+			return false;
+		}
+
+		// Weekday masks begin with Monday, while Date.getDay() begins with Sunday.
+		const todayBit = 1 << ((new Date().getDay() + 6) % 7);
+		return condition.weekdaysMask == null || (condition.weekdaysMask & todayBit) !== 0;
 	}
 }
 

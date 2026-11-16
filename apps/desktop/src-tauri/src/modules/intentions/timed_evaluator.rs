@@ -211,7 +211,7 @@ impl TimedScheduleRule {
                         time_of_day_ms: &self.time_of_day_ms,
                         weekdays_mask: self.weekdays_mask.as_ref(),
                         search_from: started_at,
-                        minimum_trigger_at: started_at,
+                        minimum_trigger_at: started_at.saturating_add(1),
                     },
                 )
             }
